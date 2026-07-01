@@ -1,286 +1,6 @@
 {
   "insights": [
     {
-      "ts": 1782806639.8028681,
-      "category": "exit_pattern",
-      "insight": "Exit [SOL]: RANGE regime invalidates long thesis. 7.9h hold >> loss median (1.5h), zero MFE progress = dead capital. confidence_scorer weak in range (11% WR, n=9)",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 4
-    },
-    {
-      "ts": 1782806733.6955364,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Sunk-cost test fails: confidence_scorer 22% WR is negative EV; range regime compounds weakness (11% WR on 9 trades). MFE retrace 59.3% signals mean-re",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 2
-    },
-    {
-      "ts": 1782806790.4382157,
-      "category": "exit_pattern",
-      "insight": "Exit [HYPE]: Regime mismatch + setup weakness + dead capital. HYPE LONG historically 11% WR in RANGE (n=9, statistically hostile). confidence_scorer 10% WR on HYPE",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 3
-    },
-    {
-      "ts": 1782806823.3141356,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Thesis invalidated by regime structure. BTC LONG entered into RANGE regime with bearish bias\u2014structurally misaligned. confidence_scorer: 18% WR on BTC",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782806858.173172,
-      "category": "trade_management",
-      "insight": "Exit [XRP]: confidence_scorer yields only 11% WR in range regimes\u2014its worst performance zone. Current +$0.46 position is rare win for this setup. Range regimes me",
-      "confidence": 0.5,
-      "evidence": "action=partial_close, thesis_valid=True",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782806923.0664384,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: confidence_scorer has 11% WR in range regimes vs 30% portfolio average\u2014worst performance in current regime. Regime outlook states 'low directional pro",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782807788.970251,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Regime-strategy mismatch. Confidence_scorer is 11% WR in range (TOXIC per edge data). Regime outlook explicitly states low directional probability. Po",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782807841.6055763,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Setup-regime mismatch: confidence_scorer 11% WR in range (n=9, strongest historical weakness); regime outlook 'low directional probability' contradict",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
-    },
-    {
-      "ts": 1782808554.3262548,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: REGIME SHIFT + THESIS DEATH. Trapped in RANGE (empirically 0% WR current run, 11% historical n=9). confidence_scorer only 11% WR in range vs 62% confi",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782808655.7685664,
-      "category": "trade_management",
-      "insight": "Exit [XRP]: MFE at 0.34% in range regime triggers profit-locking doctrine (threshold \u22650.3%). confidence_scorer: 22% WR overall, critically 11% WR in range. Range ",
-      "confidence": 0.5,
-      "evidence": "action=partial_close, thesis_valid=True",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782808729.9843671,
-      "category": "trade_management",
-      "insight": "Exit [ETH]: Range regime mandates early profit-lock (mean-reversion risk). Position barely moved (0.23% MFE in 1.8h hold, $0.20 PnL). confidence_scorer shows only",
-      "confidence": 0.5,
-      "evidence": "action=partial_close, thesis_valid=True",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782809048.809031,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: REGIME INVALIDATION + DEAD CAPITAL: Validated rule: BTC LONG viable only in trending regime. Current regime=RANGE (11% WR, -$203 net on recent streak)",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782809099.0016012,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: System hard-blocks RANGE regime: 0% WR on recent 19-trade run (-$203 total). confidence_scorer 11% WR in range (9 trades). Position profitable but MFE",
-      "confidence": 0.75,
-      "evidence": "action=partial_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": -2
-    },
-    {
-      "ts": 1782809837.2652483,
-      "category": "trade_management",
-      "insight": "Exit [XRP]: Regime shifted to long bias in TOXIC consolidation (worst performer, 29% WR). Position +0.596% MFE. Per rules: consolidation regimes mean-revert; MFE>",
-      "confidence": 0.5,
-      "evidence": "action=partial_close, thesis_valid=True",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782809882.5138626,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Regime shift to long (per outlook: 'long bias emerging...EMA20>EMA50') creates structural headwind for SHORT. Consolidation regime = toxic (29% WR per",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782810157.9581048,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Thesis weakening: emerging long bias (EMA20>EMA50, HYPE +4.7%) contradicts SHORT conviction. Setup weak (confidence_scorer 22% WR, XRP 43% WR). Consol",
-      "confidence": 0.75,
-      "evidence": "action=partial_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 7
-    },
-    {
-      "ts": 1782810184.452396,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Thesis invalidated by regime shift. Consolidation outlook shifted to long bias (bullish EMA cross, HYPE rallying). SHORT thesis contradicted by regime",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782810651.7552593,
-      "category": "trade_management",
-      "insight": "Exit [XRP]: Consolidation regime (31% WR toxic) + emerging long breakout bias = thesis weakens. Position winning, MFE +0.33% in range justifies aggressive profit-",
-      "confidence": 0.5,
-      "evidence": "action=partial_close, thesis_valid=True",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 7
-    },
-    {
-      "ts": 1782810674.5404127,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Regime thesis contradiction: regime analysis explicitly shows emerging LONG bias, not bearish confirmation. SHORT into bullish regime = thesis death, ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782811026.5529203,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Thesis invalidated: (1) Strategy-regime mismatch (confidence_scorer 11% WR in ranges vs consolidation entry); (2) Regime outlook explicitly shows emer",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782811089.3147044,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: THESIS INVALIDATED: Regime bias shifted to emerging long bias (HYPE/SOL momentum, EMA signals, volume expansion watch). Consolidation about to break w",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782811326.0938716,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: THESIS INVALIDATION: Regime analysis shows consolidation compressing \u2192 LONG bias emerging. SHORT contradicts emerging regime directional bias. Strateg",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782811377.6612346,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Regime shift from trend to consolidation. Long bias emerging contradicts SHORT thesis. Strategy weakness in consolidation (11% WR). Hold time at criti",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 4
-    },
-    {
-      "ts": 1782811654.5015163,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Edge data explicit thesis invalidation: ETH in trend regime = 0% historical WR (7 trades, all losses). Position currently profitable (+0.62%), allowin",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
-    },
-    {
-      "ts": 1782811859.2160347,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Consolidation regime + emerging long bias. Position +0.53% MFE after 7.7h. Per profit-locking framework: MFE 0.5%+ in range/consolidation = partial_cl",
-      "confidence": 0.75,
-      "evidence": "action=partial_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782812308.9096007,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Consolidation regime + emerging bullish regime signals + MFE +0.56% = standard profit-lock + thesis-weakening combo. Lock 50%, tighten trail on remain",
-      "confidence": 0.75,
-      "evidence": "action=partial_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 7
-    },
-    {
-      "ts": 1782812371.4448483,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Regime outlook contradicts SHORT thesis \u2014 consolidation shows long bias emerging, requiring volume expansion + funding tilt to confirm. Position at 2.",
-      "confidence": 0.75,
-      "evidence": "action=partial_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782812819.7519405,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Regime long bias directly contradicts SHORT thesis. Consolidation breakout forming with bullish direction (SOL/HYPE EMA20>EMA50, HYPE +4.7%). Position",
-      "confidence": 0.75,
-      "evidence": "action=partial_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
       "ts": 1782812854.6723058,
       "category": "exit_pattern",
       "insight": "Exit [ETH]: THESIS INVALIDATED by regime shift. Consolidation showing emerging long bias (HYPE +4.7%, EMA20>EMA50 crosses) contradicts SHORT directional thesis. D",
@@ -318,7 +38,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782814439.2668304,
@@ -338,7 +58,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782814864.2637062,
@@ -348,7 +68,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782815332.0890434,
@@ -368,7 +88,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782815993.6506495,
@@ -388,7 +108,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782816727.6478474,
@@ -408,7 +128,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782816853.7800574,
@@ -448,7 +168,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782818365.4370253,
@@ -488,7 +208,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782819092.8498027,
@@ -558,7 +278,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782820313.4476266,
@@ -588,7 +308,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782821181.01331,
@@ -598,7 +318,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782821252.57828,
@@ -607,8 +327,8 @@
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
+      "validated": false,
+      "validation_count": 0
     },
     {
       "ts": 1782821517.4288077,
@@ -658,7 +378,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782822002.9212403,
@@ -678,7 +398,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782822681.9102976,
@@ -698,7 +418,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782822869.5871892,
@@ -708,7 +428,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782823165.8646564,
@@ -728,7 +448,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782823566.5992165,
@@ -738,7 +458,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782823592.317149,
@@ -748,7 +468,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782823840.0569348,
@@ -778,7 +498,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782824366.0349262,
@@ -828,7 +548,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782825241.3905451,
@@ -898,7 +618,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782826573.8641503,
@@ -908,7 +628,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782826636.6902697,
@@ -918,7 +638,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782826694.6605358,
@@ -928,7 +648,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 10
     },
     {
       "ts": 1782826975.9946618,
@@ -938,7 +658,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782827042.2848036,
@@ -968,7 +688,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782827468.5735674,
@@ -978,7 +698,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782827543.915601,
@@ -998,7 +718,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782827905.9188979,
@@ -1028,7 +748,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 10
     },
     {
       "ts": 1782828714.4976888,
@@ -1038,7 +758,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782828739.4733353,
@@ -1048,7 +768,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782828786.095819,
@@ -1068,7 +788,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782828885.6236463,
@@ -1088,7 +808,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 9
     },
     {
       "ts": 1782829390.8852015,
@@ -1128,7 +848,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 9
     },
     {
       "ts": 1782830270.2062984,
@@ -1138,7 +858,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782830302.3217983,
@@ -1158,7 +878,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782831014.0770352,
@@ -1178,7 +898,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782831133.8653314,
@@ -1188,7 +908,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 10
     },
     {
       "ts": 1782831204.7318678,
@@ -1198,7 +918,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782831679.0462515,
@@ -1208,7 +928,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782831739.0050638,
@@ -1218,7 +938,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782832021.0311677,
@@ -1228,7 +948,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782832105.901295,
@@ -1248,7 +968,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782832254.1526945,
@@ -1268,7 +988,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 9
     },
     {
       "ts": 1782832640.62316,
@@ -1278,7 +998,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782832668.1112118,
@@ -1308,7 +1028,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 9
     },
     {
       "ts": 1782833170.5279403,
@@ -1328,7 +1048,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 10
     },
     {
       "ts": 1782833284.0392141,
@@ -1338,7 +1058,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782833487.4579284,
@@ -1348,7 +1068,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782833565.224382,
@@ -1368,7 +1088,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 9
     },
     {
       "ts": 1782834438.6888855,
@@ -1388,7 +1108,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -7
+      "validation_count": -9
     },
     {
       "ts": 1782835178.688315,
@@ -1418,7 +1138,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782835628.104609,
@@ -1468,7 +1188,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782836436.2576525,
@@ -1478,7 +1198,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 9
     },
     {
       "ts": 1782836484.9546764,
@@ -1538,7 +1258,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782837361.3899806,
@@ -1558,7 +1278,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782837455.1730886,
@@ -1568,7 +1288,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782837728.1387239,
@@ -1588,7 +1308,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782837928.5575087,
@@ -1608,7 +1328,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782838315.359082,
@@ -1638,7 +1358,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782839476.8812106,
@@ -1658,7 +1378,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782839760.4018843,
@@ -1738,7 +1458,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782841259.4721334,
@@ -1818,7 +1538,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782842528.189424,
@@ -1878,7 +1598,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782843764.311967,
@@ -1898,7 +1618,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782843939.029088,
@@ -1928,7 +1648,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782845765.446201,
@@ -1978,7 +1698,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782847806.5037348,
@@ -1988,7 +1708,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782847862.1337712,
@@ -2028,7 +1748,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782849433.6444068,
@@ -2038,7 +1758,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782849498.708432,
@@ -2068,7 +1788,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782851399.2100837,
@@ -2108,7 +1828,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782852413.8931882,
@@ -2127,8 +1847,8 @@
       "confidence": 0.5,
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
+      "validated": false,
+      "validation_count": 0
     },
     {
       "ts": 1782853425.20517,
@@ -2158,7 +1878,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 8
     },
     {
       "ts": 1782853879.5146992,
@@ -2168,7 +1888,7 @@
       "evidence": "action=full_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782853927.3279781,
@@ -2178,7 +1898,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782854432.059793,
@@ -2208,7 +1928,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 8
     },
     {
       "ts": 1782854893.5976095,
@@ -2268,7 +1988,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782856012.925055,
@@ -2298,7 +2018,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 8
     },
     {
       "ts": 1782856800.3819976,
@@ -2308,7 +2028,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782856851.3914332,
@@ -2328,7 +2048,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 8
     },
     {
       "ts": 1782857530.3480935,
@@ -2338,7 +2058,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782857563.0227866,
@@ -2358,7 +2078,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782857929.8652864,
@@ -2398,7 +2118,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 8
     },
     {
       "ts": 1782858541.8859508,
@@ -2408,7 +2128,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782858700.8824418,
@@ -2438,7 +2158,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782859194.460786,
@@ -2468,7 +2188,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782859657.6094818,
@@ -2478,7 +2198,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 8
     },
     {
       "ts": 1782859700.9057076,
@@ -2488,7 +2208,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782859835.8073845,
@@ -2548,7 +2268,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782860637.3570385,
@@ -2568,7 +2288,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 8
     },
     {
       "ts": 1782860859.8141701,
@@ -2588,7 +2308,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 9
     },
     {
       "ts": 1782861253.1631763,
@@ -2658,7 +2378,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -6
+      "validation_count": -8
     },
     {
       "ts": 1782862420.1408384,
@@ -2688,7 +2408,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 8
     },
     {
       "ts": 1782862569.338379,
@@ -2768,7 +2488,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782864326.0191278,
@@ -2778,7 +2498,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782864833.3824103,
@@ -2798,7 +2518,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 7
     },
     {
       "ts": 1782865233.525137,
@@ -2808,7 +2528,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782865289.3590217,
@@ -2818,7 +2538,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782865325.3589292,
@@ -2958,7 +2678,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782868920.5611203,
@@ -2998,7 +2718,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": 0
     },
     {
       "ts": 1782869932.8543243,
@@ -3008,7 +2728,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782870301.310354,
@@ -3058,7 +2778,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 3
     },
     {
       "ts": 1782871831.719381,
@@ -3138,7 +2858,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 6
     },
     {
       "ts": 1782873598.4681344,
@@ -3168,7 +2888,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 3
     },
     {
       "ts": 1782874588.224543,
@@ -3288,7 +3008,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782877372.6830103,
@@ -3318,7 +3038,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782886173.8392065,
@@ -3348,7 +3068,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782887745.782823,
@@ -3418,7 +3138,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782889059.752814,
@@ -3468,7 +3188,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782890027.6025326,
@@ -3698,7 +3418,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 4
     },
     {
       "ts": 1782893749.9335883,
@@ -3708,7 +3428,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782894224.1884797,
@@ -3728,7 +3448,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 4
     },
     {
       "ts": 1782894306.9857702,
@@ -3748,7 +3468,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 6
     },
     {
       "ts": 1782894610.3231368,
@@ -3778,7 +3498,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 5
     },
     {
       "ts": 1782895066.643297,
@@ -3928,7 +3648,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782897766.9212642,
@@ -4038,7 +3758,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -4
     },
     {
       "ts": 1782899103.2822733,
@@ -4098,7 +3818,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 3
     },
     {
       "ts": 1782900507.9224043,
@@ -4128,7 +3848,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 3
     },
     {
       "ts": 1782900925.5460076,
@@ -4168,7 +3888,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 5
     },
     {
       "ts": 1782901344.4319088,
@@ -4198,7 +3918,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 3
     },
     {
       "ts": 1782901835.2889757,
@@ -4238,7 +3958,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 4
     },
     {
       "ts": 1782903150.5213077,
@@ -4258,7 +3978,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 4
     },
     {
       "ts": 1782903735.0506563,
@@ -4288,7 +4008,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 3
     },
     {
       "ts": 1782904489.3254352,
@@ -4338,7 +4058,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 4
     },
     {
       "ts": 1782905760.4435048,
@@ -4518,7 +4238,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -4
     },
     {
       "ts": 1782908695.3944771,
@@ -4678,7 +4398,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782911760.1725698,
@@ -4748,7 +4468,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": -2
     },
     {
       "ts": 1782918556.9426656,
@@ -4847,8 +4567,8 @@
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
+      "validated": true,
+      "validation_count": 2
     },
     {
       "ts": 1782923054.8525794,
@@ -4947,8 +4667,8 @@
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
+      "validated": true,
+      "validation_count": 1
     },
     {
       "ts": 1782926201.910209,
@@ -4994,6 +4714,286 @@
       "ts": 1782927517.0437627,
       "category": "exit_pattern",
       "insight": "Exit [XRP]: Thesis invalidated: (1) confidence_scorer is 0% WR in trending but positioned LONG in trending_bull degrading to consolidation, (2) strategy overall -",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782928134.79952,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: High_volatility is a structurally losing regime for BTC (0% WR, 2 trades). MFE 1.261% exceeds 1.0% threshold for partial locks in range regimes (rule:",
+      "confidence": 0.75,
+      "evidence": "action=partial_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782928164.9294343,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Range regime punishes directional longs/shorts via mean reversion. Price moved against short (+0.08% from entry), never green. 2.7h hold in 2-4h loss ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782928198.9658697,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: XRP LONG in trending_bull: 0% WR historically (3 trades, all losses). Position developed zero MFE over 2.27h. Hold-time cohort (2-4h) has 11% WR, avg ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782928331.3408673,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Regime/thesis mismatch. SHORT position fighting bullish trend structure \u2014 this is not noise phase, it is structural opposition. No positive MFE genera",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782929029.066324,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Regime invalidation: SHORT thesis incompatible with TRENDING_BULL classification. confidence_scorer + HYPE combination has 0% WR in trend environments",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782929082.713104,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: Thesis invalidation: (1) BTC breakout unconfirmed (price $60.2k << $60.5k target), (2) OI contraction + volume weak triggering consolidation risk with",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": true,
+      "validation_count": 2
+    },
+    {
+      "ts": 1782929410.2224915,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Regime+setup mismatch invalidates thesis. Overseer memo: CRITICAL AVOIDANCE of trend/trending_bear/range regimes \u2014 this SHORT is in trending_bull (ene",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782930092.464894,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Thesis invalidated by setup edge data: (1) HYPE SHORT in trend regime = 0% WR (n=7) \u2014 validated losing configuration. (2) confidence_scorer strategy o",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782930160.6576939,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: THESIS INVALIDATED: (1) confidence_scorer has 0% WR in trend regimes per exit_history (n=6); (2) XRP LONG has 0% WR in trend (n=7); (3) Overseer class",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782930219.975787,
+      "category": "exit_pattern",
+      "insight": "Exit [ETH]: Regime 'trend' = 0% WR (n=7, probation per overseer). Strategy confidence_scorer = 0% WR in trends (n=6). Zero forward EV in this regime+strategy comb",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782931563.404577,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Would not re-enter. confidence_scorer+HYPE: 8% WR (n=12, -$568). Trending: 0% WR (n=6 consecutive losses). HYPE mean-reverts; regime weakening (OI\u2193 vo",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782932075.7926097,
+      "category": "exit_pattern",
+      "insight": "Exit [ETH]: Regime-setup mismatch invalidates thesis. ETH LONG in high_volatility: 0% WR (validated data). MFE rejection (97.5% retrace) signals market rejection ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782933171.483685,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Setup pattern death: confidence_scorer + HYPE + trending = 0% WR across all 6 historical instances. HYPE bottom-quartile asset (25% WR, -$568 net loss",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782933946.394948,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Thesis invalidated by setup toxicity. HYPE_LONG 12%WR/-$73avg (AVOID list). confidence_scorer 0%WR in trends, 8%WR on HYPE. Regime trending_bull disab",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782934223.1438491,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Thesis invalidated. confidence_scorer on BTC LONG in trending_bull regime: 0% WR (n=3). Strategy overall: 19% WR, -$843 PnL. Overseer report explicitl",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782934307.7820203,
+      "category": "exit_pattern",
+      "insight": "Exit [ETH]: Trending_bull entries disabled by overseer after 0% WR across 47 system trades; strategy confidence_scorer separately 0% in trending_bull (n=3). Posit",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782935557.570037,
+      "category": "exit_pattern",
+      "insight": "Exit [ETH]: Dead capital threshold met: 3.8h hold (~4h mark), price movement 0.0124% (well within 0.3% dead-capital boundary). confidence_scorer broken on trend t",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782935602.1734445,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Regime-setup incompatibility confirmed by exit_history: confidence_scorer 0% WR in trend, 8% WR on HYPE. Not a noise-phase loss (which would warrant 3",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782935648.628802,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Thesis invalidated on three fronts: (1) confidence_scorer on SOL LONG in trend=0%WR(n=6), hard-block hypothesis confirmed; (2) solo signal, regime_tre",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782936516.3711836,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Range regime + MFE retrace 41.8% from peak + confidence_scorer 11% WR in range (n=9 trades) = mean-reversion risk exceeds upside potential. Position 6",
+      "confidence": 0.75,
+      "evidence": "action=partial_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782936599.4306552,
+      "category": "trade_management",
+      "insight": "Exit [ETH]: Dead capital threshold met (4.1h hold, 0.18% from entry within 0.3% no-progress limit). Range regime 11% WR on setup. MFE spike (+0.495%) fully retrac",
+      "confidence": 0.5,
+      "evidence": "action=full_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782936670.5830102,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: RANGE REGIME HOSTILE: confidence_scorer 11% WR in range (n=9), explicit weakness on this setup. Regime_outlook: 'insufficient signal conviction to cla",
+      "confidence": 0.75,
+      "evidence": "action=partial_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782936692.9401908,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Thesis explicitly invalidated per regime analysis: BTC bull setup undermined by OI contraction, HYPE displaying bearish leadership, regime outlook sta",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782936742.1593144,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: REGIME INVALIDATION + SETUP FAILURE. SOL LONG + RANGE regime = 0% WR (n=6 hard-veto, n=9 range-specific). Regime fit 0.3/1.0 signals poor confluence. ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782937545.1876302,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: THESIS INVALIDATION (Trigger #2): Regime shifted from trending to RANGE, and regime_outlook explicitly indicates bull setup is undermined (OI contract",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782937594.340191,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Thesis invalid: regime outlook explicitly shows 'BTC bull setup undermined by OI contraction, HYPE bearish leadership, insufficient conviction'. 1.8h ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782938577.3426886,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Thesis invalidating: regime_outlook flags trend exhaustion within 4-8h with cross-asset divergence + OI contracting; upstream signal data confirms reg",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782938625.0290115,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Setup-regime mismatch invalidates thesis. confidence_scorer has 0% WR in trending (n=6 prior trades). Upstream assessment: skip-quality signal (confid",
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",

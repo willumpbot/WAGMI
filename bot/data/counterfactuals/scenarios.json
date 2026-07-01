@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782927689.6852634,
+  "updated_at": 1782937916.5259614,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -13369,6 +13369,387 @@
         "tp2_price": 85.35614285714284,
         "confidence": 65.36574072056466,
         "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782928551_f6ad93f1",
+      "timestamp": 1782928551.1020246,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.8,
+        "sl_price": 75.96766133059998,
+        "tp1_price": 80.93304802460013,
+        "tp2_price": 85.43314285714284,
+        "confidence": 65.36574072056466,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782929239_a81e1bdc",
+      "timestamp": 1782929239.9079041,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.7,
+        "sl_price": 75.84657142857144,
+        "tp1_price": 81.40685714285713,
+        "tp2_price": 85.11371428571427,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782930336_97327557",
+      "timestamp": 1782930336.591086,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.616,
+        "sl_price": 75.73628571428571,
+        "tp1_price": 81.37542857142857,
+        "tp2_price": 85.13485714285714,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782930481_710ca301",
+      "timestamp": 1782930481.0130384,
+      "symbol": "HYPE",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -4.104714108385865,
+      "counterfactual_pnl": 7.195354818596324,
+      "delta": 11.300068926982188,
+      "resolved": true,
+      "metadata": {
+        "side": "short",
+        "entry_price": 64.1525,
+        "actual_exit_price": 64.6365,
+        "tp1_price": 61.8445,
+        "tp2_price": 59.5365,
+        "actual_pnl_raw": -2.633276718382242,
+        "pnl_at_tp1_pct": 3.5977,
+        "pnl_at_tp2_pct": 7.1954
+      }
+    },
+    {
+      "id": "cf_1782930522_ac775779",
+      "timestamp": 1782930522.3567135,
+      "symbol": "XRP",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -47.12847001807328,
+      "counterfactual_pnl": 6.374764595103565,
+      "delta": 53.50323461317684,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 1.062,
+        "actual_exit_price": 1.06145,
+        "tp1_price": 1.0908,
+        "tp2_price": 1.1297,
+        "actual_pnl_raw": -0.5005043515919383,
+        "pnl_at_tp1_pct": 2.7119,
+        "pnl_at_tp2_pct": 6.3748
+      }
+    },
+    {
+      "id": "cf_1782931071_d21482a2",
+      "timestamp": 1782931071.028436,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0609,
+        "sl_price": 1.0451938480576208,
+        "tp1_price": 1.087755367481413,
+        "tp2_price": 1.1263285714285718,
+        "confidence": 65.36574072056466,
+        "reason": "LLM_FIRST: XRP consolidation breakout long thesis exists but 1h/4h regime misaligned (trending_bull vs range) a"
+      }
+    },
+    {
+      "id": "cf_1782931389_a91507e2",
+      "timestamp": 1782931389.131089,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.669,
+        "sl_price": 75.76585714285714,
+        "tp1_price": 81.4752857142857,
+        "tp2_price": 85.28157142857141,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782931799_231290cb",
+      "timestamp": 1782931799.7930195,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0607,
+        "sl_price": 1.0449938480576206,
+        "tp1_price": 1.087555367481413,
+        "tp2_price": 1.1261285714285718,
+        "confidence": 65.36574072056466,
+        "reason": "LLM_FIRST: XRP consolidating near 1.06; 1h trending_bull but 4h regime is range (misaligned) so breakout likely"
+      }
+    },
+    {
+      "id": "cf_1782932412_4e5535c5",
+      "timestamp": 1782932412.447539,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.39,
+        "sl_price": 75.47785714285715,
+        "tp1_price": 81.21428571428571,
+        "tp2_price": 85.03857142857142,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782932959_c421cd0e",
+      "timestamp": 1782932959.3603141,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0638,
+        "sl_price": 1.0472285714285714,
+        "tp1_price": 1.0969428571428574,
+        "tp2_price": 1.1300857142857148,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: XRP consolidating near 1.06, solo confidence_scorer LONG lacks confluence; regime_1h/4h misaligned ("
+      }
+    },
+    {
+      "id": "cf_1782933289_b697d63d",
+      "timestamp": 1782933289.0505111,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.472,
+        "sl_price": 75.61328571428571,
+        "tp1_price": 81.18942857142856,
+        "tp2_price": 84.90685714285713,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782933510_fcad0109",
+      "timestamp": 1782933510.6996624,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0639,
+        "sl_price": 1.0472714285714286,
+        "tp1_price": 1.097157142857143,
+        "tp2_price": 1.1304142857142858,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: XRP BUY solo confidence_scorer signal conflicts with 6h regime (range) vs 1h (trending_bull) \u2014 timef"
+      }
+    },
+    {
+      "id": "cf_1782934199_3ebba7fa",
+      "timestamp": 1782934199.8029993,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0616,
+        "sl_price": 1.0454960503228357,
+        "tp1_price": 1.0891355470944795,
+        "tp2_price": 1.1286857142857147,
+        "confidence": 65.36574072056466,
+        "reason": "LLM_FIRST: XRP consolidating near 1.06 with weak bullish OI divergence but 4h regime (range) conflicts with 1h "
+      }
+    },
+    {
+      "id": "cf_1782934938_4eee7144",
+      "timestamp": 1782934938.014546,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0628,
+        "sl_price": 1.0466960503228355,
+        "tp1_price": 1.0903355470944793,
+        "tp2_price": 1.1298857142857146,
+        "confidence": 65.36574072056466,
+        "reason": "LLM_FIRST: XRP consolidating 1.03-1.07 with 4h=range vs 1h=trending_bull misalignment; even if BUY, EV math is "
+      }
+    },
+    {
+      "id": "cf_1782936340_4705f615",
+      "timestamp": 1782936340.4546697,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0583,
+        "sl_price": 1.0425285714285715,
+        "tp1_price": 1.0898428571428571,
+        "tp2_price": 1.1213857142857142,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: XRP consolidating near 1.058-1.06 with weak bullish drift; solo confidence_scorer signal insufficien"
+      }
+    },
+    {
+      "id": "cf_1782936984_af3b9eb6",
+      "timestamp": 1782936984.3045294,
+      "symbol": "ETH",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -0.05949882180800261,
+      "counterfactual_pnl": 7.488321732405258,
+      "delta": 7.547820554213261,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 1616.25,
+        "actual_exit_price": 1613.35,
+        "tp1_price": 1676.76,
+        "tp2_price": 1737.28,
+        "actual_pnl_raw": -0.9616497074718422,
+        "pnl_at_tp1_pct": 3.7439,
+        "pnl_at_tp2_pct": 7.4883
+      }
+    },
+    {
+      "id": "cf_1782937116_247e0ed5",
+      "timestamp": 1782937116.2905746,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0585,
+        "sl_price": 1.042557142857143,
+        "tp1_price": 1.090385714285714,
+        "tp2_price": 1.1222714285714281,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: XRP consolidating near 1.06; solo confidence_scorer BUY lacks confluence and 4h regime (range) confl"
+      }
+    },
+    {
+      "id": "cf_1782937916_0d0ecaeb",
+      "timestamp": 1782937916.5259469,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0577,
+        "sl_price": 1.0416857142857143,
+        "tp1_price": 1.0897285714285716,
+        "tp2_price": 1.1217571428571431,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: XRP consolidating in tight range with 1h/4h regime misalignment (trending_bull vs range); solo confi"
       }
     }
   ]

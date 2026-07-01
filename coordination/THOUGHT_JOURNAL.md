@@ -915,3 +915,8 @@ PART D LEARNING — per-regime/driver edge: CONFOUNDED by the capture gap, and t
 PART B: HEALTHY. pid 34056 steady, uptime 13.3h, scan 1782 monotonic, pos 4, equity $1962.18 flat, errors 0. trades 89 (no new close since XRP@09:32, rank-8 n~3). epsilon 0.12.
 PART C: LL verified. page 200, 113 feed posts (all House), 10 content-accurate product galleries, 0 "$"+digit. Media re-classification (vision pass) holding: every piece placed by sight, Super Dope restored, joints on Infused 1g, 0 overlap. Ratings live (Dante's5/Bubba3.5/Perm4.2/SuperDope4.8), RSO+Oregon reviews corrected, iOS video-load bug fixed (vid.load()). 4 products review-only (no confident media): RSO Syringe, RSO Gummies, Bubba Kush, Permanent Marker — need real photos from owner.
 PART D: SKIP — no new trades (89 unchanged) + funding data barely grown; nothing new to learn from this pass. Deferred to next pass with fresh data.
+
+=== 2026-07-01 ~20:43 UTC — 3h quiet cron ===
+PART B: HEALTHY. pid 34056, uptime 16.3h, scan 2167 monotonic, pos 3, errors 0. NEW CLOSE: HYPE SHORT -2.63 @18:28 (90 trades, rank-8 n~4); equity 1962.18->1958.08 = the loss, clean. Note: even conf-82.9 HYPE SHORT lost — HYPE both-sides chop continues.
+PART C: LL verified. page 200, 113 posts (House+likes), 10 accurate galleries.
+PART D: covered by running wiring-audit Workflow (6 seam-tracers + adversarial verify -> WIRING_AUDIT_2026-07-01.md) + Fable-5 master plan agent; not duplicating here.

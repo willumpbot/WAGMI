@@ -1,132 +1,6 @@
 {
-  "last_updated": 1782927260,
+  "last_updated": 1782938433,
   "notes": [
-    {
-      "text": "5-loss cold streak, CB warning, trend regime 0% WR n=7, conditional_wr 0% vs base 28%, fee drag 54% of PnL, quant explicitly flags skip-everything; SOL BUY hard-vetoed by graduated rule; already holdi",
-      "ts": 1782848469.0422537,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "5-loss streak + CB warning + trend regime TOXIC (0% WR n=7) + conditional_edge -28.7% + quant explicit skip-everything + HYPE LONG AVOID flag (12% WR n=21) + all candidate signals solo/sub-floor confi",
-      "ts": 1782849037.8822656,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "5-loss streak + CB warning + survival CRITICAL + trend regime 0%WR n=14 + all candidates solo/sub-floor + quant explicit skip-all; respect mechanical rejects, wait for 2+ confluence with volume confir",
-      "ts": 1782849901.397072,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "5-loss CB streak + trend regime 0% WR (n=7) + survival CRITICAL + quant explicit skip-all + all candidates solo/sub-floor; BTC SELL 70-79% conf specifically penalized by graduated rule. Wait for 2+ co",
-      "ts": 1782850201.9165514,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "5-loss streak + CB warning + range regime toxic + quant explicit skip-all (kelly=0, EV neutral, noise_prob=0.92) + all 5 symbols rejected mechanically (confidence_floor_66/graduated_veto) \u2014 no signal",
-      "ts": 1782850967.1361315,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "5-loss streak + CB warning + range regime + all 5 symbols mechanically rejected (confidence_floor_66 or graduated_veto); SOL BUY specifically graduated-veto'd (24% WR n=34); wait for 2+ strategy confl",
-      "ts": 1782851295.4362848,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "5-loss streak + range regime + all signals rf=weak/solo + quant skip-all + BTC_SHORT toxic(9%WR) + SOL BUY graduated-vetoed + HYPE MANUAL-tier solo = no tradeable edge this scan; already 3 positions o",
-      "ts": 1782851943.900346,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime toxic (11% WR n=9), quant explicit skip-all, SOL BUY graduated-veto active (24% WR n=34), BTC_SHORT toxic 9%WR, CB warning 5-loss streak, all signals solo & mechanically rejected (confide",
-      "ts": 1782852198.3541048,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "5-loss streak + CB warning + consolidation toxic regime + SOL BUY graduated-veto active + BTC_SHORT toxic (9% WR n=11) + XRP/SOL already open positions; quant explicit skip-all (kelly=0, noise_prob=0.",
-      "ts": 1782853027.3754902,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Scan with 5 symbols all mechanically rejected (confidence_floor_66/graduated_veto) in toxic consolidation regime + 5L streak + CB warning + survival CRITICAL; quant explicitly recommended skip-all. No",
-      "ts": 1782853362.1829422,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "5-loss streak + survival CRITICAL + all signals solo/conf-floor-rejected (66) + quant explicit skip-all + SOL BUY graduated-veto active; no 2+ genuine strategy agreement on any symbol this scan",
-      "ts": 1782854378.6313407,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Consolidation regime TOXIC (29% WR n=31), all 5 symbols mechanically rejected at confidence_floor_66, BTC_SHORT specifically TOXIC (9% WR n=11, PF 0.28), SOL BUY and HYPE SELL both hit active graduate",
-      "ts": 1782854751.9458518,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "5L streak + CB warning + survival CRITICAL + all 5 symbols rejected at floor_66 in TOXIC consolidation; SOL BUY graduated-veto active, BTC_SHORT toxic 9%WR, HYPE SELL net-negative EV veto active \u2014 qua",
-      "ts": 1782857123.4542706,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Consolidation regime toxic (29% WR), survival CRITICAL, 5L streak + CB warning, all 5 symbols rejected at confidence_floor_66 or graduated veto (SOL BUY actively vetoed 24%WR n=34, BTC_SHORT toxic 9%W",
-      "ts": 1782857388.8568726,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Consolidation regime TOXIC (29% WR n=31), 5L streak + CB warning, survival CRITICAL (23/100). SOL BUY hits active graduated veto (24% WR n=34, acc=100% n=14) - genuine validated rule, not stale. All 5",
-      "ts": 1782857861.8980446,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Consolidation regime TOXIC (29% WR n=31), 5-loss streak + CB warning, survival CRITICAL. All 5 symbols solo/weak signals rejected at confidence_floor or active graduated vetoes (SOL BUY 24%WR veto, HY",
-      "ts": 1782858362.0806437,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "SOL LONG in 'unknown' regime \u2192 consolidation (hostile to directional). 3.93h loss. Skip unknown: confirm trend agreement >=2 strategies before entry.",
-      "ts": 1782862809.0227191,
-      "symbol": "SOL",
-      "regime": "unknown"
-    },
-    {
-      "text": "SOL LONG LOSS despite 76% conf in unknown, LLM_EXIT_AGENT\u2014reduce confidence for similar setups",
-      "ts": 1782862809.155192,
-      "symbol": "SOL",
-      "regime": "unknown"
-    },
-    {
-      "text": "LLM_FIRST LONG in SOL unknown regime (76% confidence)\u2014regime mismatch caught by Exit Agent at 3.93h. Trade Agent gate failed: require regime confirmation (2+ strategy agreement OR regime_agent consens",
-      "ts": 1782862859.4487243,
-      "symbol": "SOL",
-      "regime": "unknown"
-    },
-    {
-      "text": "CB warning (5L streak), survival critical, overseer hard-blocks trend/trending regimes + SOL/HYPE LONG this cycle; all current signals fail confidence floor or are graduated-vetoed - stay flat until C",
-      "ts": 1782863033.7331388,
-      "symbol": "[POSITION",
-      "regime": "trend"
-    },
-    {
-      "text": "confidence_scorer SHORT on BTC: 18% WR (n=17), below 28% baseline. Solo 65% confidence too high. Require 2+ strategy agreement or skip.",
-      "ts": 1782870774.1524937,
-      "symbol": "BTC",
-      "regime": "consolidation"
-    },
     {
       "text": "confidence_scorer SHORT on BTC weak (18% WR): require 2+ strategy agreement or skip. Solo 65% confidence insufficient.",
       "ts": 1782870827.267734,
@@ -599,6 +473,132 @@
       "text": "Cycle-wide skip: SOL BUY active veto (24% WR n=29) + HYPE LONG hard-block + all other signals solo/weak-conf during trending_bull->range transition; cold 5L streak, portfolio health critical \u2014 wait fo",
       "ts": 1782927260.8877108,
       "symbol": "[LEAD-LAG",
+      "regime": "trend"
+    },
+    {
+      "text": "HYPE_SHORT solo multi_tier_quality in trending_bull (Overseer-flagged avoid regime): graduated VETO rule active (net -$16.65/trade, n=13), quant EV negative (conditional WR 22% vs base 33%, edge -11%)",
+      "ts": 1782927890.4828076,
+      "symbol": "[LEAD-LAG",
+      "regime": "trend"
+    },
+    {
+      "text": "SOL LONG blocked by active graduated veto + quant negative edge during critical portfolio health (5L streak); HYPE SHORT also blocked by active net-negative EV veto (-$16.65/trade); other symbols solo",
+      "ts": 1782928955.2235844,
+      "symbol": "[MEMORY-WORTHY",
+      "regime": "trend"
+    },
+    {
+      "text": "Cycle-wide skip: SOL BUY veto blocks the best-looking setup; BTC/ETH_LONG toxic (0% WR low-n), HYPE SHORT hits active net-negative EV veto (-$16.65/trade), XRP solo weak. All signals solo (confluence=",
+      "ts": 1782929959.1377873,
+      "symbol": "[MEMORY-WORTHY",
+      "regime": "trend"
+    },
+    {
+      "text": "HYPE SHORT: 82% confidence but regime was 'trend' (0% WR n=7), not 'unknown'. confidence_scorer also 0% WR in trends. Hard-block.",
+      "ts": 1782930400.9709613,
+      "symbol": "HYPE",
+      "regime": "unknown"
+    },
+    {
+      "text": "HYPE SHORT LOSS despite 83% conf in unknown, LLM_EXIT_AGENT\u2014reduce confidence for similar setups",
+      "ts": 1782930401.1401696,
+      "symbol": "HYPE",
+      "regime": "unknown"
+    },
+    {
+      "text": "confidence_scorer in consolidation: 32% WR (n=28), below threshold. Avoid or filter to higher-clarity regimes.",
+      "ts": 1782930457.3542683,
+      "symbol": "XRP",
+      "regime": "consolidation"
+    },
+    {
+      "text": "Solo confidence_scorer in consolidation drifted to 0% WR trend. Exit Agent correct. Avoid solo\u2014need 3-strategy confluence or tight regime classification.",
+      "ts": 1782930522.2544498,
+      "symbol": "XRP",
+      "regime": "consolidation"
+    },
+    {
+      "text": "All signals solo (confluence=1) across BTC/ETH/SOL/HYPE/XRP with regime_trend flat; quant engine explicitly flags stand-aside, SOL BUY and HYPE SELL hit active graduated-rule vetoes, survival status C",
+      "ts": 1782930666.7235377,
+      "symbol": "[POSITION",
+      "regime": "trend"
+    },
+    {
+      "text": "SOL BUY solo/2-agree in trending_bull continues to hit the active VETO rule (24% WR n=34) and quant flags negative conditional edge (-6%) \u2014 keep this veto respected; system also in LLLLL streak/surviv",
+      "ts": 1782931272.090755,
+      "symbol": "[MEMORY-WORTHY",
+      "regime": "trend"
+    },
+    {
+      "text": "HYPE SHORT solo signal hit active graduated VETO rule again (net-negative EV n=14) plus mechanical conf_floor_71 reject (conf=48) - consistent with repeated HYPE solo-signal warnings in memory; skip s",
+      "ts": 1782932658.689024,
+      "symbol": "[MEMORY-WORTHY",
+      "regime": "trend"
+    },
+    {
+      "text": "CB active (3 consecutive losses, survival CRITICAL 1/100) with zero 2+ strategy agreement across BTC/ETH/HYPE/SOL/XRP; SOL_LONG and HYPE_SHORT both hit active validated-veto rules; mechanical conf_flo",
+      "ts": 1782933733.371072,
+      "symbol": "[MEMORY-WORTHY",
+      "regime": "trend"
+    },
+    {
+      "text": "CB warning (3 consecutive losses), survival CRITICAL, WR_20/50=0%, quant engine explicitly recommends skip across the board; SOL BUY and HYPE SELL both hit active graduated VETO rules; BTC/ETH/XRP all",
+      "ts": 1782935106.9982224,
+      "symbol": "[MEMORY-WORTHY",
+      "regime": "trend"
+    },
+    {
+      "text": "Cycle with zero 2+ strategy confluence across all 5 symbols; SOL_LONG and HYPE_SHORT both active-veto; CB warning (3 consecutive losses), WR_20=0%, survival CRITICAL, quant engine recommends system-wi",
+      "ts": 1782935433.449095,
+      "symbol": "[LEAD-LAG",
+      "regime": "trend"
+    },
+    {
+      "text": "Range regime + CB warning (3L) + all signals solo/below-floor + SOL LONG active veto = no tradeable setup this cycle; quant engine explicitly recommends system-wide skip (conditional_wr=0% n=4).",
+      "ts": 1782936470.737599,
+      "symbol": "[LEAD-LAG",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation: 4 exits (BTC/HYPE/SOL/ETH), single-signal WR 30%, confidence_scorer 31%. Gate consolidation entries unless 2+ strategy agreement.",
+      "ts": 1782936918.5907905,
+      "symbol": "ETH",
+      "regime": "consolidation"
+    },
+    {
+      "text": "ETH LONG LOSS despite 75% conf in consolidation, LLM_EXIT_AGENT\u2014reduce confidence for similar setups",
+      "ts": 1782936918.742533,
+      "symbol": "ETH",
+      "regime": "consolidation"
+    },
+    {
+      "text": "Consolidation LONG (1-strategy) invalidated by exit agent after 4h (regime fit 0.3). Gate violation. Require 2+ strategy agreement.",
+      "ts": 1782936984.1857321,
+      "symbol": "ETH",
+      "regime": "consolidation"
+    },
+    {
+      "text": "Range regime + solo confluence + CB warning (cold streak 7) + quant engine explicit skip-all recommendation (conditional_wr=0% n=4, noise_prob=0.95) \u2014 no tradeable edge this cycle across any symbol",
+      "ts": 1782937254.3177454,
+      "symbol": "[POSITION",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime with all-solo signals (quality=0.3) has conditional_wr=0% (n=4) vs base 26.7%; quant explicitly recommends skip-all this cycle; system in cold streak 7L + CB warning 3L, survival critical",
+      "ts": 1782937498.814933,
+      "symbol": "[LEAD-LAG",
+      "regime": "range"
+    },
+    {
+      "text": "BTC solo multi_tier_quality signal rejected by mechanical floor (conf 47.7<71); regime trending_bull is TOXIC bucket 0% WR n=3, quant conditional_wr=8% vs base 22% (edge -14%), kelly=0, noise_prob=0.9",
+      "ts": 1782938116.7347515,
+      "symbol": "[LEAD-LAG",
+      "regime": "trend"
+    },
+    {
+      "text": "Solo multi_tier_quality signal in trending_bull/trend regime (0% WR n=3/7), conditional_wr=8% vs base 27%, kelly=0, noise_prob=0.92 - quant explicitly recommends skip-all this cycle amid 7-loss cold s",
+      "ts": 1782938433.1748037,
+      "symbol": "[PRE-CLOSE",
       "regime": "trend"
     }
   ]
