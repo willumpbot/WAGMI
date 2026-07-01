@@ -1,24 +1,6 @@
 {
-  "last_updated": 1782938433,
+  "last_updated": 1782939451,
   "notes": [
-    {
-      "text": "confidence_scorer SHORT on BTC weak (18% WR): require 2+ strategy agreement or skip. Solo 65% confidence insufficient.",
-      "ts": 1782870827.267734,
-      "symbol": "BTC",
-      "regime": "consolidation"
-    },
-    {
-      "text": "SOL BUY graduated veto (24% WR, n=23, 100% acc) confirmed again \u2014 solo multi_tier_quality PRIORITY tier signal still fires despite veto; consider hard-blocking at signal generation.",
-      "ts": 1782871047.601361,
-      "symbol": "[POSITION",
-      "regime": "range"
-    },
-    {
-      "text": "SOL LONG solo multi_tier_quality signal fired again despite active graduated veto (24%WR n=23) - recommend hard-blocking at signal generation per prior memory note",
-      "ts": 1782871301.7302895,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "Consolidation regime TOXIC (29% WR, $-287), quant analysis explicitly flags kelly=0/skip-all, 7-loss cold streak + CB warning + survival CRITICAL(26/100). SOL BUY graduated veto still firing despite f",
       "ts": 1782871599.1655414,
@@ -600,6 +582,24 @@
       "ts": 1782938433.1748037,
       "symbol": "[PRE-CLOSE",
       "regime": "trend"
+    },
+    {
+      "text": "SOL BUY graduated veto active + trending_bull regime weakening + 8-loss cold streak + CB warning + quant explicit skip-all recommendation (noise_prob=0.9, kelly=0) \u2014 all solo signals across BTC/ETH/SO",
+      "ts": 1782939124.5539877,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "HYPE LONG: regime shifted consolidation\u2192trend during hold. HYPE 0% WR in trend (n=7). Exit within 30min of shift. Skip confidence_scorer on HYPE.",
+      "ts": 1782939451.2374284,
+      "symbol": "HYPE",
+      "regime": "consolidation"
+    },
+    {
+      "text": "HYPE LONG lost $7 in consolidation, LLM conf=0.00\u2014be cautious on similar consolidation LONGs",
+      "ts": 1782939451.401315,
+      "symbol": "HYPE",
+      "regime": "consolidation"
     }
   ]
 }

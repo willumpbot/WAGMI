@@ -1,16 +1,6 @@
 {
   "insights": [
     {
-      "ts": 1782812854.6723058,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: THESIS INVALIDATED by regime shift. Consolidation showing emerging long bias (HYPE +4.7%, EMA20>EMA50 crosses) contradicts SHORT directional thesis. D",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
       "ts": 1782813547.599841,
       "category": "trade_management",
       "insight": "Exit [XRP]: Range regime (mean-reversion punishes patience) + MFE 0.54% (meets 0.5% partial threshold) + hold 8.16h + slow progress (0.54% of 4.08% to TP1 achieve",
@@ -208,7 +198,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782819092.8498027,
@@ -308,7 +298,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782821181.01331,
@@ -448,7 +438,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782823566.5992165,
@@ -618,7 +608,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782826573.8641503,
@@ -648,7 +638,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 10
+      "validation_count": 11
     },
     {
       "ts": 1782826975.9946618,
@@ -718,7 +708,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782827905.9188979,
@@ -748,7 +738,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 10
+      "validation_count": 11
     },
     {
       "ts": 1782828714.4976888,
@@ -788,7 +778,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782828885.6236463,
@@ -808,7 +798,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 9
+      "validation_count": 10
     },
     {
       "ts": 1782829390.8852015,
@@ -848,7 +838,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 9
+      "validation_count": 10
     },
     {
       "ts": 1782830270.2062984,
@@ -858,7 +848,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782830302.3217983,
@@ -898,7 +888,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782831133.8653314,
@@ -908,7 +898,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 10
+      "validation_count": 11
     },
     {
       "ts": 1782831204.7318678,
@@ -918,7 +908,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782831679.0462515,
@@ -928,7 +918,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782831739.0050638,
@@ -938,7 +928,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782832021.0311677,
@@ -968,7 +958,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782832254.1526945,
@@ -988,7 +978,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 9
+      "validation_count": 10
     },
     {
       "ts": 1782832640.62316,
@@ -998,7 +988,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782832668.1112118,
@@ -1028,7 +1018,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 9
+      "validation_count": 10
     },
     {
       "ts": 1782833170.5279403,
@@ -1048,7 +1038,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 10
+      "validation_count": 11
     },
     {
       "ts": 1782833284.0392141,
@@ -1058,7 +1048,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782833487.4579284,
@@ -1088,7 +1078,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 9
+      "validation_count": 10
     },
     {
       "ts": 1782834438.6888855,
@@ -1108,7 +1098,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -9
+      "validation_count": -10
     },
     {
       "ts": 1782835178.688315,
@@ -1188,7 +1178,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782836436.2576525,
@@ -1198,7 +1188,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 9
+      "validation_count": 10
     },
     {
       "ts": 1782836484.9546764,
@@ -1258,7 +1248,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782837361.3899806,
@@ -1278,7 +1268,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782837455.1730886,
@@ -1288,7 +1278,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782837728.1387239,
@@ -1308,7 +1298,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782837928.5575087,
@@ -1328,7 +1318,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782838315.359082,
@@ -1758,7 +1748,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782849498.708432,
@@ -1788,7 +1778,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782851399.2100837,
@@ -1878,7 +1868,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1782853879.5146992,
@@ -1888,7 +1878,7 @@
       "evidence": "action=full_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782853927.3279781,
@@ -1898,7 +1888,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782854432.059793,
@@ -1928,7 +1918,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1782854893.5976095,
@@ -2018,7 +2008,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1782856800.3819976,
@@ -2028,7 +2018,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782856851.3914332,
@@ -2048,7 +2038,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1782857530.3480935,
@@ -2058,7 +2048,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782857563.0227866,
@@ -2078,7 +2068,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782857929.8652864,
@@ -2118,7 +2108,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1782858541.8859508,
@@ -2128,7 +2118,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782858700.8824418,
@@ -2158,7 +2148,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782859194.460786,
@@ -2188,7 +2178,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782859657.6094818,
@@ -2198,7 +2188,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1782859700.9057076,
@@ -2208,7 +2198,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782859835.8073845,
@@ -2268,7 +2258,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782860637.3570385,
@@ -2288,7 +2278,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1782860859.8141701,
@@ -2308,7 +2298,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 9
+      "validation_count": 10
     },
     {
       "ts": 1782861253.1631763,
@@ -2378,7 +2368,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -8
+      "validation_count": -9
     },
     {
       "ts": 1782862420.1408384,
@@ -2408,7 +2398,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1782862569.338379,
@@ -2518,7 +2508,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 7
+      "validation_count": 8
     },
     {
       "ts": 1782865233.525137,
@@ -2528,7 +2518,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782865289.3590217,
@@ -2778,7 +2768,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782871831.719381,
@@ -2858,7 +2848,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782873598.4681344,
@@ -2888,7 +2878,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782874588.224543,
@@ -3138,7 +3128,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782889059.752814,
@@ -3188,7 +3178,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782890027.6025326,
@@ -3418,7 +3408,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 5
     },
     {
       "ts": 1782893749.9335883,
@@ -3428,7 +3418,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782894224.1884797,
@@ -3448,7 +3438,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 5
     },
     {
       "ts": 1782894306.9857702,
@@ -3468,7 +3458,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782894610.3231368,
@@ -3498,7 +3488,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782895066.643297,
@@ -3648,7 +3638,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782897766.9212642,
@@ -3758,7 +3748,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -4
+      "validation_count": -5
     },
     {
       "ts": 1782899103.2822733,
@@ -3818,7 +3808,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782900507.9224043,
@@ -3848,7 +3838,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782900925.5460076,
@@ -3888,7 +3878,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 5
+      "validation_count": 6
     },
     {
       "ts": 1782901344.4319088,
@@ -3918,7 +3908,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782901835.2889757,
@@ -3958,7 +3948,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 5
     },
     {
       "ts": 1782903150.5213077,
@@ -3978,7 +3968,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 5
     },
     {
       "ts": 1782903735.0506563,
@@ -4008,7 +3998,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782904489.3254352,
@@ -4058,7 +4048,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 5
     },
     {
       "ts": 1782905760.4435048,
@@ -4238,7 +4228,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -4
+      "validation_count": -5
     },
     {
       "ts": 1782908695.3944771,
@@ -4398,7 +4388,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782911760.1725698,
@@ -4468,7 +4458,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782918556.9426656,
@@ -4568,7 +4558,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782923054.8525794,
@@ -4778,7 +4768,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782929410.2224915,
@@ -4827,8 +4817,8 @@
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
+      "validated": true,
+      "validation_count": 1
     },
     {
       "ts": 1782932075.7926097,
@@ -4994,6 +4984,16 @@
       "ts": 1782938625.0290115,
       "category": "exit_pattern",
       "insight": "Exit [SOL]: Setup-regime mismatch invalidates thesis. confidence_scorer has 0% WR in trending (n=6 prior trades). Upstream assessment: skip-quality signal (confid",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782939238.2319314,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Thesis invalidated on two fronts: (1) HYPE LONG in regime=trend has 0% historical WR (n=7); confidence_scorer variant also 0% WR on HYPE in trend (n=6",
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",

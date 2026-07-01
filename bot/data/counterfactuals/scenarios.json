@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782937916.5259614,
+  "updated_at": 1782938995.5809534,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -13750,6 +13750,27 @@
         "tp2_price": 1.1217571428571431,
         "confidence": 60.0,
         "reason": "LLM_FIRST: XRP consolidating in tight range with 1h/4h regime misalignment (trending_bull vs range); solo confi"
+      }
+    },
+    {
+      "id": "cf_1782938995_ed97cad5",
+      "timestamp": 1782938995.5808227,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0572,
+        "sl_price": 1.041157142857143,
+        "tp1_price": 1.089285714285714,
+        "tp2_price": 1.121371428571428,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: XRP BUY into 1h/4h regime conflict (trending_bull vs range) likely chops near 1.05-1.07 rather than "
       }
     }
   ]

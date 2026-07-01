@@ -19252,6 +19252,27 @@
         "consolidation"
       ],
       "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "HYPE LONG: regime shifted consolidation\u2192trend during hold. HYPE 0% WR in trend (n=7). Exit within 30min of shift. Skip confidence_scorer on HYPE.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "HYPE in range"
+      ],
+      "contradicting": [],
+      "created_at": 1782939451.2909389,
+      "last_validated": 1782939451.2909396,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "hype",
+        "range"
+      ],
+      "source": "learning_agent"
     }
   ]
 }
