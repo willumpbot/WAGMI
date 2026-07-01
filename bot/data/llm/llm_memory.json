@@ -1,90 +1,6 @@
 {
-  "last_updated": 1782863033,
+  "last_updated": 1782874556,
   "notes": [
-    {
-      "text": "Trend regime + solo/weak MTQ LONG = conditional WR 0% (n=7 confirmed). All OI falling: BTC-1.4%, ETH-3.4%, SOL-2.0%. Active graduated VETOs on SOL BUY (24% WR/34 live) and HYPE BUY (23% WR/35 live) ar",
-      "ts": 1782777038.8589602,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "HYPE BUY VETO confirmed again: solo MTQ MANUAL + trend regime + 6h opposed = 0/7 similar trades won. Do not override regardless of mode.",
-      "ts": 1782777310.9613678,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "Trend regime still 0% WR (n=7, $-118 TOXIC). SOL BUY VETO active (24% WR/34 live, active_rules=10). OI falling: BTC-1.3%, ETH-3.2%, SOL-1.9%. Vol_ratio\u22480 all symbols. Kelly=0.04. Do not re-evaluate un",
-      "ts": 1782777780.8403046,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "Range regime confirmed 11% WR (TOXIC). BTC_LONG=0% WR (5t) AVOID, ETH_LONG=0% WR (4t) AVOID. Active VETOs: HYPE BUY + SOL BUY. Kelly=0.0. Do not enter range regime LONGs until OI expands + volume spik",
-      "ts": 1782778219.1331375,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime 11% WR toxic + BTC LONG 0% WR live AVOID + Kelly=0.0 + quant noise=0.90 + cwr=11% all confirm no edge; skip all LONG signals until OI expands + volume spikes + 2+ ensemble agrees in trend",
-      "ts": 1782779038.4162018,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime confirmed 0% WR live (n=19 trades), 11% quant (n=9). vol:0.00! hard rejection on ALL symbols. SOL BUY VETO active (24% WR/34t). BTC LONG 0% WR live (5t). Kelly=0.0. Skip all LONGs until O",
-      "ts": 1782779341.6495714,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "XRP LONG: regime='' and confidence=0 at entry (gate fail), closed on RANGE=11% WR. Block if regime unclassified or confidence<30.",
-      "ts": 1782779677.5531435,
-      "symbol": "XRP",
-      "regime": ""
-    },
-    {
-      "text": "XRP: confidence=0 + regime=unclassified at entry (gate fail). Closed RANGE(11%WR). Block regime=unclassified or confidence<30.",
-      "ts": 1782779764.708155,
-      "symbol": "XRP",
-      "regime": ""
-    },
-    {
-      "text": "Range regime = 0% live WR confirmed (19 trades). SOL BUY veto active. BTC LONG AVOID. Kelly=0.0. All OI falling. Wait for OI expansion + volume spike + ADX>25 trend confirmation before any new LONG.",
-      "ts": 1782779957.743652,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime confirmed 0% WR live (19 trades). XRP SELL solo confidence_scorer raw=65 / adjusted=46.1 (below 66 floor). Kelly=0.0. Skip all signals in range regime until ADX>25 + OI expansion + 2-stra",
-      "ts": 1782780365.610991,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime confirmed 0% live WR (19 trades). SOL LONG veto active. All OI contracting. No entry until ADX>25 + OI expansion + trend regime confirmed.",
-      "ts": 1782780961.4931872,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime 11% WR (n=9) TOXIC. SOL BUY active VETO (24% WR 34 live). HYPE BUY active VETO (23% WR 35 live). All OI contracting: BTC -1.3%, ETH -3.7%, SOL -3.2%, HYPE -1.2%. Kelly=0.0. Wait for ADX>2",
-      "ts": 1782781238.4540982,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime 11% WR confirmed (n=9). SOL BUY active VETO (24% WR, 34 live trades). All OI contracting: ETH -3.9%, SOL -3.5%. Kelly=0.0. Conditional edge -19%. Skip until ADX>25 + OI expansion + 2-stra",
-      "ts": 1782781719.9613411,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime confirmed TOXIC: 0% live WR n=19. OI contracting all symbols. SOL BUY + HYPE BUY active vetoes (24% and 23% WR respectively). Kelly=0.0. Conditional WR=9% for solo MANUAL VWAP-opposed in",
-      "ts": 1782781971.4271743,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "SOL BUY veto confirmed active (24% WR n=34 live). OI liquidation divergence confirmed. Skip all SOL LONG until regime=trending + OI expands + volume>1.0x.",
       "ts": 1782782505.8415754,
@@ -600,6 +516,90 @@
       "ts": 1782863033.7331388,
       "symbol": "[POSITION",
       "regime": "trend"
+    },
+    {
+      "text": "confidence_scorer SHORT on BTC: 18% WR (n=17), below 28% baseline. Solo 65% confidence too high. Require 2+ strategy agreement or skip.",
+      "ts": 1782870774.1524937,
+      "symbol": "BTC",
+      "regime": "consolidation"
+    },
+    {
+      "text": "confidence_scorer SHORT on BTC weak (18% WR): require 2+ strategy agreement or skip. Solo 65% confidence insufficient.",
+      "ts": 1782870827.267734,
+      "symbol": "BTC",
+      "regime": "consolidation"
+    },
+    {
+      "text": "SOL BUY graduated veto (24% WR, n=23, 100% acc) confirmed again \u2014 solo multi_tier_quality PRIORITY tier signal still fires despite veto; consider hard-blocking at signal generation.",
+      "ts": 1782871047.601361,
+      "symbol": "[POSITION",
+      "regime": "range"
+    },
+    {
+      "text": "SOL LONG solo multi_tier_quality signal fired again despite active graduated veto (24%WR n=23) - recommend hard-blocking at signal generation per prior memory note",
+      "ts": 1782871301.7302895,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime TOXIC (29% WR, $-287), quant analysis explicitly flags kelly=0/skip-all, 7-loss cold streak + CB warning + survival CRITICAL(26/100). SOL BUY graduated veto still firing despite f",
+      "ts": 1782871599.1655414,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime toxic (29% WR n=31, -$287); quant_analysis explicitly flags kelly=0/no-trade-qualifies; 7-loss cold streak + CB warning + survival CRITICAL(26/100) demand skip until stronger mult",
+      "ts": 1782872281.5325038,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "All 5 symbols solo/weak signals in TOXIC consolidation regime; quant kelly=0, EV negative, 7-loss cold streak + survival CRITICAL(26/100); wait for 2-strategy agreement or volume/OI expansion before r",
+      "ts": 1782872629.1753407,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Low-liquidity regime + 7-loss streak + survival CRITICAL(26/100): all signals solo weak, quant kelly=0, EV negative across board; skipped per Gate1 regime hard rule",
+      "ts": 1782872873.209859,
+      "symbol": "[PRE-CLOSE",
+      "regime": "low_liquidity"
+    },
+    {
+      "text": "Low-liquidity regime explicit hard-skip per Gate 1; quant_analysis confirms kelly=0, EV negative, all symbols solo-signal only with confidence_floor rejections; 7-loss streak + survival CRITICAL(26/10",
+      "ts": 1782873172.3139322,
+      "symbol": "[PRE-CLOSE",
+      "regime": "low_liquidity"
+    },
+    {
+      "text": "Low-liquidity regime hard-skip per Gate 1; all 5 symbols solo confidence_floor rejections, quant kelly=0, EV negative, 7-loss streak + survival CRITICAL(26/100); wait for regime shift or 2+ strategy a",
+      "ts": 1782873394.8794436,
+      "symbol": "[PRE-CLOSE",
+      "regime": "low_liquidity"
+    },
+    {
+      "text": "Low-liquidity regime confirmed via regime_analysis (conf=0.75) + quant_analysis explicit axiom skip; all 4 symbols solo-signal only, confidence_floor rejections across BTC/ETH/SOL/HYPE, kelly=0, 7-los",
+      "ts": 1782873803.6404138,
+      "symbol": "[PRE-CLOSE",
+      "regime": "low_liquidity"
+    },
+    {
+      "text": "Low-liquidity cluster across all symbols + 7-loss streak + solo confidence_floor rejections on every symbol (BTC/ETH/SOL/HYPE) + quant kelly=0 EV negative = hard skip per Gate 1 regime rule, not overr",
+      "ts": 1782874077.5427723,
+      "symbol": "[PRE-CLOSE",
+      "regime": "low_liquidity"
+    },
+    {
+      "text": "low_liquidity cluster across all symbols + 7-loss streak + solo confidence_floor rejections on BTC/ETH/SOL/HYPE/XRP + kelly=0 + conditional edge -17% = hard Gate 1 skip, not overridable by thesis qual",
+      "ts": 1782874363.0798986,
+      "symbol": "[PRE-CLOSE",
+      "regime": "low_liquidity"
+    },
+    {
+      "text": "Low-liquidity cluster across all symbols + 7-loss streak + kelly=0 + corr_warning explicitly says avoid new entries; solo weak signals rejected by confidence_floor on every symbol",
+      "ts": 1782874556.6280243,
+      "symbol": "[PRE-CLOSE",
+      "regime": "low_liquidity"
     }
   ]
 }

@@ -11675,11 +11675,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (5 trades)",
       "confidence": 0.6,
-      "evidence_count": 11,
+      "evidence_count": 13,
       "supporting": [],
       "contradicting": [],
       "created_at": 1781878466.5225227,
-      "last_validated": 1782867633.9548857,
+      "last_validated": 1782873803.6476922,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -17041,11 +17041,11 @@
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 50% win rate (8 trades)",
       "confidence": 0.66,
-      "evidence_count": 20,
+      "evidence_count": 21,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782487749.0033512,
-      "last_validated": 1782850433.2017267,
+      "last_validated": 1782869578.6117144,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -17429,11 +17429,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in  regime (27% WR)",
       "confidence": 0.7,
-      "evidence_count": 3,
+      "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782696246.9916854,
-      "last_validated": 1782850433.0557072,
+      "last_validated": 1782869578.4753478,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -18326,11 +18326,11 @@
       "knowledge_type": "observation",
       "content": "0-strategy agreement: 27% win rate (15 trades)",
       "confidence": 0.8,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782815383.4937916,
-      "last_validated": 1782850433.0989602,
+      "last_validated": 1782869578.5538774,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18359,17 +18359,21 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (15% long WR vs 41% short WR)",
-      "confidence": 0.5,
+      "confidence": 0.3500000000000001,
       "evidence_count": 1,
       "supporting": [
         "Short WR=41%",
-        "Short WR=41%"
+        "Short WR=41%",
+        "Short WR=42%"
       ],
-      "contradicting": [],
+      "contradicting": [
+        "Short WR=0%",
+        "Short WR=0%"
+      ],
       "created_at": 1782815383.5798888,
-      "last_validated": 1782850433.2854786,
-      "validation_count": 2,
-      "invalidation_count": 0,
+      "last_validated": 1782873803.6886654,
+      "validation_count": 3,
+      "invalidation_count": 2,
       "category": "direction",
       "tags": [
         "side_bias"
@@ -18501,13 +18505,14 @@
       "knowledge_type": "observation",
       "content": "BTC performing poorly (17% WR, 12 trades, $-63)",
       "confidence": 0.8,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [
+        "2/12 wins",
         "2/12 wins"
       ],
       "contradicting": [],
       "created_at": 1782850432.999082,
-      "last_validated": 1782850432.999082,
+      "last_validated": 1782869578.3818603,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "symbol",
@@ -18521,11 +18526,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in unknown regime (23% WR)",
       "confidence": 0.7,
-      "evidence_count": 0,
+      "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782850433.0271676,
-      "last_validated": 1782850433.0271676,
+      "last_validated": 1782869578.5072377,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -18539,11 +18544,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 35% win rate (26 trades)",
       "confidence": 1.02,
-      "evidence_count": 0,
+      "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782850433.1547213,
-      "last_validated": 1782850433.1547222,
+      "last_validated": 1782869578.5832472,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18618,11 +18623,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (6 trades)",
       "confidence": 0.62,
-      "evidence_count": 0,
+      "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782863357.1606293,
-      "last_validated": 1782863357.1606295,
+      "last_validated": 1782871599.171402,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18630,6 +18635,90 @@
         "agree_1"
       ],
       "source": "pattern_recognition"
+    },
+    {
+      "knowledge_type": "observation",
+      "content": "HYPE performing poorly (29% WR, 7 trades, $-14)",
+      "confidence": 0.7142857142857143,
+      "evidence_count": 1,
+      "supporting": [
+        "2/7 wins"
+      ],
+      "contradicting": [],
+      "created_at": 1782869578.4305837,
+      "last_validated": 1782869578.4305851,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "symbol",
+      "tags": [
+        "HYPE",
+        "weak"
+      ],
+      "source": "pattern_recognition"
+    },
+    {
+      "knowledge_type": "hypothesis",
+      "content": "System currently favors shorts (14% long WR vs 42% short WR)",
+      "confidence": 0.24999999999999997,
+      "evidence_count": 0,
+      "supporting": [
+        "Short WR=42%"
+      ],
+      "contradicting": [
+        "Short WR=0%",
+        "Short WR=0%"
+      ],
+      "created_at": 1782869578.655471,
+      "last_validated": 1782873803.727457,
+      "validation_count": 1,
+      "invalidation_count": 2,
+      "category": "direction",
+      "tags": [
+        "side_bias"
+      ],
+      "source": "causal_analysis"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "confidence_scorer SHORT on BTC: 18% WR (n=17), below 28% baseline. Solo 65% confidence too high. Require 2+ strategy agreement or skip.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in consolidation"
+      ],
+      "contradicting": [],
+      "created_at": 1782870774.2046492,
+      "last_validated": 1782870774.20465,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "pattern_loss",
+      "tags": [
+        "pattern_loss",
+        "btc",
+        "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "confidence_scorer SHORT on BTC weak (18% WR): require 2+ strategy agreement or skip. Solo 65% confidence insufficient.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in consolidation"
+      ],
+      "contradicting": [],
+      "created_at": 1782870827.324764,
+      "last_validated": 1782870827.3247645,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "entry_timing",
+      "tags": [
+        "entry_timing",
+        "btc",
+        "consolidation"
+      ],
+      "source": "learning_agent"
     }
   ]
 }

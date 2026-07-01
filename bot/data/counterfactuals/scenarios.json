@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782869038.0533783,
+  "updated_at": 1782873916.3362951,
   "scenarios": [
     {
       "id": "cf_1782021106_762c834c",
@@ -10908,7 +10908,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1.0503,
@@ -10916,7 +10916,9 @@
         "tp1_price": 1.005414285714286,
         "tp2_price": 0.9605285714285721,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10951,7 +10953,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1.0484,
@@ -10959,7 +10961,9 @@
         "tp1_price": 1.0065428571428572,
         "tp2_price": 0.9646857142857144,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10994,7 +10998,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1.0493,
@@ -11002,7 +11006,9 @@
         "tp1_price": 1.0073,
         "tp2_price": 0.9653000000000003,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -11037,7 +11043,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1.0506,
@@ -11045,7 +11051,9 @@
         "tp1_price": 1.0079714285714287,
         "tp2_price": 0.9653428571428575,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -11124,7 +11132,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1589.3,
@@ -11132,7 +11140,9 @@
         "tp1_price": 1503.8714285714284,
         "tp2_price": 1457.8714285714284,
         "confidence": 70.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -11886,9 +11896,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -5.640224390803664,
+      "delta": -5.640224390803664,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 64.734,
@@ -11896,7 +11906,8 @@
         "tp1_price": 66.55957142857142,
         "tp2_price": 68.38514285714284,
         "confidence": 65.91590492403513,
-        "reason": "LLM_FIRST: HYPE consolidating ~64.7-65.7; solo multi_tier BUY lacks edge in this regime, likely chops back towa"
+        "reason": "LLM_FIRST: HYPE consolidating ~64.7-65.7; solo multi_tier BUY lacks edge in this regime, likely chops back towa",
+        "hit": "tp2"
       }
     },
     {
@@ -11929,9 +11940,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -4.226218784273032,
+      "delta": -4.226218784273032,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 73.595,
@@ -11939,7 +11950,8 @@
         "tp1_price": 75.15014285714287,
         "tp2_price": 76.70528571428574,
         "confidence": 76.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -11950,9 +11962,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -5.665827399249303,
+      "delta": -5.665827399249303,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 64.739,
@@ -11960,7 +11972,8 @@
         "tp1_price": 66.57300000000001,
         "tp2_price": 68.40700000000001,
         "confidence": 65.91590492403513,
-        "reason": "LLM_FIRST: HYPE LONG toward 66.5 if range resolves bullish, but data shows this exact setup is structurally tox"
+        "reason": "LLM_FIRST: HYPE LONG toward 66.5 if range resolves bullish, but data shows this exact setup is structurally tox",
+        "hit": "tp2"
       }
     },
     {
@@ -11971,9 +11984,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -4.225070589262701,
+      "delta": -4.225070589262701,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 73.615,
@@ -11981,7 +11994,8 @@
         "tp1_price": 75.17014285714286,
         "tp2_price": 76.72528571428573,
         "confidence": 76.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -11992,9 +12006,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -5.7424994177078625,
+      "delta": -5.7424994177078625,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 65.014,
@@ -12002,7 +12016,8 @@
         "tp1_price": 66.88071428571429,
         "tp2_price": 68.74742857142859,
         "confidence": 65.91590492403513,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12013,9 +12028,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -4.1261053798707366,
+      "delta": -4.1261053798707366,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 73.698,
@@ -12023,7 +12038,8 @@
         "tp1_price": 75.21842857142856,
         "tp2_price": 76.73885714285713,
         "confidence": 76.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12034,9 +12050,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -4.233222021467559,
+      "delta": -4.233222021467559,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 73.453,
@@ -12044,7 +12060,8 @@
         "tp1_price": 75.00771428571429,
         "tp2_price": 76.56242857142857,
         "confidence": 65.94471470535545,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12055,9 +12072,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -4.2648038163062525,
+      "delta": -4.2648038163062525,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 73.579,
@@ -12065,7 +12082,8 @@
         "tp1_price": 75.14799999999998,
         "tp2_price": 76.71699999999997,
         "confidence": 66.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12076,9 +12094,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -4.253588711317194,
+      "delta": -4.253588711317194,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 73.773,
@@ -12086,7 +12104,8 @@
         "tp1_price": 75.34200000000001,
         "tp2_price": 76.91100000000003,
         "confidence": 76.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12129,6 +12148,49 @@
         "tp2_price": 56.05942857142854,
         "confidence": 69.0,
         "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782869729_87ab7cdd",
+      "timestamp": 1782869729.3868072,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 63.773,
+        "sl_price": 66.35319047619048,
+        "tp1_price": 59.90271428571429,
+        "tp2_price": 56.032428571428575,
+        "confidence": 69.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782870827_cde85d49",
+      "timestamp": 1782870827.3816636,
+      "symbol": "BTC",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -0.002791925060264634,
+      "counterfactual_pnl": 5.4684607049307585,
+      "delta": 5.471252629991024,
+      "resolved": true,
+      "metadata": {
+        "side": "short",
+        "entry_price": 58601.5,
+        "actual_exit_price": 58788.5,
+        "tp1_price": 56518.5,
+        "tp2_price": 55396.9,
+        "actual_pnl_raw": -1.6361099641909793,
+        "pnl_at_tp1_pct": 3.5545,
+        "pnl_at_tp2_pct": 5.4685
       }
     }
   ]
