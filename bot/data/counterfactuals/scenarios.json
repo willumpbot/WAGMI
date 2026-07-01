@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782900042.2726316,
+  "updated_at": 1782902872.5513856,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -12400,6 +12400,27 @@
         "actual_pnl_raw": -1.0934567902671262,
         "pnl_at_tp1_pct": 3.4636,
         "pnl_at_tp2_pct": 5.3286
+      }
+    },
+    {
+      "id": "cf_1782902872_d23b95d2",
+      "timestamp": 1782902872.5512965,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1572.1,
+        "sl_price": 1605.1199999999997,
+        "tp1_price": 1506.0600000000002,
+        "tp2_price": 1470.5000000000005,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: ETH short thesis (target 1506) plausible on 1h trend but 4h regime shows range not confirming, timef"
       }
     }
   ]

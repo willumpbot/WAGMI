@@ -1,18 +1,6 @@
 {
-  "last_updated": 1782899959,
+  "last_updated": 1782902402,
   "notes": [
-    {
-      "text": "confidence_scorer + range regimes: 11% WR (n=9)\u2014no edge. Exit agent correctly closed trade after 7.95h. HARD BLOCK this entry combo.",
-      "ts": 1782807188.3156276,
-      "symbol": "SOL",
-      "regime": ""
-    },
-    {
-      "text": "Range regime scan repeat: 0/19 WR current run, all 5 symbols below conf floor 66. XRP SHORT (2-agree REGULAR VWAP+6h) remains best available structure but regime is TOXIC. No entries until regime brea",
-      "ts": 1782807366.4286458,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "Range regime 0/19 current run \u2014 hard block all entries until regime classification breaks out of range; XRP SHORT 2-agree REGULAR remains best available structure for next regime shift",
       "ts": 1782807695.2943153,
@@ -599,6 +587,18 @@
       "text": "CB active (9 consecutive losses) + consolidation regime toxic (29% WR n=31) + all signals solo (22% WR) = hard skip per quant analysis, kelly=0, no thesis clears costs",
       "ts": 1782899959.231247,
       "symbol": "[POSITION",
+      "regime": "range"
+    },
+    {
+      "text": "9-loss CB warning + consolidation TOXIC (29% WR, -$288) + all signals solo/weak or floor-rejected (BTC/ETH/HYPE/XRP conf_floor_71, SOL BUY graduated-veto). Kelly=0, quant EV neutral. Wait for 2+ conve",
+      "ts": 1782902156.9274197,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "All symbols solo/toxic in consolidation: BTC_SHORT toxic+penalize-band, HYPE SELL actively vetoed, SOL BUY actively vetoed, ETH/XRP floor-rejected. Quant explicitly recommends skip-all, kelly=0, wait",
+      "ts": 1782902402.4765358,
+      "symbol": "[PRE-CLOSE",
       "regime": "range"
     }
   ]

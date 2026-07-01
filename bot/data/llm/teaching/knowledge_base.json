@@ -19103,6 +19103,23 @@
       "last_validated": 1782899959.631954,
       "validation_count": 7,
       "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_71 blocked a winning SELL trade on HYPE in trending_bear (hypothetical +2.4%). Consider relaxing this filter.",
+      "confidence": 0.524,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_71",
+        "HYPE",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1782902675.1522675,
+      "last_validated": 1782902675.1522677,
+      "validation_count": 1,
+      "invalidation_count": 0
     }
   ]
 }
