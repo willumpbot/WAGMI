@@ -1,11 +1,12 @@
-# 🧠 STATE OF THE BRAIN — 2026-07-01 22:31 UTC
+# 🧠 STATE OF THE BRAIN — 2026-07-01 23:05 UTC
 _Auto-generated every learning-engine pass (bot/tools/gen_state.py). This is the shared page._
 
 ## Bot
-🟢 ALIVE — pid 28884, uptime 0.4h, scan 54, errors 0, equity $2318.91 (heartbeat 0m old)
+🟢 ALIVE — pid 28884, uptime 0.9h, scan 121, errors 0, equity $2318.91 (heartbeat 4m old)
 
 ## Open book
 - **SOL LONG** @ 78.264 | SL 76.433 TP1 81.925 | conf 60.0 | opened 2026-07-01T22:10
+- **HYPE SHORT** @ 62.9965 | SL 66.055 TP1 58.4088 | conf 60.0 | opened 2026-07-01T22:36
 
 ## Last 5 closes
 | time (UTC) | trade | pnl | outcome | conf | entry_type |
@@ -23,6 +24,14 @@ _Auto-generated every learning-engine pass (bot/tools/gen_state.py). This is the
 
 ## Hole registry
 62 open / 11 fixed — full registry: coordination/HOLES.md
+
+## ⚙️ ACTIVE WORK (in flight right now)
+- Fallacy audit workflow: every LLM input surface + opportunity gate vs THE_STANDARD v1.3 (4 hunters + adversarial verify)
+- Mass research swarm: 8 lanes — multi-year sim, symbol personality, sessions, risk math/leverage table, counterfactual model, lead-lag, thesis forensics, archive mining
+- Approved-fixes agent: exploration 0.1x + guarded sizing, veto restore, exchange-order wiring, restart persistence, equity unification
+- Market-data expansion collector: L2 depth/imbalance/tape/long-short — new streams accruing every 15min
+- Ship-list queued behind fixes: bread-and-butter profit-lock restore (+$1,589 backtested), cut-only sizing ladder, dollar-negative rule retirements
+Landed tonight: WIRING_AUDIT (67 verified), THESIS_AUDIT, THESIS_GRADES (230 graded), MISSED_EV_LOCKDOWN, EXIT_GEOMETRY_BACKTEST, BACKTEST_EVERYTHING, DATA_CENSUS (97 artifacts), HOLES (84 tracked), THE_STANDARD v1.3, leak detector.
 
 ## Waiting on owner
 6 owner decisions pending — coordination/MORNING_BRIEF_2026-07-02.md
