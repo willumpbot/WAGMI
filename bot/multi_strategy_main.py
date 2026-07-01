@@ -3557,7 +3557,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                            # outcome + deep memory + ALL post-trade learning. HYPE SHORT
                            # close at 07:40:37 (-$1.49) was lost. Adding here so future
                            # Exit Agent closes properly persist.
-                           "LLM_EXIT_AGENT")
+                           "LLM_EXIT_AGENT",
+                           # 2026-07-01 (audit #51): heuristic exit-engine full closes
+                           # now inject their event — persist them like the agent's.
+                           "LLM_EXIT_ENGINE")
 
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
             # 2026-06-05: removed `and event.strategy` guard — empty strategy was silently
@@ -4039,7 +4042,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
                 # RL buffer: record transition for offline learning
                 try:
-                    _rl_pos = self.pos_mgr.positions.get(symbol)
+                    _rl_pos = self.pos_mgr.positions.get(symbol) or _captured_pos
                     _risk_amt = self.risk_mgr.equity * 0.01  # 1% risk base
                     _rl_reward = total_pnl / _risk_amt if _risk_amt > 0 else 0
                     rl_append_transition(
@@ -4188,7 +4191,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
             # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in _FULL_CLOSE:
-                pos = self.pos_mgr.positions.get(symbol)
+                # 2026-07-01: fall back to _captured_pos — the dict entry can be
+                # deleted by a parallel symbol's stale cleanup mid-loop (race),
+                # which zeroed conf/realized_pnl here ('ML recorded: conf=0%').
+                pos = self.pos_mgr.positions.get(symbol) or _captured_pos
                 total_pnl = pos.realized_pnl if pos else event.pnl
 
                 # Gather close-time market context for richer ML learning
@@ -4227,7 +4233,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             # Learning hooks + enhanced trade log on full closes
             if event.action in _FULL_CLOSE:
                 self._symbol_cooldown[symbol] = time.time()
-                pos = self.pos_mgr.positions.get(symbol)
+                # 2026-07-01: fall back to _captured_pos (parallel-scan stale-
+                # cleanup race) — a None here silently skipped log_closed_trade,
+                # i.e. the trades.csv row for the whole close.
+                pos = self.pos_mgr.positions.get(symbol) or _captured_pos
                 # Per-symbol daily PnL tracking
                 if pos:
                     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -4422,7 +4431,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             logger.debug(f"Active learning cycle error: {_al_err}")
 
             # Send enhanced trade event alert
-            pos = self.pos_mgr.positions.get(symbol)
+            pos = self.pos_mgr.positions.get(symbol) or _captured_pos
             _total_pnl_alert = pos.realized_pnl if pos else event.pnl
             _hold_time_alert = event.metadata.get("hold_time_s", 0)
             try:
@@ -4537,8 +4546,18 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # its pending event has been processed.
         from execution.position_state import CLOSED as _CLOSED
         _pending_syms = {e.symbol for e in getattr(self, '_pending_exit_events', [])}
+        # 2026-07-01 (ledger completeness): only clean up THIS symbol's closed
+        # position. With SCAN_PARALLEL_SYMBOLS, this cleanup previously deleted
+        # OTHER symbols' CLOSED positions while their (slow, LLM-call-laden)
+        # close pipelines were still mid-events-loop — the re-fetched
+        # pos_mgr.positions.get(symbol) went None and log_closed_trade/
+        # record_trade_outcome silently skipped (9 of 12 closes on 07-01 have
+        # no trades.csv row; DB shows 'ML recorded: BTC conf=0%' from the
+        # same race). Each symbol's own _process_symbol pass cleans its own
+        # position AFTER its events have been processed.
         stale = [s for s, p in self.pos_mgr.positions.items()
-                 if p.state == _CLOSED and s not in open_pos and s not in _pending_syms]
+                 if s == symbol and p.state == _CLOSED
+                 and s not in open_pos and s not in _pending_syms]
         for s in stale:
             del self.pos_mgr.positions[s]
 

@@ -1017,7 +1017,13 @@ class PositionWiringMixin:
                                     reason="LLM_EXIT_ENGINE"
                                 )
                                 if _eng_close and getattr(_eng_close, "filled", False):
-                                    self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_ENGINE")
+                                    # Wiring audit #51 (2026-07-01): mirror the patched
+                                    # LLM_EXIT_AGENT pattern — inject the close event so
+                                    # equity/log_trade/learning book it (was discarded).
+                                    _eng_fc = self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_ENGINE")
+                                    if _eng_fc:
+                                        _eng_fc.metadata["_exchange_submitted"] = True
+                                        self._pending_exit_events.append(_eng_fc)
                                 else:
                                     logger.critical(
                                         f"[{symbol}] EXIT ENGINE CLOSE FAILED — position still open. "
@@ -1088,6 +1094,14 @@ class PositionWiringMixin:
             event = self.pos_mgr.check_hold_limits(sym, price, max_hold, hold_action)
             if event:
                 logger.warning(f"[HOLD_LIMIT] {sym} force-closed after {age_hours:.0f}h")
+                # Wiring audit #15 (accounting half, 2026-07-01): this TradeEvent
+                # was only logged/alerted — the close never reached equity,
+                # log_trade, trades.csv, or learning. Inject via
+                # _pending_exit_events so the main events loop books it.
+                # (Exchange submission for HOLD_LIMIT remains owner-gated.)
+                if not hasattr(self, '_pending_exit_events'):
+                    self._pending_exit_events = []
+                self._pending_exit_events.append(event)
                 if self.alerts:
                     try:
                         self.alerts.send_trade_event(
