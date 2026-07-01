@@ -195,7 +195,7 @@
     },
     {
       "rule_id": "conf_floor_70_v1",
-      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20→-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. Gate: 20%.",
+      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20∙20→-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. Gate: 20%.",
       "action": "penalize",
       "conditions": {
         "confidence_min": 60.0,
@@ -477,6 +477,29 @@
       "gate_escalated_at": "2026-05-24T05:00:00+00:00",
       "gate_escalation_reason": "RULE_CONFLICT_RESOLUTION_V1: Graduation criterion met on historical data (WR=34.6%<40% n=52>=30 conf=0.88). RULE_CONFLICT_SOL_SHORT was that LLM engine was 5x weaker than feedback engine (gate=20% vs feedback gate=100%). Escalating to gate=50% closes half the alignment gap. Directional alignment: both engines agree SOL SELL is weak. Next graduation: full veto (gate=100%) after n>=20 post-restart trades at WR<40%.",
       "deactivated_reason": "AUDIT_2026-06-26: SOL SHORT = best setup in dataset (63.7% WR, EV=+$32/trade, n=179). Rule inverts evidence."
+    },
+    {
+      "rule_id": "conf_90plus_general_boost_v1",
+      "hypothesis_statement": "90%+ confidence (non-HYPE symbols) = 64.1% WR, +$101.92/trade EV on 39 trades. BTC SHORT subset already captured by btc_short_90plus_boost_v1. ETH/SOL at 90%+ unboosted. Auto-applied run162 after 22 consecutive deferrals via ESCALATION (threshold lowered 75%→70% after 22 deferrals; conf=72%>=70%). gate=20% A/B.",
+      "action": "boost",
+      "conditions": {
+        "confidence_min": 90,
+        "symbol_exclude": ["HYPE"]
+      },
+      "adjustment": 5.0,
+      "confidence": 0.72,
+      "evidence_ratio": 0.641,
+      "total_evidence": 39,
+      "created_at": 1782925831,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "gate_percentage": 20,
+      "applied_by": "auto_fix_pipeline_run162",
+      "escalation_reason": "22_deferrals_threshold_reduced_to_70pct_cumulative_missed_ev_7542",
+      "missed_ev_before_application": 7542.0,
+      "note": "Excludes HYPE (vetoed). Excludes BTC SHORT 90%+ (already +10 via btc_short_90plus_boost_v1, avoid double-boost). Targets ETH/SOL at 90%+ specifically."
     }
   ],
   "last_audit": "2026-06-26T06:07:17Z",

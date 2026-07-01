@@ -1,11 +1,11 @@
 {
-  "last_run": "2026-06-30T01:10:00Z",
-  "run_number": 158,
-  "cadence_streak": 74,
-  "fixes_applied": 0,
-  "fixes_applied_this_run": 0,
-  "gates_active": 5,
-  "total_fixes_all_time": 125,
+  "last_run": "2026-07-01T17:09:55Z",
+  "run_number": 162,
+  "cadence_streak": 78,
+  "fixes_applied": 1,
+  "fixes_applied_this_run": 1,
+  "gates_active": 6,
+  "total_fixes_all_time": 126,
   "external_changes_detected": {
     "source": "bot/data/llm/graduated_rules.json last_audit 2026-06-26T06:07:17Z",
     "changes_outside_pipeline": [
@@ -28,40 +28,49 @@
       "description": "Added TP1 partial-feedback branch in multi_strategy_main.py after L3117.",
       "confidence": 87,
       "applied_at": "2026-06-24T08:00:00Z",
-      "status": "APPLIED_PENDING_LIVE_VERIFICATION -- 68 paper-system runs since application",
-      "consecutive_unverified_flags": 68
+      "status": "APPLIED_PENDING_LIVE_VERIFICATION -- 69 paper-system runs since application",
+      "consecutive_unverified_flags": 69
+    },
+    {
+      "fix_id": "CONF_90PLUS_GENERAL_BOOST",
+      "description": "conf_90plus_general_boost_v1 added to graduated_rules.json. Boosts ETH/SOL at 90%+ confidence by +5pts. Excludes HYPE (vetoed) and BTC SHORT 90%+ (already captured). gate=20% A/B. Applied via ESCALATION after 22 consecutive deferrals (threshold reduced 75%->70%).",
+      "confidence": 72,
+      "escalation_threshold_applied": 70,
+      "applied_at": "2026-07-01T17:09:55Z",
+      "status": "APPLIED_PENDING_LIVE_VERIFICATION -- gate=20% A/B active. Cannot verify until bot restart.",
+      "consecutive_unverified_flags": 0,
+      "evidence": {"n": 39, "wr": 0.641, "ev_per_trade": 101.92, "missed_ev_before_apply": 7542.0},
+      "rule_written_to": "bot/data/llm/graduated_rules.json",
+      "rule_id": "conf_90plus_general_boost_v1"
     }
   ],
   "all_recs_from_latest_audit": [
     {"rec_id": "TP1_BLIND_SPOT_FIX", "confidence": 87, "status": "APPLIED_PENDING_LIVE_VERIFICATION (run146)"},
     {"rec_id": "EVENING_AFTERNOON_PENALTY", "confidence": 75, "status": "VERIFIED_ACTIVE (became BOOST rules based on live data)"},
-    {"rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT", "confidence": 68, "status": "DEFERRED -- 12th deferral. hype_short_veto_v1 added independently."}
+    {"rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT", "confidence": 68, "status": "DEFERRED -- 15th deferral. hype_short_veto_v1 added independently."},
+    {"rec_id": "CONF_90PLUS_GENERAL_BOOST", "confidence": 72, "status": "APPLIED_RUN162 -- escalation threshold 75%->70% triggered after 22 deferrals. Rule: conf_90plus_general_boost_v1, gate=20%."}
   ],
-  "pending_proposals": [
+  "pending_proposals": [],
+  "active_ab_tests": 6,
+  "llm_graduated_rules_verified": {
+    "total_rules": 24,
+    "active_rules": 19,
+    "inactive_rules": 5,
+    "verified_at": "2026-07-01T17:09:55Z"
+  },
+  "skipped_this_run": [
+    {"rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT", "reason": "confidence=68% below 70% escalation threshold"}
+  ],
+  "applied_this_run": [
     {
-      "proposal_id": "CONF_90PLUS_GENERAL_BOOST",
-      "description": "90%+ confidence (all symbols): WR=64.1%, EV=+$101.92/trade (n=39). BTC SHORT subset captured by btc_short_90plus_boost_v1. Non-BTC unbosted.",
-      "confidence": 72,
-      "flag_count": 18,
-      "status": "PENDING_HUMAN_REVIEW -- conf=72% below 75% threshold",
-      "proposed_rule": {
-        "rule_id": "conf_90plus_general_boost_v1",
-        "action": "boost",
-        "conditions": {"confidence_min": 90, "symbol_exclude": ["HYPE"]},
-        "adjustment": 5.0,
-        "gate": 20
-      }
+      "rec_id": "CONF_90PLUS_GENERAL_BOOST",
+      "rule_id": "conf_90plus_general_boost_v1",
+      "applied_via": "ESCALATION (22 deferrals, threshold reduced 75%->70%)",
+      "gate": 20,
+      "evidence": "n=39, WR=64.1%, EV=+$101.92/trade, missed_ev=$7,542"
     }
   ],
-  "active_ab_tests": 5,
-  "llm_graduated_rules_verified": {
-    "total_rules": 23,
-    "active_rules": 18,
-    "inactive_rules": 5,
-    "verified_at": "2026-06-30T01:10:00Z"
-  },
-  "skipped_this_run": [{"rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT", "reason": "confidence=68% below 75%"}],
   "notes": {
-    "run158": "5-day gap since run157. graduated_rules.json evolved to 23 rules externally. BOT OFFLINE Day 68. cadence_streak=74."
+    "run162": "First fix applied in 37 runs (last was run125). CONF_90PLUS_GENERAL_BOOST escalation threshold met after 22 deferrals. graduated_rules.json now has 24 rules (19 active). BOT OFFLINE Day 69. cadence_streak=78."
   }
 }

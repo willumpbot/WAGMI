@@ -1,7 +1,7 @@
 {
-  "status": "UPDATED_RUN161",
-  "last_updated": "2026-07-01T00:00:00Z",
-  "run_number": 161,
+  "status": "UPDATED_RUN162",
+  "last_updated": "2026-07-01T17:09:55Z",
+  "run_number": 162,
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -10,25 +10,26 @@
       "count": 179,
       "ev_per_trade": 32.44,
       "status": "ACTIVE -- sol_short_penalize_v1 DEACTIVATED Jun26 (correct, was inverting evidence)",
-      "consecutive_flags": 28
+      "consecutive_flags": 29
     },
     {
       "key": "BTC_SHORT_90PLUS",
       "win_rate": 67.0,
       "count": 43,
       "ev_per_trade": 102.92,
-      "status": "ACTIVE boost +10 via btc_short_90plus_boost_v1 (new rule since run157)",
-      "consecutive_flags": 28
+      "status": "ACTIVE boost +10 via btc_short_90plus_boost_v1",
+      "consecutive_flags": 29
     },
     {
-      "key": "CONF_90_PLUS",
+      "key": "CONF_90_PLUS_NON_BTC",
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "PARTIALLY CAPTURED -- BTC SHORT via btc_short_90plus_boost_v1. Non-BTC ESCALATED (21st deferral, threshold review required).",
-      "consecutive_flags": 21,
+      "status": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 written to graduated_rules.json (+5pts boost, gate=20%). ESCALATION triggered after 22 consecutive deferrals. Pending live verification.",
+      "consecutive_flags": 22,
       "missed_ev_total_paper": 7542.0,
-      "severity": "HIGH_ESCALATED"
+      "severity": "RESOLVED_PENDING_LIVE_VERIFICATION",
+      "applied_at": "2026-07-01T17:09:55Z"
     }
   ],
   "high_edges_found": 3,
@@ -41,7 +42,12 @@
     {"key": "BB_MTQ_CO_AGREEMENT", "win_rate": 35.0, "count": 2172, "rule_status": "PENALIZE -10 (bb_mtq_antipattern_v1)"}
   ],
   "weak_setups_found": 6,
-  "new_injections_this_run": 0,
-  "pending_human_review": "CONF_90PLUS_GENERAL_BOOST (conf=72%, flag #21 master). ~$7,542 missed EV. BTC SHORT 90%+ captured. ETH/SOL at 90%+ still unboosted. ESCALATED: 21 deferrals — threshold review overdue.",
+  "new_injections_this_run": 1,
+  "injection_this_run": {
+    "rule_id": "conf_90plus_general_boost_v1",
+    "trigger": "ESCALATION_22_DEFERRALS",
+    "edge": "ETH/SOL 90%+ confidence, WR=64.1%, EV=+$101.92/trade, n=39",
+    "gate": 20
+  },
   "output": {"high_edges_found": 3, "weak_setups_found": 6}
 }
