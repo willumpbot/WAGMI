@@ -229,6 +229,12 @@ class PositionManager:
 
     def _backup_position(self, pos: 'Position') -> None:
         """Persist position SL/TP to disk for crash recovery."""
+        # Test-pollution guard (2026-07-02): pytest opening synthetic positions
+        # was writing junk crash-backups into the production dir (e.g. ETH SHORT
+        # @3000 test fixture found in data/position_backups/). Tests that set
+        # pm._backup_dir to a tmp path are unaffected.
+        if os.getenv("PYTEST_CURRENT_TEST") and self._backup_dir == Path("data") / "position_backups":
+            return
         try:
             backup_file = self._backup_dir / f"{pos.symbol.replace('/', '_')}.json"
             backup_data = {
@@ -255,6 +261,10 @@ class PositionManager:
 
     def _remove_backup(self, symbol: str) -> None:
         """Remove position backup after successful close."""
+        # Mirror of the _backup_position pytest guard: a test closing e.g. "SOL"
+        # must never delete the real crash-backup of a live open SOL position.
+        if os.getenv("PYTEST_CURRENT_TEST") and self._backup_dir == Path("data") / "position_backups":
+            return
         try:
             backup_file = self._backup_dir / f"{symbol.replace('/', '_')}.json"
             if backup_file.exists():

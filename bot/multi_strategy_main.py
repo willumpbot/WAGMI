@@ -1963,6 +1963,32 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     scan_count=self._tick,
                     exchange_healthy=bool(snap.get("exchange_healthy", True)),
                 )
+                # ── D6b (2026-07-02): one-equity-truth convergence sentinel ──
+                # CB, sizing, heartbeat and persistence all read risk_mgr.equity;
+                # the persisted file can only diverge if an external writer
+                # clobbers it (2026-07-01: pytest wrote $2318.91/peak=10000 over
+                # the real $1951.01 and the next restart trusted it). Detect >1%
+                # drift, WARN (throttled 10min), and re-persist the in-memory
+                # truth so a poisoned file can never silently feed a restart.
+                try:
+                    _eq_mem = float(snap.get("equity", 0.0))
+                    if _eq_mem > 0:
+                        with open(os.path.join("data", "risk_equity_state.json"),
+                                  encoding="utf-8") as _ef:
+                            _eq_disk = float((json.load(_ef) or {}).get("equity", 0.0))
+                        if _eq_disk > 0 and abs(_eq_disk - _eq_mem) / _eq_mem > 0.01:
+                            _now_ts = time.time()
+                            if _now_ts - getattr(self, "_equity_drift_last_warn", 0.0) > 600:
+                                self._equity_drift_last_warn = _now_ts
+                                logger.warning(
+                                    f"[EQUITY-DRIFT] persisted ${_eq_disk:.2f} vs in-memory "
+                                    f"${_eq_mem:.2f} ({(_eq_disk - _eq_mem) / _eq_mem:+.1%}) — "
+                                    f"external writer clobbered risk_equity_state.json? "
+                                    f"Re-persisting in-memory truth."
+                                )
+                                self.risk_mgr.save_equity_state()
+                except Exception:
+                    pass
             except Exception as e:
                 logger.debug(f"[HEARTBEAT-DAEMON] write error: {e}")
             # Interruptible wait so shutdown is prompt.

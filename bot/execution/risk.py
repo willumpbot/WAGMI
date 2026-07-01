@@ -530,6 +530,14 @@ class RiskManager:
         import json
         import os
         from datetime import datetime, timezone
+        # Test-pollution guard (D6b root cause, 2026-07-02): a pytest run wrote a
+        # synthetic equity into the production file (2026-07-01 22:03Z: $2318.91
+        # with peak_equity=10000 replaced the real $1951.01) -- the ratio sanity
+        # check below cannot catch in-range values, and the next restart loaded
+        # the polluted number into CB/sizing/heartbeat. Never persist to the
+        # production path from inside a test run.
+        if os.getenv("PYTEST_CURRENT_TEST"):
+            return
         # Sanity check — refuse to persist obvious test pollution.
         cfg_start = getattr(self, "_starting_equity_config", 0.0)
         if self.equity <= 0:

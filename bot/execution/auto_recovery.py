@@ -201,6 +201,15 @@ def save_position_state(pos_mgr, filepath: str = _STATE_FILE) -> bool:
     Called after every state change (open, close, trailing update).
     Returns True on success.
     """
+    # Test-pollution guard (D6a root cause, 2026-07-02): pytest shares this CWD,
+    # and PositionManager._close_position calls save_position_state(self) with
+    # the DEFAULT path -- synthetic test books were overwriting the real
+    # data/position_state.json (2026-07-01 22:03Z clobber: the next restart then
+    # loaded 0 of 3 open positions, orphaning the book). Tests that pass an
+    # explicit tmp filepath are unaffected.
+    if os.getenv("PYTEST_CURRENT_TEST") and filepath == _STATE_FILE:
+        logger.debug("[RECOVERY] pytest context: skipping save to production state path")
+        return False
     try:
         positions_data = {}
         for symbol, pos in pos_mgr.positions.items():

@@ -19,6 +19,9 @@ from typing import Dict, List, Optional, Any
 logger = logging.getLogger("bot.llm.graduated_rules")
 
 _RULES_FILE = os.path.join("data", "llm", "graduated_rules.json")
+# Captured at import so the pytest write-guard in _save() can distinguish the
+# production path from a test-monkeypatched _RULES_FILE.
+_DEFAULT_RULES_FILE = _RULES_FILE
 
 
 def _canon_side(s: str) -> str:
@@ -161,6 +164,12 @@ class GraduatedRulesEngine:
             logger.warning(f"[GRAD-RULES] Load error: {e}")
 
     def _save(self):
+        # Test-pollution guard (2026-07-02): a pytest run's engine._save() to the
+        # production path wiped all 32 historical rules (incl. hype_long_veto_v1,
+        # sol_long_veto_v1) at 2026-07-01 22:03Z, replacing them with the test's
+        # rule set. Tests that monkeypatch _RULES_FILE to a tmp path still save.
+        if os.getenv("PYTEST_CURRENT_TEST") and _RULES_FILE == _DEFAULT_RULES_FILE:
+            return
         try:
             os.makedirs(os.path.dirname(_RULES_FILE), exist_ok=True)
             with open(_RULES_FILE, "w") as f:
