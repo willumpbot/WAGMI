@@ -1,26 +1,6 @@
 {
   "insights": [
     {
-      "ts": 1782771874.405517,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: SUNK COST IMMUNITY: Forward EV assessment says NO (would not re-enter consolidation LONG at 60% confidence with confidence_scorer at 11% WR in this re",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782772412.8116658,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Consolidation regime + +0.81% MFE (well above 0.3-0.5% threshold) triggers aggressive profit-locking per range-regime framework. Original condition 'h",
-      "confidence": 0.75,
-      "evidence": "action=partial_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
       "ts": 1782772458.9175224,
       "category": "exit_pattern",
       "insight": "Exit [ETH]: Regime-invalidation: LONG in consolidation violates hard-block (overseer: 0% WR, n=6 validated). 2.8h hold time in worst band (2-4h: 9% WR vs 73% WR a",
@@ -4994,6 +4974,26 @@
       "ts": 1782877372.6830103,
       "category": "exit_pattern",
       "insight": "Exit [ETH]: Dead capital: 20.9h hold, +$0.10 profit in hostile range regime. Thesis unconfirmed (volume expansion never materialized). Setup type (confidence_scor",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782885380.6981144,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: Overseer diagnosis confirms regime-classification failure (0% WR all directional regimes, n=6-19). confidence_scorer strategy 0% WR in trends (0/6 act",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782885634.1218517,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: Strategy underperformance (21% WR) + regime mismatch (11% WR in RANGE) + system CRITICAL (0% WR_20/50, 7-loss streak CB warning) + exhausted risk budg",
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",

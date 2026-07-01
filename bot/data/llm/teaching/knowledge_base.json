@@ -4414,11 +4414,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in  regime (31% WR)",
       "confidence": 0.008,
-      "evidence_count": 0,
+      "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775772299.4223561,
-      "last_validated": 1775772299.4223561,
+      "last_validated": 1782883588.4053197,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -17041,11 +17041,11 @@
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 50% win rate (8 trades)",
       "confidence": 0.66,
-      "evidence_count": 21,
+      "evidence_count": 22,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782487749.0033512,
-      "last_validated": 1782869578.6117144,
+      "last_validated": 1782883588.5102768,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18359,11 +18359,12 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (15% long WR vs 41% short WR)",
-      "confidence": 0.1500000000000001,
+      "confidence": 0.20000000000000012,
       "evidence_count": 1,
       "supporting": [
         "Short WR=41%",
         "Short WR=41%",
+        "Short WR=42%",
         "Short WR=42%"
       ],
       "contradicting": [
@@ -18373,8 +18374,8 @@
         "Short WR=0%"
       ],
       "created_at": 1782815383.5798888,
-      "last_validated": 1782877758.3862708,
-      "validation_count": 3,
+      "last_validated": 1782883588.6062036,
+      "validation_count": 4,
       "invalidation_count": 4,
       "category": "direction",
       "tags": [
@@ -18528,11 +18529,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in unknown regime (23% WR)",
       "confidence": 0.7,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782850433.0271676,
-      "last_validated": 1782869578.5072377,
+      "last_validated": 1782883588.3761373,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -18546,11 +18547,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 35% win rate (26 trades)",
       "confidence": 1.02,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782850433.1547213,
-      "last_validated": 1782869578.5832472,
+      "last_validated": 1782883588.4627736,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18661,9 +18662,10 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (14% long WR vs 42% short WR)",
-      "confidence": 0.05,
+      "confidence": 0.1,
       "evidence_count": 0,
       "supporting": [
+        "Short WR=42%",
         "Short WR=42%"
       ],
       "contradicting": [
@@ -18673,8 +18675,8 @@
         "Short WR=0%"
       ],
       "created_at": 1782869578.655471,
-      "last_validated": 1782877758.4325306,
-      "validation_count": 1,
+      "last_validated": 1782883588.6520143,
+      "validation_count": 2,
       "invalidation_count": 4,
       "category": "direction",
       "tags": [
@@ -18807,6 +18809,62 @@
         "unknown"
       ],
       "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "observation",
+      "content": "BTC performing poorly (18% WR, 11 trades, $-59)",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "2/11 wins"
+      ],
+      "contradicting": [],
+      "created_at": 1782883588.344865,
+      "last_validated": 1782883588.3448653,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "symbol",
+      "tags": [
+        "BTC",
+        "weak"
+      ],
+      "source": "pattern_recognition"
+    },
+    {
+      "knowledge_type": "observation",
+      "content": "0-strategy agreement: 31% win rate (16 trades)",
+      "confidence": 0.8200000000000001,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1782883588.4338565,
+      "last_validated": 1782883588.4338567,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "strategy",
+      "tags": [
+        "agree_0"
+      ],
+      "source": "pattern_recognition"
+    },
+    {
+      "knowledge_type": "hypothesis",
+      "content": "System currently favors shorts (17% long WR vs 42% short WR)",
+      "confidence": 0.45,
+      "evidence_count": 0,
+      "supporting": [
+        "Short WR=42%"
+      ],
+      "contradicting": [],
+      "created_at": 1782883588.5556507,
+      "last_validated": 1782883588.6851075,
+      "validation_count": 1,
+      "invalidation_count": 0,
+      "category": "direction",
+      "tags": [
+        "side_bias"
+      ],
+      "source": "causal_analysis"
     }
   ]
 }
