@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782902872.5513856,
+  "updated_at": 1782907540.5594425,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -12421,6 +12421,132 @@
         "tp2_price": 1470.5000000000005,
         "confidence": 65.0,
         "reason": "LLM_FIRST: ETH short thesis (target 1506) plausible on 1h trend but 4h regime shows range not confirming, timef"
+      }
+    },
+    {
+      "id": "cf_1782904213_7f45bfd8",
+      "timestamp": 1782904213.2640557,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1572.8,
+        "sl_price": 1605.1885714285713,
+        "tp1_price": 1508.0228571428574,
+        "tp2_price": 1473.1428571428576,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: ETH SHORT thesis conflicts with regime timeframe alignment (1h=trend vs 4h=range) and ETH is actuall"
+      }
+    },
+    {
+      "id": "cf_1782904883_7cc33832",
+      "timestamp": 1782904883.9651868,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1573.1,
+        "sl_price": 1605.6928571428568,
+        "tp1_price": 1507.914285714286,
+        "tp2_price": 1472.8142857142861,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: ETH SHORT toward 1508 blocked by 1h/4h regime misalignment (trend vs range) despite bearish bias"
+      }
+    },
+    {
+      "id": "cf_1782905563_9b0a8700",
+      "timestamp": 1782905563.5368052,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1572.3,
+        "sl_price": 1604.9485714285713,
+        "tp1_price": 1507.002857142857,
+        "tp2_price": 1471.8428571428574,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: ETH range-bound near 1572-1580 with 1h/4h regime conflict (1h=trend, 4h=range); SHORT thesis lacks c"
+      }
+    },
+    {
+      "id": "cf_1782906094_280f52ba",
+      "timestamp": 1782906094.7221112,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1570.4,
+        "sl_price": 1603.0857142857144,
+        "tp1_price": 1505.0285714285712,
+        "tp2_price": 1469.8285714285716,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: ETH SHORT toward 1505 lacks confluence: 1h trend vs 4h range misalignment plus negative payoff-ratio"
+      }
+    },
+    {
+      "id": "cf_1782906989_4ee3f48c",
+      "timestamp": 1782906989.9898741,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1570.7,
+        "sl_price": 1603.3857142857144,
+        "tp1_price": 1505.3285714285716,
+        "tp2_price": 1470.1285714285716,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: ETH SHORT toward 1505 lacked timeframe confluence (1h=trend vs 4h=range, aligned=false) and confiden"
+      }
+    },
+    {
+      "id": "cf_1782907540_e294fad0",
+      "timestamp": 1782907540.5593147,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1569.8999999999999,
+        "sl_price": 1602.2328571428575,
+        "tp1_price": 1505.2342857142858,
+        "tp2_price": 1470.4142857142856,
+        "confidence": 75.0,
+        "reason": "LLM_FIRST: ETH short thesis plausible (consolidation drift lower) but 1h trend vs 4h range timeframe misalignme"
       }
     }
   ]
