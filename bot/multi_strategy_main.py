@@ -7809,8 +7809,29 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     if _stop_w > 0 and raw_signal.entry > 0:
                         _ex_lev = max(1.0, min(getattr(entry_decision, "leverage", 1.0) or 1.0,
                                                float(os.getenv("EXPLORATION_MAX_LEV", "2.0"))))
-                        _risk_usd = (self.risk_mgr.equity or 0.0) * float(os.getenv("EXPLORATION_RISK_PCT", "0.004"))
-                        _ex_qty = _risk_usd / (_stop_w * _ex_lev)
+                        # D4 (owner-approved 2026-07-02, audit #6): route exploration
+                        # sizing through risk_mgr.calculate_qty so EVERY sizing guard
+                        # applies — fee-padded effective stop, min-stop-width reject,
+                        # notional cap, per-symbol risk multiplier. The old raw
+                        # `risk/(stop*lev)` formula sized inverse-to-stop-width with
+                        # no floor (the $628-notional tight-stop XRP LONG class).
+                        # D1 (owner-approved 2026-07-02): EXPLORATION_RISK_MULT
+                        # (default 0.1) scales exploration risk to ~0.1x on top of
+                        # EXPLORATION_RISK_PCT — exploration keeps buying edge data
+                        # but at a tenth of the noise cost.
+                        _ex_risk_mult = float(os.getenv("EXPLORATION_RISK_MULT", "0.1"))
+                        _ex_risk_pct = (float(os.getenv("EXPLORATION_RISK_PCT", "0.004"))
+                                        * _ex_risk_mult)
+                        _risk_usd = (self.risk_mgr.equity or 0.0) * _ex_risk_pct
+                        from trading_config import get_symbol_risk_mult as _gsrm
+                        _ex_qty = self.risk_mgr.calculate_qty(
+                            entry=raw_signal.entry,
+                            stop_loss=raw_signal.sl,
+                            leverage=_ex_lev,
+                            risk_multiplier=_gsrm(symbol),
+                            symbol=symbol,
+                            risk_per_trade_override=_ex_risk_pct,
+                        )
                         if _ex_qty > 0:
                             entry_decision.action = "go"
                             entry_decision.position_qty = _ex_qty
