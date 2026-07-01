@@ -1,24 +1,6 @@
 {
-  "last_updated": 1782914276,
+  "last_updated": 1782917011,
   "notes": [
-    {
-      "text": "2026-06-30 scan: range regime 11%WR TOXIC, all signals failed conf floor 66 (max HYPE 53%), BTC SHORT 2-agree TOXIC 8%WR, Kelly=0, vol ratios 0.0-0.1 dead market, active vetoes HYPE BUY + SOL BUY. No",
-      "ts": 1782814768.4545822,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime scan 2026-06-30: All signals below floor 66 (best BTC SHORT ensemble 43.4). BTC SHORT TOXIC (8% WR/12t, $-52.59). Active vetoes: HYPE BUY, HYPE SELL, SOL BUY. Kelly=0. Noise prob=0.9. No",
-      "ts": 1782815206.373841,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "2026-06-30 range scan: 0/5 passed floor 66. Active vetoes: SOL BUY, HYPE BUY/SELL. BTC SHORT TOXIC 8%WR. Kelly=0. OI liquidation divergence across ETH/SOL/HYPE/XRP. Wait for 2-TF EMA align + volume su",
-      "ts": 1782815678.3663697,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "Range scan 2026-06-30: all 5 symbols failed conf floor 66 (best: HYPE BUY 53.2, BTC SHORT 43.4 weighted). Range WR=11% TOXIC. BTC_SHORT 8%WR/12t TOXIC. Kelly=0. Noise_prob=0.92. Conditional_wr=11% for",
       "ts": 1782815956.527906,
@@ -599,6 +581,24 @@
       "text": "Circuit breaker active: all candidates skipped until reset, per safety gate axiom (never override CB).",
       "ts": 1782914276.7137327,
       "symbol": "[POSITION",
+      "regime": "trend"
+    },
+    {
+      "text": "CB active: 10 consecutive losses, daily_pnl=-3.9 \u2014 hard skip per safety axiom, no override regardless of setup quality",
+      "ts": 1782915176.404321,
+      "symbol": "[MEMORY-WORTHY",
+      "regime": "trend"
+    },
+    {
+      "text": "BTC solo/contradictory signal in trending_bull (n=2-3, unvalidated) with both LONG(0%WR n=5) and SHORT(9%WR n=11 TOXIC) historically poor; quant explicitly flags kelly=0, skip",
+      "ts": 1782916369.1907206,
+      "symbol": "[MEMORY-WORTHY",
+      "regime": "trend"
+    },
+    {
+      "text": "Scan showed all 5 symbols with weak/conflicting solo signals; BTC/ETH/XRP confidence <=0.5 with mismatched strategy direction, SOL BUY actively vetoed (24% WR n=34), HYPE SELL actively vetoed (-$16.65",
+      "ts": 1782917011.1642723,
+      "symbol": "[LEAD-LAG",
       "regime": "trend"
     }
   ]

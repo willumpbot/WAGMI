@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782914414.850275,
+  "updated_at": 1782916836.7205424,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -10829,7 +10829,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 65.299,
@@ -10837,7 +10837,9 @@
         "tp1_price": 62.19328571428573,
         "tp2_price": 59.087571428571465,
         "confidence": 64.505,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10850,7 +10852,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 64.809,
@@ -10858,7 +10860,9 @@
         "tp1_price": 61.60985714285715,
         "tp2_price": 58.410714285714306,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10871,7 +10875,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 64.754,
@@ -10879,7 +10883,9 @@
         "tp1_price": 61.55485714285716,
         "tp2_price": 58.35571428571431,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10892,7 +10898,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 64.513,
@@ -10900,7 +10906,9 @@
         "tp1_price": 61.24957142857144,
         "tp2_price": 57.98614285714288,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10913,7 +10921,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58866.99999999999,
@@ -10921,7 +10929,9 @@
         "tp1_price": 57568.71428571429,
         "tp2_price": 56270.42857142858,
         "confidence": 60.0,
-        "reason": "LLM_FIRST: BTC likely to chop near $58,800 in consolidation; bearish 1h signal insufficient to overcome TOXIC l"
+        "reason": "LLM_FIRST: BTC likely to chop near $58,800 in consolidation; bearish 1h signal insufficient to overcome TOXIC l",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10934,7 +10944,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58967.0,
@@ -10942,7 +10952,9 @@
         "tp1_price": 57552.71428571429,
         "tp2_price": 56138.42857142858,
         "confidence": 60.0,
-        "reason": "LLM_FIRST: BTC likely sideways-to-weak-bear in consolidation, but BTC_SHORT live edge is TOXIC (8% WR, 12 trade"
+        "reason": "LLM_FIRST: BTC likely sideways-to-weak-bear in consolidation, but BTC_SHORT live edge is TOXIC (8% WR, 12 trade",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10953,9 +10965,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.198648795902797,
+      "delta": -1.198648795902797,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58995.0,
@@ -10963,7 +10975,8 @@
         "tp1_price": 57580.71428571429,
         "tp2_price": 56166.42857142858,
         "confidence": 60.0,
-        "reason": "LLM_FIRST: BTC likely to chop/squeeze near $58,800-59,300 consolidation zone; bearish thesis not credible given"
+        "reason": "LLM_FIRST: BTC likely to chop/squeeze near $58,800-59,300 consolidation zone; bearish thesis not credible given",
+        "hit": "sl"
       }
     },
     {
@@ -10996,9 +11009,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.3519249440153729,
+      "delta": -1.3519249440153729,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58562.0,
@@ -11006,7 +11019,8 @@
         "tp1_price": 56978.571428571435,
         "tp2_price": 55395.14285714287,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: BTC SELL solo signal conflicts with 4h/1h regime misalignment and decayed BTC_SHORT edge; skip rathe"
+        "reason": "LLM_FIRST: BTC SELL solo signal conflicts with 4h/1h regime misalignment and decayed BTC_SHORT edge; skip rathe",
+        "hit": "sl"
       }
     },
     {
@@ -11017,9 +11031,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.2868739828286846,
+      "delta": -1.2868739828286846,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58636.0,
@@ -11027,7 +11041,8 @@
         "tp1_price": 57126.857142857145,
         "tp2_price": 55617.71428571429,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: BTC SHORT toward 57100 plausible given bearish OI divergence, but multiple wired-data red flags over"
+        "reason": "LLM_FIRST: BTC SHORT toward 57100 plausible given bearish OI divergence, but multiple wired-data red flags over",
+        "hit": "sl"
       }
     },
     {
@@ -11082,9 +11097,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.3096965337300073,
+      "delta": -1.3096965337300073,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58585.0,
@@ -11092,7 +11107,8 @@
         "tp1_price": 57050.428571428565,
         "tp2_price": 55515.85714285713,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: BTC SHORT solo confidence_scorer signal conflicts with 4h/1h regime misalignment and toxic BTC_SHORT"
+        "reason": "LLM_FIRST: BTC SHORT solo confidence_scorer signal conflicts with 4h/1h regime misalignment and toxic BTC_SHORT",
+        "hit": "sl"
       }
     },
     {
@@ -11125,9 +11141,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.308869902571931,
+      "delta": -1.308869902571931,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58622.0,
@@ -11135,7 +11151,8 @@
         "tp1_price": 57087.428571428565,
         "tp2_price": 55552.85714285713,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: BTC short setup mechanically plausible (weak downtrend, OI bearish divergence) but data integrity fa"
+        "reason": "LLM_FIRST: BTC short setup mechanically plausible (weak downtrend, OI bearish divergence) but data integrity fa",
+        "hit": "sl"
       }
     },
     {
@@ -11146,9 +11163,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.3103991148652276,
+      "delta": -1.3103991148652276,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58619.0,
@@ -11156,7 +11173,8 @@
         "tp1_price": 57082.71428571429,
         "tp2_price": 55546.42857142858,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: BTC short bias plausible into weak downtrend but historical BTC_SHORT edge is toxic (9% WR n=11) and"
+        "reason": "LLM_FIRST: BTC short bias plausible into weak downtrend but historical BTC_SHORT edge is toxic (9% WR n=11) and",
+        "hit": "sl"
       }
     },
     {
@@ -11167,9 +11185,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.7282514811255276,
+      "delta": -1.7282514811255276,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58715.0,
@@ -11177,7 +11195,8 @@
         "tp1_price": 56685.514285714286,
         "tp2_price": 55592.71428571429,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: BTC drifting lower toward 56.7k but setup is structurally poor; not entering short here"
+        "reason": "LLM_FIRST: BTC drifting lower toward 56.7k but setup is structurally poor; not entering short here",
+        "hit": "sl"
       }
     },
     {
@@ -11188,9 +11207,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.143075028305149,
+      "delta": -1.143075028305149,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58790.0,
@@ -11198,7 +11217,8 @@
         "tp1_price": 57445.972381718806,
         "tp2_price": 55651.71428571429,
         "confidence": 70.1967241847822,
-        "reason": "LLM_FIRST: BTC SELL toward 57.4k stalls \u2014 live edge data shows BTC_SHORT is currently TOXIC (9% WR n=11, PF 0.2"
+        "reason": "LLM_FIRST: BTC SELL toward 57.4k stalls \u2014 live edge data shows BTC_SHORT is currently TOXIC (9% WR n=11, PF 0.2",
+        "hit": "sl"
       }
     },
     {
@@ -11209,9 +11229,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.0929017659164568,
+      "delta": -1.0929017659164568,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58846.99999999999,
@@ -11219,7 +11239,8 @@
         "tp1_price": 57560.72019562229,
         "tp2_price": 55749.28571428571,
         "confidence": 69.39722815635416,
-        "reason": "LLM_FIRST: BTC SELL thesis (OI bearish divergence + breakdown) is directionally plausible toward 57500 but live"
+        "reason": "LLM_FIRST: BTC SELL thesis (OI bearish divergence + breakdown) is directionally plausible toward 57500 but live",
+        "hit": "sl"
       }
     },
     {
@@ -11230,9 +11251,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.2512627716163816,
+      "delta": -1.2512627716163816,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58642.99999999999,
@@ -11240,7 +11261,8 @@
         "tp1_price": 57175.443945682026,
         "tp2_price": 55484.71428571429,
         "confidence": 70.1967241847822,
-        "reason": "LLM_FIRST: BTC drifts toward 57.5k support on bearish OI divergence but BTC_SHORT is a TOXIC live edge (9% WR n"
+        "reason": "LLM_FIRST: BTC drifts toward 57.5k support on bearish OI divergence but BTC_SHORT is a TOXIC live edge (9% WR n",
+        "hit": "sl"
       }
     },
     {
@@ -11251,9 +11273,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.214037383136216,
+      "delta": -1.214037383136216,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58696.00000000001,
@@ -11261,7 +11283,8 @@
         "tp1_price": 57270.81723518872,
         "tp2_price": 55537.71428571429,
         "confidence": 70.1967241847822,
-        "reason": "LLM_FIRST: BTC SHORT toward 57.3k possible on bearish OI divergence but setup is structurally poisoned: 1h/4h r"
+        "reason": "LLM_FIRST: BTC SHORT toward 57.3k possible on bearish OI divergence but setup is structurally poisoned: 1h/4h r",
+        "hit": "sl"
       }
     },
     {
@@ -11272,9 +11295,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.7624838948971144,
+      "delta": -1.7624838948971144,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58544.0,
@@ -11282,7 +11305,8 @@
         "tp1_price": 56480.34285714287,
         "tp2_price": 55369.14285714287,
         "confidence": 60.0,
-        "reason": "LLM_FIRST: BTC SHORT toward 56.5k on bearish OI divergence + funding tilt, but live edge is broken: BTC_SHORT 9"
+        "reason": "LLM_FIRST: BTC SHORT toward 56.5k on bearish OI divergence + funding tilt, but live edge is broken: BTC_SHORT 9",
+        "hit": "sl"
       }
     },
     {
@@ -11293,9 +11317,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.7784629946307517,
+      "delta": -1.7784629946307517,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58561.0,
@@ -11303,7 +11327,8 @@
         "tp1_price": 56478.02857142858,
         "tp2_price": 55356.42857142858,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: BTC short thesis aligns with bearish regime bias but 1h trend vs 4h high_volatility regime misalign "
+        "reason": "LLM_FIRST: BTC short thesis aligns with bearish regime bias but 1h trend vs 4h high_volatility regime misalign ",
+        "hit": "sl"
       }
     },
     {
@@ -11314,9 +11339,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -1.776642695084892,
+      "delta": -1.776642695084892,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 58621.0,
@@ -11324,7 +11349,8 @@
         "tp1_price": 56538.02857142858,
         "tp2_price": 55416.42857142858,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: BTC SHORT toward 56.5k mechanically plausible but structurally compromised: solo confidence_scorer s"
+        "reason": "LLM_FIRST: BTC SHORT toward 56.5k mechanically plausible but structurally compromised: solo confidence_scorer s",
+        "hit": "sl"
       }
     },
     {
@@ -12410,9 +12436,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.100375294192466,
+      "delta": -2.100375294192466,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1572.1,
@@ -12420,7 +12446,8 @@
         "tp1_price": 1506.0600000000002,
         "tp2_price": 1470.5000000000005,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: ETH short thesis (target 1506) plausible on 1h trend but 4h regime shows range not confirming, timef"
+        "reason": "LLM_FIRST: ETH short thesis (target 1506) plausible on 1h trend but 4h regime shows range not confirming, timef",
+        "hit": "sl"
       }
     },
     {
@@ -12431,9 +12458,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.05929370730998,
+      "delta": -2.05929370730998,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1572.8,
@@ -12441,7 +12468,8 @@
         "tp1_price": 1508.0228571428574,
         "tp2_price": 1473.1428571428576,
         "confidence": 70.0,
-        "reason": "LLM_FIRST: ETH SHORT thesis conflicts with regime timeframe alignment (1h=trend vs 4h=range) and ETH is actuall"
+        "reason": "LLM_FIRST: ETH SHORT thesis conflicts with regime timeframe alignment (1h=trend vs 4h=range) and ETH is actuall",
+        "hit": "sl"
       }
     },
     {
@@ -12452,9 +12480,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.0718871745506915,
+      "delta": -2.0718871745506915,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1573.1,
@@ -12462,7 +12490,8 @@
         "tp1_price": 1507.914285714286,
         "tp2_price": 1472.8142857142861,
         "confidence": 70.0,
-        "reason": "LLM_FIRST: ETH SHORT toward 1508 blocked by 1h/4h regime misalignment (trend vs range) despite bearish bias"
+        "reason": "LLM_FIRST: ETH SHORT toward 1508 blocked by 1h/4h regime misalignment (trend vs range) despite bearish bias",
+        "hit": "sl"
       }
     },
     {
@@ -12473,9 +12502,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.076484858396703,
+      "delta": -2.076484858396703,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1572.3,
@@ -12483,7 +12512,8 @@
         "tp1_price": 1507.002857142857,
         "tp2_price": 1471.8428571428574,
         "confidence": 70.0,
-        "reason": "LLM_FIRST: ETH range-bound near 1572-1580 with 1h/4h regime conflict (1h=trend, 4h=range); SHORT thesis lacks c"
+        "reason": "LLM_FIRST: ETH range-bound near 1572-1580 with 1h/4h regime conflict (1h=trend, 4h=range); SHORT thesis lacks c",
+        "hit": "sl"
       }
     },
     {
@@ -12494,9 +12524,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.08136234626301,
+      "delta": -2.08136234626301,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1570.4,
@@ -12504,7 +12534,8 @@
         "tp1_price": 1505.0285714285712,
         "tp2_price": 1469.8285714285716,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: ETH SHORT toward 1505 lacks confluence: 1h trend vs 4h range misalignment plus negative payoff-ratio"
+        "reason": "LLM_FIRST: ETH SHORT toward 1505 lacks confluence: 1h trend vs 4h range misalignment plus negative payoff-ratio",
+        "hit": "sl"
       }
     },
     {
@@ -12515,9 +12546,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.080964810957809,
+      "delta": -2.080964810957809,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1570.7,
@@ -12525,7 +12556,8 @@
         "tp1_price": 1505.3285714285716,
         "tp2_price": 1470.1285714285716,
         "confidence": 65.0,
-        "reason": "LLM_FIRST: ETH SHORT toward 1505 lacked timeframe confluence (1h=trend vs 4h=range, aligned=false) and confiden"
+        "reason": "LLM_FIRST: ETH SHORT toward 1505 lacked timeframe confluence (1h=trend vs 4h=range, aligned=false) and confiden",
+        "hit": "sl"
       }
     },
     {
@@ -12536,9 +12568,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.0595488338657,
+      "delta": -2.0595488338657,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1569.8999999999999,
@@ -12546,7 +12578,8 @@
         "tp1_price": 1505.2342857142858,
         "tp2_price": 1470.4142857142856,
         "confidence": 75.0,
-        "reason": "LLM_FIRST: ETH short thesis plausible (consolidation drift lower) but 1h trend vs 4h range timeframe misalignme"
+        "reason": "LLM_FIRST: ETH short thesis plausible (consolidation drift lower) but 1h trend vs 4h range timeframe misalignme",
+        "hit": "sl"
       }
     },
     {
@@ -12557,9 +12590,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.0999244238456436,
+      "delta": -2.0999244238456436,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1568.9,
@@ -12567,7 +12600,8 @@
         "tp1_price": 1503.0085714285713,
         "tp2_price": 1467.5285714285715,
         "confidence": 75.0,
-        "reason": "LLM_FIRST: ETH short thesis targets 1503 but 1h trend vs 4h range regime misalignment plus consolidation toxici"
+        "reason": "LLM_FIRST: ETH short thesis targets 1503 but 1h trend vs 4h range regime misalignment plus consolidation toxici",
+        "hit": "sl"
       }
     },
     {
@@ -12578,9 +12612,9 @@
       "actual_action": "vetoed_SELL",
       "counterfactual_action": "entered_SELL",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -2.097785054805128,
+      "delta": -2.097785054805128,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1570.4999999999998,
@@ -12588,7 +12622,8 @@
         "tp1_price": 1504.6085714285714,
         "tp2_price": 1469.1285714285714,
         "confidence": 75.0,
-        "reason": "LLM_FIRST: ETH SHORT toward 1505 plausible on 1h trend but 4h regime is range (toxic 11% WR) and 1h/4h are misa"
+        "reason": "LLM_FIRST: ETH SHORT toward 1505 plausible on 1h trend but 4h regime is range (toxic 11% WR) and 1h/4h are misa",
+        "hit": "sl"
       }
     },
     {
@@ -12643,9 +12678,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -10.01465725875175,
+      "delta": -10.01465725875175,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 75.438,
@@ -12653,7 +12688,8 @@
         "tp1_price": 78.65688405207153,
         "tp2_price": 82.99285714285715,
         "confidence": 70.3576999537341,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12686,9 +12722,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -7.077457848811126,
+      "delta": -7.077457848811126,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 1594.6,
@@ -12696,7 +12732,8 @@
         "tp1_price": 1651.028571428571,
         "tp2_price": 1707.4571428571421,
         "confidence": 69.98851389412006,
-        "reason": "LLM_FIRST: ETH consolidation/range regime with CB tripped (10 consecutive losses) - no trade should be taken un"
+        "reason": "LLM_FIRST: ETH consolidation/range regime with CB tripped (10 consecutive losses) - no trade should be taken un",
+        "hit": "tp2"
       }
     },
     {
@@ -12707,9 +12744,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -10.247715785655116,
+      "delta": -10.247715785655116,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 76.003,
@@ -12717,6 +12754,221 @@
         "tp1_price": 79.74195757637005,
         "tp2_price": 83.79157142857146,
         "confidence": 68.36777139332122,
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1782914920_a25a6ca3",
+      "timestamp": 1782914920.9030328,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": -7.02534938375701,
+      "delta": -7.02534938375701,
+      "resolved": true,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1592.6,
+        "sl_price": 1564.6285714285716,
+        "tp1_price": 1648.542857142857,
+        "tp2_price": 1704.485714285714,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: ETH consolidation range-bound near 1592, no directional edge given circuit breaker halt",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1782915099_51ecf976",
+      "timestamp": 1782915099.2055023,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": -10.175743315669243,
+      "delta": -10.175743315669243,
+      "resolved": true,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 75.833,
+        "sl_price": 74.04201504005152,
+        "tp1_price": 79.41496991989695,
+        "tp2_price": 83.54957142857145,
+        "confidence": 68.36777139332122,
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1782915099_c0053b62",
+      "timestamp": 1782915099.5568564,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 64.028,
+        "sl_price": 66.6207537985056,
+        "tp1_price": 60.13886930224161,
+        "tp2_price": 56.14000000000003,
+        "confidence": 69.15367137789924,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782915539_9ed62f6c",
+      "timestamp": 1782915539.5884595,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": -6.581956454079224,
+      "delta": -6.581956454079224,
+      "resolved": true,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0557,
+        "sl_price": 1.0383285714285715,
+        "tp1_price": 1.0904428571428573,
+        "tp2_price": 1.1251857142857145,
+        "confidence": 74.0,
+        "reason": "LLM_FIRST: XRP LONG bounce to 1.09 possible but circuit breaker tripped overrides thesis",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1782915853_f0efaa59",
+      "timestamp": 1782915853.7182314,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": -7.510588902475744,
+      "delta": -7.510588902475744,
+      "resolved": true,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1612.2,
+        "sl_price": 1581.9285714285716,
+        "tp1_price": 1672.742857142857,
+        "tp2_price": 1733.285714285714,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: ETH LONG solo confidence_scorer signal invalidated by active circuit breaker (10 consecutive losses)",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1782916052_71c20efe",
+      "timestamp": 1782916052.5174303,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 76.881,
+        "sl_price": 74.77385714285714,
+        "tp1_price": 81.09528571428572,
+        "tp2_price": 85.30957142857145,
+        "confidence": 62.00000000000001,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782916053_c380f082",
+      "timestamp": 1782916053.2256024,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 64.143,
+        "sl_price": 66.619,
+        "tp1_price": 60.428999999999995,
+        "tp2_price": 56.715,
+        "confidence": 72.85742557749654,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782916199_be8c8b58",
+      "timestamp": 1782916199.4593961,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0564,
+        "sl_price": 1.0384428571428572,
+        "tp1_price": 1.0923142857142856,
+        "tp2_price": 1.1282285714285711,
+        "confidence": 74.0,
+        "reason": "LLM_FIRST: XRP consolidation bounce likely fades back toward 1.04-1.05 range; solo confidence_scorer signal lac"
+      }
+    },
+    {
+      "id": "cf_1782916745_6d69f838",
+      "timestamp": 1782916745.1379757,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1601.2,
+        "sl_price": 1570.4142857142858,
+        "tp1_price": 1662.7714285714285,
+        "tp2_price": 1724.342857142857,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: ETH LONG solo signal conflicts with 4h range regime vs 1h trend; ETH_LONG toxic 0% WR (n=4) and tren"
+      }
+    },
+    {
+      "id": "cf_1782916836_748d7050",
+      "timestamp": 1782916836.7205312,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 76.692,
+        "sl_price": 74.58485714285713,
+        "tp1_price": 80.90628571428572,
+        "tp2_price": 85.12057142857144,
+        "confidence": 62.00000000000001,
         "reason": "LLM_FIRST: "
       }
     }

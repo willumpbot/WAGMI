@@ -905,3 +905,8 @@ PART B: STABLE. pid 34056 steady, uptime 9.7h, scan 1321 monotonic, pos 1, equit
 PART C: LL verified, holding. page 200, 56 posts all likes, 12/24 galleries, reel r05 200, 0 "$"+digit. Names/reviews unchanged (no regression).
 PART D: SKIP — funding_oi_history 1405 rows (~300/sym, only +20 since last), not meaningfully more data; regime-gate firming-up deferred until span grows.
 LOOP: hourly ScheduleWakeup retiring; 3-hourly quiet cron (e0c4a62e) now owns the loop per owner (fewer pings, learning-first).
+
+=== 2026-07-01 ~14:43 UTC — 3h quiet cron: health + LEARNING increment ===
+PART B: HEALTHY. pid 34056 steady, uptime 10.3h, scan 1397 monotonic, pos 1, equity $1962.18 flat, errors 0. trades 89 (rank-8 n~3). epsilon 0.12.
+PART C: LL verified. page 200, 56 posts all likes, 12/24 galleries, reel r12 200, 0 "$"+digit. Ryder code added+live this session. No regression.
+PART D LEARNING — per-regime/driver edge: CONFOUNDED by the capture gap, and that IS the finding. ALL profit (+$1,756, 52% WR) sits in the (blank)-metadata group (21 legacy trades = the big short wins, pre-wiring); every LABELED regime is a net loser and the 'ensemble' driver (64 recent trades) is -$1,063. => you CANNOT attribute edge to regime/driver yet — winners are unlabeled, losers labeled. Reinforces audit #3 (plug capture leaks) as THE prerequisite for all regime learning. Within labeled data: vol-band 'medium' worst (-$718, 9%WR), consolidation LONG -$318/9%WR (longs bleed again), consolidation SHORT +$30/40%WR. Proposal (owner sign-off before code): finish thesis+confidence+driver+regime capture on EVERY close so the next audit is trustworthy. No trading-behavior change made. Journaled to knowledge base.
