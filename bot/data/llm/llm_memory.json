@@ -1,66 +1,6 @@
 {
-  "last_updated": 1782889927,
+  "last_updated": 1782896712,
   "notes": [
-    {
-      "text": "BTC SHORT in range: even 3-strat bollinger-90% agreement maps to 8% WR TOXIC in live dynamic data. Kelly=0.0. Range regime = 0% WR brain (19t), 11% wired (9t). Skip until volume surge + OI expansion c",
-      "ts": 1782796201.090065,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "BTC SHORT 2-agree (bollinger_squeeze 90% + confidence_scorer 65%, avg_conf=77.5%) = best available signal. Blocked: range regime 8% WR wired (12t) + 0% WR brain (19t) + vol=0.59x compressed + BB squee",
-      "ts": 1782797742.331737,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "BTC SHORT 2-agree (bollinger 90% + confidence_scorer 65%, avg_conf=77.5%) in range: wired data = 0% WR brain (19t) + 8% WR live (12t) + Kelly=0.0. PENALIZE rule active for avg_conf 70-79% (single larg",
-      "ts": 1782798416.4576883,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "BTC SHORT 3-agree bollinger-90%+multi_tier-PRIORITY-83%+conf_scorer-65% in range/BB-squeeze: testing BOOST rule ('BTC SELL 90%+ is #1 edge, 67% WR') vs quant's conditional_wr=11% for range-solo. Track",
-      "ts": 1782798802.8213024,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "LLM_FIRST entry for ETH SHORT in unknown regime won (+$0.30, 3.2h) vs confidence_scorer (10% WR). Override failing strategies with 70%+ LLM confidence in weak regimes.",
-      "ts": 1782799303.11276,
-      "symbol": "ETH",
-      "regime": "unknown"
-    },
-    {
-      "text": "Unknown regime holds >4h without TP1 progress = losses. ETH SL-exit 3.2h +$0.30 (thesis correct) beat SOL hold 5.8h -$3.52 (zero progress). Exit or reassess at 4h if thesis intact but stalled.",
-      "ts": 1782799374.7853732,
-      "symbol": "ETH",
-      "regime": "unknown"
-    },
-    {
-      "text": "BB squeeze (2.22% width) with OI liquidation cross-asset (BTC-1.8%, ETH-3.2%, SOL-1.2%) = bearish breakout building. Wait for volume surge + directional confirmation before entry. Bearish bias is clea",
-      "ts": 1782799691.8231316,
-      "symbol": "[POSITION",
-      "regime": "range"
-    },
-    {
-      "text": "BTC SHORT 3-agree (BB-squeeze-90%+MTQ-PRIORITY-83%+CS-65%) in consolidation. Volume compressed 0.56x = key risk. Testing BOOST rule: BTC SELL 90%+ unvalidated 67% WR. OI liquidation across all assets",
-      "ts": 1782800947.7746572,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime = 0% WR (19 trades) \u2014 most toxic regime in live DNA. Kelly=0. Conditional WR collapses to 11% for solo MANUAL-tier in range. All signals below conf floor 66. Stand down until OI accumulat",
-      "ts": 1782804476.5428689,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "XRP SHORT (REGULAR tier, VWAP+6h aligned, negative funding -6.1%/yr) is best candidate when range breaks or ensemble signal forms; monitor for OI expansion + volume surge as transition signal",
-      "ts": 1782806141.9738567,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "Range regime = 0% WR (19 trades current run). ALL 5 symbols below conf floor 66. XRP SHORT best structural setup (2-agree, REGULAR, VWAP+6h aligned) but still rejected. Wait for regime break + OI expa",
       "ts": 1782806484.9758146,
@@ -600,6 +540,66 @@
       "ts": 1782889927.04247,
       "symbol": "[PRE-CLOSE",
       "regime": "trend"
+    },
+    {
+      "text": "Consolidation TOXIC (29% WR n=31), CB warning 7-loss streak, solo weak signals across BTC/ETH/SOL/XRP/HYPE, quant explicitly flags no positive-EV path - skip all",
+      "ts": 1782893363.460641,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime + solo confluence + CB warning (7L) + quant kelly=0 explicit skip-all directive; no tradeable edge this scan",
+      "ts": 1782893560.1421072,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime + solo signals + CB warning (7L) + quant kelly=0 = skip-all; wait for volume-spike breakout with 2+ strategy agreement before re-engaging",
+      "ts": 1782894015.317893,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime all-solo signals, CB warning 7L, quant explicit skip-all - no tradeable edge this scan across BTC/ETH/SOL/XRP/HYPE",
+      "ts": 1782894198.0105922,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation + CB warning (7L) + solo confluence=1 + quant skip-all directive across all symbols this scan; wait for volume-spike breakout with 2+ strategy agreement",
+      "ts": 1782894567.8864617,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "All symbols solo signals (confl=1, quality=0.3) rejected at confidence_floor_66 mechanically; consolidation regime TOXIC (29% WR, $-288 n=31); quant explicitly flags skip-all with kelly=0, EV neutral,",
+      "ts": 1782894912.6390054,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime TOXIC (11% WR n=9) + all signals solo confluence=1 + CB warning (7 consecutive losses) + quant explicit skip-all directive (kelly=0, EV neutral, conditional WR 11% vs 28.6% base, edge -17",
+      "ts": 1782895585.4898918,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime + all-solo confluence=1 + CB warning(7L) + quant explicit stand-down (conditional WR 11% vs 28.6% base, edge -17.6%) across every symbol this scan. SOL BUY also hits active VETO rule (24%",
+      "ts": 1782895873.789932,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime toxic (11% WR n=9), quant explicit skip-all (kelly=0, cond_wr 11% vs 28% base), CB warning 7L, noise_prob=0.92 \u2014 stand down until confluence>=2 or regime shifts to trend",
+      "ts": 1782896504.343868,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime toxic (90% noise, kelly=0, quant skip-all), CB warning 7L, all signals solo/weak & mechanically rejected at conf_floor_66; HYPE SELL hits active net-negative EV veto, SOL BUY hits active",
+      "ts": 1782896712.0197737,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
     }
   ]
 }

@@ -4414,11 +4414,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in  regime (31% WR)",
       "confidence": 0.008,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775772299.4223561,
-      "last_validated": 1782883588.4053197,
+      "last_validated": 1782895163.7752807,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -17041,11 +17041,11 @@
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 50% win rate (8 trades)",
       "confidence": 0.66,
-      "evidence_count": 22,
+      "evidence_count": 23,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782487749.0033512,
-      "last_validated": 1782883588.5102768,
+      "last_validated": 1782895163.8640609,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18359,11 +18359,12 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (15% long WR vs 41% short WR)",
-      "confidence": 0.20000000000000012,
+      "confidence": 0.2500000000000001,
       "evidence_count": 1,
       "supporting": [
         "Short WR=41%",
         "Short WR=41%",
+        "Short WR=42%",
         "Short WR=42%",
         "Short WR=42%"
       ],
@@ -18374,8 +18375,8 @@
         "Short WR=0%"
       ],
       "created_at": 1782815383.5798888,
-      "last_validated": 1782883588.6062036,
-      "validation_count": 4,
+      "last_validated": 1782895163.9391978,
+      "validation_count": 5,
       "invalidation_count": 4,
       "category": "direction",
       "tags": [
@@ -18529,11 +18530,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in unknown regime (23% WR)",
       "confidence": 0.7,
-      "evidence_count": 2,
+      "evidence_count": 3,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782850433.0271676,
-      "last_validated": 1782883588.3761373,
+      "last_validated": 1782895163.7458422,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -18547,11 +18548,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 35% win rate (26 trades)",
       "confidence": 1.02,
-      "evidence_count": 2,
+      "evidence_count": 3,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782850433.1547213,
-      "last_validated": 1782883588.4627736,
+      "last_validated": 1782895163.8323293,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18662,9 +18663,10 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (14% long WR vs 42% short WR)",
-      "confidence": 0.1,
+      "confidence": 0.15000000000000002,
       "evidence_count": 0,
       "supporting": [
+        "Short WR=42%",
         "Short WR=42%",
         "Short WR=42%"
       ],
@@ -18675,8 +18677,8 @@
         "Short WR=0%"
       ],
       "created_at": 1782869578.655471,
-      "last_validated": 1782883588.6520143,
-      "validation_count": 2,
+      "last_validated": 1782895163.9901237,
+      "validation_count": 3,
       "invalidation_count": 4,
       "category": "direction",
       "tags": [
@@ -18814,13 +18816,14 @@
       "knowledge_type": "observation",
       "content": "BTC performing poorly (18% WR, 11 trades, $-59)",
       "confidence": 0.8,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [
+        "2/11 wins",
         "2/11 wins"
       ],
       "contradicting": [],
       "created_at": 1782883588.344865,
-      "last_validated": 1782883588.3448653,
+      "last_validated": 1782895163.7140627,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "symbol",
@@ -18834,11 +18837,11 @@
       "knowledge_type": "observation",
       "content": "0-strategy agreement: 31% win rate (16 trades)",
       "confidence": 0.8200000000000001,
-      "evidence_count": 0,
+      "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782883588.4338565,
-      "last_validated": 1782883588.4338567,
+      "last_validated": 1782895163.8036969,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18850,21 +18853,90 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (17% long WR vs 42% short WR)",
-      "confidence": 0.45,
-      "evidence_count": 0,
+      "confidence": 0.5,
+      "evidence_count": 1,
       "supporting": [
+        "Short WR=42%",
         "Short WR=42%"
       ],
       "contradicting": [],
       "created_at": 1782883588.5556507,
-      "last_validated": 1782883588.6851075,
-      "validation_count": 1,
+      "last_validated": 1782895164.018795,
+      "validation_count": 2,
       "invalidation_count": 0,
       "category": "direction",
       "tags": [
         "side_bias"
       ],
       "source": "causal_analysis"
+    },
+    {
+      "knowledge_type": "self_discovered",
+      "content": "Avoid trading when regime is unknown - 100% loss rate on unknown-regime signals",
+      "confidence": 0.85,
+      "evidence_count": 5,
+      "category": "risk",
+      "tags": [
+        "regime-validation",
+        "pre-trade-filter"
+      ],
+      "source": "self_analyst_cli",
+      "evidence": "5 unknown-regime trades all lost: -1.24, -0.28, -9.50, -8.48, -0.45 (-$19.75 total)",
+      "created_at": 1782895691.008482,
+      "last_validated": 1782895691.0084825,
+      "validation_count": 5,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "self_discovered",
+      "content": "HYPE symbol has weak edge - only 25% win rate, consider raising filter or skipping",
+      "confidence": 0.7,
+      "evidence_count": 8,
+      "category": "symbol",
+      "tags": [
+        "weak-signal",
+        "symbol-filtering"
+      ],
+      "source": "self_analyst_cli",
+      "evidence": "8 HYPE trades: 2 tiny wins (0.03, 0.11), 6 losses; 25% hit rate vs 60%+ on ETH/SOL",
+      "created_at": 1782895691.0090353,
+      "last_validated": 1782895691.0090356,
+      "validation_count": 8,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "self_discovered",
+      "content": "BTC LONG in consolidation consistently fails - skip or require exceptional confluence",
+      "confidence": 0.72,
+      "evidence_count": 3,
+      "category": "execution",
+      "tags": [
+        "directional-bias",
+        "regime-symbol"
+      ],
+      "source": "self_analyst_cli",
+      "evidence": "3 BTC LONG consolidation trades: all negative (-2.93, -3.11, -25.62), 0% win rate vs BTC SHORT 17% win",
+      "created_at": 1782895691.0094981,
+      "last_validated": 1782895691.0094984,
+      "validation_count": 3,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "self_discovered",
+      "content": "SOL SHORT in consolidation is high-probability - 66% win rate with asymmetric P&L edge",
+      "confidence": 0.65,
+      "evidence_count": 3,
+      "category": "symbol",
+      "tags": [
+        "high-edge",
+        "regime-symbol"
+      ],
+      "source": "self_analyst_cli",
+      "evidence": "3 SOL SHORT consolidation trades: 2 big wins (23.82, 17.07), 1 tiny loss (-0.70)",
+      "created_at": 1782895691.0099087,
+      "last_validated": 1782895691.0099087,
+      "validation_count": 3,
+      "invalidation_count": 0
     }
   ]
 }
