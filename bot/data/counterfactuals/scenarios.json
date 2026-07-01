@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782878356.4133997,
+  "updated_at": 1782882001.1839347,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -11764,6 +11764,153 @@
         "tp1_price": 70.79575404847836,
         "tp2_price": 76.91,
         "confidence": 73.5609697952599,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782878983_2fe2b000",
+      "timestamp": 1782878983.7749834,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.45,
+        "sl_price": 62.31666410796624,
+        "tp1_price": 70.15000383805065,
+        "tp2_price": 75.77000000000002,
+        "confidence": 77.66793777317183,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782879662_18bad6f3",
+      "timestamp": 1782879662.5548015,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.513,
+        "sl_price": 62.82882152501538,
+        "tp1_price": 69.53926771247694,
+        "tp2_price": 72.52671428571429,
+        "confidence": 77.66793777317183,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782880147_0dd5c6aa",
+      "timestamp": 1782880147.0963233,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.611,
+        "sl_price": 62.911732041980194,
+        "tp1_price": 69.65990193702972,
+        "tp2_price": 72.66414285714286,
+        "confidence": 77.66793777317183,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782880750_3deb8b7e",
+      "timestamp": 1782880750.1372006,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.548,
+        "sl_price": 62.889357142857136,
+        "tp1_price": 69.5359642857143,
+        "tp2_price": 72.63771428571431,
+        "confidence": 78.5,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782881367_f7185260",
+      "timestamp": 1782881367.6914177,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.969,
+        "sl_price": 63.256357142857134,
+        "tp1_price": 70.03796428571428,
+        "tp2_price": 73.20271428571431,
+        "confidence": 78.5,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782881430_a7e22c50",
+      "timestamp": 1782881430.4016755,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1600.3,
+        "sl_price": 1575.2,
+        "tp1_price": 1650.4999999999998,
+        "tp2_price": 1700.6999999999996,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782882001_a01cb2c8",
+      "timestamp": 1782882001.1838727,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.87,
+        "sl_price": 63.15435714285715,
+        "tp1_price": 69.94346428571428,
+        "tp2_price": 73.1117142857143,
+        "confidence": 78.5,
         "reason": "LLM_FIRST: "
       }
     }
