@@ -13,7 +13,6 @@ A fallacy = ANY of: (a) a standard violation (v1.2/v1.3), (b) code that could be
 
 ## OPEN QUESTIONS (ranked by expected value)
 1. What does the honest post-fix data say after 15-20 clean closes? (The first-ever trustworthy sample. Re-run WR/conf/side/regime tables on it alone.)
-2. Exit intent restoration: does hold-and-trim beat current config? (IN FLIGHT — exit-geometry backtest.)
 3. Which entry source has real edge? (IN FLIGHT — signal-sources lane.)
 4. Are any graduated rules dollar-negative under honest accounting? (IN FLIGHT — veto-rescore lane.)
 5. High-ADX continuation: real edge or artifact? (IN FLIGHT — adx-survivor lane.)
@@ -22,17 +21,9 @@ A fallacy = ANY of: (a) a standard violation (v1.2/v1.3), (b) code that could be
 8. Funding-crowding regime gate: does the fade edge hold when gated by trend-state? (Needs multi-regime funding span; collector must stay alive — H61.)
 9. Exit-agent skill: are its hold/close/partial calls better than a mechanical baseline? (exit_decisions.jsonl vs price-after.)
 10. Regime classification accuracy: does the Regime agent's label match realized vol/trend measures? (Its labels gate everything downstream.)
-11. Time-of-day/session structure: does the night-session veto hold in dollars across months? Is there a session edge at all?
-12. Symbol personality: per-symbol optimal hold time / stop width / trim pct (HYPE clearly differs from BTC — quantify, don't vibe).
-13. Cross-symbol lead-lag: does BTC direction lead alts at 1-6h in our data? (Scout agent claims it — test it.)
-14. Counterfactual gold mine: 36.5k skip records — train a simple logistic "should-have-traded" model on skip features; does anything beat the confidence floors?
-15. Thesis language forensics: do graded-right theses share linguistic features (specific levels, invalidation clauses) vs graded-wrong ones? (Feeds prompt design.)
-16. Drawdown structure: what do losing STREAKS look like — clustered by regime/session/symbol? (Feeds the CB tuning conversation, never weakening it.)
 17. Fee drag map: realized fees as % of gross per setup type — where does fee drag eat the edge?
 18. Old eras archaeology: the pre-May trades (rows 1-21, +$1,756) — what conditions produced them and are they detectable live?
 19. Ensemble strategy attribution: which of the 4 strategies' signals actually correlate with wins? (Needs H22 strategy-capture fix live first.)
-21. ARCHIVE MINING: the under-mined historical estate — data/reports/paper_trading_*.md (Apr-May reports incl. the 82 frozen A/B rules), sim_trades.jsonl sniper simulations, pre-May trade eras: extract every validated pattern + failed experiment already paid for. Years of walkthroughs = free training data.
-20. Equity-curve Monte Carlo: given honest per-trade distributions, what bankroll/leverage keeps risk-of-ruin <5% at each calibration level? (The math behind the leverage ramp.)
 22. Gate ROC: signal_outcomes.jsonl carries 56k signals with per-gate pass/reject annotations — for each gate (esp. confidence_floor), at what threshold does pass/reject flip EV-positive? (Source: DATA_CENSUS 2026-07-01.)
 23. Sniper rejection EV audit: sniper_rejections.jsonl (79k records, write-only) — which single rejection reason destroyed the most counterfactual EV, per regime? 5x the sample of any accepted-trade set.
 24. Agent skill attribution: agent_performance.jsonl (24k calls) — which agent role's confidence actually moves trade outcomes (skill vs noise per role)? Feeds calibration weights and token budget.
@@ -43,6 +34,15 @@ A fallacy = ANY of: (a) a standard violation (v1.2/v1.3), (b) code that could be
 28. DATA EXPANSION: what free trade/market streams do we NOT collect that would sharpen EV? (HL: L2 book depth/spread/imbalance snapshots, liquidation events, trade-tape aggregates; Binance: long/short account ratio, taker buy/sell flow, basis.) Time-series can't be backfilled — every uncollected day is lost forever. Collector must be ISOLATED (own daemon/task, new files, zero contact with the trade path during the open rewire).
 
 ## ANSWERED (verdict + report)
+- Q2 Exit intent restoration: RESTORED S3 geometry beats current + naive control in EVERY year/symbol/side over 2.5y (+91.7R vs −65.0R, t=3.80, n=1,131) — structural, not era-luck; standalone-alpha claim does NOT survive worst-case ordering — RQ_MULTIYEAR_SIM.md
+- Q11 Sessions: NO session is a real dollar edge; night-block "savings" = generic selectivity, not the clock; "night is dead" premise factually wrong (EU 06-12 quietest) — RQ11_SESSIONS.md
+- Q12 Symbol personality: winners don't breathe (26/36 zero adverse excursion); no exit-geometry grid cell creates alpha; HYPE doesn't pay (17% WR, −$914, both eras); HYPE-LONG 1/13 qualifies for n≥13 veto — RQ12_SYMBOL_PERSONALITY.md
+- Q13 Lead-lag: KILL — BTC→alt lead at 1-6h does not exist (|r|≤0.057); alts move inside the same bar; tradeable residue after fees: zero — RQ13_LEAD_LAG.md
+- Q14 CF model: confidence floors have ~zero rank signal (AUC 0.516); logistic beats base (p=2e-5) but not confidence head-to-head (p=0.13–0.27) — no graduation, NO deployment — RQ14_CF_MODEL.md
+- Q15 Thesis forensics: quality IS legible — checklist score≥2 → 74% vs ≤0 → 37%, monotonic, both eras; fresh numeric target + ≤25 words in; numeric QB-stat citations + session-edge language out — RQ15_THESIS_FORENSICS.md
+- Q16 Drawdown structure: streaks are REAL temporal clustering (runs-test p=0.012; post-loss WR 20% vs post-win 46%), no session/symbol pocket; fix = after-loss de-sizing — RQ16_20_RISK_MATH.md
+- Q20 Equity-curve MC: above ~2x leverage buys ruin with zero median growth (3x = 20.5% ruin under forward dist); 1x now, 2x gated on n≥30 live mean R ≥ +0.10 — leverage-ramp table in RQ16_20_RISK_MATH.md
+- Q21 Archive mining: estate mined — trend-shorts edge, HYPE LONG toxic all eras, conf 60–79 anti-signal; 82 A/B rules' primary data PURGED; sniper edge real but PF 1.02 (exit geometry eats it); top-5 revivals specced — RQ21_ARCHIVE_MINING.md
 - Missed-EV regime-skips: ARTIFACT (week-1 crash shorts) — MISSED_EV_LOCKDOWN_2026-07-01.md
 - Funding-crowding as mean-revert fade: weak fade, regime-dominated; don't flip sign, gate by regime — CROWDING_STUDY.md
 - Quant Brain stats value: anti-signal (17% WR when cited); muted — THESIS_AUDIT_2026-07-01.md
