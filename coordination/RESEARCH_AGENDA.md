@@ -27,6 +27,7 @@ This is the standing research backlog. The learning engine pulls the top unanswe
 17. Fee drag map: realized fees as % of gross per setup type — where does fee drag eat the edge?
 18. Old eras archaeology: the pre-May trades (rows 1-21, +$1,756) — what conditions produced them and are they detectable live?
 19. Ensemble strategy attribution: which of the 4 strategies' signals actually correlate with wins? (Needs H22 strategy-capture fix live first.)
+21. ARCHIVE MINING: the under-mined historical estate — data/reports/paper_trading_*.md (Apr-May reports incl. the 82 frozen A/B rules), sim_trades.jsonl sniper simulations, pre-May trade eras: extract every validated pattern + failed experiment already paid for. Years of walkthroughs = free training data.
 20. Equity-curve Monte Carlo: given honest per-trade distributions, what bankroll/leverage keeps risk-of-ruin <5% at each calibration level? (The math behind the leverage ramp.)
 
 ## ANSWERED (verdict + report)
