@@ -2,8 +2,6 @@
   "recent_outcomes": [
     true,
     true,
-    true,
-    true,
     false,
     true,
     false,
@@ -19,7 +17,9 @@
     false,
     false,
     false,
-    false
+    false,
+    false,
+    true
   ],
   "regime_wr": {
     "trending": {

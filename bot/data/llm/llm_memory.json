@@ -1,72 +1,6 @@
 {
-  "last_updated": 1782874556,
+  "last_updated": 1782878009,
   "notes": [
-    {
-      "text": "SOL BUY veto confirmed active (24% WR n=34 live). OI liquidation divergence confirmed. Skip all SOL LONG until regime=trending + OI expands + volume>1.0x.",
-      "ts": 1782782505.8415754,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "SOL BUY VETO confirmed active (24% WR n=34). Consolidation regime TOXIC (29% WR $-288). OI liquidation divergence (SOL OI -6.1% vs price -0.01% = forced deleveraging). Kelly=0.0. No LONG until ADX>25",
-      "ts": 1782782944.7603126,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "SOL BUY veto remains active. OI liquidation divergence confirmed again. Do not long SOL until OI expands + ADX>25 + regime=trending.",
-      "ts": 1782783435.6902213,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Wait for VR>1.5x + OI expansion to confirm breakout direction. Consolidation 29% WR TOXIC. Kelly=0.0. Do not enter until volume spike confirms side.",
-      "ts": 1782783734.8028245,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "ETH SHORT in consolidation: 50% WR (8t, $+7.64) \u2014 this specific sub-edge is positive vs overall consolidation 29% TOXIC. OI -5% ETH bearish. Flip on SL hit.",
-      "ts": 1782784415.2206552,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime confirmed 0% WR (19 trades, TOXIC). VR=0 is structural dead zone \u2014 no volume = no breakout fuel. ETH SHORT best available edge (42% WR recent 50t) but range kills it. Wait for VR>1.5x + O",
-      "ts": 1782785556.6588662,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime 11% WR (n=9, TOXIC). Solo multi_tier_quality in range = conditional WR 11% (-19pp vs base). Kelly=0.0. Wait for BTC >$60.5k + VR>1.5x + OI expansion before any long.",
-      "ts": 1782785955.8910732,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "ETH LONG lost $8 in trending_bull, LLM conf=0.13\u2014be cautious on similar trending_bull LONGs",
-      "ts": 1782786365.0068786,
-      "symbol": "ETH",
-      "regime": "trending_bull"
-    },
-    {
-      "text": "ETH LONG SL in trending_bull\u2014confidence_scorer 0% WR (3 losers). MUTE from trending regimes.",
-      "ts": 1782786424.2341654,
-      "symbol": "ETH",
-      "regime": "trending_bull"
-    },
-    {
-      "text": "Post-close pause: range regime confirmed toxic (11% WR n=9). Wait for VR>1.5x + OI expansion + regime shift to proceed. ETH SHORT remains best available edge (42% WR recent) but NOT in range.",
-      "ts": 1782786666.8989553,
-      "symbol": "[POSITION",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime 11% WR (n=9) confirmed toxic. Best edge ETH_SHORT (42% WR) explicitly blocked in range per memory note. Entry conditions not met: VR=1.4 (need >1.5x), OI falling across all (liquidation n",
-      "ts": 1782793661.2862053,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "Range regime = 0% WR (brain, 19 trades) + confidence_scorer in range = 11% WR (n=9, wired). ETH SHORT explicitly blocked in range per memory note. Skip all confidence_scorer solo signals in range regi",
       "ts": 1782794199.5255675,
@@ -600,6 +534,72 @@
       "ts": 1782874556.6280243,
       "symbol": "[PRE-CLOSE",
       "regime": "low_liquidity"
+    },
+    {
+      "text": "All symbols (ETH/BTC/SOL/HYPE) rejected by confidence_floor_71 mechanical gate; HYPE SELL hits active VETO rule; trend regime 0%WR n=7; 7-loss cold streak + survival-critical status. Skip until regime",
+      "ts": 1782874932.50228,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "Trend regime 0% WR n=7, kelly=0, noise_prob=0.9, survival-critical (26/100) with 7-loss streak; every candidate signal solo or floor-rejected today, skip is correct not over-filtering",
+      "ts": 1782875300.2332835,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "Trend regime toxic (0% WR n=7) + 7-loss cold streak + survival CRITICAL(26/100); every symbol (ETH/BTC/SOL/HYPE/XRP) solo-weak and floor-rejected this cycle, kelly=0, noise_prob=0.9 \u2014 correct to skip,",
+      "ts": 1782875652.4111483,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "7-loss cold streak, survival critical, kelly=0 across board \u2014 every symbol mechanically confidence_floor_71 rejected, conditional_edge -28% in trend regime; wait for 2+ strategy agreement and vol>1.0x",
+      "ts": 1782875945.5443804,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "7-loss cold streak, CB warning, survival critical(26/100), trend regime 0%WR n=7, quant explicitly flags kelly=0 noise=0.9 skip-all; all symbols solo/floor-rejected, HYPE SELL matches active VETO rule",
+      "ts": 1782876281.279355,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "7-loss cold streak + survival critical(26/100); every candidate solo/weak and floor-rejected this cycle; quant explicitly flags kelly=0, noise=0.95, conditional edge -28% in trend regime \u2014 correct to",
+      "ts": 1782876543.5235574,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "ETH solo multi_tier_quality MANUAL-tier signal floor-rejected (conf_floor_71); range regime 11%WR n=9 TOXIC, quant kelly=0, noise=0.9, CB warning 7L streak, survival critical 26/100 - skip until 2+ st",
+      "ts": 1782877043.812374,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime TOXIC (11% WR n=9), all signals solo/weak (conf<71 floor), quant kelly=0 EV=0.0, active VETO rules on SOL BUY and HYPE SELL, 7-loss cold streak + survival critical(26/100), already holdin",
+      "ts": 1782877264.2521448,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime + solo signal + 8-loss streak + kelly=0 + noise=0.9 = skip; already holding ETH SHORT, no reason to add exposure on a floor-rejected solo signal",
+      "ts": 1782877758.3210309,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Dead capital win trap: ETH SHORT +$0.01/21h on confidence_scorer (11% WR in range). Thesis unvalidated. Block setup in this regime.",
+      "ts": 1782877958.1999037,
+      "symbol": "ETH",
+      "regime": ""
+    },
+    {
+      "text": "ETH SHORT in unknown regime on confidence_scorer: $0.01/21h dead capital win. Setup 11% WR in range. BLOCK all unknown regime entries.",
+      "ts": 1782878009.7509823,
+      "symbol": "ETH",
+      "regime": ""
     }
   ]
 }

@@ -30,3 +30,23 @@ Made 2026-06-30 ~16:00 UTC (owner away 6-12h). Resolve each vs actual price. Goa
 | p5 | XRP | 1.03555 | 1.04275 | +0.70% | up_or_flat | yes (>1.025) | crowded-shorts squeeze |
 
 Interim: 3/5 currently on-track, but ~1h is below signal — the two "down" highest-conviction calls (SOL, BTC) are slightly red against us so far. Real scoring at the 12h horizon (~04:00 UTC Jul 1).
+
+## FINAL RESOLUTION — 2026-07-01 03:55 UTC (~12h horizon)
+| # | Sym | price0 | final | %move | call | driver | RESULT |
+|---|-----|--------|-------|-------|------|--------|--------|
+| p1 | BTC | 58434.5 | 59241.5 | +1.38% | down | funding-crowding (mild) | WRONG |
+| p2 | ETH | 1566.75 | 1596.8 | +1.92% | flat | low-funding/no-catalyst | WRONG (broke above +1.5% band) |
+| p3 | SOL | 73.2465 | 75.5985 | +3.21% | down | funding-crowd + OI-div + sol_long_veto | WRONG |
+| p4 | HYPE | 65.2105 | 65.6425 | +0.66% | down | funding-crowding | WRONG |
+| p5 | XRP | 1.03555 | 1.05175 | +1.56% | up_or_flat | crowded-shorts squeeze (funding) | CORRECT |
+
+**RUNNING ACCURACY: 1 / 5 (20%).**
+
+### Honest verdict — did the directional alpha work?
+NO, not this window. 1/5. A broad market melt-up (+1.4% to +3.2% across majors) ran over every "crowded longs -> mean-revert DOWN" call (BTC/SOL/HYPE all wrong; ETH trended out of its flat band too). The ONLY hit was the contrarian XRP "crowded SHORTS -> squeeze UP" call.
+
+### The signal that actually scored — and the lesson
+Funding-crowding worked as a **SQUEEZE detector** (XRP: crowded shorts -> price squeezed UP into their pain = correct) but **FAILED as a mean-reversion FADE** (crowded longs did NOT revert down; trend/momentum won). Hypothesis to log + test (n=1, do NOT overfit): *crowding predicts continuation toward the squeezed side / max pain, not reversal.* If it holds up, the fix is to flip the sign of the crowding->direction mapping for the "crowded longs" case (or gate it to only fire as a squeeze/breakout signal, not a fade).
+
+### sol_long_veto note (owner flagged)
+The sol_long_veto DOWN thesis was **doubly contradicted**: SOL rose +3.21% AND the bot's own epsilon-override SOL LONG (opened 19:38 against the veto) was the session's winning position. The veto's *historical* live edge is still 14/14 on closed trades — but as a same-day directional PRICE forecast it was wrong here. Keep the veto (trade-level edge stands); do NOT treat it as a short-horizon price predictor.

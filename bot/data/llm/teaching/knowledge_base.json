@@ -11675,11 +11675,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (5 trades)",
       "confidence": 0.6,
-      "evidence_count": 13,
+      "evidence_count": 14,
       "supporting": [],
       "contradicting": [],
       "created_at": 1781878466.5225227,
-      "last_validated": 1782873803.6476922,
+      "last_validated": 1782875652.4294474,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18359,7 +18359,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (15% long WR vs 41% short WR)",
-      "confidence": 0.3500000000000001,
+      "confidence": 0.1500000000000001,
       "evidence_count": 1,
       "supporting": [
         "Short WR=41%",
@@ -18368,12 +18368,14 @@
       ],
       "contradicting": [
         "Short WR=0%",
+        "Short WR=0%",
+        "Short WR=0%",
         "Short WR=0%"
       ],
       "created_at": 1782815383.5798888,
-      "last_validated": 1782873803.6886654,
+      "last_validated": 1782877758.3862708,
       "validation_count": 3,
-      "invalidation_count": 2,
+      "invalidation_count": 4,
       "category": "direction",
       "tags": [
         "side_bias"
@@ -18623,11 +18625,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (6 trades)",
       "confidence": 0.62,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782863357.1606293,
-      "last_validated": 1782871599.171402,
+      "last_validated": 1782877758.3269901,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18659,19 +18661,21 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (14% long WR vs 42% short WR)",
-      "confidence": 0.24999999999999997,
+      "confidence": 0.05,
       "evidence_count": 0,
       "supporting": [
         "Short WR=42%"
       ],
       "contradicting": [
         "Short WR=0%",
+        "Short WR=0%",
+        "Short WR=0%",
         "Short WR=0%"
       ],
       "created_at": 1782869578.655471,
-      "last_validated": 1782873803.727457,
+      "last_validated": 1782877758.4325306,
       "validation_count": 1,
-      "invalidation_count": 2,
+      "invalidation_count": 4,
       "category": "direction",
       "tags": [
         "side_bias"
@@ -18717,6 +18721,90 @@
         "entry_timing",
         "btc",
         "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "confidence_scorer SHORT landed in range (11% WR setup) after unknown regime entry. Dead capital 26h. REJECT unknown regime entries.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "XRP in range"
+      ],
+      "contradicting": [],
+      "created_at": 1782877571.5979283,
+      "last_validated": 1782877571.5979285,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "xrp",
+        "range"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "XRP SHORT on confidence_scorer landed in range (11% WR worst setup). 25.9h dead capital. RULE: Block unknown regime entries. Downsize confidence_scorer on XRP.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "XRP in range"
+      ],
+      "contradicting": [],
+      "created_at": 1782877645.5979366,
+      "last_validated": 1782877645.5979369,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "xrp",
+        "range"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Dead capital win trap: ETH SHORT +$0.01/21h on confidence_scorer (11% WR in range). Thesis unvalidated. Block setup in this regime.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "ETH in range"
+      ],
+      "contradicting": [],
+      "created_at": 1782877958.2495723,
+      "last_validated": 1782877958.2495732,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "pattern_loss",
+      "tags": [
+        "pattern_loss",
+        "eth",
+        "range"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "ETH SHORT in unknown regime on confidence_scorer: $0.01/21h dead capital win. Setup 11% WR in range. BLOCK all unknown regime entries.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "ETH in unknown"
+      ],
+      "contradicting": [],
+      "created_at": 1782878009.8071532,
+      "last_validated": 1782878009.8071535,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "eth",
+        "unknown"
       ],
       "source": "learning_agent"
     }
