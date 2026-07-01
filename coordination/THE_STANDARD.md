@@ -27,6 +27,15 @@ Owner concern (2026-07-02): learned vetoes/hard blocks from incomplete data + in
 - The learning engine (3h loop) runs: spine verification → HOLES burns → RESEARCH_AGENDA pull → knowledge commit. Findings that change prior conclusions must edit the prior document and say so.
 - The RECALL layer goal: every decision informed by everything ever collected, from the clean ledger only.
 
+## 3b. LLM input standard — raw truth + help understanding, never opinions
+Owner directive (2026-07-02): LLMs get ONLY raw true data plus help understanding it; injected context must be objective, full-information, quant-grade.
+- RAW FIRST: price/candles/funding/OI/positions enter prompts as measured, with timestamps and source. No engine's summary replaces the raw number it summarizes.
+- STATS MUST BE HONEST STATISTICS: any derived stat entering a prompt carries denominator (n), era, and provenance (which ledger version computed it). A WR without an n is banned. A stat computed on a known-broken ledger is banned.
+- FULL-INFORMATION SYMMETRY: if a setup's WR is shown, the base rate and the opposite side are shown too. No cherry-picked context — the LLM must see what a quant would demand to see.
+- NO NAKED OPINIONS: upstream conclusions ("this setup is bad") never enter without their evidence attached. Engines that emit opinion-without-evidence get muted (Quant Brain precedent).
+- HELP UNDERSTANDING = structure, not steering: label the data, explain units/context, surface contradictions — never pre-decide.
+- The RECALL layer (agenda Q7) is built to this spec: clean-ledger stats only, full denominators, symmetric context, A/B-validated for whether it actually improves graded thesis accuracy before it becomes permanent.
+
 ## 4. Data estate — what we own
 - Live collected: trades ledger, 36.5k counterfactuals, 237+ graded theses, decisions/exits/funding-OI streams, deep memory.
 - Historical archive (UNDER-MINED): data/reports/paper_trading_*.md (Apr-May), sim_trades.jsonl sniper simulations, replay/backtest artifacts, pre-May trade eras. → RESEARCH_AGENDA Q21.
@@ -42,5 +51,6 @@ Amendments are committed to this file with date + reason. An unamended standard 
 
 ## Amendment log
 - 2026-07-02: v1 adopted.
+- 2026-07-02: v1.3 — added §3b LLM input standard (raw truth + honest statistics + full-information symmetry; no naked opinions).
 - 2026-07-02: v1.2 — added §2b learned-rule provenance & quarantine (anti-poisoning) per owner concern re: circular mech->LLM->mech corruption.
 - 2026-07-02: v1.1 — owner directive: DO-NOW items are questioned/audited/fixed/re-tested and SHIPPED autonomously; owner receives results, not requests. Owner-gated set narrowed to: live-money flips, CB/gate changes, spend, irreversibles.
