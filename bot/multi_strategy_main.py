@@ -3964,6 +3964,49 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 except Exception as e:
                     logger.debug(f"Learning integrator trade close error: {e}")
 
+                # Thesis grading (2026-07-01): close the thesis directly on trade
+                # close. Previously grading only happened inside the coordinator's
+                # get_post_trade_lesson (an LLM call) — when that call failed or
+                # the notes never carried thesis_id, theses stayed "pending"
+                # forever (209/209 ungraded). This direct call grades on price/PnL
+                # facts; the coordinator's own close_thesis becomes a no-op after.
+                try:
+                    _th_er = {}
+                    if pos is not None and getattr(pos, "entry_reasons", None):
+                        try:
+                            import json as _json_th
+                            _th_er = (_json_th.loads(pos.entry_reasons)
+                                      if isinstance(pos.entry_reasons, str)
+                                      else (pos.entry_reasons or {}))
+                        except Exception:
+                            _th_er = {}
+                    _th_notes = str(_th_er.get("llm_notes", "") or "")
+                    if "thesis_id=" in _th_notes:
+                        _th_id = _th_notes.split("thesis_id=")[1].split(" ")[0].split("|")[0].strip()
+                        if _th_id:
+                            from llm.brain_wiring import close_thesis as _bw_close_thesis
+                            _th_pnl_pct = (total_pnl / self.risk_mgr.equity * 100) if self.risk_mgr.equity > 0 else 0.0
+                            _th_mf = None
+                            _th_ma = None
+                            if pos is not None:
+                                if event.side == "LONG":
+                                    _th_mf = getattr(pos, "highest_price", None)
+                                    _th_ma = getattr(pos, "lowest_price", None)
+                                else:
+                                    _th_mf = getattr(pos, "lowest_price", None)
+                                    _th_ma = getattr(pos, "highest_price", None)
+                            _bw_close_thesis(
+                                thesis_id=_th_id,
+                                exit_price=event.price,
+                                pnl_pct=_th_pnl_pct,
+                                max_favorable=_th_mf,
+                                max_adverse=_th_ma,
+                                actual_hold_h=event.metadata.get("hold_time_s", 0) / 3600.0,
+                            )
+                            logger.info(f"[THESIS] Graded {_th_id} on close: pnl_pct={_th_pnl_pct:+.2f}%")
+                except Exception as e:
+                    logger.debug(f"Thesis close-grading error: {e}")
+
                 # Multi-Agent Learning: run LLM Learning Agent on each closed trade
                 # Previously only ran in backtest — now wired to live loop
                 if os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
@@ -8020,6 +8063,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "entry_type": _entry_label,
             "pipeline_failed": _pipeline_failed,
             "agent_confidences": getattr(entry_decision, "agent_confidences", {}) or {},
+            # Carries "thesis_id=..." so the close path can grade the thesis
+            # (2026-07-01: LLM-first entries never wrote llm_notes — theses
+            # were structurally ungradeable on the live path).
+            "llm_notes": (entry_decision.notes or "")[:500],
         }
 
         # ── Execute trade ──

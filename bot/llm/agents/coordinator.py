@@ -1490,9 +1490,16 @@ class AgentCoordinator:
                     _entry = _markets[0].get("price", _markets[0].get("p", 0.0))
                 thesis_text = td.get("thesis", td.get("n", ""))
                 setup_type = td.get("setup_type", td.get("st", ""))
+                # Audit #49: the Trade Agent schema emits no 'side', so the old
+                # default recorded side="BUY" on every thesis (209/209). The
+                # thesis direction is the signal side the agent judged — fall
+                # back to it when the agent output has none.
+                _thesis_side = str(td.get("side", td.get("s", "")) or "")
+                if not _thesis_side and _signals and isinstance(_signals[0], dict):
+                    _thesis_side = str(_signals[0].get("side", "") or "")
                 thesis_id = record_thesis(
                     symbol=_sym,
-                    side=td.get("side", td.get("s", "BUY")),
+                    side=_thesis_side or "BUY",
                     thesis=thesis_text[:200] if thesis_text else "",
                     confidence=decision.confidence * 100 if decision.confidence <= 1 else decision.confidence,
                     regime=regime,
