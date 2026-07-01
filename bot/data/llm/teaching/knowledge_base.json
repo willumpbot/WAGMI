@@ -3983,11 +3983,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (3 trades)",
       "confidence": 0.5,
-      "evidence_count": 84,
+      "evidence_count": 85,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775668595.8846202,
-      "last_validated": 1782832381.802828,
+      "last_validated": 1782911442.8958583,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18995,23 +18995,6 @@
         "unknown"
       ],
       "source": "learning_agent"
-    },
-    {
-      "knowledge_type": "counterfactual_evidence",
-      "content": "[FILTER_MISS] confidence_floor_71 blocked a winning SELL trade on HYPE in range (hypothetical +3.9%). Consider relaxing this filter.",
-      "confidence": 0.539,
-      "evidence_count": 1,
-      "category": "execution",
-      "tags": [
-        "confidence_floor_71",
-        "HYPE",
-        "SELL"
-      ],
-      "source": "counterfactual_resolution",
-      "created_at": 1782910286.2183013,
-      "last_validated": 1782910286.2183018,
-      "validation_count": 1,
-      "invalidation_count": 0
     }
   ]
 }

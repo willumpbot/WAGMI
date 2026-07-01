@@ -1,46 +1,6 @@
 {
   "insights": [
     {
-      "ts": 1782800947.6376326,
-      "category": "meta",
-      "insight": "Self-critique: Vacc=0.5 requires 3+ flags + clear counter-thesis; I have 8+ red flags and structured counter-thesis with price/time/falsifiable. This is not over-blo",
-      "confidence": 0.7,
-      "evidence": "Critic challenged: Consolidation regime TOXIC (29% WR, -$288), BTC_SHORT TOXIC (8% WR, -$53), this exact combo is flagg",
-      "source": "critic_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782801324.7393308,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Thesis dead, regime hostile. Entered LONG in consolidation with bearish bias; regime outlook explicitly predicts downside within 6h. Hold time 7.66h (",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782801368.1394212,
-      "category": "exit_pattern",
-      "insight": "Exit [SOL]: Thesis invalidated: Regime explicitly predicts 'directional move downside within 6h' while position is LONG. Bearish bias in consolidation directly co",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782801397.7316253,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: DEAD CAPITAL: 4.8h hold, unrealized -$0.41, price movement 0.16% (within 0.3% dead-capital threshold). REGIME TOXICITY: consolidation is enemy terrain",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
       "ts": 1782801465.9595187,
       "category": "exit_pattern",
       "insight": "Exit [HYPE]: Thesis invalidated by regime assessment. Consolidation regime explicitly biased bearish, EMA/MACD predicting downside within 6h, contradicts LONG posi",
@@ -4996,6 +4956,46 @@
       "insight": "Exit [HYPE]: HYPE SHORT in trending_bear: 0% WR (5 trades, -$565 avg). Setup-regime mismatch despite valid directional regime. Test: 'If no position, enter now?' =",
       "confidence": 0.75,
       "evidence": "action=partial_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782910916.0269382,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Thesis invalidated by regime-direction mismatch. System context: trend regime 0% WR (n=7 trades, all losses), BTC SHORT 9% WR (n=11, PF 0.28). Circuit",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782910981.7777133,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Setup-regime mismatch confirmed: confidence_scorer on HYPE fails in 'trend' regimes (0% WR, n=6). Current regime is exactly 'trend' + 'bearish'. Posit",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782911311.311604,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Sunk-cost-immunity fails: would NOT SHORT HYPE right now. Empirical contradictions: bearish trend 0% WR (n=5), trend regime 0% WR (n=7) \u2014 regime toxic",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782911351.5644336,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: confidence_scorer + BTC SHORT in trend regime = lethal combination (0% WR historically, n=6). Position 2.84h with $+0.72 dead capital, entering statis",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
       "validation_count": 0
