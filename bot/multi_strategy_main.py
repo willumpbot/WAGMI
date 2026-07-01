@@ -8136,7 +8136,54 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             )
             return
 
-        # Submit order
+        # ── Submit order to exchange (D5, owner-approved 2026-07-02, audit #1) ──
+        # The LLM-first path previously registered the position ONLY in the
+        # PositionManager — no exchange order was ever submitted (paper mode
+        # masked it; one env flip from live and every entry would be a phantom
+        # whose reduce-only close is rejected forever). Mirror the mechanical
+        # path: submit first, bail cleanly if not filled, reconcile the
+        # position to the actual fill price/qty.
+        # NOTE: order_executor expects BUY/SELL (side.upper()=="BUY" else sell);
+        # `side` here is already normalized to LONG/SHORT, so map it back.
+        _order_side = "BUY" if side == "LONG" else "SELL"
+        order_result = self.order_executor.open_position(
+            symbol=symbol,
+            side=_order_side,
+            qty=qty,
+            price=actual_entry,
+            leverage=int(leverage),
+            order_type="market",
+        )
+        if not order_result.filled:
+            logger.warning(
+                f"[{trace_id}][{symbol}] LLM-FIRST order FAILED: {order_result.error}"
+            )
+            return
+
+        # Record trade for rate limiting AFTER order confirms (mirrors mechanical)
+        Telemetry.inc("total_trades")
+        self.ops_guard.record_trade()
+
+        # Use actual fill price and qty from exchange
+        actual_entry = order_result.fill_price if order_result.fill_price > 0 else actual_entry
+        qty = order_result.fill_qty if order_result.fill_qty > 0 else qty
+
+        # Record fill quality for execution analytics (mirrors mechanical path)
+        if hasattr(self, 'execution_analytics') and self.execution_analytics:
+            try:
+                self.execution_analytics.record_fill(
+                    trade_id=f"{symbol}_{int(time.time())}",
+                    symbol=symbol,
+                    side=side,
+                    expected_price=snapshot_entry,
+                    actual_fill=order_result.fill_price if order_result.fill_price > 0 else actual_entry,
+                    notional=qty * actual_entry,
+                    regime=self._tick_regime_cache.get(symbol, "unknown"),
+                    signal_time=entry_reasons.get("signal_time", time.time()),
+                )
+            except Exception as e:
+                logger.debug(f"Execution analytics record error: {e}")
+
         self.pos_mgr.open_position(
             symbol=symbol,
             side=side,
