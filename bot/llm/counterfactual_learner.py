@@ -562,8 +562,12 @@ class CounterfactualLearner:
                     # won=True -> blocked trade would have WON -> veto was wrong (no credit).
                     # won=False -> blocked trade would have LOST -> veto was correct (+correct).
                     # Resolve by the EXACT rule_ids that fired (same population, no re-match).
+                    # Carry the counterfactual move so retirement is PnL-weighted (P2).
                     _won = (rec.hypothetical_pnl_pct or 0) > 0
-                    get_graduated_rules_engine().record_veto_outcome(_veto_ids, won=_won)
+                    get_graduated_rules_engine().record_veto_outcome(
+                        _veto_ids, won=_won,
+                        hypothetical_pnl_pct=rec.hypothetical_pnl_pct,
+                    )
                     logger.debug(
                         f"[CF→RULES] Veto outcome wired by id: {rec.symbol} {rec.side} "
                         f"ids={_veto_ids} won={_won} pnl={rec.hypothetical_pnl_pct}"

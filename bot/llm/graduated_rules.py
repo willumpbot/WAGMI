@@ -56,6 +56,14 @@ class GraduatedRule:
     # These never touch accuracy (the trade was NOT blocked), tracked separately for audit.
     times_overridden: int = 0
     overridden_correct: int = 0
+    # PnL-weighted veto scoring (master plan P2, 2026-07-01): hit-RATE alone
+    # retired vetoes that blocked a few small winners while saving big losses
+    # (killed the vindicated hype_long_veto). Units: hypothetical_pnl_pct of the
+    # blocked trade, accumulated at counterfactual resolution.
+    # pnl_saved  = sum(|pnl_pct|) of blocked would-be LOSERS (veto correct)
+    # pnl_missed = sum(pnl_pct)  of blocked would-be WINNERS (veto wrong)
+    pnl_saved: float = 0.0
+    pnl_missed: float = 0.0
     active: bool = True
 
     @property
@@ -65,6 +73,11 @@ class GraduatedRule:
         if self.times_applied <= 0:
             return 0.5
         return max(0.0, min(1.0, self.times_correct / self.times_applied))
+
+    @property
+    def net_pnl_saved(self) -> float:
+        """Dollar-aware veto value: pct-loss avoided minus pct-gain foregone."""
+        return self.pnl_saved - self.pnl_missed
 
     def matches(self, symbol="", regime="", side="", strategy="",
                 setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
@@ -407,7 +420,8 @@ class GraduatedRulesEngine:
 
         self._save()
 
-    def record_veto_outcome(self, rule_ids: List[str], won: Optional[bool]) -> None:
+    def record_veto_outcome(self, rule_ids: List[str], won: Optional[bool],
+                            hypothetical_pnl_pct: Optional[float] = None) -> None:
         """Credit VETO-rule accuracy by rule_id — the SOLE writer of veto counters.
 
         This is the ONLY place veto times_applied AND times_correct are mutated. By
@@ -424,6 +438,12 @@ class GraduatedRulesEngine:
                      possible) -> UNMEASURED: touches NEITHER applied nor correct.
                      The rule_id stamp is retained purely for audit. (Counting a
                      denominator with no possible numerator would itself be a leak.)
+
+        hypothetical_pnl_pct: the counterfactual $ move of the blocked trade
+        (already known at resolution). Accumulated into pnl_saved / pnl_missed
+        so retirement is dollar-aware, not hit-rate-only (master plan P2 —
+        rate-only scoring retired the vindicated hype_long_veto: 88.9% TRUE
+        blocked-loser rate measured at 52.6% by the biased estimator).
         """
         self._ensure_loaded()
         if not rule_ids:
@@ -440,24 +460,32 @@ class GraduatedRulesEngine:
             # Denominator increment lives here (paired with the numerator), NOT in
             # evaluate_signal — guarantees applied & correct share one population.
             rule.times_applied += 1
+            _pnl = abs(hypothetical_pnl_pct) if hypothetical_pnl_pct is not None else 0.0
             if won is False:
                 rule.times_correct += 1
+                rule.pnl_saved += _pnl
                 logger.info(
                     f"[GRAD-RULES] VETO +correct: {rule.rule_id} blocked a loser "
-                    f"(times_correct now={rule.times_correct}, times_applied={rule.times_applied})"
+                    f"(times_correct now={rule.times_correct}, times_applied={rule.times_applied}, "
+                    f"pnl_saved={rule.pnl_saved:.2f}%)"
                 )
             else:  # won is True
+                rule.pnl_missed += _pnl
                 logger.info(
                     f"[GRAD-RULES] VETO applied (wrong): {rule.rule_id} blocked a would-be winner "
-                    f"(times_correct={rule.times_correct}, times_applied now={rule.times_applied})"
+                    f"(times_correct={rule.times_correct}, times_applied now={rule.times_applied}, "
+                    f"pnl_missed={rule.pnl_missed:.2f}%)"
                 )
 
-            # Vetoes can now self-retire on the SAME criteria as other rules.
-            if rule.times_applied >= 10 and rule.accuracy < 0.35:
+            # Vetoes self-retire only when BOTH the hit rate is bad AND the rule
+            # is not net-saving money — a veto that misses often but saves more
+            # in avoided losses than it forgoes in winners stays active.
+            if (rule.times_applied >= 10 and rule.accuracy < 0.35
+                    and rule.net_pnl_saved <= 0):
                 rule.active = False
                 logger.info(
                     f"[GRAD-RULES] Auto-retired VETO: {rule.hypothesis_statement[:50]} "
-                    f"(acc={rule.accuracy:.0%})"
+                    f"(acc={rule.accuracy:.0%}, net_pnl_saved={rule.net_pnl_saved:.2f}%)"
                 )
         if changed:
             self._save()
