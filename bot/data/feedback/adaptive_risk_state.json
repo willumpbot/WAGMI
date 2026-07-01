@@ -1,7 +1,5 @@
 {
   "recent_outcomes": [
-    true,
-    true,
     false,
     true,
     false,
@@ -19,7 +17,9 @@
     false,
     false,
     false,
-    true
+    true,
+    false,
+    false
   ],
   "regime_wr": {
     "trending": {
@@ -36,7 +36,7 @@
     },
     "consolidation": {
       "wins": 11,
-      "total": 35
+      "total": 36
     },
     "trend": {
       "wins": 0,
@@ -60,7 +60,7 @@
     },
     "unknown": {
       "wins": 3,
-      "total": 16
+      "total": 17
     }
   }
 }

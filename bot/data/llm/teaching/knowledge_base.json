@@ -18871,71 +18871,237 @@
       "source": "causal_analysis"
     },
     {
-      "knowledge_type": "self_discovered",
-      "content": "Avoid trading when regime is unknown - 100% loss rate on unknown-regime signals",
-      "confidence": 0.85,
-      "evidence_count": 5,
-      "category": "risk",
-      "tags": [
-        "regime-validation",
-        "pre-trade-filter"
+      "knowledge_type": "principle",
+      "content": "Unknown regime trade (17% WR XRP). Exit agent closure at 3.6h correct. Skip unknown regime trades or require 2+ strategies + >80% confidence.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "XRP in unknown"
       ],
-      "source": "self_analyst_cli",
-      "evidence": "5 unknown-regime trades all lost: -1.24, -0.28, -9.50, -8.48, -0.45 (-$19.75 total)",
-      "created_at": 1782895691.008482,
-      "last_validated": 1782895691.0084825,
-      "validation_count": 5,
+      "contradicting": [],
+      "created_at": 1782898288.040805,
+      "last_validated": 1782898288.0408053,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "xrp",
+        "unknown"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Unknown regime + single strategy (67% conf) = predictable loss (17% WR). Gate: require 2+ strategies or >80% confidence to override unknown regime block.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "XRP in unknown"
+      ],
+      "contradicting": [],
+      "created_at": 1782898341.8473403,
+      "last_validated": 1782898341.8473408,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "xrp",
+        "unknown"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "BTC SHORT consolidation + solo LLM 48% conf \u2192 3.38h dead capital. Require 2+ strategy or >65% confidence in choppy regimes.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in consolidation"
+      ],
+      "contradicting": [],
+      "created_at": 1782899784.8378434,
+      "last_validated": 1782899784.8378437,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "btc",
+        "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Solo BTC SHORT consolidation (48% conf) = 3.38h dead capital. Block solo signals in chop unless >65% conf. Require 2+ strategy agreement.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in consolidation"
+      ],
+      "contradicting": [],
+      "created_at": 1782899821.1065447,
+      "last_validated": 1782899821.106545,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "btc",
+        "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[CAUTION] Implement regime-change exit rule: Close all confidence_scorer positions on consolidation\u2192trend flip. 0% WR in trends is structural, not noise.",
+      "confidence": 0.35,
+      "evidence_count": 14,
+      "evidence_ratio": 0.286,
+      "category": "regime",
+      "tags": [
+        "symbol",
+        "regime",
+        "strategy"
+      ],
+      "source": "hypothesis_graduation",
+      "rule_id": "rule_1782899959_13",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "SOL",
+        "regime": "trend",
+        "strategy": "confidence_scorer"
+      },
+      "created_at": 1782899959.236748,
+      "last_validated": 1782899959.236748,
+      "validation_count": 14,
       "invalidation_count": 0
     },
     {
-      "knowledge_type": "self_discovered",
-      "content": "HYPE symbol has weak edge - only 25% win rate, consider raising filter or skipping",
-      "confidence": 0.7,
-      "evidence_count": 8,
+      "knowledge_type": "graduated_rule",
+      "content": "[EDGE] Auto-exit confidence_scorer SHORT when consolidation regime ends or trending detected. Edge drops to 0% in trending (n=5 validated); saves ~$1.74 per trade vs SL.",
+      "confidence": 0.35,
+      "evidence_count": 14,
+      "evidence_ratio": 0.286,
+      "category": "regime",
+      "tags": [
+        "symbol",
+        "regime",
+        "side",
+        "strategy"
+      ],
+      "source": "hypothesis_graduation",
+      "rule_id": "rule_1782899959_14",
+      "action": "boost",
+      "conditions": {
+        "symbol": "SOL",
+        "regime": "trend",
+        "side": "SELL",
+        "strategy": "confidence_scorer"
+      },
+      "created_at": 1782899959.2926486,
+      "last_validated": 1782899959.2926486,
+      "validation_count": 14,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[AVOID] BTC LONGs in consolidation with confidence <60 or agreement <0.7 fail predictably. Test: block all such entries, measure WR vs baseline",
+      "confidence": 0.325,
+      "evidence_count": 17,
+      "evidence_ratio": 0.294,
+      "category": "regime",
+      "tags": [
+        "symbol",
+        "regime",
+        "side"
+      ],
+      "source": "hypothesis_graduation",
+      "rule_id": "rule_1782899959_15",
+      "action": "veto",
+      "conditions": {
+        "symbol": "BTC",
+        "regime": "consolidation",
+        "side": "BUY"
+      },
+      "created_at": 1782899959.3819294,
+      "last_validated": 1782899959.3819294,
+      "validation_count": 17,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[EDGE] Confidence threshold separates winners: BTC LONG in consolidation with conf >60 should outperform conf <50 by 2:1+ WR ratio. Test on last 20 consolidation LONGs",
+      "confidence": 0.325,
+      "evidence_count": 17,
+      "evidence_ratio": 0.294,
+      "category": "regime",
+      "tags": [
+        "symbol",
+        "regime",
+        "side"
+      ],
+      "source": "hypothesis_graduation",
+      "rule_id": "rule_1782899959_16",
+      "action": "boost",
+      "conditions": {
+        "symbol": "BTC",
+        "regime": "consolidation",
+        "side": "BUY"
+      },
+      "created_at": 1782899959.50546,
+      "last_validated": 1782899959.50546,
+      "validation_count": 17,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[CAUTION] Consolidation shorts with <50% confidence leak false positives. Require minimum 50% confidence OR 2+ strategy confluence at entry gate\u2014trailing stops can bail out bad entries but create survivorship b",
+      "confidence": 0.4,
+      "evidence_count": 10,
+      "evidence_ratio": 0.3,
+      "category": "regime",
+      "tags": [
+        "symbol",
+        "regime",
+        "side"
+      ],
+      "source": "hypothesis_graduation",
+      "rule_id": "rule_1782899959_17",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "SOL",
+        "regime": "consolidation",
+        "side": "SELL"
+      },
+      "created_at": 1782899959.5584362,
+      "last_validated": 1782899959.5584362,
+      "validation_count": 10,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[AVOID] BTC SHORT with confidence<20 or regime=unknown has <10% WR. Block all (BTC:SHORT && (conf<20 || regime='unknown')) trades at risk gate.",
+      "confidence": 0.375,
+      "evidence_count": 7,
+      "evidence_ratio": 0.143,
       "category": "symbol",
       "tags": [
-        "weak-signal",
-        "symbol-filtering"
+        "symbol",
+        "side"
       ],
-      "source": "self_analyst_cli",
-      "evidence": "8 HYPE trades: 2 tiny wins (0.03, 0.11), 6 losses; 25% hit rate vs 60%+ on ETH/SOL",
-      "created_at": 1782895691.0090353,
-      "last_validated": 1782895691.0090356,
-      "validation_count": 8,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "self_discovered",
-      "content": "BTC LONG in consolidation consistently fails - skip or require exceptional confluence",
-      "confidence": 0.72,
-      "evidence_count": 3,
-      "category": "execution",
-      "tags": [
-        "directional-bias",
-        "regime-symbol"
-      ],
-      "source": "self_analyst_cli",
-      "evidence": "3 BTC LONG consolidation trades: all negative (-2.93, -3.11, -25.62), 0% win rate vs BTC SHORT 17% win",
-      "created_at": 1782895691.0094981,
-      "last_validated": 1782895691.0094984,
-      "validation_count": 3,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "self_discovered",
-      "content": "SOL SHORT in consolidation is high-probability - 66% win rate with asymmetric P&L edge",
-      "confidence": 0.65,
-      "evidence_count": 3,
-      "category": "symbol",
-      "tags": [
-        "high-edge",
-        "regime-symbol"
-      ],
-      "source": "self_analyst_cli",
-      "evidence": "3 SOL SHORT consolidation trades: 2 big wins (23.82, 17.07), 1 tiny loss (-0.70)",
-      "created_at": 1782895691.0099087,
-      "last_validated": 1782895691.0099087,
-      "validation_count": 3,
+      "source": "hypothesis_graduation",
+      "rule_id": "rule_1782899959_18",
+      "action": "veto",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "SELL"
+      },
+      "created_at": 1782899959.631954,
+      "last_validated": 1782899959.631954,
+      "validation_count": 7,
       "invalidation_count": 0
     }
   ]

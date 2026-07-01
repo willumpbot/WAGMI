@@ -1,30 +1,6 @@
 {
-  "last_updated": 1782896712,
+  "last_updated": 1782899959,
   "notes": [
-    {
-      "text": "Range regime = 0% WR (19 trades current run). ALL 5 symbols below conf floor 66. XRP SHORT best structural setup (2-agree, REGULAR, VWAP+6h aligned) but still rejected. Wait for regime break + OI expa",
-      "ts": 1782806484.9758146,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "confidence_scorer signals in range regimes: 11% WR (n=9). SOL example\u20147.95h hold, low directional probability. Hard veto.",
-      "ts": 1782807091.4536273,
-      "symbol": "SOL",
-      "regime": ""
-    },
-    {
-      "text": "confidence_scorer HYPE longs: 10% WR on symbol + 11% WR in ranges. 5.7h hold in range regime lost $1.20\u2014mute or require 2-strategy confirmation",
-      "ts": 1782807111.6108098,
-      "symbol": "HYPE",
-      "regime": ""
-    },
-    {
-      "text": "confidence_scorer range signals: thesis requires volume breakout by 1.3h; without it, directional prob\u21920. HYPE long 5.7h lost $1.20\u2014mute or gate-exit.",
-      "ts": 1782807174.7659457,
-      "symbol": "HYPE",
-      "regime": ""
-    },
     {
       "text": "confidence_scorer + range regimes: 11% WR (n=9)\u2014no edge. Exit agent correctly closed trade after 7.95h. HARD BLOCK this entry combo.",
       "ts": 1782807188.3156276,
@@ -599,6 +575,30 @@
       "text": "Range regime toxic (90% noise, kelly=0, quant skip-all), CB warning 7L, all signals solo/weak & mechanically rejected at conf_floor_66; HYPE SELL hits active net-negative EV veto, SOL BUY hits active",
       "ts": 1782896712.0197737,
       "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime TOXIC (29% WR n=31), CB warning 7L active, all live signals solo (confluence=1, ~22% hist WR), BTC_SHORT specifically TOXIC (9% WR n=11) despite already holding a BTC SHORT; SOL B",
+      "ts": 1782898549.1711257,
+      "symbol": "[POSITION",
+      "regime": "range"
+    },
+    {
+      "text": "BTC SHORT consolidation + solo LLM 48% conf \u2192 3.38h dead capital. Require 2+ strategy or >65% confidence in choppy regimes.",
+      "ts": 1782899784.7804306,
+      "symbol": "BTC",
+      "regime": "consolidation"
+    },
+    {
+      "text": "Solo BTC SHORT consolidation (48% conf) = 3.38h dead capital. Block solo signals in chop unless >65% conf. Require 2+ strategy agreement.",
+      "ts": 1782899821.0571651,
+      "symbol": "BTC",
+      "regime": "consolidation"
+    },
+    {
+      "text": "CB active (9 consecutive losses) + consolidation regime toxic (29% WR n=31) + all signals solo (22% WR) = hard skip per quant analysis, kelly=0, no thesis clears costs",
+      "ts": 1782899959.231247,
+      "symbol": "[POSITION",
       "regime": "range"
     }
   ]

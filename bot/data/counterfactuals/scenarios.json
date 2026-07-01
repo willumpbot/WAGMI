@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782889059.7827816,
+  "updated_at": 1782900042.2726316,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -10602,7 +10602,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1590.0,
@@ -10610,7 +10610,9 @@
         "tp1_price": 1523.8857142857146,
         "tp2_price": 1488.2857142857147,
         "confidence": 60.0,
-        "reason": "LLM_FIRST: ETH drifting lower in consolidation with bearish OI flow, but setup lacks positive EV at current tim"
+        "reason": "LLM_FIRST: ETH drifting lower in consolidation with bearish OI flow, but setup lacks positive EV at current tim",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10623,7 +10625,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 1592.8,
@@ -10631,7 +10633,9 @@
         "tp1_price": 1541.0857142857142,
         "tp2_price": 1489.3714285714284,
         "confidence": 60.0,
-        "reason": "LLM_FIRST: ETH SHORT toward $1541 on bearish OI unwind and liquidation divergence, but range regime is TOXIC (1"
+        "reason": "LLM_FIRST: ETH SHORT toward $1541 on bearish OI unwind and liquidation divergence, but range regime is TOXIC (1",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10710,7 +10714,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 65.165,
@@ -10718,7 +10722,9 @@
         "tp1_price": 61.51842857142857,
         "tp2_price": 57.87185714285714,
         "confidence": 64.505,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10731,7 +10737,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 65.19,
@@ -10739,7 +10745,9 @@
         "tp1_price": 62.00628571428569,
         "tp2_price": 58.82257142857139,
         "confidence": 64.505,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10752,7 +10760,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 65.088,
@@ -10760,7 +10768,9 @@
         "tp1_price": 61.855714285714264,
         "tp2_price": 58.62342857142855,
         "confidence": 64.505,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10773,7 +10783,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 65.086,
@@ -10781,7 +10791,9 @@
         "tp1_price": 61.85371428571427,
         "tp2_price": 58.62142857142855,
         "confidence": 64.505,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -10794,7 +10806,7 @@
       "actual_pnl": 0.0,
       "counterfactual_pnl": 0.0,
       "delta": 0.0,
-      "resolved": false,
+      "resolved": true,
       "metadata": {
         "side": "SELL",
         "entry_price": 65.316,
@@ -10802,7 +10814,9 @@
         "tp1_price": 62.04742857142858,
         "tp2_price": 58.77885714285716,
         "confidence": 64.505,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "expired": true,
+        "expiry_reason": "exceeded_lookback_window"
       }
     },
     {
@@ -12176,9 +12190,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -14.879247767959747,
+      "delta": -14.879247767959747,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 65.299,
@@ -12186,7 +12200,8 @@
         "tp1_price": 69.95532142857145,
         "tp2_price": 75.01500000000004,
         "confidence": 79.4622204590251,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12197,9 +12212,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -8.13011223131069,
+      "delta": -8.13011223131069,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 75.1,
@@ -12207,7 +12222,8 @@
         "tp1_price": 78.15285714285716,
         "tp2_price": 81.20571428571432,
         "confidence": 60.35769995373409,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12218,9 +12234,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -13.46449431294193,
+      "delta": -13.46449431294193,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 65.06,
@@ -12228,7 +12244,8 @@
         "tp1_price": 69.32678571428572,
         "tp2_price": 73.82000000000002,
         "confidence": 80.4636522772069,
-        "reason": "LLM_FIRST: HYPE grinds toward TP1 ~69.3 (+6.5%) within 4-8h on bullish OI divergence (+2.4% OI vs +1% price) an"
+        "reason": "LLM_FIRST: HYPE grinds toward TP1 ~69.3 (+6.5%) within 4-8h on bullish OI divergence (+2.4% OI vs +1% price) an",
+        "hit": "tp2"
       }
     },
     {
@@ -12239,9 +12256,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -8.277532737619135,
+      "delta": -8.277532737619135,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 75.012,
@@ -12249,7 +12266,8 @@
         "tp1_price": 78.11657142857143,
         "tp2_price": 81.22114285714287,
         "confidence": 62.34762851414697,
-        "reason": "LLM_FIRST: "
+        "reason": "LLM_FIRST: ",
+        "hit": "tp2"
       }
     },
     {
@@ -12260,9 +12278,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -13.517957860117752,
+      "delta": -13.517957860117752,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 65.069,
@@ -12270,7 +12288,8 @@
         "tp1_price": 69.35192857142859,
         "tp2_price": 73.86500000000002,
         "confidence": 80.4636522772069,
-        "reason": "LLM_FIRST: HYPE consolidation drift, no clean directional edge for LONG despite ensemble confidence"
+        "reason": "LLM_FIRST: HYPE consolidation drift, no clean directional edge for LONG despite ensemble confidence",
+        "hit": "tp2"
       }
     },
     {
@@ -12281,9 +12300,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -9.119612814012454,
+      "delta": -9.119612814012454,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 65.085,
@@ -12291,7 +12310,8 @@
         "tp1_price": 69.32464285714286,
         "tp2_price": 71.0205,
         "confidence": 77.92419545678527,
-        "reason": "LLM_FIRST: HYPE grinding near 65 in a marginal 1h trend, but structural red flags dominate: trend regime is 0% "
+        "reason": "LLM_FIRST: HYPE grinding near 65 in a marginal 1h trend, but structural red flags dominate: trend regime is 0% ",
+        "hit": "tp2"
       }
     },
     {
@@ -12302,9 +12322,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -9.372678880911142,
+      "delta": -9.372678880911142,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 64.624,
@@ -12312,7 +12332,8 @@
         "tp1_price": 68.95042857142857,
         "tp2_price": 70.68100000000001,
         "confidence": 77.94430686620959,
-        "reason": "LLM_FIRST: HYPE breaks upper BB compression, targets 68.95 (TP1, +6.7%) within 8-12h; invalidated below 61.74"
+        "reason": "LLM_FIRST: HYPE breaks upper BB compression, targets 68.95 (TP1, +6.7%) within 8-12h; invalidated below 61.74",
+        "hit": "tp2"
       }
     },
     {
@@ -12323,9 +12344,9 @@
       "actual_action": "vetoed_BUY",
       "counterfactual_action": "entered_BUY",
       "actual_pnl": 0.0,
-      "counterfactual_pnl": 0.0,
-      "delta": 0.0,
-      "resolved": false,
+      "counterfactual_pnl": -9.42363156839461,
+      "delta": -9.42363156839461,
+      "resolved": true,
       "metadata": {
         "side": "BUY",
         "entry_price": 64.837,
@@ -12333,7 +12354,52 @@
         "tp1_price": 69.20128571428575,
         "tp2_price": 70.94700000000002,
         "confidence": 77.92419545678527,
-        "reason": "LLM_FIRST: HYPE LONG breaks squeeze continuation toward 69.2 (TP1) within 4-8h as bollinger_squeeze resolves in"
+        "reason": "LLM_FIRST: HYPE LONG breaks squeeze continuation toward 69.2 (TP1) within 4-8h as bollinger_squeeze resolves in",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1782898341_a02808fc",
+      "timestamp": 1782898341.9278562,
+      "symbol": "XRP",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -265.07017194675814,
+      "counterfactual_pnl": 2.7047619047619027,
+      "delta": 267.77493385152,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 1.05,
+        "actual_exit_price": 1.04535,
+        "tp1_price": 1.0719,
+        "tp2_price": 1.0784,
+        "actual_pnl_raw": -2.7832368054409606,
+        "pnl_at_tp1_pct": 2.0857,
+        "pnl_at_tp2_pct": 2.7048
+      }
+    },
+    {
+      "id": "cf_1782899821_0fd45712",
+      "timestamp": 1782899821.157168,
+      "symbol": "BTC",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -0.0018609971497062048,
+      "counterfactual_pnl": 5.328601941912812,
+      "delta": 5.330462939062518,
+      "resolved": true,
+      "metadata": {
+        "side": "short",
+        "entry_price": 58756.5,
+        "actual_exit_price": 58868.5,
+        "tp1_price": 56721.4,
+        "tp2_price": 55625.6,
+        "actual_pnl_raw": -1.0934567902671262,
+        "pnl_at_tp1_pct": 3.4636,
+        "pnl_at_tp2_pct": 5.3286
       }
     }
   ]
