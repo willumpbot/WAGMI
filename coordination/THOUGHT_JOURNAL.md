@@ -899,3 +899,9 @@ PART C: LL verified, holding. page 200, 56 posts all likes, 12/24 galleries, ree
 
 === 2026-07-01 ~12:15 UTC — ALPHA WORK: crowding→direction study (autonomous) ===
 Tested the scorecard's "crowding=continuation, flip the sign" hypothesis against 25d of funding_oi_history (~300/sym). Result: pooled corr(funding, fwd_ret) = -0.06/-0.18/-0.18 at 6/12/24h -> NEGATIVE = weak FADE (crowded longs underperform), the OPPOSITE of "continuation". => do NOT flip the sign (would be overfitting to the 1/5 melt-up window). Real insight: fade edge is weak+real but gets destroyed fighting a trend; the 1/5 failure was REGIME (faded crowded longs into a melt-up), not wrong direction. Recommendation: keep fade sign, GATE it by regime (suppress fade when multi-TF trend is with the crowd), do NOT graduate yet (thin n, single regime, overlapping-window autocorrelation). Full writeup: coordination/CROWDING_STUDY.md. No code change made (validate-before-build). Health loops unchanged/green.
+
+=== 2026-07-01 ~14:08 UTC — health + verify (final hourly; handing off to 3h quiet cron) ===
+PART B: STABLE. pid 34056 steady, uptime 9.7h, scan 1321 monotonic, pos 1, equity $1962.18 (−$1.30 mark, no new close), errors 0. trades.csv 89 (rank-8 n~3). Vetoes unchanged. epsilon 0.12.
+PART C: LL verified, holding. page 200, 56 posts all likes, 12/24 galleries, reel r05 200, 0 "$"+digit. Names/reviews unchanged (no regression).
+PART D: SKIP — funding_oi_history 1405 rows (~300/sym, only +20 since last), not meaningfully more data; regime-gate firming-up deferred until span grows.
+LOOP: hourly ScheduleWakeup retiring; 3-hourly quiet cron (e0c4a62e) now owns the loop per owner (fewer pings, learning-first).

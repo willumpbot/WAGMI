@@ -1,86 +1,6 @@
 {
   "insights": [
     {
-      "ts": 1782801465.9595187,
-      "category": "exit_pattern",
-      "insight": "Exit [HYPE]: Thesis invalidated by regime assessment. Consolidation regime explicitly biased bearish, EMA/MACD predicting downside within 6h, contradicts LONG posi",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782802137.1949441,
-      "category": "meta",
-      "insight": "Self-critique: Veto accuracy 0% (destroyed +$8.20 on 1 decision) vs Trade accuracy 100% (n=4); deferring via confidence reduction rather than skip, respecting Trade ",
-      "confidence": 0.7,
-      "evidence": "Critic challenged: Large-sample regime data (consolidation 29% WR n=31) contradicts low-sample setup edge (50% WR n=8);",
-      "source": "critic_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782802191.5593133,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: LONG in trending_bear regime = fundamental thesis mismatch. Market trending downward, position betting upward. 0% WR on BTC LONG in trending_bear (n=5",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782802221.1763916,
-      "category": "exit_pattern",
-      "insight": "Exit [SOL]: Regime-thesis death: LONG in RANGE regime has 11% WR per setup history. MFE=0% after 6.7h (never went green)\u2014zero profitable development. Dead capital",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": -4
-    },
-    {
-      "ts": 1782802271.4044893,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Setup invalidity + regime mismatch. XRP SHORT in range: 11% WR (confidence_scorer 22% WR overall, 11% in range). Dead capital: 5h hold, price at entry",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782802310.6449473,
-      "category": "exit_pattern",
-      "insight": "Exit [HYPE]: Range regime thesis failure. Confidence_scorer has 11% WR in range (n=9 trades, -$838 PnL). HYPE has 10% WR with this setup (n=10, -$563 total). Posit",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782802347.7536604,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Regime invalidation: consolidation regime explicitly bearish with downside expected within 6h is fundamentally opposed to LONG. Hold time 7.95h near r",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782802385.1423824,
-      "category": "exit_pattern",
-      "insight": "Exit [SOL]: Regime thesis mismatch: LONG position in bearish consolidation expecting downside. Strategy (confidence_scorer) has 22% WR and is particularly weak in",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 6
-    },
-    {
       "ts": 1782802430.6416404,
       "category": "trade_management",
       "insight": "Exit [XRP]: Dead capital criteria met: hold_time 5.08h exceeds 4h threshold; price 1.04895 within 0.3% of entry 1.0482 (0.075% deviation, -$0.19 PnL). Consolidati",
@@ -358,7 +278,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782806823.3141356,
@@ -488,7 +408,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782810184.452396,
@@ -1228,7 +1148,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782826573.8641503,
@@ -1258,7 +1178,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782826975.9946618,
@@ -1328,7 +1248,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 5
     },
     {
       "ts": 1782827905.9188979,
@@ -1358,7 +1278,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782828714.4976888,
@@ -1398,7 +1318,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782828885.6236463,
@@ -1518,7 +1438,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782831204.7318678,
@@ -1538,7 +1458,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782831739.0050638,
@@ -1658,7 +1578,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782833284.0392141,
@@ -2688,7 +2608,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 4
+      "validation_count": 5
     },
     {
       "ts": 1782857929.8652864,
@@ -2918,7 +2838,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 6
+      "validation_count": 7
     },
     {
       "ts": 1782861253.1631763,
@@ -3068,7 +2988,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782863970.1824708,
@@ -3138,7 +3058,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 3
+      "validation_count": 4
     },
     {
       "ts": 1782865289.3590217,
@@ -3298,7 +3218,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -3
     },
     {
       "ts": 1782869145.7994578,
@@ -3748,7 +3668,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782889059.752814,
@@ -4008,7 +3928,7 @@
       "evidence": "action=full_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782893649.2384157,
@@ -4038,7 +3958,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782894224.1884797,
@@ -4078,7 +3998,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782894610.3231368,
@@ -4148,7 +4068,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782896235.8978484,
@@ -4218,7 +4138,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 2
+      "validation_count": 3
     },
     {
       "ts": 1782897252.873234,
@@ -4248,7 +4168,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782897440.7047691,
@@ -4257,8 +4177,8 @@
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
+      "validated": true,
+      "validation_count": 1
     },
     {
       "ts": 1782897766.9212642,
@@ -4328,7 +4248,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782898581.5213146,
@@ -4498,7 +4418,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782901344.4319088,
@@ -4568,7 +4488,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782903150.5213077,
@@ -4588,7 +4508,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782903735.0506563,
@@ -4668,7 +4588,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1782905760.4435048,
@@ -4848,7 +4768,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": -2
     },
     {
       "ts": 1782908695.3944771,
@@ -4999,6 +4919,86 @@
       "source": "exit_agent",
       "validated": false,
       "validation_count": 0
+    },
+    {
+      "ts": 1782911680.4625092,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: (1) Regime TREND = 0% WR on HYPE shorts (recent data mismatch: actual 'trend' regime is weak, not 'trending'). (2) Position +1.53% (+$1.12) at 4.93h h",
+      "confidence": 0.75,
+      "evidence": "action=partial_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1782911760.1725698,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Thesis invalidation: strategy execution failure. confidence_scorer 0% WR in trending on BTC (6 losses). Core test: 'If no position, enter now?' Answer",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782911881.666064,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: Thesis INVALIDATED: (1) HYPE SHORT in trending_bear: 0% WR (n=5 historical, last 5 all losses). (2) Circuit breaker active\u2014system halted trending_bear",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782911926.020256,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Overseer directive: 'trend' regime 0% WR, should be gated off. BTC SHORT in trend: 0% historical WR. Position at 3.0h hold time (median loss hold). MF",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782912207.201225,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Strategy-level invalidation: confidence_scorer 0% WR in trend (6 trades). Dead capital indicator met: >3h elapsed, price within 0.3% of entry (-81 pip",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782912511.7361403,
+      "category": "trade_management",
+      "insight": "Exit [BTC]: Dead capital after 3.15h hold. Price within 0.3% of entry with no meaningful progress toward target. Historical data: 2h-4h bucket = 11% WR, avg $-0.5",
+      "confidence": 0.5,
+      "evidence": "action=full_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782912986.7509077,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Strategy failure pattern + dead capital + CB-active. confidence_scorer has documented 0% WR on SHORT BTC in trend (n=6). Trade has sat 3.3h with zero ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782913650.4000363,
+      "category": "trade_management",
+      "insight": "Exit [HYPE]: Regime weakening per outlook: OI contracts, ADX strong but trend momentum declining. Strategy terrible on HYPE (9% WR), not general weakness. MFI over",
+      "confidence": 0.5,
+      "evidence": "action=partial_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": -1
     }
   ]
 }

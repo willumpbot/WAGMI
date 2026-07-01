@@ -1,48 +1,6 @@
 {
-  "last_updated": 1782910048,
+  "last_updated": 1782914276,
   "notes": [
-    {
-      "text": "BTC LONG in RANGE: Regime hard-block rule (0% WR, 19 trades) validated. Avoid entry or wait for TREND. This trade's MFE 0.596% trapped by noise.",
-      "ts": 1782809272.0510335,
-      "symbol": "BTC",
-      "regime": ""
-    },
-    {
-      "text": "GATE FAILURE: BTC LONG entered in RANGE despite hard-block rule (0% WR, 19 trades). Regime validation missing at entry. MFE trapped at noise.",
-      "ts": 1782809429.7026997,
-      "symbol": "BTC",
-      "regime": ""
-    },
-    {
-      "text": "XRP SHORT 2-agree REGULAR (best signal, EV=0.77/dollar) already captured in portfolio at +$0.8. BTC SHORT hard-flagged TOXIC (8% WR, n=12 reliable). Next entry condition: regime reclassification out o",
-      "ts": 1782809783.5311675,
-      "symbol": "[POSITION",
-      "regime": "range"
-    },
-    {
-      "text": "All 5 symbols: range regime=11%WR(n=9) TOXIC, OI liquidation across board, BTC SHORT still TOXIC(8%WR n=12). Next entry condition: regime reclassification to trend/trending_bear OR 2+ convergent strat",
-      "ts": 1782813200.224667,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range scan: BTC SHORT 2-agree REGULAR was best candidate but TOXIC (8% WR/12t, -$52). All OI showing liquidation divergence (exhaustion signal, not directional trigger). HYPE both directions vetoed ac",
-      "ts": 1782813466.5580053,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime scan 2026-06-30: all 5 symbols failed conf floor (max HYPE 63 vs floor 66). BTC SHORT 2-agree but TOXIC (8% WR, $-52.59/12t). HYPE both dirs vetoed. SOL BUY vetoed. Kelly=0. OI liquidatio",
-      "ts": 1782813952.2966633,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range scan 2026-06-30: all 5 symbols failed conf floor (best=HYPE 63 vs floor 66). BTC SHORT 2-agree REGULAR but TOXIC (8% WR/12t, $-52.59). Kelly=0. Active vetoes: HYPE BUY/SELL, SOL BUY. No new entr",
-      "ts": 1782814214.7442048,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "2026-06-30 scan: range regime 11%WR TOXIC, all signals failed conf floor 66 (max HYPE 53%), BTC SHORT 2-agree TOXIC 8%WR, Kelly=0, vol ratios 0.0-0.1 dead market, active vetoes HYPE BUY + SOL BUY. No",
       "ts": 1782814768.4545822,
@@ -598,6 +556,48 @@
     {
       "text": "Circuit breaker active (10 consecutive losses) - hard skip per safety gates, no override regardless of thesis quality",
       "ts": 1782910048.9422607,
+      "symbol": "[POSITION",
+      "regime": "trend"
+    },
+    {
+      "text": "confidence_scorer BTC SHORT underperforms: 0% WR trend (6 trades), 17% unknown (12 trades). 3.3h dead hold\u2014gate this combo.",
+      "ts": 1782913142.2542343,
+      "symbol": "BTC",
+      "regime": "unknown"
+    },
+    {
+      "text": "confidence_scorer BTC SHORT in unknown regime: known weak pattern (0% trend WR) re-entered. Gate must block unless 2+ confluence",
+      "ts": 1782913218.0652425,
+      "symbol": "BTC",
+      "regime": "unknown"
+    },
+    {
+      "text": "CB active, all candidates solo or toxic regime (trending_bear 0% WR n=5); preserve capital until CB resets",
+      "ts": 1782913352.8385174,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "CB tripped (10 consecutive losses) \u2014 mandatory skip per safety gate, no override regardless of thesis quality",
+      "ts": 1782913826.6419892,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "confidence_scorer HYPE: 9% WR (n=11, -$565). Exit Agent closed SHORT at regime deterioration (-$0.20 loss). Gate: require 2+ agreement.",
+      "ts": 1782913975.985285,
+      "symbol": "HYPE",
+      "regime": "unknown"
+    },
+    {
+      "text": "Block HYPE solo-signals in unknown regime. confidence_scorer on HYPE decaying to 9% WR (n=11)\u2014require 2+ confluence.",
+      "ts": 1782914036.2857418,
+      "symbol": "HYPE",
+      "regime": "unknown"
+    },
+    {
+      "text": "Circuit breaker active: all candidates skipped until reset, per safety gate axiom (never override CB).",
+      "ts": 1782914276.7137327,
       "symbol": "[POSITION",
       "regime": "trend"
     }

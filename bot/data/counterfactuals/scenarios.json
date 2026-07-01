@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782909857.6062567,
+  "updated_at": 1782914414.850275,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -12611,6 +12611,113 @@
         "actual_pnl_raw": -0.056750791142945164,
         "pnl_at_tp1_pct": 4.25,
         "pnl_at_tp2_pct": 8.5
+      }
+    },
+    {
+      "id": "cf_1782913218_c2da858e",
+      "timestamp": 1782913218.1841931,
+      "symbol": "BTC",
+      "scenario_type": "exit_timing",
+      "actual_action": "SL",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": -0.001768003831553543,
+      "counterfactual_pnl": 3.6922343567786635,
+      "delta": 3.694002360610217,
+      "resolved": true,
+      "metadata": {
+        "side": "short",
+        "entry_price": 58739.5,
+        "actual_exit_price": 58853.5,
+        "tp1_price": 56570.7,
+        "tp2_price": 55402.9,
+        "actual_pnl_raw": -1.0385166106353934,
+        "pnl_at_tp1_pct": 3.6922,
+        "pnl_at_tp2_pct": 5.6803
+      }
+    },
+    {
+      "id": "cf_1782913741_eb55e386",
+      "timestamp": 1782913741.2768784,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 75.438,
+        "sl_price": 73.82855797396424,
+        "tp1_price": 78.65688405207153,
+        "tp2_price": 82.99285714285715,
+        "confidence": 70.3576999537341,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782914036_e34d6ac9",
+      "timestamp": 1782914036.3892221,
+      "symbol": "HYPE",
+      "scenario_type": "exit_timing",
+      "actual_action": "SL",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": -0.3170579544543956,
+      "counterfactual_pnl": 7.945174530255676,
+      "delta": 8.262232484710072,
+      "resolved": true,
+      "metadata": {
+        "side": "short",
+        "entry_price": 63.7368,
+        "actual_exit_price": 63.8805,
+        "tp1_price": 58.6728,
+        "tp2_price": 56.6511,
+        "actual_pnl_raw": -0.20208259431468922,
+        "pnl_at_tp1_pct": 7.9452,
+        "pnl_at_tp2_pct": 11.1171
+      }
+    },
+    {
+      "id": "cf_1782914206_7efea10c",
+      "timestamp": 1782914206.0946815,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1594.6,
+        "sl_price": 1566.3857142857144,
+        "tp1_price": 1651.028571428571,
+        "tp2_price": 1707.4571428571421,
+        "confidence": 69.98851389412006,
+        "reason": "LLM_FIRST: ETH consolidation/range regime with CB tripped (10 consecutive losses) - no trade should be taken un"
+      }
+    },
+    {
+      "id": "cf_1782914414_2d8b2f64",
+      "timestamp": 1782914414.8502584,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 76.003,
+        "sl_price": 74.13352121181498,
+        "tp1_price": 79.74195757637005,
+        "tp2_price": 83.79157142857146,
+        "confidence": 68.36777139332122,
+        "reason": "LLM_FIRST: "
       }
     }
   ]

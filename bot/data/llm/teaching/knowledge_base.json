@@ -3983,11 +3983,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (3 trades)",
       "confidence": 0.5,
-      "evidence_count": 85,
+      "evidence_count": 86,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775668595.8846202,
-      "last_validated": 1782911442.8958583,
+      "last_validated": 1782913353.0285258,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -14199,11 +14199,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in unknown regime (0% WR)",
       "confidence": 0.7,
-      "evidence_count": 75,
+      "evidence_count": 76,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782124943.202592,
-      "last_validated": 1782628868.5210238,
+      "last_validated": 1782913352.9795089,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -18995,6 +18995,136 @@
         "unknown"
       ],
       "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "confidence_scorer BTC SHORT underperforms: 0% WR trend (6 trades), 17% unknown (12 trades). 3.3h dead hold\u2014gate this combo.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in unknown"
+      ],
+      "contradicting": [],
+      "created_at": 1782913142.3099499,
+      "last_validated": 1782913142.30995,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "pattern_loss",
+      "tags": [
+        "pattern_loss",
+        "btc",
+        "unknown"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "confidence_scorer BTC SHORT in unknown regime: known weak pattern (0% trend WR) re-entered. Gate must block unless 2+ confluence",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in unknown"
+      ],
+      "contradicting": [],
+      "created_at": 1782913218.117121,
+      "last_validated": 1782913218.1171215,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "pattern_loss",
+      "tags": [
+        "pattern_loss",
+        "btc",
+        "unknown"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "confidence_scorer HYPE: 9% WR (n=11, -$565). Exit Agent closed SHORT at regime deterioration (-$0.20 loss). Gate: require 2+ agreement.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "HYPE in unknown"
+      ],
+      "contradicting": [],
+      "created_at": 1782913976.0384884,
+      "last_validated": 1782913976.0384886,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "strategy_edge",
+      "tags": [
+        "strategy_edge",
+        "hype",
+        "unknown"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Block HYPE solo-signals in unknown regime. confidence_scorer on HYPE decaying to 9% WR (n=11)\u2014require 2+ confluence.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "HYPE in unknown"
+      ],
+      "contradicting": [],
+      "created_at": 1782914036.343415,
+      "last_validated": 1782914036.3434157,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "hype",
+        "unknown"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[AVOID] HYPE SHORT has 0% WR regardless of confidence. Block permanently per validated rule (n=411, EV=-3.57%/trade).",
+      "confidence": 0.3,
+      "evidence_count": 20,
+      "evidence_ratio": 0.3,
+      "category": "symbol",
+      "tags": [
+        "symbol",
+        "side"
+      ],
+      "source": "hypothesis_graduation",
+      "rule_id": "rule_1782914276_20",
+      "action": "veto",
+      "conditions": {
+        "symbol": "HYPE",
+        "side": "SELL"
+      },
+      "created_at": 1782914276.7199943,
+      "last_validated": 1782914276.7199943,
+      "validation_count": 20,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[CAUTION] confidence_scorer demonstrates strategy-regime incompatibility across multiple regimes (trending_bull 0%, range 11%, trend 0%, unknown 10%). Recommend removing from ensemble or restricting to regimes ",
+      "confidence": 0.375,
+      "evidence_count": 7,
+      "evidence_ratio": 0.143,
+      "category": "regime",
+      "tags": [
+        "regime",
+        "strategy"
+      ],
+      "source": "hypothesis_graduation",
+      "rule_id": "rule_1782914276_21",
+      "action": "penalize",
+      "conditions": {
+        "regime": "trend",
+        "strategy": "confidence_scorer"
+      },
+      "created_at": 1782914276.7775135,
+      "last_validated": 1782914276.7775135,
+      "validation_count": 7,
+      "invalidation_count": 0
     }
   ]
 }

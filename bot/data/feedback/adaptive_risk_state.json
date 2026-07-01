@@ -2,21 +2,21 @@
   "recent_outcomes": [
     true,
     false,
-    true,
-    false,
-    false,
-    false,
-    false,
-    true,
-    false,
-    false,
-    false,
-    false,
-    false,
     false,
     false,
     false,
     true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+    false,
     false,
     false,
     false
@@ -60,7 +60,7 @@
     },
     "unknown": {
       "wins": 3,
-      "total": 18
+      "total": 20
     }
   }
 }
