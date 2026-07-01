@@ -4505,6 +4505,18 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         )
                         if _liq_close2 and getattr(_liq_close2, "filled", False):
                             event = self.pos_mgr.force_close(symbol, current_price, "LIQUIDATION_AVOID")
+                            if event:
+                                # Wiring audit #3 (2026-07-01): this force_close runs AFTER the
+                                # events loop, so its TradeEvent was used only for the alert and
+                                # then dropped — the close never reached equity, trades.csv, or
+                                # learning (the largest leveraged losses silently erased).
+                                # Inject via _pending_exit_events (same pattern as LLM_EXIT_AGENT)
+                                # so the next events-loop pass books it; the stale-cleanup guard
+                                # keeps the CLOSED position alive until the event is processed.
+                                event.metadata["_exchange_submitted"] = True
+                                if not hasattr(self, '_pending_exit_events'):
+                                    self._pending_exit_events = []
+                                self._pending_exit_events.append(event)
                             if self.alerts and event:
                                 self.alerts.send_trade_alert(
                                     f"LIQUIDATION AVOID: {symbol} {event.side} "
