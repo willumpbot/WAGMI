@@ -1,8 +1,8 @@
-# 🧠 STATE OF THE BRAIN — 2026-07-01 22:26 UTC
+# 🧠 STATE OF THE BRAIN — 2026-07-01 22:31 UTC
 _Auto-generated every learning-engine pass (bot/tools/gen_state.py). This is the shared page._
 
 ## Bot
-🟢 ALIVE — pid 28884, uptime 0.4h, scan 45, errors 0, equity $2318.91 (heartbeat 0m old)
+🟢 ALIVE — pid 28884, uptime 0.4h, scan 54, errors 0, equity $2318.91 (heartbeat 0m old)
 
 ## Open book
 - **SOL LONG** @ 78.264 | SL 76.433 TP1 81.925 | conf 60.0 | opened 2026-07-01T22:10
@@ -22,7 +22,7 @@ _Auto-generated every learning-engine pass (bot/tools/gen_state.py). This is the
 - Spine: repaired 2026-07-01 (6 fixes); live verification on new closes in progress. Invariant contract: WIRING_INVARIANTS.md
 
 ## Hole registry
-registry pending _(unavailable: FileNotFoundError)_
+62 open / 11 fixed — full registry: coordination/HOLES.md
 
 ## Waiting on owner
 6 owner decisions pending — coordination/MORNING_BRIEF_2026-07-02.md
