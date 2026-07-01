@@ -14,6 +14,14 @@ This unifies the contracts already in force: WIRING_INVARIANTS.md (the wiring), 
 - Risk-reducing-only changes (cut-only ladders, tighter guards) still follow the pipeline but may ship on backtest + flag without waiting on unrelated results.
 - Never: weaken circuit breakers, reorder gates, hardcode directional opinion, add features during an open rewire.
 
+## 2b. Learned-rule provenance & quarantine (anti-poisoning)
+Owner concern (2026-07-02): learned vetoes/hard blocks from incomplete data + incomplete wiring are dangerous — the mech->LLM->mech->LLM loop can compound corruption.
+- Every learned rule carries PROVENANCE: the data era, n, and ledger-integrity version it was learned from.
+- Rules learned on a ledger later shown broken are SUSPECT BY CONSTRUCTION: they may hard-block ONLY after dollar re-validation on trustworthy data (counterfactual re-score or clean closes). Until then: SHADOW MODE — log the would-have-blocked decision, enforce nothing.
+- No new rule graduates to enforcement without: n>=13, dollar-positive, learned on the current ledger version.
+- The loop is ANCHORED: every cycle grades against PRICE (external truth) — never against the system's own outputs. A rule justified only by system-internal stats is not justified.
+- After any major instrument fix, the meta-audit re-runs the dollar re-score of ALL enforcing rules.
+
 ## 3. Learning standard — how understanding compounds
 - Every thesis graded against price. Every rule scored in dollars. Every agent's calls scored against a baseline. Every dataset consumed or explicitly muted (Invariant 7).
 - The learning engine (3h loop) runs: spine verification → HOLES burns → RESEARCH_AGENDA pull → knowledge commit. Findings that change prior conclusions must edit the prior document and say so.
@@ -34,4 +42,5 @@ Amendments are committed to this file with date + reason. An unamended standard 
 
 ## Amendment log
 - 2026-07-02: v1 adopted.
+- 2026-07-02: v1.2 — added §2b learned-rule provenance & quarantine (anti-poisoning) per owner concern re: circular mech->LLM->mech corruption.
 - 2026-07-02: v1.1 — owner directive: DO-NOW items are questioned/audited/fixed/re-tested and SHIPPED autonomously; owner receives results, not requests. Owner-gated set narrowed to: live-money flips, CB/gate changes, spend, irreversibles.
