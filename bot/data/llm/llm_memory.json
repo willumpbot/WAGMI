@@ -1,18 +1,6 @@
 {
-  "last_updated": 1782888500,
+  "last_updated": 1782889927,
   "notes": [
-    {
-      "text": "Range regime confirmed 11% WR toxic (n=9, wired). SOL BUY VETO active (acc=100%, n=5) + OI liquidation on SOL \u2014 let SL hit, do not defend. Kelly=0.0 across all symbols. CB WARNING active (3 consecutiv",
-      "ts": 1782795165.5567853,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime structural skip confirmed by brain (0%/19t) + wired (11%/n=9). ETH SHORT blocked in range per memory. SOL BUY VETO active (acc=100%, n=5). HYPE BUY VETO active (n=7). CB warning (3 consec",
-      "ts": 1782795854.3828127,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "BTC SHORT in range: even 3-strat bollinger-90% agreement maps to 8% WR TOXIC in live dynamic data. Kelly=0.0. Range regime = 0% WR brain (19t), 11% wired (9t). Skip until volume surge + OI expansion c",
       "ts": 1782796201.090065,
@@ -600,6 +588,18 @@
       "ts": 1782888500.6371715,
       "symbol": "[PRE-CLOSE",
       "regime": "range"
+    },
+    {
+      "text": "trending_bear regime showing 0% WR (n=5-7 across bear/trend/bull), all signals solo/weak <=0.5 conf, none clear 66% floor, BTC_SHORT toxic 9% WR n=11, HYPE SELL active veto (-$16.65/trade), SOL BUY ac",
+      "ts": 1782889637.9667134,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "All symbols rejected at confidence_floor_66 this scan; BTC_SHORT toxic (9% WR n=11), trending_bear regime 0% WR (n=5-8), solo confluence=1, quant explicitly flags no positive-EV path, CB warning at 7",
+      "ts": 1782889927.04247,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
     }
   ]
 }
