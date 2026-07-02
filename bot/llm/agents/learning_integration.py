@@ -307,15 +307,23 @@ def _propose_hypothesis(hypothesis: str, category: str, evidence_lesson: str):
 def _inject_into_knowledge_base(
     lesson: str, category: str, strength: str, symbol: str, regime: str
 ):
-    """Feed strong lessons into the self-teaching knowledge base."""
+    """Feed strong lessons into the self-teaching knowledge base.
+
+    FALLACY_AUDIT D7 (2026-07-02): this used to mint permanent PRINCIPLEs at
+    confidence 0.80 from a SINGLE trade's LLM self-labeled 'strong' lesson —
+    192 of the 237 served principles were n=1, compaction-exempt forever.
+    THE_STANDARD §1/§2b: nothing graduates below n>=13. Strong lessons now
+    enter as HYPOTHESES (n=1, provenance-stamped); principle status is only
+    reachable through the validation path (n>=13, dollar-positive).
+    """
     if strength != "strong":
         return  # Only strong lessons become knowledge
 
     try:
+        import time as _time
         from llm.self_teaching import get_teaching_engine
         engine = get_teaching_engine()
 
-        knowledge_type = "principle"  # Only strong lessons reach here (guarded above)
         tags = [category]
         if symbol:
             tags.append(symbol.lower())
@@ -323,15 +331,18 @@ def _inject_into_knowledge_base(
             tags.append(regime.lower())
 
         engine.knowledge.add(
-            knowledge_type=knowledge_type,
+            knowledge_type="hypothesis",  # D7: single-trade lesson != principle
             content=lesson[:200],
-            confidence=0.80,
+            confidence=0.55,
             category=category,
             tags=tags,
             source="learning_agent",
-            evidence=f"{symbol} in {regime}" if symbol or regime else "",
+            evidence=(
+                f"n=1 single-trade lesson ({symbol or '?'} in {regime or '?'}), "
+                f"era={_time.strftime('%Y-%m')} — needs n>=13 dollar-positive validation"
+            ),
         )
-        logger.debug(f"[AGENT-LEARN] Knowledge added: [{category}] {lesson[:60]}")
+        logger.debug(f"[AGENT-LEARN] Hypothesis added (n=1): [{category}] {lesson[:60]}")
 
     except Exception as e:
         logger.debug(f"[AGENT-LEARN] Knowledge injection error: {e}")
