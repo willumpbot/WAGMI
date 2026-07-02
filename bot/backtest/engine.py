@@ -293,10 +293,17 @@ class BacktestEngine:
             from feedback.rejection_tracker import RejectionOutcomeTracker
             from feedback.ev_calibrator import EVCalibrator
             from feedback.correlation_boost import CrossAssetCorrelationBoost
-            self._bt_rejection_tracker = RejectionOutcomeTracker(data_dir="data")
+            # FALLACY_AUDIT M8 (2026-07-02): backtests used data_dir="data" —
+            # the SAME ev_calibrator_state.json the live bot loads. A backtest
+            # run could flip the live gate STRICT<->RELAXED and logged every
+            # backtest close as an "override win" (source of the impossible
+            # 28-wins/0-overrides live state). Backtest state is now scratch.
+            import tempfile
+            _bt_scratch = tempfile.mkdtemp(prefix="wagmi_bt_adaptive_")
+            self._bt_rejection_tracker = RejectionOutcomeTracker(data_dir=_bt_scratch)
             self._bt_ev_calibrator = EVCalibrator(
                 rejection_tracker=self._bt_rejection_tracker,
-                data_dir="data",
+                data_dir=_bt_scratch,
             )
             self._bt_correlation_boost = CrossAssetCorrelationBoost(symbols=symbols)
             # Wire into ensemble
@@ -1659,10 +1666,13 @@ class BacktestEngine:
                 except Exception:
                     pass  # Adaptive floor is best-effort
 
-            # Feed EV calibrator with trade outcome (for adaptive threshold)
+            # Re-evaluate EV calibrator threshold from rejection outcomes.
+            # FALLACY_AUDIT M8: record_override_outcome(outcome=="WIN") on
+            # EVERY close was removed — only trades actually admitted via
+            # override belong in that ledger, and no such attribution exists
+            # here. update() alone re-reads the (scratch) tracker stats.
             if self._bt_ev_calibrator is not None:
                 try:
-                    self._bt_ev_calibrator.record_override_outcome(outcome == "WIN")
                     self._bt_ev_calibrator.update()
                 except Exception:
                     pass

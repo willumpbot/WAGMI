@@ -60,7 +60,11 @@ class TestRejectionOutcomeTracker:
             assert completed[0]["final_outcome"] == "missed_profit"
 
     def test_measure_correct_rejection(self):
-        """Detect correct rejection when price moves against signal."""
+        """Detect correct rejection when price moves against signal.
+
+        FALLACY_AUDIT M9: symmetric +/-1.0% bar on fee-adjusted move —
+        a -0.71% drift (old -0.5% bar) is now inconclusive; use a real drop.
+        """
         with tempfile.TemporaryDirectory() as td:
             tracker = RejectionOutcomeTracker(data_dir=td)
             rec = RejectionRecord(
@@ -70,9 +74,18 @@ class TestRejectionOutcomeTracker:
             )
             tracker._pending.append(rec)
 
-            completed = tracker.measure_outcomes({"BTC": 69500.0})
+            completed = tracker.measure_outcomes({"BTC": 69000.0})
             assert len(completed) == 1
             assert completed[0]["final_outcome"] == "correct_rejection"
+
+    def test_first_touch_stop_beats_lookahead_rally(self):
+        """FALLACY_AUDIT M9: SL-first-then-rally is a correct rejection, not a miss."""
+        moves = {30: -1.5, 60: 0.2, 120: 2.5, 240: 3.0}
+        assert RejectionOutcomeTracker.classify_moves(moves) == "correct_rejection"
+
+    def test_first_touch_profit(self):
+        moves = {30: 0.4, 60: 1.6, 120: -2.0}
+        assert RejectionOutcomeTracker.classify_moves(moves) == "missed_profit"
 
     def test_stats_update(self):
         """Stats update correctly on classification."""
@@ -113,16 +126,18 @@ class TestRejectionOutcomeTracker:
 class TestEVCalibrator:
     """Test adaptive EV threshold adjustment."""
 
-    def test_initial_cold_start_relaxed(self):
-        """Cold-starts in relaxed mode (allows marginal overrides immediately)."""
+    def test_initial_cold_start_shadow(self):
+        """FALLACY_AUDIT M7: cold-starts in SHADOW — logs would-have, admits nothing."""
         with tempfile.TemporaryDirectory() as td:
             cal = EVCalibrator(data_dir=td)
-            # Cold-start: should allow marginal EV with consensus
-            assert cal.should_override(-0.005, 3)
-            # But not below absolute min
+            assert cal._mode == "shadow"
+            # Would-have-overridden is counted but NOT admitted
+            assert not cal.should_override(-0.005, 3)
+            assert cal._shadow_would_overrides == 1
+            # Below absolute min / no consensus: not even shadow-counted
             assert not cal.should_override(-0.03, 3)
-            # And not without consensus
             assert not cal.should_override(-0.005, 1)
+            assert cal._shadow_would_overrides == 1
 
     def test_should_not_override_positive_ev(self):
         """Never override positive EV (not a rejection)."""

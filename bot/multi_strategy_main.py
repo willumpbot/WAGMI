@@ -1017,15 +1017,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             except Exception as rt_e:
                 logger.debug(f"[INIT] RejectionOutcomeTracker unavailable: {rt_e}")
                 self._rejection_tracker = None
-            # Wire EV calibrator for adaptive threshold adjustment
+            # Wire EV calibrator for adaptive threshold adjustment.
+            # FALLACY_AUDIT M7 (2026-07-02): the tracker was never passed (so
+            # update() could not read outcome stats) and ingest_outcome did not
+            # exist (AttributeError nulled this handle while the ensemble kept
+            # the override). Tracker now passed; callback exists.
             try:
                 from feedback.ev_calibrator import EVCalibrator
-                self._ev_calibrator = EVCalibrator(data_dir="data")
+                self._ev_calibrator = EVCalibrator(
+                    rejection_tracker=self._rejection_tracker,
+                    data_dir="data",
+                )
                 self.ensemble._ev_calibrator = self._ev_calibrator
                 # Connect rejection tracker -> EV calibrator feedback loop
                 if self._rejection_tracker is not None:
                     self._rejection_tracker._outcome_callback = self._ev_calibrator.ingest_outcome
-                logger.info("[INIT] EVCalibrator wired into ensemble EV gate")
+                logger.info("[INIT] EVCalibrator wired into ensemble EV gate (tracker connected)")
             except Exception as ev_e:
                 logger.debug(f"[INIT] EVCalibrator unavailable: {ev_e}")
                 self._ev_calibrator = None

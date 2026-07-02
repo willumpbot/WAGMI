@@ -169,22 +169,44 @@ class RejectionOutcomeTracker:
 
         return newly_completed
 
+    # Classification constants (FALLACY_AUDIT M9, 2026-07-02)
+    CLASSIFY_THRESHOLD_PCT = 1.0   # symmetric win/loss bar on NET move
+    ROUND_TRIP_FEE_PCT = 0.10      # est. taker fees both ways, pct of notional
+
+    @classmethod
+    def classify_moves(cls, outcomes: Dict) -> str:
+        """First-touch classification over windowed move snapshots.
+
+        FALLACY_AUDIT M9 (2026-07-02): the old rule took max() over all
+        windows > +1.0% as "missed_profit" EVEN IF -0.5% was breached first
+        (look-ahead best-excursion; a stop-out counted as a miss), with
+        asymmetric thresholds and no fees. This inflated miss_rate and pushed
+        the EVCalibrator toward RELAXED. Now: walk windows in TIME order; the
+        first window whose fee-adjusted move breaches the symmetric +/-1.0%
+        bar decides. (True path ordering needs candles; window order is the
+        best available proxy on stored snapshots.)
+        """
+        if not outcomes:
+            return "inconclusive"
+        # JSON round-trips turn int keys into strings — normalize
+        try:
+            seq = sorted(((int(k), float(v)) for k, v in outcomes.items()))
+        except (ValueError, TypeError):
+            return "inconclusive"
+        for _window, move in seq:
+            net = move - cls.ROUND_TRIP_FEE_PCT  # a taken trade pays fees
+            if net >= cls.CLASSIFY_THRESHOLD_PCT:
+                return "missed_profit"
+            if net <= -cls.CLASSIFY_THRESHOLD_PCT:
+                return "correct_rejection"
+        return "inconclusive"
+
     def _classify(self, rec: RejectionRecord) -> None:
         """Classify rejection outcome and update statistics."""
-        if not rec.outcomes:
-            rec.final_outcome = "inconclusive"
+        rec.final_outcome = self.classify_moves(rec.outcomes)
+        if rec.final_outcome == "inconclusive" and not rec.outcomes:
             rec.archived = True
             return
-
-        best_move = max(rec.outcomes.values())
-        worst_move = min(rec.outcomes.values())
-
-        if best_move > 1.0:
-            rec.final_outcome = "missed_profit"
-        elif worst_move < -0.5:
-            rec.final_outcome = "correct_rejection"
-        else:
-            rec.final_outcome = "inconclusive"
 
         rec.archived = True
         self._completed.append(rec)
@@ -216,7 +238,7 @@ class RejectionOutcomeTracker:
         logger.info(
             f"[REJECTION-TRACKER] Outcome: {rec.symbol} {rec.side} "
             f"EV={rec.ev:.4f} n_agree={rec.n_agree} -> {rec.final_outcome} "
-            f"(best_move={best_move:+.2f}%)"
+            f"(first-touch over windows {sorted(rec.outcomes.keys()) if rec.outcomes else []})"
         )
 
         # Feed outcome to EVCalibrator
@@ -271,9 +293,16 @@ class RejectionOutcomeTracker:
                     if not line:
                         continue
                     rec_dict = json.loads(line)
-                    # Rebuild stats from completed records
+                    # Rebuild stats from completed records.
+                    # FALLACY_AUDIT M9: RE-SCORE with the first-touch
+                    # classifier rather than trusting stored verdicts — the
+                    # backlog was graded by the look-ahead best-excursion rule.
                     ev = rec_dict.get("ev", 0)
-                    outcome = rec_dict.get("final_outcome", "")
+                    _stored_moves = rec_dict.get("outcomes") or {}
+                    outcome = (
+                        self.classify_moves(_stored_moves)
+                        if _stored_moves else rec_dict.get("final_outcome", "")
+                    )
                     n_agree = rec_dict.get("n_agree", 1)
 
                     for name, config in self.bins.items():

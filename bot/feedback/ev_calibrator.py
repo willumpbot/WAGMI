@@ -37,7 +37,9 @@ EV_BIN_MODERATE_NEG = "moderate_neg"  # -0.05 <= EV < -0.01
 EV_BIN_MARGINAL_NEG = "marginal_neg"  # -0.01 <= EV < 0.0
 
 # Threshold adjustment triggers
-MIN_OBSERVATIONS = 5           # Reduced from 10 — faster adaptation (2026-03-24)
+# FALLACY_AUDIT M7 (2026-07-02): was 5 ("faster adaptation") — below
+# THE_STANDARD §1/§2b evidence floor. Nothing enforces below n>=13.
+MIN_OBSERVATIONS = 13
 MISS_RATE_RELAX_THRESHOLD = 0.30   # Relax when miss_rate > 30%
 CORRECT_RATE_RELAX_MAX = 0.10      # Only relax when correct_rate < 10%
 CORRECT_RATE_TIGHTEN = 0.50        # Tighten when correct_rate > 50%
@@ -50,6 +52,10 @@ OVERRIDE_SIZE_MULTIPLIER = 0.5     # Half size on overridden signals
 # Threshold modes
 MODE_STRICT = "strict"        # EV >= 0 required (default)
 MODE_RELAXED = "relaxed"      # Allow marginal negatives with consensus
+# SHADOW (FALLACY_AUDIT M7): would-have-overridden is logged, nothing is
+# admitted. This is the cold-start mode — the old cold-start forced RELAXED
+# on every restart, a permanently-relaxed gate no measurement could revoke.
+MODE_SHADOW = "shadow"
 
 
 class EVCalibrator:
@@ -83,18 +89,21 @@ class EVCalibrator:
         self._last_update: float = 0.0
         self._total_overrides: int = 0
         self._total_override_wins: int = 0
+        self._shadow_would_overrides: int = 0
         self._transition_history: list = []  # [{timestamp, from_mode, to_mode, reason, stats}]
 
         # Load persisted state
         self._load_state()
 
-        # Cold-start: begin in relaxed mode until we have enough data to decide.
-        # Paper trading proved marginal EV signals are 50%+ profitable with consensus.
-        # Starting strict means we miss winners while waiting for 5+ observations.
+        # Cold-start: SHADOW (FALLACY_AUDIT M7 / THE_STANDARD 2b). The old
+        # cold-start re-forced RELAXED on every restart based on a claim
+        # ("50%+ profitable") whose measurement loop was dead — an enforcing
+        # gate with no revocation path. Shadow logs would-have-overridden and
+        # admits nothing until n>=13 rejection outcomes justify relaxing.
         if self._total_overrides == 0 and not self._transition_history:
-            self._mode = MODE_RELAXED
-            self._ev_threshold = -0.01
-            logger.info("[EV-CALIBRATOR] Cold-start: beginning in RELAXED mode")
+            self._mode = MODE_SHADOW
+            self._ev_threshold = -0.01  # what SHADOW *would* allow (logged only)
+            logger.info("[EV-CALIBRATOR] Cold-start: beginning in SHADOW mode (log-only)")
 
         logger.info(
             f"[EV-CALIBRATOR] Initialized: mode={self._mode} "
@@ -119,6 +128,17 @@ class EVCalibrator:
 
         # Never override if EV is below absolute minimum
         if ev < ABSOLUTE_MIN_EV_THRESHOLD:
+            return False
+
+        # SHADOW: log the would-have-overridden decision, admit nothing (M7)
+        if self._mode == MODE_SHADOW:
+            if n_agree >= MIN_CONSENSUS_FOR_OVERRIDE and ev >= self._ev_threshold:
+                self._shadow_would_overrides += 1
+                self._save_state()
+                logger.info(
+                    f"[EV-CALIBRATOR] SHADOW would-have-overridden: EV={ev:.4f} "
+                    f"n_agree={n_agree} (total shadow: {self._shadow_would_overrides}) — not admitted"
+                )
             return False
 
         # Only override in relaxed mode
@@ -167,6 +187,20 @@ class EVCalibrator:
             f"(override win rate: {wins}/{total} = {win_rate:.1%})"
         )
 
+    def ingest_outcome(self, ev: float, n_agree: int, outcome: str) -> None:
+        """Per-outcome callback from RejectionOutcomeTracker.
+
+        FALLACY_AUDIT M7: main wired the tracker callback to this method name
+        but it never existed — AttributeError at init, the calibrator handle
+        was nulled in main while the ensemble kept enforcing the override.
+        The tracker's bin stats already include this outcome by callback time;
+        re-evaluating the threshold is all that's needed here.
+        """
+        try:
+            self.update()
+        except Exception as e:
+            logger.debug(f"[EV-CALIBRATOR] ingest_outcome update error: {e}")
+
     def update(self) -> Dict[str, Any]:
         """Re-evaluate threshold based on current rejection outcome data.
 
@@ -193,7 +227,7 @@ class EVCalibrator:
         reason = ""
 
         if total >= MIN_OBSERVATIONS:
-            if self._mode == MODE_STRICT:
+            if self._mode in (MODE_STRICT, MODE_SHADOW):
                 # Check if we should relax: high miss rate, low correct rate
                 if miss_rate > MISS_RATE_RELAX_THRESHOLD and correct_rate < CORRECT_RATE_RELAX_MAX:
                     self._mode = MODE_RELAXED
@@ -202,6 +236,14 @@ class EVCalibrator:
                         f"Relaxing: miss_rate={miss_rate:.1%} > {MISS_RATE_RELAX_THRESHOLD:.0%}, "
                         f"correct_rate={correct_rate:.1%} < {CORRECT_RATE_RELAX_MAX:.0%} "
                         f"over {total} observations"
+                    )
+                elif self._mode == MODE_SHADOW and correct_rate > CORRECT_RATE_TIGHTEN:
+                    # Shadow resolved against relaxing — settle into strict
+                    self._mode = MODE_STRICT
+                    self._ev_threshold = 0.0
+                    reason = (
+                        f"Shadow resolved to STRICT: correct_rate={correct_rate:.1%} > "
+                        f"{CORRECT_RATE_TIGHTEN:.0%} over {total} observations"
                     )
 
             elif self._mode == MODE_RELAXED:
@@ -265,6 +307,7 @@ class EVCalibrator:
             "override_size_mult": self._override_size_mult,
             "total_overrides": self._total_overrides,
             "override_win_rate": round(override_win_rate, 4),
+            "shadow_would_overrides": self._shadow_would_overrides,
             "last_update": self._last_update,
             "transitions": len(self._transition_history),
         }
@@ -277,6 +320,7 @@ class EVCalibrator:
             "override_size_mult": self._override_size_mult,
             "total_overrides": self._total_overrides,
             "total_override_wins": self._total_override_wins,
+            "shadow_would_overrides": self._shadow_would_overrides,
             "last_update": self._last_update,
             "transition_history": self._transition_history,
         }
@@ -306,12 +350,13 @@ class EVCalibrator:
             self._override_size_mult = state.get("override_size_mult", OVERRIDE_SIZE_MULTIPLIER)
             self._total_overrides = state.get("total_overrides", 0)
             self._total_override_wins = state.get("total_override_wins", 0)
+            self._shadow_would_overrides = state.get("shadow_would_overrides", 0)
             self._last_update = state.get("last_update", 0.0)
             self._transition_history = state.get("transition_history", [])
 
             # Enforce safety rails on loaded state
             self._ev_threshold = max(self._ev_threshold, ABSOLUTE_MIN_EV_THRESHOLD)
-            if self._mode not in (MODE_STRICT, MODE_RELAXED):
+            if self._mode not in (MODE_STRICT, MODE_RELAXED, MODE_SHADOW):
                 logger.warning(
                     f"[EV-CALIBRATOR] Invalid mode '{self._mode}' in state file, resetting to strict"
                 )
