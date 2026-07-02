@@ -1,0 +1,287 @@
+
+======== CLOSE decisions (per-call) ========
+close applied=True ALL {
+ "n": 74,
+ "6h": "correct 38/74 (51%), mean -0.235%, median +0.048%",
+ "6h_$": "n=67 sum -1043.33$ mean -15.57$",
+ "12h": "correct 38/74 (51%), mean -0.427%, median +0.086%",
+ "12h_$": "n=67 sum -1056.74$ mean -15.77$",
+ "24h": "correct 42/74 (57%), mean -0.227%, median +0.602%",
+ "24h_$": "n=67 sum -764.86$ mean -11.42$"
+}
+  E1_jun01-10 {
+ "n": 29,
+ "6h": "correct 15/29 (52%), mean -0.163%, median +0.048%",
+ "6h_$": "n=29 sum -966.75$ mean -33.34$",
+ "12h": "correct 14/29 (48%), mean -0.664%, median -0.240%",
+ "12h_$": "n=29 sum -1282.09$ mean -44.21$",
+ "24h": "correct 18/29 (62%), mean +0.153%, median +0.978%",
+ "24h_$": "n=29 sum -969.26$ mean -33.42$"
+}
+  E2_jun16-22 {
+ "n": 26,
+ "6h": "correct 14/26 (54%), mean +0.220%, median +0.479%",
+ "6h_$": "n=22 sum -42.91$ mean -1.95$",
+ "12h": "correct 14/26 (54%), mean +0.036%, median +0.241%",
+ "12h_$": "n=22 sum +243.86$ mean +11.08$",
+ "24h": "correct 14/26 (54%), mean -0.201%, median +0.668%",
+ "24h_$": "n=22 sum +219.56$ mean +9.98$"
+}
+  E3_jun23-jul02 {
+ "n": 19,
+ "6h": "correct 9/19 (47%), mean -0.968%, median -0.062%",
+ "6h_$": "n=16 sum -33.66$ mean -2.10$",
+ "12h": "correct 10/19 (53%), mean -0.699%, median +0.075%",
+ "12h_$": "n=16 sum -18.51$ mean -1.16$",
+ "24h": "correct 10/19 (53%), mean -0.843%, median +0.075%",
+ "24h_$": "n=16 sum -15.17$ mean -0.95$"
+}
+close applied=False ALL {
+ "n": 430,
+ "6h": "correct 263/430 (61%), mean +0.108%, median +0.362%",
+ "6h_$": "n=358 sum -122.11$ mean -0.34$",
+ "12h": "correct 281/430 (65%), mean +0.326%, median +0.563%",
+ "12h_$": "n=358 sum +491.57$ mean +1.37$",
+ "24h": "correct 318/430 (74%), mean +0.473%, median +0.653%",
+ "24h_$": "n=358 sum +1067.69$ mean +2.98$"
+}
+  E1_jun01-10 {
+ "n": 5,
+ "6h": "correct 0/5 (0%), mean -1.669%, median -2.257%",
+ "6h_$": "n=5 sum -584.87$ mean -116.97$",
+ "12h": "correct 0/5 (0%), mean -1.301%, median -1.169%",
+ "12h_$": "n=5 sum -223.87$ mean -44.77$",
+ "24h": "correct 2/5 (40%), mean -0.956%, median -2.257%",
+ "24h_$": "n=5 sum +323.44$ mean +64.69$"
+}
+  E2_jun16-22 {
+ "n": 76,
+ "6h": "correct 42/76 (55%), mean +0.142%, median +0.202%",
+ "6h_$": "n=73 sum +156.64$ mean +2.15$",
+ "12h": "correct 39/76 (51%), mean -0.051%, median +0.048%",
+ "12h_$": "n=73 sum +319.94$ mean +4.38$",
+ "24h": "correct 34/76 (45%), mean -0.658%, median -0.424%",
+ "24h_$": "n=73 sum +50.00$ mean +0.68$"
+}
+  E3_jun23-jul02 {
+ "n": 349,
+ "6h": "correct 221/349 (63%), mean +0.127%, median +0.460%",
+ "6h_$": "n=280 sum +306.12$ mean +1.09$",
+ "12h": "correct 242/349 (69%), mean +0.432%, median +0.630%",
+ "12h_$": "n=280 sum +395.50$ mean +1.41$",
+ "24h": "correct 282/349 (81%), mean +0.740%, median +0.801%",
+ "24h_$": "n=280 sum +694.26$ mean +2.48$"
+}
+
+======== CLOSE decisions (per-position first-call) ========
+close applied=True EPISODES {
+ "n": 74,
+ "6h": "correct 38/74 (51%), mean -0.235%, median +0.048%",
+ "6h_$": "n=67 sum -1043.33$ mean -15.57$",
+ "12h": "correct 38/74 (51%), mean -0.427%, median +0.086%",
+ "12h_$": "n=67 sum -1056.74$ mean -15.77$",
+ "24h": "correct 42/74 (57%), mean -0.227%, median +0.602%",
+ "24h_$": "n=67 sum -764.86$ mean -11.42$"
+}
+  E1_jun01-10 {
+ "n": 29,
+ "6h": "correct 15/29 (52%), mean -0.163%, median +0.048%",
+ "6h_$": "n=29 sum -966.75$ mean -33.34$",
+ "12h": "correct 14/29 (48%), mean -0.664%, median -0.240%",
+ "12h_$": "n=29 sum -1282.09$ mean -44.21$",
+ "24h": "correct 18/29 (62%), mean +0.153%, median +0.978%",
+ "24h_$": "n=29 sum -969.26$ mean -33.42$"
+}
+  E2_jun16-22 {
+ "n": 26,
+ "6h": "correct 14/26 (54%), mean +0.220%, median +0.479%",
+ "6h_$": "n=22 sum -42.91$ mean -1.95$",
+ "12h": "correct 14/26 (54%), mean +0.036%, median +0.241%",
+ "12h_$": "n=22 sum +243.86$ mean +11.08$",
+ "24h": "correct 14/26 (54%), mean -0.201%, median +0.668%",
+ "24h_$": "n=22 sum +219.56$ mean +9.98$"
+}
+  E3_jun23-jul02 {
+ "n": 19,
+ "6h": "correct 9/19 (47%), mean -0.968%, median -0.062%",
+ "6h_$": "n=16 sum -33.66$ mean -2.10$",
+ "12h": "correct 10/19 (53%), mean -0.699%, median +0.075%",
+ "12h_$": "n=16 sum -18.51$ mean -1.16$",
+ "24h": "correct 10/19 (53%), mean -0.843%, median +0.075%",
+ "24h_$": "n=16 sum -15.17$ mean -0.95$"
+}
+close applied=False EPISODES {
+ "n": 72,
+ "6h": "correct 45/72 (62%), mean +0.107%, median +0.340%",
+ "6h_$": "n=54 sum -313.63$ mean -5.81$",
+ "12h": "correct 42/72 (58%), mean +0.308%, median +0.359%",
+ "12h_$": "n=54 sum +277.29$ mean +5.13$",
+ "24h": "correct 52/72 (72%), mean +0.543%, median +0.783%",
+ "24h_$": "n=54 sum +860.26$ mean +15.93$"
+}
+  E1_jun01-10 {
+ "n": 4,
+ "6h": "correct 0/4 (0%), mean -1.443%, median -0.596%",
+ "6h_$": "n=4 sum -573.34$ mean -143.33$",
+ "12h": "correct 0/4 (0%), mean -1.287%, median -0.922%",
+ "12h_$": "n=4 sum -217.78$ mean -54.44$",
+ "24h": "correct 2/4 (50%), mean -0.501%, median +0.910%",
+ "24h_$": "n=4 sum +335.89$ mean +83.97$"
+}
+  E2_jun16-22 {
+ "n": 13,
+ "6h": "correct 10/13 (77%), mean +0.588%, median +0.606%",
+ "6h_$": "n=12 sum +204.80$ mean +17.07$",
+ "12h": "correct 8/13 (62%), mean +0.584%, median +0.788%",
+ "12h_$": "n=12 sum +423.61$ mean +35.30$",
+ "24h": "correct 8/13 (62%), mean +0.340%, median +0.493%",
+ "24h_$": "n=12 sum +378.81$ mean +31.57$"
+}
+  E3_jun23-jul02 {
+ "n": 55,
+ "6h": "correct 35/55 (64%), mean +0.106%, median +0.340%",
+ "6h_$": "n=38 sum +54.91$ mean +1.44$",
+ "12h": "correct 34/55 (62%), mean +0.359%, median +0.359%",
+ "12h_$": "n=38 sum +71.45$ mean +1.88$",
+ "24h": "correct 42/55 (76%), mean +0.667%, median +0.783%",
+ "24h_$": "n=38 sum +145.55$ mean +3.83$"
+}
+
+======== CLOSE by reason bucket (episodes, all applied+blocked) ========
+bucket=historical_stats {
+ "n": 25,
+ "6h": "correct 15/25 (60%), mean -0.053%, median +0.396%",
+ "6h_$": "n=17 sum -6.86$ mean -0.40$",
+ "12h": "correct 12/25 (48%), mean -0.341%, median -0.173%",
+ "12h_$": "n=17 sum -53.11$ mean -3.12$",
+ "24h": "correct 15/25 (60%), mean +0.332%, median +0.754%",
+ "24h_$": "n=17 sum +12.67$ mean +0.75$"
+}
+bucket=mfe_protect {
+ "n": 1,
+ "6h": "correct 0/1 (0%), mean -1.188%, median -1.188%",
+ "6h_$": "n=1 sum -1.02$ mean -1.02$",
+ "12h": "correct 0/1 (0%), mean -2.236%, median -2.236%",
+ "12h_$": "n=1 sum -1.92$ mean -1.92$",
+ "24h": "correct 0/1 (0%), mean -2.953%, median -2.953%",
+ "24h_$": "n=1 sum -2.54$ mean -2.54$"
+}
+bucket=other {
+ "n": 10,
+ "6h": "correct 10/10 (100%), mean +1.237%, median +0.916%",
+ "6h_$": "n=9 sum +94.95$ mean +10.55$",
+ "12h": "correct 8/10 (80%), mean +0.808%, median +1.209%",
+ "12h_$": "n=9 sum -267.80$ mean -29.76$",
+ "24h": "correct 8/10 (80%), mean +0.754%, median +1.565%",
+ "24h_$": "n=9 sum -452.36$ mean -50.26$"
+}
+bucket=panic_regime {
+ "n": 2,
+ "6h": "correct 0/2 (0%), mean -2.047%, median -1.728%",
+ "6h_$": "n=2 sum -196.65$ mean -98.33$",
+ "12h": "correct 0/2 (0%), mean -1.266%, median -0.746%",
+ "12h_$": "n=2 sum -141.98$ mean -70.99$",
+ "24h": "correct 0/2 (0%), mean -3.485%, median -2.541%",
+ "24h_$": "n=2 sum -360.05$ mean -180.02$"
+}
+bucket=regime_mismatch {
+ "n": 41,
+ "6h": "correct 26/41 (63%), mean +0.106%, median +0.340%",
+ "6h_$": "n=37 sum +57.06$ mean +1.54$",
+ "12h": "correct 25/41 (61%), mean +0.139%, median +0.301%",
+ "12h_$": "n=37 sum -310.77$ mean -8.40$",
+ "24h": "correct 31/41 (76%), mean +0.488%, median +0.702%",
+ "24h_$": "n=37 sum +480.91$ mean +13.00$"
+}
+bucket=thesis_invalidated {
+ "n": 35,
+ "6h": "correct 17/35 (49%), mean -0.090%, median -0.121%",
+ "6h_$": "n=29 sum +85.32$ mean +2.94$",
+ "12h": "correct 20/35 (57%), mean +0.121%, median +0.359%",
+ "12h_$": "n=29 sum +451.46$ mean +15.57$",
+ "24h": "correct 22/35 (63%), mean +0.358%, median +0.607%",
+ "24h_$": "n=29 sum +992.83$ mean +34.24$"
+}
+bucket=time_stop {
+ "n": 7,
+ "6h": "correct 4/7 (57%), mean -0.063%, median +0.896%",
+ "6h_$": "n=5 sum -219.70$ mean -43.94$",
+ "12h": "correct 3/7 (43%), mean -0.211%, median -0.240%",
+ "12h_$": "n=5 sum +18.52$ mean +3.70$",
+ "24h": "correct 4/7 (57%), mean -0.297%, median +0.896%",
+ "24h_$": "n=5 sum -547.42$ mean -109.48$"
+}
+
+======== CLOSE by winner/loser at decision time (episodes) ========
+in_profit {
+ "n": 46,
+ "6h": "correct 28/46 (61%), mean +0.124%, median +0.396%",
+ "6h_$": "n=33 sum +17.15$ mean +0.52$",
+ "12h": "correct 21/46 (46%), mean -0.167%, median -0.456%",
+ "12h_$": "n=33 sum -82.23$ mean -2.49$",
+ "24h": "correct 28/46 (61%), mean +0.247%, median +0.754%",
+ "24h_$": "n=33 sum +1429.92$ mean +43.33$"
+}
+in_loss {
+ "n": 75,
+ "6h": "correct 44/75 (59%), mean +0.011%, median +0.340%",
+ "6h_$": "n=67 sum -204.05$ mean -3.05$",
+ "12h": "correct 47/75 (63%), mean +0.146%, median +0.644%",
+ "12h_$": "n=67 sum -223.38$ mean -3.33$",
+ "24h": "correct 52/75 (69%), mean +0.333%, median +0.763%",
+ "24h_$": "n=67 sum -1305.89$ mean -19.49$"
+}
+
+======== PARTIAL decisions ========
+partial ALL (frac-weighted) {
+ "n": 50,
+ "6h": "correct 37/50 (74%), mean +0.142%, median +0.276%",
+ "6h_$": "n=42 sum +79.66$ mean +1.90$",
+ "12h": "correct 38/50 (76%), mean +0.129%, median +0.308%",
+ "12h_$": "n=42 sum +84.99$ mean +2.02$",
+ "24h": "correct 39/50 (78%), mean +0.137%, median +0.308%",
+ "24h_$": "n=42 sum +93.00$ mean +2.21$"
+}
+partial applied {
+ "n": 25,
+ "6h": "correct 13/25 (52%), mean -0.090%, median +0.047%",
+ "6h_$": "n=17 sum +16.13$ mean +0.95$",
+ "12h": "correct 14/25 (56%), mean -0.154%, median +0.078%",
+ "12h_$": "n=17 sum +21.00$ mean +1.24$",
+ "24h": "correct 15/25 (60%), mean -0.141%, median +0.150%",
+ "24h_$": "n=17 sum +28.96$ mean +1.70$"
+}
+partial blocked {
+ "n": 25,
+ "6h": "correct 24/25 (96%), mean +0.374%, median +0.332%",
+ "6h_$": "n=25 sum +63.53$ mean +2.54$",
+ "12h": "correct 24/25 (96%), mean +0.411%, median +0.361%",
+ "12h_$": "n=25 sum +63.99$ mean +2.56$",
+ "24h": "correct 24/25 (96%), mean +0.415%, median +0.361%",
+ "24h_$": "n=25 sum +64.03$ mean +2.56$"
+}
+partial EPISODES {
+ "n": 12,
+ "6h": "correct 9/12 (75%), mean +0.272%, median +0.280%",
+ "6h_$": "n=9 sum +14.54$ mean +1.62$",
+ "12h": "correct 8/12 (67%), mean +0.178%, median +0.280%",
+ "12h_$": "n=9 sum +11.69$ mean +1.30$",
+ "24h": "correct 9/12 (75%), mean +0.293%, median +0.280%",
+ "24h_$": "n=9 sum +19.73$ mean +2.19$"
+}
+
+======== TIGHTEN_SL decisions ========
+n = 41 Counter({'protective': 27, 'wash': 11, 'premature': 3})
+applied: Counter({'protective': 27, 'wash': 11, 'premature': 3})
+applied tighten value vs old-SL null: mean +0.621% median +0.500% pos 27 neg 3 zero 11
+dollar est (n=34): sum +389.70$
+  E1_jun01-10: n=15 mean +0.394% classes Counter({'protective': 7, 'wash': 6, 'premature': 2})
+  E2_jun16-22: n=5 mean -0.518% classes Counter({'wash': 2, 'protective': 2, 'premature': 1})
+  E3_jun23-jul02: n=21 mean +1.054% classes Counter({'protective': 18, 'wash': 3})
+episodes: 35 Counter({'protective': 23, 'wash': 9, 'premature': 3})
+episode value: mean +0.641% median +0.611%
+
+======== unresolved horizon counts (data ran out) ========
+close 24h unresolved: 20
+tighten 48h unresolved: 3
+qty matched: 501 / 595
