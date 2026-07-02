@@ -7756,7 +7756,14 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # exploration overrides from genuine LLM judgments in all records.
         _pipeline_failed = "pipeline failure" in (entry_decision.thesis or "").lower()
         _exploration_entry = False
-        if entry_decision.action == "skip":
+        if entry_decision.action == "skip" and _pipeline_failed:
+            # Owner call 2026-07-02 (live HYPE-SHORT example; audit #7 conversion half):
+            # a pipeline FAILURE is not a considered skip — the brain rendered no
+            # opinion, so there is nothing to explore against. Converting malfunctions
+            # into coin-flip entries is noise, not edge data. Stand down; the signal
+            # still reaches the pipeline_error logging path below.
+            logger.info(f"[{trace_id}][{symbol}] exploration BLOCKED: pipeline failure is not an explorable skip")
+        elif entry_decision.action == "skip":
             # ── EXPLORATION MODE (Nunu-authorized 2026-06-20) ──────────────────
             # Break the entry paralysis to GATHER EDGE DATA: convert a throttled
             # fraction of LLM skips into REDUCED-SIZE exploratory entries. SAFE by
