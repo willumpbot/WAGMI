@@ -205,6 +205,7 @@ class BacktestEngine:
         strategies: Optional[List[str]] = None,
         learn: bool = False,
         start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Run a backtest.
@@ -231,9 +232,15 @@ class BacktestEngine:
 
         # Optional: start main loop from a specific date (warmup still uses earlier data)
         self._start_date = pd.Timestamp(start_date, tz="UTC") if start_date else None
+        # Optional: hard end bound for the walk (replay harness needs exact windows).
+        # When set, the fetch window is anchored to end_date and all candles
+        # after end_date are trimmed before the walk starts.
+        self._end_date = pd.Timestamp(end_date, tz="UTC") if end_date else None
         # Tell fetcher to anchor historical fetch window to start_date + days
         # so CCXT pulls the right time period instead of always fetching current data.
-        if start_date:
+        if end_date:
+            self.fetcher.backtest_end_date = self._end_date.isoformat()
+        elif start_date:
             _fetch_end = pd.Timestamp(start_date, tz="UTC") + pd.Timedelta(days=days + 5)
             self.fetcher.backtest_end_date = _fetch_end.isoformat()
         else:
@@ -328,6 +335,14 @@ class BacktestEngine:
             logger.info(f"Fetching data for {symbol} ({sym_cfg.coingecko_id})")
             data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, needed_tfs)
             all_data[symbol] = data
+
+        # Trim all candles after end_date (exact replay windows, no lookahead
+        # past the requested period).
+        if self._end_date is not None:
+            for symbol, data in all_data.items():
+                for tf, df in list(data.items()):
+                    if df is not None and not df.empty and "time" in df.columns:
+                        data[tf] = df[df["time"] <= self._end_date].reset_index(drop=True)
 
         # Log data coverage for transparency
         print(f"\n  Data Coverage (requested {days} days):")
@@ -1488,6 +1503,13 @@ class BacktestEngine:
 
         decision = self.llm.evaluate_entry(snapshot_data, signal, "pre_trade_backtest")
         if decision is None:
+            if os.getenv("REPLAY_MODE"):
+                # Replay harness: the sample must contain ONLY trades the real
+                # LLM pipeline approved. No LLM opinion (failure, call cap,
+                # pre-filter skip) => no trade. Mechanical-fallback trades
+                # would pollute the clean-close sample.
+                signal.metadata["llm_status"] = "llm_required_missing_replay"
+                return None
             if self._raw_mode:
                 # In raw mode, LLM IS the filter. Session-limit failures must veto rather than
                 # approve — otherwise fallback trades pollute the dataset with unfiltered noise.

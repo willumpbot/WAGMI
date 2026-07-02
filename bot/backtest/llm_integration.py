@@ -122,6 +122,26 @@ class BacktestLLMIntegration:
         if resume:
             self.resume_state = self._load_checkpoint()
 
+        # ── Replay-harness discipline (tools/replay_harness.py) ──────
+        # All default OFF; a normal backtest is unaffected.
+        # REPLAY_MAX_LLM_CALLS: hard cap on total LLM calls per run (0 = off).
+        # REPLAY_LLM_SLEEP_S: sleep after each coordinator invocation so the
+        #   live bot's CLI quota isn't starved by the replay burst.
+        # REPLAY_MODE: journal every LLM invocation to data/replay_llm_journal.jsonl.
+        try:
+            self.max_llm_calls = int(os.getenv("REPLAY_MAX_LLM_CALLS", "0") or 0)
+        except (TypeError, ValueError):
+            self.max_llm_calls = 0
+        try:
+            self.llm_sleep_s = float(os.getenv("REPLAY_LLM_SLEEP_S", "0") or 0)
+        except (TypeError, ValueError):
+            self.llm_sleep_s = 0.0
+        self.call_cap_reached = False
+        self._journal_path = (
+            os.path.join("data", "replay_llm_journal.jsonl")
+            if os.getenv("REPLAY_MODE") else None
+        )
+
     # ── Preflight ─────────────────────────────────────────────────
 
     def run_preflight(
@@ -380,6 +400,42 @@ class BacktestLLMIntegration:
             f"global spent ${self.total_cost_usd:.2f}/${self.budget_usd:.2f}"
         )
 
+    # ── Replay discipline ─────────────────────────────────────────
+
+    def _replay_discipline(self, kind: str, calls_delta: int, cost: float,
+                           symbol: str = ""):
+        """Replay-harness bookkeeping after a coordinator invocation.
+
+        Journals the call, enforces the hard call cap, and rate-limits so
+        the live bot's CLI quota isn't starved. No-op unless the REPLAY_*
+        env vars are set (normal backtests are unaffected).
+        """
+        if self._journal_path:
+            try:
+                os.makedirs(os.path.dirname(self._journal_path), exist_ok=True)
+                with open(self._journal_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "ts": datetime.now(timezone.utc).isoformat(),
+                        "kind": kind,
+                        "symbol": symbol,
+                        "calls_delta": calls_delta,
+                        "total_calls": self.llm_calls,
+                        "cost_delta_usd": round(cost, 6),
+                        "total_cost_usd": round(self.total_cost_usd, 6),
+                        "cap": self.max_llm_calls,
+                    }) + "\n")
+            except Exception:
+                pass  # Journaling must never break the run
+        if (self.max_llm_calls > 0 and self.llm_calls >= self.max_llm_calls
+                and not self.call_cap_reached):
+            self.call_cap_reached = True
+            logger.warning(
+                f"[REPLAY] LLM call cap reached ({self.llm_calls}/"
+                f"{self.max_llm_calls}) — no further LLM calls this run."
+            )
+        if self.llm_sleep_s > 0 and calls_delta > 0:
+            time.sleep(self.llm_sleep_s)
+
     # ── Pre-LLM Signal Filter ─────────────────────────────────────
 
     def _should_skip_llm(self, snapshot_data: Optional[dict], signal) -> bool:
@@ -422,7 +478,7 @@ class BacktestLLMIntegration:
 
         On ANY failure: returns None (strategy-only fallback), never crashes.
         """
-        if self.budget_exhausted:
+        if self.budget_exhausted or self.call_cap_reached:
             self.candles_fallback += 1
             return None
 
@@ -450,7 +506,13 @@ class BacktestLLMIntegration:
             call_cost = self._compute_cost_from_stats(stats)
             self.total_cost_usd += call_cost
             self._symbol_cost_usd += call_cost
-            self.llm_calls += stats.get("total_calls", 0)
+            _calls_delta = stats.get("total_calls", 0)
+            self.llm_calls += _calls_delta
+            self._replay_discipline(
+                "entry", _calls_delta, call_cost,
+                symbol=(snapshot_data.get("m", [{}])[0].get("s", "")
+                        if snapshot_data else ""),
+            )
 
             if decision:
                 self.candles_with_llm += 1
@@ -518,7 +580,7 @@ class BacktestLLMIntegration:
 
         Throttled: only evaluates every EXIT_EVAL_INTERVAL candles per position.
         """
-        if self.budget_exhausted or self._coordinator is None:
+        if self.budget_exhausted or self.call_cap_reached or self._coordinator is None:
             return None
 
         symbol = position_data.get("symbol", "")
@@ -537,7 +599,9 @@ class BacktestLLMIntegration:
             stats = self._coordinator.get_stats()
             call_cost = self._compute_cost_from_stats(stats)
             self.total_cost_usd += call_cost
-            self.llm_calls += stats.get("total_calls", 0)
+            _calls_delta = stats.get("total_calls", 0)
+            self.llm_calls += _calls_delta
+            self._replay_discipline("exit", _calls_delta, call_cost, symbol=symbol)
 
             if self.total_cost_usd >= self.budget_usd:
                 self.budget_exhausted = True
@@ -566,7 +630,7 @@ class BacktestLLMIntegration:
         deep memory, post-trade learner, hypothesis tracker, self-teaching,
         improvement proposals, and calibration ledger.
         """
-        if self.budget_exhausted or self._coordinator is None:
+        if self.budget_exhausted or self.call_cap_reached or self._coordinator is None:
             return None
 
         try:
@@ -575,7 +639,12 @@ class BacktestLLMIntegration:
             stats = self._coordinator.get_stats()
             call_cost = self._compute_cost_from_stats(stats)
             self.total_cost_usd += call_cost
-            self.llm_calls += stats.get("total_calls", 0)
+            _calls_delta = stats.get("total_calls", 0)
+            self.llm_calls += _calls_delta
+            self._replay_discipline(
+                "learning", _calls_delta, call_cost,
+                symbol=str(trade_data.get("symbol", "")),
+            )
 
             if self.total_cost_usd >= self.budget_usd:
                 self.budget_exhausted = True
