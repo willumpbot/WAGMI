@@ -1,0 +1,337 @@
+{
+ "n_labels_total": 3696,
+ "n_joined": 3696,
+ "agent_vs_mech_coarse": {
+  "ranging": {
+   "ranging": 1465,
+   "trending": 924,
+   "high_vol": 170
+  },
+  "high_vol": {
+   "trending": 55,
+   "ranging": 57,
+   "high_vol": 54
+  },
+  "trending": {
+   "trending": 358,
+   "high_vol": 318,
+   "ranging": 295
+  }
+ },
+ "agent_vs_mech_agree": 0.5078463203463204,
+ "agent_raw_vs_mech_fine": {
+  "consolidation": {
+   "ranging": 765,
+   "trending_bear": 352,
+   "high_vol": 90,
+   "trending_bull": 228
+  },
+  "range": {
+   "trending_bull": 145,
+   "trending_bear": 192,
+   "ranging": 699,
+   "high_vol": 80
+  },
+  "high_volatility": {
+   "trending_bull": 36,
+   "ranging": 57,
+   "trending_bear": 19,
+   "high_vol": 49
+  },
+  "trending_bear": {
+   "trending_bear": 177,
+   "high_vol": 268,
+   "ranging": 66
+  },
+  "trending_bull": {
+   "trending_bull": 94,
+   "ranging": 34,
+   "high_vol": 2,
+   "trending_bear": 17
+  },
+  "trend": {
+   "ranging": 195,
+   "high_vol": 48,
+   "trending_bear": 46,
+   "trending_bull": 24
+  },
+  "low_liquidity": {
+   "ranging": 1,
+   "trending_bear": 7
+  },
+  "panic": {
+   "high_vol": 5
+  }
+ },
+ "n_hindsight": 3414,
+ "agent_acc_vs_realized": 0.6001757469244289,
+ "mech_acc_vs_realized": 0.5219683655536028,
+ "always_ranging_acc": 0.710896309314587,
+ "realized_base_rates": {
+  "ranging": 2427,
+  "trending": 546,
+  "high_vol": 441
+ },
+ "agent_cm_vs_realized": {
+  "ranging": {
+   "ranging": 1905,
+   "trending": 415,
+   "high_vol": 153
+  },
+  "high_vol": {
+   "ranging": 86,
+   "trending": 32,
+   "high_vol": 45
+  },
+  "trending": {
+   "trending": 99,
+   "ranging": 436,
+   "high_vol": 243
+  }
+ },
+ "mech_cm_vs_realized": {
+  "ranging": {
+   "ranging": 1289,
+   "trending": 259,
+   "high_vol": 79
+  },
+  "trending": {
+   "ranging": 978,
+   "trending": 199,
+   "high_vol": 68
+  },
+  "high_vol": {
+   "trending": 88,
+   "ranging": 160,
+   "high_vol": 294
+  }
+ },
+ "agent_trending": {
+  "precision": 0.12724935732647816,
+  "recall": 0.1813186813186813,
+  "n_pred": 778,
+  "n_true": 546
+ },
+ "mech_trending": {
+  "precision": 0.1598393574297189,
+  "recall": 0.36446886446886445,
+  "n_pred": 1245,
+  "n_true": 546
+ },
+ "agent_ranging": {
+  "precision": 0.770319450060655,
+  "recall": 0.7849196538936959,
+  "n_pred": 2473,
+  "n_true": 2427
+ },
+ "mech_ranging": {
+  "precision": 0.7922556853103873,
+  "recall": 0.5311083642356819,
+  "n_pred": 1627,
+  "n_true": 2427
+ },
+ "agent_high_vol": {
+  "precision": 0.27607361963190186,
+  "recall": 0.10204081632653061,
+  "n_pred": 163,
+  "n_true": 441
+ },
+ "mech_high_vol": {
+  "precision": 0.5424354243542435,
+  "recall": 0.6666666666666666,
+  "n_pred": 542,
+  "n_true": 441
+ },
+ "agent_direction": {
+  "n": 611,
+  "acc": 0.5400981996726678
+ },
+ "mech_direction": {
+  "n": 1245,
+  "acc": 0.40160642570281124
+ },
+ "era1_pre0616": {
+  "n": 1641,
+  "agent_acc": 0.5679463741620963,
+  "mech_acc": 0.4460694698354662,
+  "always_ranging": 0.6745886654478976,
+  "agree_rate": 0.41560024375380866
+ },
+ "era2_post0616": {
+  "n": 1773,
+  "agent_acc": 0.6300056401579244,
+  "mech_acc": 0.5922165820642978,
+  "always_ranging": 0.7445008460236887,
+  "agree_rate": 0.6271855611957134
+ },
+ "per_symbol": {
+  "BTC": {
+   "n": 1456,
+   "agent_acc": 0.4842032967032967,
+   "mech_acc": 0.4574175824175824,
+   "always_ranging": 0.6552197802197802
+  },
+  "ETH": {
+   "n": 643,
+   "agent_acc": 0.7589424572317263,
+   "mech_acc": 0.6003110419906688,
+   "always_ranging": 0.7962674961119751
+  },
+  "SOL": {
+   "n": 666,
+   "agent_acc": 0.6756756756756757,
+   "mech_acc": 0.5780780780780781,
+   "always_ranging": 0.6831831831831832
+  },
+  "HYPE": {
+   "n": 633,
+   "agent_acc": 0.6208530805687204,
+   "mech_acc": 0.5213270142180095,
+   "always_ranging": 0.7740916271721959
+  },
+  "XRP": {
+   "n": 16,
+   "agent_acc": 0.8125,
+   "mech_acc": 0.9375,
+   "always_ranging": 1.0
+  }
+ },
+ "sens_er0.25": {
+  "agent_acc": 0.4917984768599883,
+  "mech_acc": 0.4906268306971295,
+  "always_ranging": 0.5284124194493263
+ },
+ "sens_er0.45": {
+  "agent_acc": 0.6622729935559462,
+  "mech_acc": 0.5310486233157586,
+  "always_ranging": 0.8022847100175747
+ },
+ "conf_calibration": {
+  "mid0.7-0.8": {
+   "n": 624,
+   "acc": 0.46314102564102566
+  },
+  "lo<0.7": {
+   "n": 2603,
+   "acc": 0.6565501344602381
+  },
+  "hi>=0.8": {
+   "n": 187,
+   "acc": 0.2727272727272727
+  }
+ },
+ "trades": {
+  "n_total": 158,
+  "n_joined": 158,
+  "agent_mech_agree": {
+   "n": 44,
+   "wr": 0.205,
+   "pnl": -546.77,
+   "avg": -12.43
+  },
+  "agent_mech_disagree": {
+   "n": 114,
+   "wr": 0.237,
+   "pnl": 591.86,
+   "avg": 5.19
+  },
+  "agent_correct_vs_realized": {
+   "n": 52,
+   "wr": 0.231,
+   "pnl": -722.76,
+   "avg": -13.9
+  },
+  "agent_wrong_vs_realized": {
+   "n": 96,
+   "wr": 0.25,
+   "pnl": 782.06,
+   "avg": 8.15
+  },
+  "mech_correct_vs_realized": {
+   "n": 80,
+   "wr": 0.237,
+   "pnl": -26.52,
+   "avg": -0.33
+  },
+  "mech_wrong_vs_realized": {
+   "n": 68,
+   "wr": 0.25,
+   "pnl": 85.82,
+   "avg": 1.26
+  },
+  "by_agent_regime": {
+   "illiquid": {
+    "n": 5,
+    "wr": 0.4,
+    "pnl": 14.75,
+    "avg": 2.95
+   },
+   "ranging": {
+    "n": 69,
+    "wr": 0.217,
+    "pnl": -1001.28,
+    "avg": -14.51
+   },
+   "high_vol": {
+    "n": 12,
+    "wr": 0.333,
+    "pnl": 287.18,
+    "avg": 23.93
+   },
+   "trending": {
+    "n": 42,
+    "wr": 0.214,
+    "pnl": 811.48,
+    "avg": 19.32
+   },
+   "unknown": {
+    "n": 30,
+    "wr": 0.2,
+    "pnl": -67.04,
+    "avg": -2.23
+   }
+  }
+ },
+ "top_misclassifications": [
+  [
+   "consolidation->trending",
+   247
+  ],
+  [
+   "trending_bear->ranging",
+   240
+  ],
+  [
+   "trending_bear->high_vol",
+   201
+  ],
+  [
+   "range->trending",
+   168
+  ],
+  [
+   "trend->ranging",
+   109
+  ],
+  [
+   "consolidation->high_vol",
+   93
+  ],
+  [
+   "trending_bull->ranging",
+   87
+  ],
+  [
+   "high_volatility->ranging",
+   86
+  ],
+  [
+   "range->high_vol",
+   60
+  ],
+  [
+   "trend->high_vol",
+   39
+  ]
+ ]
+}
