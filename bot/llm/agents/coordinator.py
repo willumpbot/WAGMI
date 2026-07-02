@@ -535,6 +535,28 @@ class AgentCoordinator:
             except Exception as e:
                 logger.debug("[MULTI-AGENT] 4h technicals enrichment failed: %s", e)
 
+        # Mechanical regime overlay (RQ10, env-gated): compute the validated
+        # ATR-ptile/ADX hybrid nowcast and stash it for the Regime agent's
+        # INPUT (labeled context, additive — the agent still decides).
+        if os.getenv("MECH_REGIME_OVERLAY", "").lower() in ("true", "1", "yes"):
+            try:
+                from llm.agents.mech_regime import compute_mech_regime
+                _mech_ohlcv = None
+                _mech_all = snapshot_data.get("ohlcv_by_symbol_1h", {})
+                if _enrich_symbol and _mech_all.get(_enrich_symbol):
+                    _mech_ohlcv = _mech_all[_enrich_symbol]
+                if _mech_ohlcv is None:
+                    _mech_ohlcv = snapshot_data.get("ohlcv_1h")
+                _mech = compute_mech_regime(_mech_ohlcv)
+                if _mech:
+                    snapshot_data["mech_regime"] = _mech
+                    logger.info(
+                        "[MULTI-AGENT] Mech regime overlay: %s (ADX=%s, ATR ptile=%s)",
+                        _mech.get("label"), _mech.get("adx"), _mech.get("atr_ptile"),
+                    )
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Mech regime overlay failed: %s", e)
+
         # Strip raw OHLCV arrays after technicals computed — saves ~1800 tokens per call
         for _ohlcv_key in ["ohlcv_1h", "ohlcv_5m", "ohlcv_4h", "ohlcv_by_symbol_1h", "ohlcv_by_symbol_5m"]:
             snapshot_data.pop(_ohlcv_key, None)
@@ -3701,6 +3723,17 @@ class AgentCoordinator:
         # Enriched context from technicals, feedback, telemetry, positions
         if snapshot.get("enriched_context"):
             regime_data["enriched"] = snapshot["enriched_context"]
+
+        # Mechanical regime overlay (RQ10, env-gated upstream): labeled
+        # additive context — NOT an override; the agent still decides.
+        if snapshot.get("mech_regime"):
+            try:
+                from llm.agents.mech_regime import format_mech_regime
+                regime_data["mechanical_classifier"] = format_mech_regime(
+                    snapshot["mech_regime"]
+                )
+            except Exception:
+                pass
 
         # Per-agent self-performance stats for the Regime Agent (skip in backtest)
         _pt = getattr(self, '_perf_tracker_ref', None)
