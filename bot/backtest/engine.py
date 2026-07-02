@@ -1489,6 +1489,16 @@ class BacktestEngine:
             signal.metadata["llm_status"] = "no_llm"
             return signal
 
+        if os.getenv("REPLAY_MODE"):
+            # Entry-event filter needs the point-in-time candle timestamp for
+            # its per-symbol 4h same-direction cooldown (wall clock is
+            # meaningless inside a replay walk). REPLAY-gated: normal
+            # backtests untouched.
+            try:
+                signal.metadata["replay_sim_ts"] = sim_dt.timestamp()
+            except Exception:
+                pass
+
         snapshot_data = self.llm.build_backtest_snapshot(
             symbol=symbol,
             windowed_data=windowed,

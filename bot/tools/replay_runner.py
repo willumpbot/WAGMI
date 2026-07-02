@@ -110,6 +110,11 @@ def main() -> int:
         "call_cap_reached": llm.call_cap_reached,
         "budget_exhausted": llm.budget_exhausted,
         "agent_costs": dict(llm.agent_costs),
+        # Entry-event trigger filter accounting (REPLAY_CAMPAIGN_PLAN §2.1)
+        "replay_entry_events": getattr(llm, "replay_entry_events", 0),
+        "replay_starved_events": getattr(llm, "replay_starved_events", 0),
+        "replay_cooldown_skips": getattr(llm, "replay_cooldown_skips", 0),
+        "replay_symbol_calls": dict(getattr(llm, "_replay_symbol_calls", {}) or {}),
         "fee_model": {
             "taker_fee_bps_per_side": config.taker_fee_bps,
             "slippage_bps": getattr(config, "slippage_bps", 0),

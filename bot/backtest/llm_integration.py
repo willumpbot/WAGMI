@@ -142,6 +142,38 @@ class BacktestLLMIntegration:
             if os.getenv("REPLAY_MODE") else None
         )
 
+        # ── Entry-event trigger filter (REPLAY_CAMPAIGN_PLAN §2.1) ────
+        # REPLAY-gated: normal backtests keep the legacy confidence
+        # pre-filter below. Fixes VAL1's first-come-first-served starvation
+        # (cap burned on the weakest solo signals; multi-agree never seen).
+        # LLM pipeline fires ONLY on entry events:
+        #   num_agree >= 2, OR solo conf >= 75 from the whitelist strategies;
+        # plus a per-symbol 4h same-direction cooldown (only the first bar
+        # of a signal cluster spends calls) and a per-symbol call budget of
+        # cap/num_symbols (BTC cannot starve ETH/SOL).
+        self._replay_filter_on = bool(os.getenv("REPLAY_MODE"))
+        try:
+            self._replay_solo_conf = float(
+                os.getenv("REPLAY_SOLO_CONF_MIN", "75"))
+        except (TypeError, ValueError):
+            self._replay_solo_conf = 75.0
+        self._replay_solo_whitelist = {
+            s.strip() for s in os.getenv(
+                "REPLAY_SOLO_WHITELIST",
+                "regime_trend,bollinger_squeeze,vmc_cipher,mean_reversion",
+            ).split(",") if s.strip()
+        }
+        try:
+            self._replay_cooldown_s = float(
+                os.getenv("REPLAY_COOLDOWN_H", "4")) * 3600.0
+        except (TypeError, ValueError):
+            self._replay_cooldown_s = 4 * 3600.0
+        self._replay_last_fire: Dict[str, float] = {}   # "SYM:SIDE" -> sim ts
+        self._replay_symbol_calls: Dict[str, int] = {}  # symbol -> calls spent
+        self.replay_entry_events = 0    # signals qualifying as entry events
+        self.replay_starved_events = 0  # entry events lost to call caps
+        self.replay_cooldown_skips = 0  # entry events inside a cluster cooldown
+
     # ── Preflight ─────────────────────────────────────────────────
 
     def run_preflight(
@@ -403,27 +435,34 @@ class BacktestLLMIntegration:
     # ── Replay discipline ─────────────────────────────────────────
 
     def _replay_discipline(self, kind: str, calls_delta: int, cost: float,
-                           symbol: str = ""):
+                           symbol: str = "", extra: Optional[Dict[str, Any]] = None):
         """Replay-harness bookkeeping after a coordinator invocation.
 
         Journals the call, enforces the hard call cap, and rate-limits so
         the live bot's CLI quota isn't starved. No-op unless the REPLAY_*
         env vars are set (normal backtests are unaffected).
         """
+        if symbol and calls_delta:
+            # Per-symbol call accounting for the entry-event filter budget
+            self._replay_symbol_calls[symbol] = (
+                self._replay_symbol_calls.get(symbol, 0) + calls_delta)
         if self._journal_path:
             try:
                 os.makedirs(os.path.dirname(self._journal_path), exist_ok=True)
+                record = {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "kind": kind,
+                    "symbol": symbol,
+                    "calls_delta": calls_delta,
+                    "total_calls": self.llm_calls,
+                    "cost_delta_usd": round(cost, 6),
+                    "total_cost_usd": round(self.total_cost_usd, 6),
+                    "cap": self.max_llm_calls,
+                }
+                if extra:
+                    record.update(extra)
                 with open(self._journal_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({
-                        "ts": datetime.now(timezone.utc).isoformat(),
-                        "kind": kind,
-                        "symbol": symbol,
-                        "calls_delta": calls_delta,
-                        "total_calls": self.llm_calls,
-                        "cost_delta_usd": round(cost, 6),
-                        "total_cost_usd": round(self.total_cost_usd, 6),
-                        "cap": self.max_llm_calls,
-                    }) + "\n")
+                    f.write(json.dumps(record, default=str) + "\n")
             except Exception:
                 pass  # Journaling must never break the run
         if (self.max_llm_calls > 0 and self.llm_calls >= self.max_llm_calls
@@ -438,6 +477,64 @@ class BacktestLLMIntegration:
 
     # ── Pre-LLM Signal Filter ─────────────────────────────────────
 
+    def _replay_is_entry_event(self, signal) -> bool:
+        """True if the signal qualifies as an entry event (plan §2.1):
+        multi-strategy confluence (num_agree >= 2) OR a whitelisted solo
+        strategy at conf >= REPLAY_SOLO_CONF_MIN (0-100 scale)."""
+        meta = getattr(signal, "metadata", None) or {}
+        try:
+            if int(meta.get("num_agree", 1) or 1) >= 2:
+                return True
+        except (TypeError, ValueError):
+            pass
+        try:
+            conf = float(getattr(signal, "confidence", 0) or 0)
+        except (TypeError, ValueError):
+            conf = 0.0
+        strat = str(getattr(signal, "strategy", "") or "")
+        return strat in self._replay_solo_whitelist and conf >= self._replay_solo_conf
+
+    def _replay_symbol_cap(self) -> int:
+        """Per-symbol LLM call budget = global cap / num_symbols (0 = off)."""
+        if self.max_llm_calls <= 0:
+            return 0
+        return max(1, self.max_llm_calls // max(self._num_symbols, 1))
+
+    def _replay_should_skip(self, signal, symbol: str) -> bool:
+        """REPLAY-only entry-event trigger filter (REPLAY_CAMPAIGN_PLAN §2.1).
+
+        Returns True (skip the LLM pipeline) unless:
+        - the signal is an entry event (multi-agree OR whitelisted solo >= 75), AND
+        - the symbol still has per-symbol call budget (cap/num_symbols), AND
+        - the symbol+direction is outside its 4h cooldown (only the first bar
+          of a persistent signal cluster spends calls).
+        """
+        if not self._replay_is_entry_event(signal):
+            return True
+        self.replay_entry_events += 1
+
+        cap = self._replay_symbol_cap()
+        if cap and self._replay_symbol_calls.get(symbol, 0) >= cap:
+            self.replay_starved_events += 1
+            return True
+
+        meta = getattr(signal, "metadata", None) or {}
+        side = str(getattr(signal, "side", "") or "").upper()
+        key = f"{symbol}:{side}"
+        sim_ts = meta.get("replay_sim_ts")  # stamped by engine._apply_llm_entry
+        try:
+            sim_ts = float(sim_ts) if sim_ts is not None else None
+        except (TypeError, ValueError):
+            sim_ts = None
+        last = self._replay_last_fire.get(key)
+        if (sim_ts is not None and last is not None
+                and 0 <= (sim_ts - last) < self._replay_cooldown_s):
+            self.replay_cooldown_skips += 1
+            return True
+        if sim_ts is not None:
+            self._replay_last_fire[key] = sim_ts
+        return False
+
     def _should_skip_llm(self, snapshot_data: Optional[dict], signal) -> bool:
         """Pre-filter signals BEFORE calling the LLM API to save budget.
 
@@ -446,10 +543,20 @@ class BacktestLLMIntegration:
         - Solo strategy signal with low confidence (< 55%)
         - Signal in low_liquidity regime (hard limit in Trade Agent prompt)
 
+        In REPLAY_MODE the legacy check is replaced by the entry-event
+        trigger filter (see _replay_should_skip).
+
         Returns True if we should skip the LLM call entirely.
         """
         if not snapshot_data or not signal:
             return True
+
+        if self._replay_filter_on:
+            symbol = ""
+            markets = snapshot_data.get("m", [])
+            if markets:
+                symbol = markets[0].get("s", "")
+            return self._replay_should_skip(signal, symbol)
 
         # Check signal confidence — solo signals below floor almost always get vetoed.
         # Threshold reads from ENSEMBLE_CONFIDENCE_FLOOR (default 55% if not set).
@@ -479,6 +586,11 @@ class BacktestLLMIntegration:
         On ANY failure: returns None (strategy-only fallback), never crashes.
         """
         if self.budget_exhausted or self.call_cap_reached:
+            # Replay sample purity: post-cap signals stay forced-skip, but
+            # count the entry events the cap starved (report honesty).
+            if (self._replay_filter_on and signal is not None
+                    and self._replay_is_entry_event(signal)):
+                self.replay_starved_events += 1
             self.candles_fallback += 1
             return None
 
@@ -512,6 +624,14 @@ class BacktestLLMIntegration:
                 "entry", _calls_delta, call_cost,
                 symbol=(snapshot_data.get("m", [{}])[0].get("s", "")
                         if snapshot_data else ""),
+                extra={
+                    "decision": (getattr(decision, "action", None) or "none")
+                                if decision else "none",
+                    "decision_confidence": getattr(decision, "confidence", None)
+                                           if decision else None,
+                    "regime": getattr(decision, "regime", None)
+                              if decision else None,
+                },
             )
 
             if decision:
@@ -901,6 +1021,17 @@ class BacktestLLMIntegration:
             "regime_transitions": len(self.regime_timeline),
             "regime_timeline": self.regime_timeline,
             "veto_stats": self._compute_veto_stats(),
+            "replay_filter": {
+                "enabled": self._replay_filter_on,
+                "entry_events": self.replay_entry_events,
+                "starved_events": self.replay_starved_events,
+                "cooldown_skips": self.replay_cooldown_skips,
+                "per_symbol_calls": dict(self._replay_symbol_calls),
+                "per_symbol_cap": self._replay_symbol_cap(),
+                "solo_conf_min": self._replay_solo_conf,
+                "solo_whitelist": sorted(self._replay_solo_whitelist),
+                "cooldown_h": round(self._replay_cooldown_s / 3600, 1),
+            },
         }
 
     def _compute_veto_stats(self) -> Dict[str, Any]:

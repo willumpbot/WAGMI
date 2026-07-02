@@ -337,6 +337,11 @@ def write_run_report(run_id: str, run_dir: Path, sandbox: Path,
         f"- Journal entries: {len(journal)} | failures: "
         f"{summary.get('llm_failures', 0)} | pre-filter skips: "
         f"{summary.get('pre_filter_skips', 0)}",
+        f"- Entry-event filter: {summary.get('replay_entry_events', 'n/a')} "
+        f"qualifying events | starved by caps: "
+        f"{summary.get('replay_starved_events', 'n/a')} | cooldown-suppressed: "
+        f"{summary.get('replay_cooldown_skips', 'n/a')} | per-symbol calls: "
+        f"{json.dumps(summary.get('replay_symbol_calls', {}))}",
         f"- Wall time: {elapsed_min:.0f} min",
         f"- SCALING MATH: ~{closes_per_60} closes per 60 LLM calls at this "
         f"signal density ({n} closes / {llm_calls} calls)",
