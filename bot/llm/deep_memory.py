@@ -144,10 +144,18 @@ class TradeDNAStore:
         _save_json("trade_dna.json", {"trades": self._trades})
         logger.info(f"[DEEP-MEM] Recorded trade DNA: {dna.symbol} {dna.side} {dna.outcome} PnL={dna.pnl:+.2f}")
 
+    # Trades closed before the fee-accounting fix carry broken pnl math —
+    # excluded from replication templates (FALLACY_AUDIT M12, THE_STANDARD 2b).
+    CLEAN_LEDGER_EPOCH = 1780617600.0  # 2026-06-05T00:00:00Z
+
     def get_sniper_trades(self, limit: int = 20) -> List[Dict]:
-        """Get the best trades for pattern study."""
+        """Get the best trades for pattern study (clean-ledger era only)."""
         self._ensure_loaded()
-        snipers = [t for t in self._trades if t.get("was_sniper") or t.get("quality_score", 0) >= 0.8]
+        snipers = [
+            t for t in self._trades
+            if (t.get("was_sniper") or t.get("quality_score", 0) >= 0.8)
+            and float(t.get("timestamp", 0) or 0) >= self.CLEAN_LEDGER_EPOCH
+        ]
         snipers.sort(key=lambda t: t.get("pnl", 0), reverse=True)
         return snipers[:limit]
 
@@ -214,6 +222,14 @@ class TradeDNAStore:
         avg_hold = sum(t.get("hold_time_s", 0) for t in self._trades) / total if total else 0
         snipers = sum(1 for t in self._trades if t.get("was_sniper"))
 
+        # FALLACY_AUDIT D3 (2026-07-02): exit-type split. Pooling LLM_EXIT_AGENT
+        # closes (structurally 0/N in the broken era) halved the headline WR the
+        # agents believed about themselves. Surface both populations.
+        mech = [t for t in self._trades if "LLM" not in str(t.get("exit_reason", "")).upper()]
+        mech_wins = sum(1 for t in mech if t.get("outcome") == "WIN")
+        llm_exit_n = total - len(mech)
+        llm_exit_wins = wins - mech_wins
+
         return {
             "total_trades": total,
             "wins": wins,
@@ -223,6 +239,12 @@ class TradeDNAStore:
             "avg_pnl": round(total_pnl / total, 2) if total else 0,
             "avg_hold_time_s": round(avg_hold),
             "sniper_count": snipers,
+            "mech_trades": len(mech),
+            "mech_wins": mech_wins,
+            "mech_win_rate": mech_wins / len(mech) if mech else 0,
+            "mech_pnl": round(sum(t.get("pnl", 0) for t in mech), 2),
+            "llm_exit_trades": llm_exit_n,
+            "llm_exit_wins": llm_exit_wins,
             "by_regime": self.get_win_rate_by("regime"),
             "by_symbol": self.get_win_rate_by("symbol"),
             "by_side": self.get_win_rate_by("side"),
@@ -375,16 +397,30 @@ class StrategyFingerprints:
             fp["by_symbol_side"][sym_side_key]["wins"] += 1
         fp["by_symbol_side"][sym_side_key]["pnl"] += pnl
 
-        # Track by symbol×regime (cross-tab: "SOL_trend", "BTC_range")
-        sym_regime_key = f"{symbol}_{regime}"
+        # Track by symbol×regime (cross-tab: "SOL_trend", "BTC_range").
+        # FALLACY_AUDIT D17-prep (2026-07-02): the TOXIC-block reader in
+        # multi_strategy_main looks up "{symbol}_{side}_{regime}" but this
+        # writer only stored "{symbol}_{regime}" — formats could never match
+        # (dead gate, misaligned data). Now BOTH keys are written (legacy key
+        # kept for existing consumers), blank regimes are not written (was
+        # minting "SOL_" garbage buckets), and buckets carry provenance.
         if "by_symbol_regime" not in fp:
             fp["by_symbol_regime"] = {}
-        if sym_regime_key not in fp["by_symbol_regime"]:
-            fp["by_symbol_regime"][sym_regime_key] = {"wins": 0, "total": 0, "pnl": 0.0}
-        fp["by_symbol_regime"][sym_regime_key]["total"] += 1
-        if win:
-            fp["by_symbol_regime"][sym_regime_key]["wins"] += 1
-        fp["by_symbol_regime"][sym_regime_key]["pnl"] += pnl
+        if regime:
+            # Reader vocabulary is BUY/SELL; positions close with LONG/SHORT.
+            _side_canon = "BUY" if (side or "").upper() in ("BUY", "LONG") else "SELL"
+            for sym_regime_key in (f"{symbol}_{regime}", f"{symbol}_{_side_canon}_{regime}"):
+                if sym_regime_key not in fp["by_symbol_regime"]:
+                    fp["by_symbol_regime"][sym_regime_key] = {
+                        "wins": 0, "total": 0, "pnl": 0.0,
+                        "since": time.time(), "ledger_version": "v2_post_fee_fix_2026-06",
+                    }
+                _b = fp["by_symbol_regime"][sym_regime_key]
+                _b["total"] += 1
+                if win:
+                    _b["wins"] += 1
+                _b["pnl"] += pnl
+                _b["updated_at"] = time.time()
 
         # Track by side
         if side not in fp["by_side"]:
@@ -414,32 +450,37 @@ class StrategyFingerprints:
         strengths = []
         weaknesses = []
 
+        # FALLACY_AUDIT D14 (2026-07-02): verdicts below n=13 are noise
+        # (THE_STANDARD §1), and denominator-free lines ("Poor on BTC (0% WR)")
+        # are banned from prompts (§3b). Every line carries (n, all-era pooled).
+        _MIN_N = 13
+
         # Check by regime
         for regime, stats in fp["by_regime"].items():
-            if stats["total"] >= 5:
+            if stats["total"] >= _MIN_N:
                 wr = stats["wins"] / stats["total"]
                 if wr >= 0.65:
-                    strengths.append(f"Strong in {regime} ({wr:.0%} WR, {stats['total']} trades)")
+                    strengths.append(f"Strong in {regime} ({wr:.0%} WR, n={stats['total']}, all-era)")
                 elif wr <= 0.35:
-                    weaknesses.append(f"Weak in {regime} ({wr:.0%} WR, {stats['total']} trades)")
+                    weaknesses.append(f"Weak in {regime} ({wr:.0%} WR, n={stats['total']}, all-era)")
 
         # Check by symbol
         for symbol, stats in fp["by_symbol"].items():
-            if stats["total"] >= 5:
+            if stats["total"] >= _MIN_N:
                 wr = stats["wins"] / stats["total"]
                 if wr >= 0.70:
-                    strengths.append(f"Excellent on {symbol} ({wr:.0%} WR)")
+                    strengths.append(f"Excellent on {symbol} ({wr:.0%} WR, n={stats['total']}, all-era)")
                 elif wr <= 0.30:
-                    weaknesses.append(f"Poor on {symbol} ({wr:.0%} WR)")
+                    weaknesses.append(f"Poor on {symbol} ({wr:.0%} WR, n={stats['total']}, all-era)")
 
         # Check by side
         for side, stats in fp["by_side"].items():
-            if stats["total"] >= 5:
+            if stats["total"] >= _MIN_N:
                 wr = stats["wins"] / stats["total"]
                 if wr >= 0.65:
-                    strengths.append(f"Strong {side}s ({wr:.0%} WR)")
+                    strengths.append(f"Strong {side}s ({wr:.0%} WR, n={stats['total']}, all-era)")
                 elif wr <= 0.35:
-                    weaknesses.append(f"Weak {side}s ({wr:.0%} WR)")
+                    weaknesses.append(f"Weak {side}s ({wr:.0%} WR, n={stats['total']}, all-era)")
 
         fp["strengths"] = strengths[:10]
         fp["weaknesses"] = weaknesses[:10]
@@ -706,7 +747,13 @@ class InsightJournal:
         return [i for i in reversed(self._insights) if i.get("validated")][:limit]
 
     def get_summary_for_llm(self) -> str:
-        """Compact summary of key insights for LLM prompt."""
+        """Compact summary of key insights for LLM prompt.
+
+        FALLACY_AUDIT M19 (2026-07-02): served-opinion hygiene — only insights
+        with validation_count >= 3 qualify (one confirmation is not
+        "validated"), and the evidence field + validation tally are served
+        with the opinion (THE_STANDARD 3b: no naked opinions).
+        """
         self._ensure_loaded()
         if not self._insights:
             return ""
@@ -714,15 +761,20 @@ class InsightJournal:
         # Group by category, take top insight per category
         by_cat = defaultdict(list)
         for i in self._insights:
-            by_cat[i["category"]].append(i)
+            if int(i.get("validation_count", 0) or 0) >= 3:
+                by_cat[i["category"]].append(i)
 
         lines = []
         for cat, insights in by_cat.items():
-            # Take most confident + most recent
-            best = sorted(insights, key=lambda x: (x.get("validated", False), x["confidence"]), reverse=True)
+            best = sorted(insights, key=lambda x: (x.get("validation_count", 0), x["confidence"]), reverse=True)
             if best:
                 top = best[0]
-                lines.append(f"[{cat}] {top['insight']}")
+                _ev = (top.get("evidence") or "").strip()
+                _ev_str = f" | evidence: {_ev[:150]}" if _ev else " | evidence: none recorded"
+                lines.append(
+                    f"[{cat}] {top['insight']} "
+                    f"(validated {top.get('validation_count', 0)}x{_ev_str})"
+                )
 
         return " | ".join(lines) if lines else ""
 
@@ -777,8 +829,17 @@ class DeepMemoryManager:
         Called after every trade closes. Populates trade DNA,
         updates strategy fingerprints, and detects patterns.
         """
-        # Calculate quality metrics
-        pnl_pct = (pnl / (entry_price * leverage)) * 100 if entry_price > 0 and leverage > 0 else 0
+        # Calculate quality metrics.
+        # FALLACY_AUDIT M12 (2026-07-02): the old formula pnl/(entry*leverage)
+        # divided dollars by (price x leverage) — unit-less garbage that minted
+        # 260%+ "sniper" artifacts. pnl_pct is now return-on-margin from the
+        # actual price move: move_pct x leverage (fees excluded, sign from side).
+        pnl_pct = 0.0
+        if entry_price > 0 and exit_price > 0:
+            _move = (exit_price - entry_price) / entry_price
+            if (side or "").upper() in ("SELL", "SHORT"):
+                _move = -_move
+            pnl_pct = _move * max(leverage, 1.0) * 100.0
 
         # Detect sniper trades (entered within 0.5% of local min/max)
         was_sniper = False
@@ -880,14 +941,23 @@ class DeepMemoryManager:
         """
         parts = []
 
-        # 1. Overall stats
+        # 1. Overall stats — split by exit type with window/ledger label
+        # (FALLACY_AUDIT D3: the pooled "26% WR" headline halved the WR every
+        # agent believed about itself; mechanical-only truth was ~49%).
         stats = self.trade_dna.get_summary_stats()
         if stats.get("total_trades", 0) > 0:
             parts.append(
-                f"PERFORMANCE: {stats['total_trades']} trades, "
-                f"{stats['win_rate']:.0%} WR, ${stats['total_pnl']:+.0f} PnL, "
-                f"{stats['sniper_count']} sniper trades"
+                f"PERFORMANCE [window=last {stats['total_trades']} closes, all eras pooled]: "
+                f"{stats['total_trades']} trades, {stats['win_rate']:.0%} WR, "
+                f"${stats['total_pnl']:+.0f} PnL, {stats['sniper_count']} sniper trades"
             )
+            if stats.get("mech_trades", 0) > 0 and stats.get("llm_exit_trades", 0) > 0:
+                parts.append(
+                    f"  by exit type: mechanical {stats['mech_wins']}/{stats['mech_trades']} "
+                    f"({stats['mech_win_rate']:.0%} WR, ${stats.get('mech_pnl', 0):+.0f}) | "
+                    f"LLM-agent exits {stats['llm_exit_wins']}/{stats['llm_exit_trades']} "
+                    f"(historically contaminated era — weigh mechanical line)"
+                )
 
         # 2. Symbol-specific knowledge
         if symbol:
@@ -957,16 +1027,26 @@ class DeepMemoryManager:
             trans_strs = [f"{t['from']}->{t['to']}" for t in transitions[:3]]
             parts.append(f"REGIME FLOW: {' | '.join(trans_strs)}")
 
-        # 8. Sniper trade patterns (what made the best trades work)
+        # 8. Sniper trade patterns (what made the best trades work).
+        # FALLACY_AUDIT M12: clean-ledger era only, and the base rate is shown
+        # alongside (winners-only cherry-picking is banned — THE_STANDARD 3b).
         snipers = self.trade_dna.get_sniper_trades(5)
         if snipers:
             sniper_patterns = []
             for s in snipers[:3]:
                 sniper_patterns.append(
-                    f"{s['symbol']} {s['side']} in {s['regime']} "
+                    f"{s['symbol']} {s['side']} in {s.get('regime') or '?'} "
                     f"(conf={s['confidence']:.0f}%, +${s['pnl']:.0f})"
                 )
-            parts.append(f"SNIPER MODELS: {' | '.join(sniper_patterns)}")
+            _n_clean = sum(
+                1 for t in self.trade_dna._trades
+                if float(t.get("timestamp", 0) or 0) >= self.trade_dna.CLEAN_LEDGER_EPOCH
+            )
+            parts.append(
+                f"SNIPER MODELS (clean ledger, {len(snipers)} snipers out of "
+                f"{_n_clean} closes — survivor sample, not a setup WR): "
+                f"{' | '.join(sniper_patterns)}"
+            )
 
         return "\n".join(parts)
 

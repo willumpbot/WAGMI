@@ -406,14 +406,27 @@ class TestTradeDNAStore:
         assert len(store._trades) == 1
 
     def test_get_sniper_trades(self, tmp_deep_dir):
+        import time as _time
         store = TradeDNAStore()
         dna = TradeDNA(
             trade_id="sniper_001", symbol="BTC", side="BUY",
             outcome="WIN", pnl=500, was_sniper=True, quality_score=0.9,
+            timestamp=_time.time(),  # clean-ledger era
         )
         store.record_trade(dna)
         snipers = store.get_sniper_trades()
         assert len(snipers) == 1
+
+    def test_get_sniper_trades_excludes_dirty_ledger(self, tmp_deep_dir):
+        """FALLACY_AUDIT M12: pre-clean-ledger snipers are not replication templates."""
+        store = TradeDNAStore()
+        dna = TradeDNA(
+            trade_id="sniper_dirty", symbol="ETH", side="SELL",
+            outcome="WIN", pnl=1010, was_sniper=True, quality_score=0.9,
+            timestamp=TradeDNAStore.CLEAN_LEDGER_EPOCH - 86400,
+        )
+        store.record_trade(dna)
+        assert store.get_sniper_trades() == []
 
     def test_summary_stats(self, tmp_deep_dir):
         store = TradeDNAStore()
@@ -457,11 +470,21 @@ class TestInsightJournal:
         assert len(results) == 1
 
     def test_summary_for_llm(self, tmp_deep_dir):
+        """FALLACY_AUDIT M19: only vc>=3 insights are served, with evidence."""
         journal = InsightJournal()
-        journal.add_insight("strategy_insight", "Test insight 1", confidence=0.9)
+        journal.add_insight("strategy_insight", "Test insight 1", confidence=0.9,
+                            evidence="BTC WIN $+10 in trend")
         journal.add_insight("regime_insight", "Test insight 2", confidence=0.8)
+        # Unvalidated opinions are NOT served
+        assert journal.get_summary_for_llm() == ""
+        # Validate insight 1 three times -> served with tally + evidence
+        for _ in range(3):
+            journal.validate_insight("Test insight 1", True)
         summary = journal.get_summary_for_llm()
-        assert "Test insight" in summary
+        assert "Test insight 1" in summary
+        assert "validated 3x" in summary
+        assert "evidence" in summary
+        assert "Test insight 2" not in summary
 
 
 class TestDeepMemoryManager:

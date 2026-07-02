@@ -7676,20 +7676,23 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     "regime_n": _reg_n,
                     "is_toxic": _is_toxic,
                 }
-            # Hard TOXIC block: if regime-specific live WR < 10% with n >= 10,
-            # do not call the LLM. This fixes the enforcement gap where
-            # HYPE_BUY_illiquid=9% WR TOXIC was loaded but never blocked.
-            # Defense-in-depth: LLM agents also see is_toxic via the snapshot
-            # built in coordinator._build_entry_snapshot, so even if this
-            # short-circuit is bypassed, the prompts have the data.
+            # TOXIC gate — SHADOW MODE (FALLACY_AUDIT D17, 2026-07-02).
+            # History: this hard-block was DEAD since birth — the writer keyed
+            # by_symbol_regime as "{symbol}_{regime}" while this reader looked
+            # up "{base}_{side}_{regime}", so _is_toxic could never be True.
+            # The key mismatch is now fixed in deep_memory (side-canonical keys
+            # with provenance), which would have silently ARMED a learned rule
+            # that never passed THE_STANDARD 2b dollar re-validation. Per the
+            # audit verdict, enforcement stays OFF (owner-gated): we log the
+            # would-have-blocked counterfactual and let the signal flow to the
+            # LLM, which still sees is_toxic in edge_data.
             if _is_toxic:
-                _toxic_reason = f"TOXIC_SETUP: {_regime_key} WR={_reg_wr:.1f}% n={_reg_n}"
+                _toxic_reason = f"TOXIC_SETUP_SHADOW: {_regime_key} WR={_reg_wr:.1f}% n={_reg_n}"
                 logger.warning(
-                    f"[{trace_id}][{symbol}] LLM-FIRST TOXIC BLOCK: "
-                    f"{_regime_key} WR={_reg_wr:.1f}% n={_reg_n} — "
-                    f"hard-blocked before LLM call"
+                    f"[{trace_id}][{symbol}] TOXIC SHADOW (would have blocked, not enforcing): "
+                    f"{_regime_key} WR={_reg_wr:.1f}% n={_reg_n}"
                 )
-                # Record counterfactual for learning
+                # Record counterfactual so the shadow verdict is dollar-scored
                 if self.counterfactual:
                     try:
                         self.counterfactual.record_veto(
@@ -7704,14 +7707,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         )
                     except Exception:
                         pass
-                # Track rejection in signal_outcomes.jsonl
-                self._track_llm_first_outcome(
-                    raw_signal, symbol,
-                    passed=False, hard_rejected=True,
-                    reason=_toxic_reason, stage="toxic_block",
-                    metadata={"regime_wr": _reg_wr, "regime_n": _reg_n, "regime": _regime},
-                )
-                return
+                # NO return — signal continues to the LLM (shadow, not enforcement)
         except Exception as e:
             logger.debug(f"[{trace_id}][{symbol}] edge_data load failed: {e}")
 
