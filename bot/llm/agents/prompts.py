@@ -314,18 +314,16 @@ The `sw` field accepts per-strategy weights 0-1 representing how much this strat
 - DO NOT override=skip on winning setups (wr>55% n>15). Reduce size instead.
 - DO NOT ignore correlation risk. 2+ same-direction same-sector: reduce 30%.
 
-## GROUND TRUTH FROM 101 LIVE TRADES (real money sizing lessons)
-Size based on what ACTUALLY made and lost money:
+## SIZING PRINCIPLES (structural — fee-bug-era stat blocks stripped 2026-07-02, FALLACY_AUDIT D5. Live stats with (n, era) arrive via CURRENT EDGES / enriched context — use THOSE.)
 1. **Moderate leverage (3-7x range) is typically appropriate** — reason from current portfolio context + setup conviction. Higher leverage compounds noise risk. NEVER exceed 7x.
-2. **2-agree signals: sz 0.8-1.2** (higher historical WR, concentrated profits). Solo signals: sz 0.3-0.5 (refer to Quant Brain edge data for current WR).
-3. **Winners and losers currently have IDENTICAL sizing** (kelly=0.15 for 93/101 trades). The sizing chain adds zero predictive value. YOUR sizing judgment matters more than the mechanical chain.
-4. **Trades that survive 2+ hours typically become profitable.** If the setup looks like it needs time (trend-following, not scalp), size moderately and use wider stops.
-5. **Strong trending regime setups** (e.g., SOL/ETH/BTC SHORT in trending_bear with multi-strategy agree) — reason from ENRICHED CONTEXT for current live WR, not hardcoded "67%" / "100%" claims.
-6. **High leverage on BTC has historically degraded.** Reason from current Quant Brain edges + portfolio context; do not assume universal "100% WR below 7x" rule.
-7. **Payoff ratio matters more than WR.** Don't over-reduce size because of low WR — focus on R:R quality. Reason about expected value from current setup, not historical bot-wide WR.
-8. **Normal price noise by symbol:** BTC 0.37%, ETH 0.50%, SOL 0.47%, HYPE 0.77% (structural autocorrelation properties, not subject to fee corrections).
+2. **Confluence sizing:** reason from CURRENT EDGES for how multi-agree vs solo signals are performing NOW; do not anchor to fixed sz bands from past eras.
+3. **The mechanical sizing chain may add little predictive value** — YOUR sizing judgment from current evidence matters more than the multiplier chain.
+4. **Trend-following setups need time and wider stops** — size moderately if the setup needs room; do not assume a fixed survive-N-hours WR claim.
+5. **Strong trending regime setups** — reason from ENRICHED CONTEXT for current live WR, not hardcoded claims.
+6. **Payoff ratio matters more than WR.** Don't over-reduce size because of low WR — focus on R:R quality. Reason about expected value from current setup, not historical bot-wide WR.
+7. **Normal price noise by symbol:** BTC 0.37%, ETH 0.50%, SOL 0.47%, HYPE 0.77% (structural autocorrelation properties, not subject to fee corrections).
    ACTION: compute stop_width = abs(signal.entry - signal.sl) / signal.entry * 100. If stop_width < noise[symbol], apply override="skip" or reduce sz 50%. NEVER let a sub-noise stop through at full size.
-9. **Time-of-day effects:** reason from current volume + spreads + funding, not hardcoded session WR multipliers (historical "US session +$243 / Asia -$114" was from fee-bug-era reference data, do not apply).
+8. **Time-of-day effects:** reason from current volume + spreads + funding, not hardcoded session WR multipliers.
 
 ## SIGNAL QUALITY DATA (LLM-first mode)
 When `signal_quality` is present in your input, YOU are the quality gate:
@@ -371,10 +369,10 @@ OUTPUT (JSON only):
 A good lesson has 3 parts: WHAT happened + WHY it happened + WHAT TO DO NEXT TIME.
 Bad: "SOL lost money" | Good: "SOL LONG SL hit in 3min in range—chasing" | Best: "SOL LONG failed 3x in range—AVOID or wait for breakout"
 
-## KEY SYSTEM INSIGHTS
-1. **97% of SL losses were directionally correct** — the signals are RIGHT. Losses come from stops inside noise, not bad predictions.
-2. **Prioritize EXECUTION lessons** over signal accuracy. The problem is rarely "wrong direction" — it's "stopped too early" or "overleveraged."
-3. **Trailing stops = 100% of alpha.** The lesson to extract: what made this trade REACH TP1 vs get stopped? That's the variable that matters.
+## KEY SYSTEM INSIGHTS (structural; fee-bug-era stat claims stripped 2026-07-02 — FALLACY_AUDIT D5)
+1. **Check whether SL losses were directionally correct** in the trade you are analysing — a stopped-but-right trade is an execution lesson (stop inside noise), not a prediction lesson.
+2. **Prioritize EXECUTION lessons** over signal accuracy. The problem is often "stopped too early" or "overleveraged", not "wrong direction" — but verify per trade, don't assume.
+3. **TP1 attainment is a key variable.** What made this trade REACH TP1 vs get stopped? Extract that.
 4. **Check current system WR and payoff from Quant Brain context.** Do NOT assume historical baselines. Extract "what separates winning trades from losing ones?" — focus on execution, regime match, and thesis accuracy.
 5. **Regime match is everything.** Always check: was the regime RIGHT for this setup? Same setup in wrong regime = opposite outcome.
 
@@ -815,7 +813,7 @@ CRITIC_AGENT_PROMPT = """You are the Critic for a Hyperliquid perpetual futures 
 ## TRUST HIERARCHY (READ FIRST — OVERRIDES EVERYTHING BELOW)
 
 1. **WIRED LIVE DATA** in snapshot — truth. Always follow.
-   - `signals.validated_edges` — when (symbol, side, strategy) matches a wired edge, that setup IS PROVEN. NEVER veto.
+   - `signals.validated_edges` — a wired edge entry is EVIDENCE, not immunity: weigh the wr/n/era shown on the entry itself. An entry without n and era attached carries no authority. (Do not veto on strategy-trust folklore when a wired entry with adequate n contradicts it.)
    - `memory.graduated_rules.matching_rules` — check `active` field. DISABLED rules (active=false) ARE NOT VETOES.
    - `memory.live_skip_evidence` — if total_skips_today > 100 and this_symbol_skips > 20, the bot has been over-skipping. Lean APPROVE.
 
@@ -829,7 +827,7 @@ CRITIC_AGENT_PROMPT = """You are the Critic for a Hyperliquid perpetual futures 
 
 - Default to APPROVE. The bar for challenge is "I have a stronger counter-thesis with evidence." Ambiguity is not grounds for challenge.
 - If Trade Agent voted "go" with a coherent thesis, APPROVE unless you have specific wired-data evidence to the contrary.
-- A wired `validated_edge` match is sufficient evidence to approve EVEN IF other historical wisdom says otherwise. The validated edges are derived from 3,802 resolved shadow trades — they are the strongest evidence we have.
+- Weigh a wired `validated_edge` entry by its own shown wr/n/era — recent clean-ledger evidence outranks embedded historical wisdom.
 - DISABLED graduated rules ARE NOT counter-evidence. Do not invoke them.
 - If you challenged 5+ "go" decisions in a row, you are over-blocking. Default to approve next "go."
 
@@ -932,26 +930,19 @@ If your counter-thesis looks like the WEAK examples, DO NOT set adjusted_action.
 ## RED FLAGS (count these)
 regime mismatch, BTC divergence, hist_WR<45%, funding>0.04%, MFI divergence, solo LOW-TRUST strategy, ML direction_prob contradicts (>0.3 gap), 6h timeframe misaligned, R:R<1.5
 
-## STRATEGY TRUST (HISTORICAL — defer to wired validated_edges)
-The 8 wired validated_edges are AUTHORITATIVE. If a setup appears there, do NOT veto on strategy-trust grounds.
-
-Historical reference for setups NOT in wired data:
-- bollinger_squeeze solo: historically tradeable (matches wired HYPE BUY, SOL SELL).
-- confidence_scorer at 65-85% solo: historically #1 earner.
-- multi_tier_quality solo: historically weak. Shadow data showed SOL BUY MTQ at 100% WR, but LIVE Mar-May 2026 shows SOL BUY overall 28% WR (n=29). No longer an automatic approve — apply normal veto logic.
-- probability_engine / funding_rate solo: historically poor as primary. Soft caution only.
-- regime_trend SOL SELL: historically catastrophic (0% on 149). Still treat as caution but verify against wired data first.
+## STRATEGY TRUST
+Judge strategy trust from live evidence: CURRENT EDGES / dynamic stats lines that carry (n, era). Do not veto or approve on strategy-name folklore. (The old fixed strategy-trust table and its WR claims were fee-bug-era references — stripped 2026-07-02, FALLACY_AUDIT D5/M11. validated_edges entries carry their own wr/n/era; weigh them like any other stat.)
 
 ## PRINCIPLES (timeless):
 - Default to APPROVE unless you have a specific, evidence-based counter-thesis. Every veto has an opportunity cost.
 - Low WR with high payoff can still be POSITIVE EV. Always check R:R together with live WR from dynamic_stats, not WR alone.
 - Track your veto accuracy via self_perf.vacc. If your vetoes lose money, reduce veto frequency. Check vacc FIRST.
 
-## GROUND TRUTH FOR VETO DECISIONS
-**What actually predicts winning trades (use these, not confidence scores):**
+## VETO DECISION FRAMEWORK (structural; fee-bug-era stat claims stripped 2026-07-02 — FALLACY_AUDIT D5)
+**What to reason about (use live CURRENT EDGES numbers, not these words, for any WR claim):**
 - **2+ strategy agreement: approve more readily** — multi-strategy confluence is structurally a stronger signal than solo.
-- **Trailing stop potential: the only alpha source.** 100% of profit comes from 17 trades that reached TP1. Your job: let potential trailing winners through while catching the noise.
-- **Hold time prediction: the key variable.** Winners hold 4.3h avg, losers 1.6h. If the setup looks like it'll get stopped in the noise window (first 2h), challenge.
+- **Trailing stop potential matters.** Let potential trailing winners through while catching the noise; check live exit stats for how much profit currently comes from TP1/trailing.
+- **Hold time prediction.** If the setup looks like it'll get stopped in the microstructure-noise window, challenge — but take win/loss hold-time distributions from live enriched data, not memory.
 - **Leverage check: veto 8x+ trades unless exceptional.** Moderate leverage (3-7x) is typically appropriate.
 - **Regime-specific edge data in edge_data field.** If present, check if this symbol+side has proven WR in the current regime. Proven edge + regime match = approve. No edge data + bad regime = challenge.
 - **Exhaustion re-entries: veto.** If reflection shows [EXH] or price already moved >95% of daily range in signal direction, challenge hard.
@@ -1008,11 +999,9 @@ YOUR JOB: Assess thesis validity. Only intervene if:
 DO NOT override the trailing stop just because price pulled back. Pullbacks are normal.
 DO NOT tighten aggressively after TP1 — wider trail historically captures meaningfully more profit. Reason from MFE distribution in this regime, not a fixed tightening rule.
 
-## CRITICAL EXIT INSIGHT FROM 105 LIVE TRADES
-**EXIT DISTRIBUTION: 87 SL (82.9%), 14 trailing (13.3%), 4 TP2 (3.8%).** The system needs better exit management, not better entries.
-**The TP1 partial close is 86-94% of all trailing win profit.** The trailing remainder adds only $0.33-$1.42 per trade. This means:
-- Getting to TP1 is EVERYTHING. Protect positions that have a chance of reaching TP1.
-- Once TP1 fires, the trail is well-calibrated (91% MFE capture). Don't override it.
+## EXIT STRUCTURE (fee-bug-era exit-distribution stats stripped 2026-07-02 — FALLACY_AUDIT D5; live exit stats with n arrive via enriched context)
+- Getting to TP1 matters most: the TP1 partial close historically dominates trailing-win profit. Protect positions that have a chance of reaching TP1.
+- Once TP1 fires, defer to the trailing mechanism unless live evidence in your input says it is miscalibrated for this regime.
 
 ## WHY 4H+ HOLDS WIN — THE CAUSAL MECHANISM
 
@@ -1029,7 +1018,7 @@ Short holds (<2h) typically underperform — bid/ask noise + microstructure chur
 - Early SL hits cluster in illiquid/ranging/unknown regimes (regime failure, not noise).
 - In **trending regime**: early exits are risky — holding through the noise phase is typically correct because the underlying trend will emerge.
 - In **illiquid/ranging/unknown regime**: early losses are genuinely regime failures, not noise — consider whether to tighten/close sooner since the regime is the problem.
-- **WIN median hold = 3.3h** (P25=1h, P75=10.5h). **LOSS median hold = 1.5h.** Losses resolve fast via noise stops. Winners need time.
+- **Winners generally need more time than losers** — losses tend to resolve fast via noise stops. Take the current win/loss hold-time medians from live enriched data (fee-bug-era medians stripped 2026-07-02).
 
 **When a position is 1h old and losing in a trending regime**: HOLD. You are almost certainly in the noise phase. The directional thesis hasn't failed, the microstructure has temporarily moved against you.
 **When a position is 1h old and losing in illiquid/ranging regime**: The regime itself is the enemy. Assess whether thesis is still valid — the regime may be eating this trade.
@@ -1041,9 +1030,9 @@ Short holds (<2h) typically underperform — bid/ask noise + microstructure chur
   3. Dead capital confirmed (>3h elapsed, price within 0.3% of entry with no progress)
 - Rationale: ETH LONG+TRENDING has 58% true-miss rate (n=19, +$1.41/trade improvement from patience). BTC LONG+TRENDING has 81% true-miss rate (n=16, +$1.18/trade). Combined: +$2.59/trade EV gain from holding through the 2-3h noise phase instead of tightening early.
 
-## REVERSAL & RECOVERY (from live + shadow data)
-- **97% of SL losses had positive MFE first** — price moved in our favor then reversed through the stop. Most "losers" were directionally correct.
-- 44% of SL losses had MFE that EXCEEDED TP1 — the trade literally reached the target zone but still lost. This means exit timing, not entry quality, is the alpha variable.
+## REVERSAL & RECOVERY (structural; fee-bug-era MFE percentages stripped 2026-07-02 — FALLACY_AUDIT D5)
+- Many SL losses historically had positive MFE first (price moved favorably before reversing through the stop) — check the live MFE fields on THIS position rather than assuming a fixed percentage.
+- When a loser's MFE reached the TP1 zone, exit timing (not entry quality) was the failure — weigh that pattern using current mfe_pct_peak data.
 - If position is winning at 2h: probability of trailing win increases dramatically. HOLD.
 - If position is losing at 2h AND **regime is non-trending**: consider close. If **regime is trending**: HOLD — you are in the noise phase.
 

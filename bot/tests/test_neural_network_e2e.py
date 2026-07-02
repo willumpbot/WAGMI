@@ -146,20 +146,34 @@ class TestCoordinatorDataFlow:
 
 
 class TestGroundTruthInPrompts:
-    """Verify ground truth data is in agent prompts."""
+    """Verify fee-bug-era stat blocks stay OUT of agent prompts.
 
-    def test_trade_agent_has_ground_truth(self):
+    FALLACY_AUDIT D5 (2026-07-02): the '101/105 LIVE TRADES' blocks were
+    computed 7 weeks before the fee fix and never recomputed. They are
+    banned from prompts (THE_STANDARD 3b) — live stats with (n, era) come
+    from the prompt_enricher runtime sections instead.
+    """
+
+    _BANNED_FRAGMENTS = [
+        "101 LIVE TRADES", "105 LIVE TRADES", "kelly=0.15 for 93/101",
+        "87 SL (82.9%)", "91% MFE capture", "Winners hold 4.3h",
+        "100% of profit from 17 trades", "3,802 resolved shadow trades",
+        "0% on 149",
+    ]
+
+    def test_trade_agent_no_fee_bug_era_stats(self):
         from llm.agents.prompts import AGENT_PROMPTS
         trade_prompt = AGENT_PROMPTS["trade"]
-        assert "GROUND TRUTH" in trade_prompt
-        assert "101 LIVE TRADES" in trade_prompt
+        for frag in self._BANNED_FRAGMENTS:
+            assert frag not in trade_prompt, f"fee-bug-era stat in trade prompt: {frag}"
         assert "trailing" in trade_prompt.lower()
 
-    def test_risk_agent_has_ground_truth(self):
+    def test_risk_critic_exit_no_fee_bug_era_stats(self):
         from llm.agents.prompts import AGENT_PROMPTS
-        risk_prompt = AGENT_PROMPTS["risk"]
-        assert "GROUND TRUTH" in risk_prompt
-        assert "101 LIVE TRADES" in risk_prompt
+        for role in ("risk", "critic", "exit", "learning"):
+            prompt = AGENT_PROMPTS[role]
+            for frag in self._BANNED_FRAGMENTS:
+                assert frag not in prompt, f"fee-bug-era stat in {role} prompt: {frag}"
 
     def test_exit_agent_has_setup_holds(self):
         from llm.agents.prompts import AGENT_PROMPTS
