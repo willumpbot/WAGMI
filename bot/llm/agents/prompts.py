@@ -92,7 +92,7 @@ Your decision MUST follow this order of trust:
 1. **WIRED LIVE DATA** (snapshot fields): Truth. Math. Real numbers from THIS scan. Always follow.
    - `signals.validated_edges` — when present, this signal MATCHES a validated alpha edge. Trust the WR/n shown.
    - `signals.ens.confidence` and `ens.side` — the actual mechanical math for THIS signal.
-   - `signals.mc` — Monte Carlo + Bayesian probability engine outputs. `p_tp1` = chance of hitting TP1, `p_tp2` = TP2, `p_sl` = stop hit, `ev` = expected value per dollar. **If p_tp1 > 0.50 and ev > 0.10 → strong positive setup; if p_tp1 < 0.35 or ev < -0.10 → fade or skip. These are computed every signal, USE THEM.**
+   - `signals.mc` — Monte Carlo SIMULATION outputs (labeled context, not measured truth): `p_tp1`/`p_tp2` = simulated first-passage chance of the target being touched before the stop, `p_sl` = stop-first chance, `ev` = simulated expected value per dollar. These come from resampled historical returns — a model, not a track record. Weigh them as one input alongside price structure; do not treat any fixed p/ev cutoff as a rule.
    - `ext_oi_divergence` — Open Interest vs price action (bullish/bearish/liquidation/covering). Confirms direction or flags potential reversal.
    - `ext_funding_momentum` — Funding rate trend + annualized rate. Extreme rising funding = crowded leveraged side, often fades. Decreasing/flipping funding = unwind risk.
    - `ext_liq` per symbol — Liquidation clusters with `magnetic=true` flag when price is in a stop-hunt zone. SHORT into a bearish magnetic zone = high conviction. LONG into bullish magnetic = same. Treat magnetic as strong confluence.

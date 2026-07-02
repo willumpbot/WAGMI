@@ -213,22 +213,49 @@ class ProbabilityEngineStrategy(BaseStrategy):
             "std_terminal": float(np.std(terminal)),
         }
 
+    @staticmethod
+    def _first_touch_idx(mask: np.ndarray) -> np.ndarray:
+        """Index of first True per row; rows with no touch get a sentinel
+        beyond the horizon so comparisons treat them as 'never'."""
+        any_hit = mask.any(axis=1)
+        idx = np.argmax(mask, axis=1).astype(np.int64)
+        idx[~any_hit] = mask.shape[1] + 1
+        return idx
+
     def _compute_probabilities(self, mc: Dict, price: float,
                                 tp1: float, tp2: float, sl: float,
                                 side: str) -> Dict[str, float]:
-        """Compute probability of hitting TP1, TP2, SL during the simulation."""
-        max_prices = mc["max_prices"]
-        min_prices = mc["min_prices"]
-        n_sims = len(max_prices)
+        """First-passage probabilities of TP1/TP2/SL over simulated paths.
+
+        FALLACY_AUDIT M3 (2026-07-02): the old accounting used whole-path
+        max/min excursion — a path that hit SL first and THEN rallied through
+        TP1 counted as a TP1 win. Order of hit now decides: a target only
+        counts if it is touched strictly BEFORE the stop (same-bar ties go to
+        the stop, conservatively — intra-bar order is unknowable here).
+        Realized check that motivated this: 53% WR / -0.04% avg vs the
+        engine's internal +0.10-0.20 EV gate.
+        """
+        paths = mc["paths"]
+        n_sims = paths.shape[0]
 
         if side == "BUY":
-            prob_tp1 = float(np.sum(max_prices >= tp1)) / n_sims
-            prob_tp2 = float(np.sum(max_prices >= tp2)) / n_sims
-            prob_sl = float(np.sum(min_prices <= sl)) / n_sims
+            tp1_mask = paths >= tp1
+            tp2_mask = paths >= tp2
+            sl_mask = paths <= sl
         else:
-            prob_tp1 = float(np.sum(min_prices <= tp1)) / n_sims
-            prob_tp2 = float(np.sum(min_prices <= tp2)) / n_sims
-            prob_sl = float(np.sum(max_prices >= sl)) / n_sims
+            tp1_mask = paths <= tp1
+            tp2_mask = paths <= tp2
+            sl_mask = paths >= sl
+
+        first_tp1 = self._first_touch_idx(tp1_mask)
+        first_tp2 = self._first_touch_idx(tp2_mask)
+        first_sl = self._first_touch_idx(sl_mask)
+        never = paths.shape[1] + 1
+
+        prob_tp1 = float(np.sum((first_tp1 < first_sl) & (first_tp1 < never))) / n_sims
+        prob_tp2 = float(np.sum((first_tp2 < first_sl) & (first_tp2 < never))) / n_sims
+        # SL-first (ties included) — the loss mass the old math truncated
+        prob_sl = float(np.sum((first_sl <= first_tp1) & (first_sl < never))) / n_sims
 
         return {
             "prob_tp1": prob_tp1,
