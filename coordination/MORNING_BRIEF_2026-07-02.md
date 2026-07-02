@@ -98,3 +98,9 @@ One trades.csv row per close (any path), truthful entry_type, partial-close rows
 
 ## THE ONE-LINE STATE
 The machine's judgment was never the problem tonight proved — its bookkeeping was; the spine now tells the truth, the caution was earning not costing, and selectivity + shorts + honest instruments is the validated identity of this system.
+
+## New owner decisions (fallacy audit)
+- **D8 Quant Agent demotion** — the ungated Quant Agent still mutates confidence +/-0.15, forces skips (noise_prob>0.6 + conf<0.20, runs AFTER Critic), and scales size 0.5-1.5x via un-validated Kelly (coordinator.py:1260-1296, 4736-4744). Recommend: demote to advisory + shadow-log until dollar-scored n>=13. NOT shipped (gate change, yours).
+- **D9 slippage gate** — hard-rejects at >50%-of-stop despite its own measured 44.6% accuracy (blocks winners more than losers, signal_pipeline.py:359-381). Recommend: advisory-only until a fresh dollar re-score. NOT shipped (gate change, yours).
+- **D17 TOXIC block re-arm** — the pre-LLM TOXIC hard-block was DEAD since birth (writer/reader key mismatch). I fixed the data plumbing (side-canonical keys + provenance) but set the gate to SHADOW so the alignment could not silently arm an unvalidated learned rule. Re-arming enforcement is your call after the shadow counterfactuals dollar-score.
+- **FYI (shipped autonomously per audit verdict): M7 EVCalibrator** — was permanently-RELAXED via broken cold-start + dead measurement loop + impossible 28-wins/0-overrides state; backtests were writing the LIVE state file. Now: SHADOW cold-start, measurement loop actually wired, state reset, backtest isolated to scratch. Net effect: negative-EV overrides that were being admitted at 0.5x are OFF until n>=13 evidence justifies relaxing.
