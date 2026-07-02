@@ -24,9 +24,6 @@ A fallacy = ANY of: (a) a standard violation (v1.2/v1.3), (b) code that could be
 17. Fee drag map: realized fees as % of gross per setup type — where does fee drag eat the edge?
 18. Old eras archaeology: the pre-May trades (rows 1-21, +$1,756) — what conditions produced them and are they detectable live?
 19. Ensemble strategy attribution: which of the 4 strategies' signals actually correlate with wins? (Needs H22 strategy-capture fix live first.)
-22. Gate ROC: signal_outcomes.jsonl carries 56k signals with per-gate pass/reject annotations — for each gate (esp. confidence_floor), at what threshold does pass/reject flip EV-positive? (Source: DATA_CENSUS 2026-07-01.)
-23. Sniper rejection EV audit: sniper_rejections.jsonl (79k records, write-only) — which single rejection reason destroyed the most counterfactual EV, per regime? 5x the sample of any accepted-trade set.
-24. Agent skill attribution: agent_performance.jsonl (24k calls) — which agent role's confidence actually moves trade outcomes (skill vs noise per role)? Feeds calibration weights and token budget.
 25. Scorecard validity: trade_scorecards.jsonl (2.5k records, nothing reads it) — do scorecard grades predict realized PnL, i.e. is the grader worth its tokens?
 26. Proposal→adoption audit: growth/hypotheses+recommendations+self_improvement_proposals (1.5MB, ~write-only) — what fraction of machine proposals were ever enacted, and did enacted beat ignored?
 27. P0 INTEGRITY — single source of truth: five trade stores disagree (trades.csv 91 vs trade_ledger.csv 157 vs ml_data/bot.db trades 330 vs ml_data/trade_outcomes.json vs analysis/trade_outcomes.csv 25). Reconcile once, designate canon, alias the rest — every WR/EV answer depends on this denominator. (Full flag list: DATA_CENSUS.md §4.)
@@ -47,3 +44,7 @@ A fallacy = ANY of: (a) a standard violation (v1.2/v1.3), (b) code that could be
 - Funding-crowding as mean-revert fade: weak fade, regime-dominated; don't flip sign, gate by regime — CROWDING_STUDY.md
 - Quant Brain stats value: anti-signal (17% WR when cited); muted — THESIS_AUDIT_2026-07-01.md
 - Thesis confidence calibration: INVERTED (30-44 band 67% right vs 60-74 43%) — THESIS_GRADES_2026-07-01.md
+- Q22 Gate ROC: "56k" = 6,967 episodes (8x re-emission); confidence doesn't rank (era AUC 0.43–0.51); 60–79 anti-signal confirmed n=926; live floors 66/71 keep the WORST slice; no threshold makes stream positive (best −9bps gross vs fees) — problem is upstream signal gen; volume_chop broken (fires on 0.0) + most expensive gate; trend_alignment/rr/fee/ev floors dead-wired — GM_GATE_ROC_56K.md
+- Q23 Sniper rejections: "79k" = 5,528 episodes (41% dupes); NO gate provably denies era-stable EV (low_consensus/low_confidence/daily_limit "costs" = W1 crash beta); two gates save money (quality_floor_proven_solo −70bps, aggressive_standard_skip LATE −179); keep all; low_rr watch at n≥50; rejections never logged entry/SL/TP (fix) — GM_REJECTIONS_79K.md
+- Q24 Agent skill: REGIME only keeper (58.5% @4h vs mech 47.5%, all eras); QUANT = wk1 artifact, de-Opus/mute (ev_per_dollar AUC 0.444–0.470 anti-predictive — Quant-Brain-suspect CONFIRMED); TRADE skip filter real post-wk1, go-confidence inverted (−0.17); CRITIC veto wk1 artifact (mid inverted) → shadow-mode proposal owner-gated; EXIT holds −25bps → fix hold prompt; 7/9 roles have broken confidence logging — measurement first — GM_AGENT_SKILL_24K.md
+- Synthesis of Q22–24 + disposition under THE_STANDARD v1.1 — GOLDMINE_2026-07-02.md
