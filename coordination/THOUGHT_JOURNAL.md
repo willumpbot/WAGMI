@@ -979,3 +979,9 @@ Campaign C1: healthy, 17/180 calls, 0 failures, all considered-flats so far (ear
 ⭐ C1 COMPLETE: 3 closes, 66.7% WR, +$16.18 net fees (+3.2%) in the Jul-2025 trend-up window — LLM-approved entries through the FULL pipeline with restored exits, incl. a +$8.21 trailing runner. FIRST-EVER entry-edge evidence (n=3, one window; standard verdict: suggestive, 5 windows to go). C2 running (78/180 calls, low-liquidity stretch, correctly flat so far). Scaling math: ~1 close/60 calls at C1 signal density.
 LIVE ERA: green +$2.65 (2W/1L) — ratchet harvested XRP +$0.85 + SOL +$0.98; HYPE loss -$1.48 was the now-blocked class. Invariants 7/7, equity one-truth, LL 200.
 Thesis-grading watch RESOLVED: 0 graded because all era closes were EXPLORATION (no thesis linked) — grader arms on first LLM_FIRST close.
+
+=== 2026-07-02 ~17:50 UTC — engine pass: C2 done, C3 finishing, all clear ===
+Invariants 7/7, equity $5,001.85 (era: 5 closes net -$0.44 — tiny capped exploration churn, as designed). LL 200.
+CAMPAIGN: C2 (low-liquidity stretch) COMPLETE: 1 close, 1W, +$0.05 — the brain stayed correctly flat in a dead window; caution is cheap now (fees $0.02). C3 (trend-down Nov 2025) at 161/180 calls, all considered-flats so far — the interesting question is whether it SHORTS the down-leg (its historical strength) or sits out. C4-C6 queued.
+EMERGING CAMPAIGN SHAPE (2 windows): trades trend-up (+3.2%), sits out dead markets (+0.0%) — the selectivity thesis reproducing in emulation.
+Note: HYPE LONG exploration at 14:51 (-$0.00) — the old hardcoded exploration block on HYPE_LONG is gone (consistent: owner's no-hardcoded-blocks + the veto retired itself on dollars; epsilon may probe it at 0.1x; the dollar-aware machinery re-judges continuously).
