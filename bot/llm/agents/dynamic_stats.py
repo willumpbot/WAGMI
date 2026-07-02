@@ -203,18 +203,23 @@ def get_system_baseline() -> Tuple[float, float]:
     return (wr, payoff_ratio)
 
 
-def _wr_label(wr: float, n: int) -> str:
+def _wr_label(wr: float, n: int, baseline_wr: Optional[float] = None) -> str:
     """Human-readable label for a win rate given sample size.
 
     Labels are relative to dynamic system baseline, not 50%.
-    Baseline = system's actual win rate from recent trades.
+    baseline_wr: pass the baseline computed on the SAME population as wr.
+    FALLACY_AUDIT D2 (2026-07-02): grading pooled dirty WRs (all exit types)
+    against the decontaminated mechanical baseline made every line read TOXIC.
+    When omitted, falls back to get_system_baseline() — only valid if wr was
+    computed on the same population that baseline uses.
     """
     if n < 3:
         return "INSUFFICIENT DATA"
     if n < 10:
         return "LOW SAMPLE"
 
-    baseline_wr, _ = get_system_baseline()
+    if baseline_wr is None:
+        baseline_wr, _ = get_system_baseline()
 
     # STRONG: at least 0.10 above baseline
     if wr >= baseline_wr + 0.10:
@@ -244,7 +249,17 @@ def get_current_edge_map(max_trades: int = 100) -> str:
         groups[key] = groups.get(key, [])
         groups[key].append(t)
 
-    lines = [f"CURRENT EDGES (last {len(trades)} trades):"]
+    # Population-symmetric baseline (FALLACY_AUDIT D2): these WRs pool ALL
+    # exit types from trades.csv, so the grading baseline is the pooled WR of
+    # the SAME population — never the mechanical-only system baseline.
+    total_n = len(trades)
+    total_wins = sum(1 for t in trades if t["won"])
+    overall_wr = total_wins / total_n if total_n > 0 else 0
+
+    lines = [
+        f"CURRENT EDGES (last {total_n} closes, ALL exit types pooled; "
+        f"labels graded vs pooled baseline {overall_wr:.0%}):"
+    ]
     # Sort by trade count descending
     for key in sorted(groups.keys(), key=lambda k: -len(groups[k])):
         group = groups[key]
@@ -258,16 +273,13 @@ def get_current_edge_map(max_trades: int = 100) -> str:
         pf = (gross_wins / gross_losses) if gross_losses > 0 else float("inf") if gross_wins > 0 else 0
         pf_str = f"PF {pf:.2f}" if pf < 100 else "PF INF"
 
-        label = _wr_label(wr, n)
+        label = _wr_label(wr, n, baseline_wr=overall_wr)
         lines.append(
             f"  {key}: {wr:.0%} WR ({n} trades), {pf_str}, ${total_pnl:+.2f} — {label}"
         )
 
-    # Overall
-    total_n = len(trades)
-    total_wins = sum(1 for t in trades if t["won"])
-    overall_wr = total_wins / total_n if total_n > 0 else 0
-    lines.append(f"  OVERALL: {overall_wr:.0%} WR ({total_n} trades)")
+    # Overall (population stated)
+    lines.append(f"  OVERALL: {overall_wr:.0%} WR ({total_n} closes, all exit types)")
 
     # Add regime-specific edges (symbol+side+regime)
     regime_groups: Dict[str, List[dict]] = defaultdict(list)
@@ -289,9 +301,9 @@ def get_current_edge_map(max_trades: int = 100) -> str:
 
     if regime_edges:
         regime_edges.sort(key=lambda x: -x[3])
-        lines.append("  REGIME-SPECIFIC (n>=3):")
+        lines.append("  REGIME-SPECIFIC (n>=3, same pooled population):")
         for key, n, wr, pnl in regime_edges[:8]:
-            label = _wr_label(wr, n)
+            label = _wr_label(wr, n, baseline_wr=overall_wr)
             lines.append(f"    {key}: {wr:.0%} WR ({n}), ${pnl:+.2f} — {label}")
 
     return "\n".join(lines)
@@ -326,12 +338,21 @@ def get_current_regime_performance() -> str:
     if not regime_stats:
         return "REGIME PERFORMANCE: No data available."
 
-    lines = ["REGIME PERFORMANCE:"]
+    # Population-symmetric baseline (FALLACY_AUDIT D2): grade pooled regime WRs
+    # against the pooled WR of the same trades.csv window.
+    _pool_n = len(trades)
+    _pool_wr = (sum(1 for t in trades if t["won"]) / _pool_n) if _pool_n else None
+
+    lines = [
+        f"REGIME PERFORMANCE (all exit types pooled, last {_pool_n} closes; "
+        f"labels vs pooled baseline {_pool_wr:.0%}):" if _pool_wr is not None
+        else "REGIME PERFORMANCE:"
+    ]
     for regime in sorted(regime_stats.keys(), key=lambda r: -regime_stats[r]["total"]):
         s = regime_stats[regime]
         n = s["total"]
         wr = s["wins"] / n if n > 0 else 0
-        label = _wr_label(wr, n)
+        label = _wr_label(wr, n, baseline_wr=_pool_wr)
         lines.append(f"  {regime}: {wr:.0%} WR ({n} trades), ${s['pnl']:+.2f} — {label}")
 
     return "\n".join(lines)
@@ -463,7 +484,15 @@ def get_current_kelly() -> str:
     if not kelly:
         return "KELLY: No Kelly data available."
 
-    lines = ["KELLY FRACTIONS:"]
+    # Provenance header (FALLACY_AUDIT M16): state when the source was written.
+    _asof = ""
+    try:
+        _asof = datetime.fromtimestamp(
+            os.path.getmtime(KELLY_WEIGHTS), tz=timezone.utc
+        ).strftime("%Y-%m-%d")
+    except OSError:
+        pass
+    lines = [f"KELLY FRACTIONS (source updated {_asof or 'unknown'}):"]
     trades_data = kelly.get("trades", {})
     for strat, data in trades_data.items():
         trade_list = data if isinstance(data, list) else []
@@ -472,6 +501,15 @@ def get_current_kelly() -> str:
         n = len(trade_list)
         wins = sum(1 for t in trade_list if t.get("won", False))
         wr = wins / n if n > 0 else 0
+
+        # FALLACY_AUDIT M16: a full_kelly=1.000 ("bet the bankroll") line was
+        # served from n=1. The n<13 suppression its sibling sections apply was
+        # missing here — no Kelly math below THE_STANDARD's evidence floor.
+        if n < 13:
+            lines.append(
+                f"  {strat}: INSUFFICIENT DATA (n={n} < 13) — do not weight"
+            )
+            continue
 
         # Compute Kelly: f* = (p*b - q) / b where p=WR, q=1-p, b=avg_win/avg_loss
         win_pcts = [t.get("pnl_pct", 0) for t in trade_list if t.get("won", False)]
