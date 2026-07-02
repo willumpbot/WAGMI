@@ -1,10 +1,8 @@
 # ☕ RETURN PACKAGE — the 5-minute re-entry read
 Prepped 2026-07-02 morning while you ease back in. Everything deeper links out; nothing here needs more than a yes/no.
 
-## 0. Kill the phone spam (2 minutes, only you can)
-The pinger is a cloud **Routine** on your claude.ai account. Either:
-- Type **`/schedule list`** in the Claude Code chat → then `/schedule update` to delete/pause the WAGMI one, OR
-- Go to **claude.ai/code/routines** → click the WAGMI routine → **trash icon** (delete) or flip the **Repeats** toggle (pause).
+## 0. Phone spam: ✅ KILLED (done for you, 2026-07-02 ~11:00 UTC)
+THREE cloud routines from April were firing ~60 runs/day against the OLD GitHub repo (source of "offline day N" pings + a big quota drain). All three DISABLED via the routines API: Overnight Paper Trading Report (hourly), Perpetual Improvement Loop (hourly), Autonomous Quant Audit (2h). Paused not deleted — to remove permanently: claude.ai/code/routines → trash icons.
 
 ## 1. What the night did (one paragraph)
 26 code repairs shipped (spine → your five approvals → ship-list → 10 fallacy fixes → P0 recovery-metadata fix), all tested, all pushed, bot healthy on every one of them. The learning stack was quarantined and rebuilt (5 trusted rules of 57; everything else must re-earn enforcement in dollars). The bread-and-butter exits you remembered are restored (+$1,589 backtested, shadow-validated live). The audits produced the honest verdict: **no entry alpha has ever been demonstrated — avoidance is the proven skill** — and the golden-era myth died under testing (June 1-6 was regime beta; the "early era profit" was a ledger illusion). Full detail: MORNING_BRIEF_2026-07-02.md, OBJECTIVE_STATE.md.

@@ -963,3 +963,6 @@ Health otherwise green (equity one-truth $1,942.21, thesis sides truthful 426 re
 
 === 2026-07-02 ~06:12 UTC — engine pass (zero-token; session limit until 07:10 UTC) ===
 Invariants 7/7 ALL CLEAR verified 06:07 (P0 closed: metadata survives recovery, exit_type stamped, retro-label done, bot pid 11664 healthy on the fix). LL 200. No agents spawned this pass (limit). Queued for next window: replay VAL1 zero-trade diagnosis (entry-event triggering / cap sizing), thesis-grading fire verification (440 records, graded still 0 — grading triggers on CLOSE of linked positions; verify next linked close grades), regime-oracle prompt upgrade (RQ10 ship). Cron notes: items 2-3 of this prompt are DONE (shipped earlier tonight) — treat as historical.
+
+=== 2026-07-02 ~11:00 UTC — PHANTOM PINGERS KILLED ===
+Found via /schedule + RemoteTrigger: THREE cloud routines (created Apr 24-25) firing hourly/hourly/2-hourly against the OLD repo Vince2kLyleStyle/WAGMI = the "bot offline day N" false alarms + ~60 cloud runs/day of quota drain since April. All three disabled (enabled:false confirmed). Quota reclaimed for real work.
