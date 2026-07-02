@@ -972,9 +972,28 @@ class LearningCycleEngine:
         return hypotheses
 
     def _validate_hypotheses(self, trades: List[Dict]) -> List[Dict]:
-        """Level 2: Validate existing hypotheses against new data."""
+        """Level 2: Validate existing hypotheses against new data.
+
+        FALLACY_AUDIT M10 (2026-07-02): the "edge" bar was hardcoded to 0.40
+        anchored to a contaminated 35% baseline — BELOW the true mechanical
+        baseline (~50-63%), so below-baseline sides "validated" directional
+        bias into knowledge. Now: era-matched live baseline from
+        get_system_baseline() (mechanical-only when USE_MECHANICAL_BASELINE),
+        n>=13 windows, baseline logged in the evidence string.
+        """
         validated = []
         active = self.knowledge.get_active_hypotheses()
+        if not active:
+            return validated
+
+        # Live, era-matched baseline (THE_STANDARD 2b anchoring)
+        baseline_wr = 0.50
+        try:
+            from llm.agents.dynamic_stats import get_system_baseline
+            baseline_wr, _ = get_system_baseline()
+        except Exception as _be:
+            logger.debug(f"[TEACH] Baseline fetch failed, using 0.50: {_be}")
+        edge_bar = baseline_wr + 0.05  # edge = meaningfully above live baseline
 
         for h in active:
             content = h.get("content", "").lower()
@@ -983,9 +1002,10 @@ class LearningCycleEngine:
             if "favors longs" in content:
                 long_wr = self._calc_side_wr(trades, "long")
                 if long_wr is not None:
-                    # System baseline is 35% WR — 40%+ for a side = edge
-                    correct = long_wr >= 0.40
-                    self.knowledge.validate(h["content"], correct, f"Long WR={long_wr:.0%}")
+                    correct = long_wr >= edge_bar
+                    self.knowledge.validate(
+                        h["content"], correct,
+                        f"Long WR={long_wr:.0%} vs live baseline={baseline_wr:.0%} (bar={edge_bar:.0%})")
                     if correct:
                         self.curriculum.hypotheses_validated += 1
                     else:
@@ -995,8 +1015,10 @@ class LearningCycleEngine:
             elif "favors shorts" in content:
                 short_wr = self._calc_side_wr(trades, "short")
                 if short_wr is not None:
-                    correct = short_wr >= 0.40  # Above system baseline
-                    self.knowledge.validate(h["content"], correct, f"Short WR={short_wr:.0%}")
+                    correct = short_wr >= edge_bar
+                    self.knowledge.validate(
+                        h["content"], correct,
+                        f"Short WR={short_wr:.0%} vs live baseline={baseline_wr:.0%} (bar={edge_bar:.0%})")
                     if correct:
                         self.curriculum.hypotheses_validated += 1
                     else:
@@ -1006,9 +1028,11 @@ class LearningCycleEngine:
         return validated
 
     def _calc_side_wr(self, trades: List[Dict], side: str) -> Optional[float]:
-        """Calculate win rate for a specific side."""
+        """Calculate win rate for a specific side.
+
+        n>=13 window (THE_STANDARD §1 small-n humility; was 3 — M10)."""
         matching = [t for t in trades if t.get("side", "").upper() in (side.upper(), "BUY" if side == "long" else "SELL")]
-        if len(matching) < 3:
+        if len(matching) < 13:
             return None
         wins = sum(1 for t in matching if t.get("outcome") == "WIN")
         return wins / len(matching)
