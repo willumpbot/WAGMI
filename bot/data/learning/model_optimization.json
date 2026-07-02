@@ -1,9 +1,9 @@
 {
-  "status": "UPDATED_RUN163",
-  "last_updated": "2026-07-01T18:10:00Z",
-  "run_number": 163,
+  "status": "UPDATED_RUN164",
+  "last_updated": "2026-07-02T05:10:15Z",
+  "run_number": 164,
   "cost_tracker_status": "NOT_FOUND",
-  "consecutive_skips": 19,
+  "consecutive_skips": 20,
   "roi_summary": {
     "roi_all_time": 140.0,
     "roi_recent_100": -11647.8,
@@ -23,7 +23,7 @@
   ],
   "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- fix RR geometry (atr_mult_sl), restart bot, collect live data.",
   "missing_data_gaps": [
-    "bot/llm/cost_tracker.json -- does not exist. 19th consecutive skip.",
+    "bot/llm/cost_tracker.json -- does not exist. 20th consecutive skip.",
     "llm_regime field in CSV -- empty for all 965 trades (bot offline)."
   ],
   "output": {"model_swaps_recommended": 0, "potential_savings": "$0.00"}

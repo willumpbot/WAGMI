@@ -1,0 +1,76 @@
+{
+  "date": "2026-07-02",
+  "run": 164,
+  "generated_at": "2026-07-02T05:10:15Z",
+  "bot_status": "OFFLINE",
+  "days_offline": 70,
+  "trades_today": 0,
+  "current_utc_hour": 5,
+  "session_window": "NIGHT (00:00-06:00 UTC) — BLOCKED by night_session_block_v1 (19% WR)",
+  "next_window": {
+    "window": "MORNING (06:00-12:00 UTC)",
+    "wr": 0.74,
+    "opens_in_minutes": 50,
+    "status": "IMMINENT — best window of day. Bot must be running by 06:00 UTC to capture it.",
+    "priority": 1
+  },
+  "summary": "New day 2026-07-02. Bot offline Day 70. No trades. MORNING WINDOW (74% WR, best of day) opens in ~50 minutes at 06:00 UTC. This is the highest-EV trading window daily. Starting bot now would capture it.",
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE",
+      "severity": "CRITICAL",
+      "days": 70,
+      "consecutive_flags": 156,
+      "description": "Bot offline Day 70. 24 graduated rules (19 active) and 6 A/B gates untested. Equity at $497.05 (90.1% drawdown). Morning window (74% WR) opens in ~50 min."
+    },
+    {
+      "type": "MORNING_WINDOW_IMMINENT",
+      "severity": "HIGH_TIMESENSITIVE",
+      "window": "06:00-12:00 UTC",
+      "wr": 0.74,
+      "opens_in_minutes": 50,
+      "description": "Best trading window of the day (74% WR, 7 live trades evidence). Opens at 06:00 UTC. Starting bot NOW would capture this window. Window closes at 12:00 UTC."
+    },
+    {
+      "type": "RR_GEOMETRY_BROKEN",
+      "severity": "CRITICAL",
+      "rr_ratio_last50": 0.479,
+      "rr_ratio_alltime": 0.763,
+      "consecutive_flags": 96,
+      "description": "avg_loss=$306.96 vs avg_win=$147.07 (last 50). 96 consecutive flags. Options: A) global atr_mult_sl 1.5->1.8, B) HYPE-specific 2.0->2.3. HUMAN_DECISION_OVERDUE since flag 1."
+    },
+    {
+      "type": "EQUITY_DRAWDOWN",
+      "severity": "HIGH",
+      "equity": 497.05,
+      "drawdown_pct": 90.1,
+      "circuit_breaker_losses_remaining": 2,
+      "description": "90.1% drawdown from $5000 start. 2 losses from circuit breaker. Start at 50% sizing."
+    },
+    {
+      "type": "CIRCUIT_BREAKER_PROXIMITY",
+      "severity": "MEDIUM",
+      "consecutive_losses": 4,
+      "trigger_at": 6,
+      "losses_remaining": 2
+    },
+    {
+      "type": "CONF_90PLUS_RULE_UNVERIFIED",
+      "severity": "LOW",
+      "flags": 2,
+      "description": "conf_90plus_general_boost_v1 applied run162. Cannot verify until bot restarts."
+    }
+  ],
+  "tod_windows_today": [
+    {"window": "night 00:00-06:00", "wr": 0.19, "status": "BLOCKED (rule active)", "priority": 0},
+    {"window": "morning 06:00-12:00", "wr": 0.74, "status": "OPENS IN 50 MIN", "priority": 1},
+    {"window": "afternoon 12:00-18:00", "wr": 0.64, "status": "AVAILABLE LATER", "priority": 3},
+    {"window": "evening 18:00-24:00", "wr": 0.65, "status": "AVAILABLE LATER", "priority": 2}
+  ],
+  "focus_today": {
+    "symbols": ["SOL SHORT (63.7% WR, n=179)", "BTC SHORT 90%+ (67% WR, n=43)", "ETH/SOL 90%+ conf (64.1% WR, new rule)"],
+    "avoid": ["HYPE any side (vetoed)", "illiquid/ranging regimes", "BTC 70-80% SHORT (penalized -20pts)"],
+    "sizing_note": "50% sizing on restart (consecutive_losses=4, circuit_breaker triggers at 6)"
+  },
+  "end_of_day": false
+}
