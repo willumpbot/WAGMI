@@ -61,7 +61,7 @@
       "timestamp": 1776346399.1892202,
       "invalidated": true,
       "invalidated_at": "2026-06-20T00:30:00Z",
-      "invalidation_reason": "DIRECT_CONTRADICTION: Insight 1 (n=20) shows morning 71% WR. This (n=7) claims 14%. Run 90 auto-fix."
+      "invalidated_reason": "DIRECT_CONTRADICTION: Insight 1 (n=20) shows morning 71% WR. This (n=7) claims 14%. Run 90 auto-fix."
     },
     {
       "category": "bias",
@@ -132,7 +132,10 @@
       "confidence": 0.8,
       "evidence_count": 14,
       "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening.",
-      "timestamp": 1775374182.2370985
+      "timestamp": 1775374182.2370985,
+      "invalidated": true,
+      "invalidated_at": "2026-07-02T08:15:00Z",
+      "invalidated_reason": "RUN164_AUDIT: graduated rule tod_evening_edge_v1 active showing 65% WR (BOOST, not penalty). n=14 sample was insufficient. Live evidence directly contradicts — do not add evening penalty."
     },
     {
       "category": "weakness",
@@ -151,7 +154,10 @@
       "confidence": 0.8,
       "evidence_count": 15,
       "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during afternoon.",
-      "timestamp": 1775261560.8799977
+      "timestamp": 1775261560.8799977,
+      "invalidated": true,
+      "invalidated_at": "2026-07-02T08:15:00Z",
+      "invalidated_reason": "RUN164_AUDIT: graduated rule tod_afternoon_edge_v1 active showing 64% WR (BOOST, not penalty). n=15 sample was insufficient. Live evidence directly contradicts — do not add afternoon penalty."
     },
     {
       "category": "bias",
@@ -200,6 +206,6 @@
   ],
   "last_dedup_at": "2026-05-18T22:06:12.775083+00:00",
   "dedup_note": "Pruned from 108 to 19 by perpetual_improvement_loop (removed 89 duplicates, kept most-recent per insight category/bucket)",
-  "last_invalidation_run": "Run106_2026-06-20T23:30:00Z",
-  "invalidation_note": "Run91: 9 invalidated (8 SIZE + 1 stale ensemble). Run90: 2 (LONG bias stale, morning-14% contradiction). Run105: 1 (morning 71% live contradiction). Run106: 1 (sniper_premium stale n=6). Active valid insights: 4 of 19 (night weakness, evening weakness, afternoon weakness, ensemble concentration)."
+  "last_invalidation_run": "RUN164_AUDIT_2026-07-02T08:15:00Z",
+  "invalidation_note": "Run91: 9 invalidated (8 SIZE + 1 stale ensemble). Run90: 2 (LONG bias stale, morning-14% contradiction). Run105: 1 (morning 71% live contradiction). Run106: 1 (sniper_premium stale n=6). RUN164_AUDIT: 2 (evening weakness n=14 contradicted by tod_evening_edge_v1 65% WR; afternoon weakness n=15 contradicted by tod_afternoon_edge_v1 64% WR). Active valid insights: 2 of 19 (night weakness confirmed; ensemble concentration partially holds but WR stale)."
 }
