@@ -1,0 +1,3878 @@
+{
+ "meta": {
+  "cf_records": 39119,
+  "span": [
+   "2026-05-30 18:10:02.594797+00:00",
+   "2026-07-01 22:03:09.071047+00:00"
+  ],
+  "median_notional_usd": 714.3396859656885,
+  "skip_reason_dist": {
+   "graduated_rule_veto": 180,
+   "graduated_rule_veto_overridden": 5346,
+   "confidence_floor_55": 514,
+   "[MA] regime=consolidation(74%) shifting_to_high_volatility | OUTLOOK: Multi-asset vol compression \u2014 ": 1,
+   "[MA] regime=range(66%) uncertain | OUTLOOK: Compressed low-vol range across majors; HYPE likely chop": 1,
+   "[MA] regime=consolidation(72%) shifting_to_high_volatility | OUTLOOK: Volatility compression across ": 2,
+   "[MA] regime=consolidation(78%) shifting_to_high_volatility | OUTLOOK: Compression this tight resolve": 2,
+   "[MA] regime=consolidation(72%) shifting_to_high_volatility | OUTLOOK: Vol-compressed coil; breakout ": 2,
+   "[MA] regime=range(68%) | OUTLOOK: Likely chops within ~1.8% band next 4-8h; no directional edge unle": 3,
+   "[MA] regime=range(68%) uncertain | OUTLOOK: Range-bound chop likely persists 4-12h; tight bands acro": 2,
+   "[MA] regime=consolidation(72%) shifting_to_high_volatility | OUTLOOK: Compression likely resolves in": 1,
+   "[MA] regime=range(62%) uncertain | OUTLOOK: Tight cross-asset compression likely persists 4-12h; wat": 2,
+   "[MA] regime=consolidation(78%) uncertain | OUTLOOK: Compression likely persists; breakout imminent b": 3,
+   "[MA] regime=consolidation(70%) | OUTLOOK: Compression continues; BB squeeze building \u2014 watch for bre": 1,
+   "[MA] regime=range(66%) uncertain | OUTLOOK: Range-bound chop likely persists next 4-8h; broad compre": 1,
+   "[MA] regime=consolidation(72%) uncertain | OUTLOOK: Tight coil across BTC/ETH/SOL; expect range-boun": 3,
+   "[MA] regime=range(62%) | OUTLOOK: Compressed low-vol range across majors; HYPE likely chops 67-69.5 ": 3,
+   "[MA] regime=consolidation(68%) uncertain | OUTLOOK: Tight compression near 2034; expect continued ch": 1,
+   "[MA] regime=high_volatility(52%) uncertain | OUTLOOK: HYPE elevated vol vs flat majors; BUY signal l": 1,
+   "[MA] regime=consolidation(72%) shifting_to_trend | OUTLOOK: Compression likely resolves into a direc": 1,
+   "[MA] regime=high_volatility(58%) uncertain | OUTLOOK: HYPE choppy with two-way swings; needs ADX>25 ": 1,
+   "[MA] regime=high_volatility(62%) bias=bullish uncertain | OUTLOOK: HYPE diverging on elevated vol wh": 1,
+   "[MA] regime=high_volatility(58%) uncertain | OUTLOOK: HYPE volatile while majors flat \u2014 relative str": 2,
+   "[MA] regime=consolidation(62%) uncertain | OUTLOOK: Tight low-vol compression across majors; expect ": 3,
+   "[MA] regime=consolidation(62%) uncertain | OUTLOOK: Range-bound chop likely persists; no edge for SE": 1,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Tight 0.7% coil likely persists 4-10h; breakout imminent b": 3,
+   "[MA] regime=consolidation(72%) uncertain | OUTLOOK: Vol compression across majors suggests range-bou": 3,
+   "[MA] regime=consolidation(70%) | OUTLOOK: Tight low-vol coil likely persists 4-12h; BB squeeze risk ": 3,
+   "[MA] regime=consolidation(68%) uncertain | OUTLOOK: Compression likely persists 4-8h; watch for BB-s": 3,
+   "[MA] regime=consolidation(62%) uncertain | OUTLOOK: Compressed range likely persists; watch for sque": 7,
+   "[MA] regime=consolidation(72%) shifting_to_trend | OUTLOOK: Vol compression at 0.7% range signals sq": 3,
+   "[MA] regime=consolidation(70%) uncertain | OUTLOOK: Tight coil persists; breakout direction unconfir": 3,
+   "[MA] regime=consolidation(70%) shifting_to_high_volatility | OUTLOOK: Compression across majors sign": 9,
+   "[MA] regime=consolidation(72%) | OUTLOOK: Tight consolidation likely persists 4-10h; SELL signal lac": 2,
+   "[MA] regime=consolidation(72%) | OUTLOOK: Compressed low-vol chop; SELL signal lacks directional con": 3,
+   "[MA] regime=consolidation(60%) uncertain | OUTLOOK: Tight coil likely persists 4-8h; watch for BB-sq": 8,
+   "[MA] regime=high_volatility(58%) uncertain | OUTLOOK: Elevated HYPE volatility vs flat majors; chopp": 3,
+   "[MA] regime=consolidation(72%) uncertain | OUTLOOK: Compression likely persists; watch for BB-squeez": 4,
+   "[MA] regime=consolidation(68%) shifting_to_high_volatility | OUTLOOK: Tight cross-asset compression ": 6,
+   "[MA] regime=consolidation(68%) shifting_to_high_volatility | OUTLOOK: Tight compression near 82; BB ": 2,
+   "[MA] regime=high_volatility(60%) uncertain | OUTLOOK: HYPE-specific volatility decoupled from majors": 1,
+   "[MA] regime=consolidation(72%) | OUTLOOK: Tight low-vol coil likely persists 4-8h; BB squeeze risks ": 3,
+   "[MA] regime=consolidation(72%) uncertain | OUTLOOK: Tight compression favors a breakout within 4-8h;": 1,
+   "[MA] regime=consolidation(72%) shifting_to_high_volatility | OUTLOOK: Tight compression likely resol": 4,
+   "[MA] regime=consolidation(70%) uncertain | OUTLOOK: Tight compression; breakout imminent but directi": 6,
+   "[MA] regime=consolidation(68%) uncertain | OUTLOOK: Compression likely persists 4-10h; watch for BB-": 6,
+   "[MA] regime=consolidation(72%) shifting_to_high_volatility | OUTLOOK: Coiling in tight 0.8% band \u2014 b": 2,
+   "[MA] regime=consolidation(62%) shifting_to_trend | OUTLOOK: Tight coil on BTC; expect range-bound ch": 4,
+   "[MA] regime=range(58%) uncertain | OUTLOOK: Likely range-bound $1980-2055 over next 4-8h; needs ADX>": 4,
+   "[MA] regime=range(58%) uncertain | OUTLOOK: Choppy 81.7-84.5 range likely persists; no clean trend f": 3,
+   "[MA] regime=high_volatility(60%) uncertain | OUTLOOK: Elevated HYPE vol vs calm BTC; chop risk both ": 3,
+   "[MA] regime=high_volatility(66%) uncertain | OUTLOOK: Choppy two-way action likely persists; BUY sig": 2,
+   "[MA] regime=consolidation(66%) uncertain | OUTLOOK: Tight 1.1% coil favors continued chop next 4-8h;": 3,
+   "[MA] regime=range(62%) uncertain | OUTLOOK: Likely chop within ~2% band next 4-8h; SELL signal lacks": 3,
+   "[MA] regime=range(58%) uncertain | OUTLOOK: Choppy 2-2.5% band likely persists; no trend trigger yet": 3,
+   "[MA] regime=consolidation(66%) uncertain | OUTLOOK: Tight low-vol coil likely persists; BB squeeze b": 2,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Likely chops within 1989-2023 band next 4-8h; no directi": 4,
+   "[MA] regime=high_volatility(62%) uncertain | OUTLOOK: Elevated vol favors two-way chop; HYPE best ed": 3,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Choppy 2-3% band likely persists 4-8h; no directional im": 3,
+   "[MA] regime=range(60%) uncertain | OUTLOOK: Choppy 2% band likely persists 4-8h; needs volume+OI exp": 2,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Choppy 82-85 likely; no trend confirmation, BUY signal l": 2,
+   "[MA] regime=high_volatility(62%) uncertain | OUTLOOK: Choppy two-way action likely persists 4-8h; HY": 1,
+   "[MA] regime=consolidation(68%) uncertain | OUTLOOK: Compression likely persists 4-10h; watch for bre": 1,
+   "[MA] regime=high_volatility(62%) uncertain | OUTLOOK: Wide two-way swings likely to persist next 4-8": 3,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Choppy 2-2.5% band likely persists 4-12h; no trending_be": 3,
+   "[MA] regime=range(55%) | OUTLOOK: Likely choppy 1980-2025 over next 4-8h; no trend confirmation \u2014 SE": 3,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Choppy 2-2.5% range likely persists; no trend confirmati": 3,
+   "[MA] regime=consolidation(72%) shifting_to_high_volatility | OUTLOOK: Tight 1.1% coil likely resolve": 3,
+   "[MA] regime=range(58%) uncertain | OUTLOOK: Likely range-bound 1980-2025 next 4-10h; SELL signal lac": 3,
+   "[MA] regime=range(55%) bias=bearish uncertain | OUTLOOK: Mild bearish lean from ensemble SELL but no": 3,
+   "[MA] regime=consolidation(68%) uncertain | OUTLOOK: Likely continued chop in 72.3k-73.8k; BB squeeze": 3,
+   "[MA] regime=range(60%) | OUTLOOK: Likely chop within 2% band over next 4-8h; no confirmed directiona": 12,
+   "[MA] regime=range(62%) uncertain | OUTLOOK: Likely continued chop 81-83 without OI/volume expansion;": 6,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Tight 1.1% range likely persists 4-10h; SELL signal lacks ": 9,
+   "[MA] regime=high_volatility(58%) uncertain | OUTLOOK: Elevated HYPE volatility, two-sided risk; no c": 3,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Likely chops within 1960-2010; SELL only validates if br": 8,
+   "[MA] regime=range(52%) uncertain | OUTLOOK: Choppy two-sided action likely next 4-8h; no clean trend": 8,
+   "[MA] regime=consolidation(62%) shifting_to_high_volatility | OUTLOOK: Compression likely resolves wi": 4,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Choppy 2-2.5% band likely persists 4-8h; no trending con": 2,
+   "[MA] regime=consolidation(62%) uncertain | OUTLOOK: Tight 1.1% band likely persists 4-10h; SELL sign": 3,
+   "[MA] regime=high_volatility(62%) uncertain | OUTLOOK: Elevated vol two-way swings likely; watch for ": 8,
+   "[MA] regime=range(58%) uncertain | OUTLOOK: Choppy SOL likely stays rangebound 79-82; SELL lacks tre": 2,
+   "[MA] regime=consolidation(62%) shifting_to_high_volatility | OUTLOOK: Tight 1.1% compression favors ": 3,
+   "[MA] regime=consolidation(62%) shifting_to_high_volatility | OUTLOOK: Compression likely resolves in": 1,
+   "[MA] regime=high_volatility(62%) uncertain | OUTLOOK: Elevated HYPE-specific vol with no clear trend": 6,
+   "[MA] regime=range(58%) uncertain | OUTLOOK: Choppy 2-3% band likely persists next 4-8h; no confirmed": 13,
+   "[MA] regime=consolidation(62%) | OUTLOOK: Compressed range likely persists 4-10h; watch for BB-squee": 11,
+   "[MA] regime=range(60%) | OUTLOOK: Likely range-bound 1900-2010; SELL signal lacks trend confirmation": 5,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Choppy 2-3% band likely persists next 4-8h; no trend con": 12,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Tight compression likely persists 4-10h; BB squeeze risk\u2014w": 15,
+   "[MA] regime=range(60%) uncertain | OUTLOOK: Likely chops within ~2% band next 4-10h; no confirmed di": 8,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Likely chops in 78-82 band next 4-12h; SELL signal lacks": 8,
+   "[MA] regime=consolidation(62%) uncertain | OUTLOOK: Tight coil near 72k likely persists 4-10h; watch": 5,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: Range-bound, 75% SELL signal suggests potential ": 2,
+   "[MA] regime=range(58%) bias=bearish uncertain | OUTLOOK: SOL consolidating 77-82; downside bias vali": 7,
+   "[MA] regime=range(62%) bias=bearish uncertain | OUTLOOK: Range-bound with downside test probable; TP": 15,
+   "[MA] regime=range(68%) | OUTLOOK: Sideways consolidation; monitor for breakout confirmation with vol": 1,
+   "[MA] regime=range(60%) bias=bearish shifting_to_trend | OUTLOOK: range-bound consolidation with down": 1,
+   "[MA] regime=range(58%) bias=bearish shifting_to_trend | OUTLOOK: SOL breaking lower from consolidati": 6,
+   "[MA] regime=range(45%) | OUTLOOK: Range-bound sideways market; 65% confidence is insufficient for en": 3,
+   "[MA] regime=trending_bear(65%) bias=bearish | OUTLOOK: Downside reversal toward 70,317-69,934 on ens": 5,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: Contained range with downward pressure; SELL thesis s": 5,
+   "[MA] regime=high_volatility(67%) bias=bearish | OUTLOOK: High volatility with bearish directional si": 1,
+   "[MA] regime=range(58%) bias=bearish uncertain | OUTLOOK: Range-bound with downside probe; system wea": 1,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: BTC consolidating in range; SELL bias from ensemble b": 11,
+   "[MA] regime=range(55%) bias=bearish uncertain | OUTLOOK: Range-bound with downside lean; historicall": 1,
+   "[MA] regime=high_volatility(58%) bias=bearish | OUTLOOK: Elevated-volatility environment with direct": 1,
+   "[MA] regime=high_volatility(68%) shifting_to_trend | OUTLOOK: Elevated vol environment creates direc": 12,
+   "[MA] regime=high_volatility(60%) shifting_to_range | OUTLOOK: High-vol momentum weakening; likely co": 8,
+   "[MA] regime=high_volatility(65%) bias=bearish | OUTLOOK: Elevated volatility with bearish ensemble t": 4,
+   "[MA] regime=high_volatility(60%) uncertain | OUTLOOK: Elevated noise from high volatility; expect co": 5,
+   "[MA] regime=trending_bull(75%) bias=bullish shifting_to_trend | OUTLOOK: Directional breakup likely ": 3,
+   "[MA] regime=high_volatility(66%) bias=bearish shifting_to_trend | OUTLOOK: High volatility environme": 5,
+   "[MA] regime=high_volatility(59%) bias=bullish uncertain | OUTLOOK: Bullish continuation if volatilit": 4,
+   "[MA] regime=trending_bear(78%) bias=bearish | OUTLOOK: SOL downside continuation likely; multi-strat": 6,
+   "[MA] regime=range(55%) shifting_to_consolidation | OUTLOOK: Weak trend trap \u2014 chop-prone, poor execu": 26,
+   "[MA] regime=high_volatility(70%) bias=bullish shifting_to_trend | OUTLOOK: High-vol breakout with en": 3,
+   "[MA] regime=high_volatility(62%) bias=bearish | OUTLOOK: Volatile environment with ensemble-detected": 12,
+   "[MA] regime=range(50%) | THESIS: BTC SELL to ~69,400 within 12-24h on trending_bear regime (ADX=61, ": 3,
+   "[MA] regime=high_volatility(56%) uncertain | OUTLOOK: Vol bidirectional with trend unclear; cold str": 12,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: Range-bound trading with weak downside probe; directi": 4,
+   "[MA] regime=high_volatility(65%) bias=bearish shifting_to_consolidation | OUTLOOK: Bearish pressure ": 12,
+   "[MA] regime=high_volatility(68%) bias=bearish shifting_to_high_volatility | OUTLOOK: Vol breakout se": 12,
+   "[MA] regime=consolidation(65%) uncertain | OUTLOOK: Tight consolidation continuing; system ill-suite": 54,
+   "[MA] regime=range(62%) uncertain | OUTLOOK: chop kills capital\u2014require 75%+ confidence + multi-strat": 2,
+   "[MA] regime=trending_bear(65%) bias=bearish | OUTLOOK: Downside continuation expected within 4-12h w": 9,
+   "[MA] regime=high_volatility(68%) bias=bearish | OUTLOOK: Volatile downward swings expected, targets ": 8,
+   "[MA] regime=trending_bear(68%) bias=bearish | OUTLOOK: BTC SHORT aligns with recent winning pattern;": 3,
+   "[MA] regime=consolidation(32%) uncertain | OUTLOOK: Cannot predict direction without OHLCV history. ": 4,
+   "[MA] regime=consolidation(56%) bias=bearish uncertain | OUTLOOK: Consolidative chop with downside le": 6,
+   "[MA] regime=consolidation(50%) | OUTLOOK: Range-bound consolidation likely; breakout direction uncer": 4,
+   "[MA] regime=high_volatility(73%) bias=bearish | OUTLOOK: Bearish, testing support at TP1 76.86, exte": 6,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: Downside bias within range-bound structure; target 80": 2,
+   "[MA] regime=high_volatility(65%) bias=bearish | OUTLOOK: SOL in elevated volatility phase with downs": 6,
+   "[MA] regime=range(62%) bias=bearish uncertain | OUTLOOK: Market range-bound with weak directional mo": 54,
+   "[MA] regime=high_volatility(58%) uncertain | OUTLOOK: Volatile swings without clear direction; monit": 2,
+   "[MA] regime=high_volatility(50%) uncertain | OUTLOOK: Elevated vol both directions; directional thes": 2,
+   "[MA] regime=consolidation(58%) uncertain | OUTLOOK: Tight volatility squeeze \u2014 consolidation before ": 27,
+   "[MA] regime=high_volatility(68%) bias=bearish | OUTLOOK: Downside bias with volatility swings; 7% TP": 3,
+   "[MA] regime=high_volatility(65%) bias=bearish | OUTLOOK: SOL pullback thesis viable in elevated vola": 3,
+   "[MA] regime=high_volatility(65%) bias=bearish | OUTLOOK: High-vol downside bias; ensemble SELL has d": 3,
+   "[MA] regime=consolidation(53%) bias=bearish uncertain | OUTLOOK: Consolidation with downside bias; m": 6,
+   "[MA] regime=trending_bear(55%) bias=bearish | OUTLOOK: Beartrend initiating; if TP1 (76.50) holds, t": 3,
+   "[MA] regime=trending_bull(78%) bias=bullish | OUTLOOK: HYPE in uptrend formation with strong multi-s": 1,
+   "[MA] regime=high_volatility(65%) bias=bearish | OUTLOOK: High volatility bearish. Validated optimal ": 26,
+   "[MA] regime=high_volatility(60%) uncertain | OUTLOOK: Choppy bidirectional swings eroding recent tra": 2,
+   "[MA] regime=high_volatility(62%) bias=bearish | OUTLOOK: Elevated volatility with downside pressure;": 24,
+   "[MA] regime=range(55%) bias=bearish uncertain | OUTLOOK: Tight consolidation within 2% band; downsid": 51,
+   "[MA] regime=trending_bear(72%) bias=bearish | OUTLOOK: Strong bearish bias confirmed by ensemble; hi": 48,
+   "[MA] regime=high_volatility(60%) bias=bullish uncertain | OUTLOOK: High volatility with directional ": 2,
+   "[MA] regime=high_volatility(58%) bias=bearish | OUTLOOK: HYPE in high volatility with downside bias;": 48,
+   "[MA] regime=high_volatility(68%) bias=bearish | OUTLOOK: High volatility persists with downside bias": 57,
+   "[MA] regime=high_volatility(70%) bias=bearish | OUTLOOK: Elevated volatility with bearish directiona": 24,
+   "[MA] regime=high_volatility(65%) bias=bearish | OUTLOOK: Short bias with elevated volatility; target": 72,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Consolidation likely to resolve with directional": 75,
+   "[MA] regime=high_volatility(66%) bias=bearish uncertain | OUTLOOK: High volatility with downside pro": 63,
+   "[MA] regime=high_volatility(65%) bias=bullish shifting_to_trend | OUTLOOK: Directional bullish move ": 48,
+   "[MA] regime=high_volatility(60%) bias=bearish shifting_to_trend | OUTLOOK: Volatile environment with": 21,
+   "[MA] regime=high_volatility(68%) bias=bullish | OUTLOOK: High vol persists with bullish tilt from en": 24,
+   "[MA] regime=consolidation(40%) bias=bearish uncertain | OUTLOOK: Cannot form reliable thesis without": 50,
+   "[MA] regime=consolidation(75%) bias=bearish | OUTLOOK: After 24h selloff, consolidating near support": 23,
+   "[MA] regime=high_volatility(60%) bias=bullish | OUTLOOK: Elevated volatility regime; BUY signal alig": 46,
+   "[MA] regime=high_volatility(68%) bias=bullish uncertain | OUTLOOK: Elevated volatility with bullish ": 23,
+   "[MA] regime=high_volatility(67%) bias=bearish | OUTLOOK: High vol creates micro-alpha window; SELL t": 23,
+   "[MA] regime=trend(55%) bias=bullish | OUTLOOK: Emerging uptrend, directional thesis valid; hold 4h+ ": 23,
+   "[MA] regime=high_volatility(70%) bias=bearish | OUTLOOK: High-volatility downside environment; TP1 t": 22,
+   "[MA] regime=trending_bear(75%) bias=bearish | OUTLOOK: BTC downtrend established; support test immin": 23,
+   "[MA] regime=trending_bear(82%) bias=bearish | OUTLOOK: BTC downtrend continuation. TP1 (64018) and T": 46,
+   "[MA] regime=range(56%) uncertain | OUTLOOK: Range consolidation with sideways bias \u2014 breakout setup ": 44,
+   "[MA] regime=range(67%) bias=bearish | OUTLOOK: Range-bound environment; ETH downside test toward TP1": 54,
+   "[MA] regime=trending_bear(75%) bias=bearish | OUTLOOK: SOL downtrend intact, target 1.5-2% drop with": 16,
+   "[MA] regime=trend(60%) bias=bearish shifting_to_range | OUTLOOK: Weak trend (likely ADX 18-25 range)": 9,
+   "[MA] regime=high_volatility(70%) bias=bearish | OUTLOOK: Short bias but givenback risk post-win - OI": 6,
+   "[MA] regime=range(60%) bias=bearish uncertain | OUTLOOK: Range consolidation with downside bias dete": 9,
+   "[MA] regime=high_volatility(60%) bias=bearish shifting_to_range | OUTLOOK: Vol spike temporary; rang": 6,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: ETH consolidating with bearish bias; test TP1 1445 wi": 1,
+   "[MA] regime=trend(73%) bias=bearish | OUTLOOK: BTC trending lower toward TP1 57768 within 4-12h | TH": 1,
+   "[MA] regime=consolidation(48%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation breaking down": 1,
+   "[MA] regime=consolidation(48%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation with downside": 2,
+   "[MA] regime=consolidation(62%) shifting_to_high_volatility | OUTLOOK: Consolidation squeeze breakout": 6,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: Consolidating with downside bias if ensemble sig": 4,
+   "[MA] regime=range(60%) shifting_to_trend | OUTLOOK: BTC consolidating, ensemble signals upside break": 6,
+   "[MA] regime=consolidation(52%) | OUTLOOK: Consolidation likely holds or breaks bullish within 4-8h; ": 6,
+   "[MA] regime=consolidation(65%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation breaking down": 3,
+   "[MA] regime=range(60%) bias=bullish shifting_to_trend | OUTLOOK: BTC consolidating in range phase wi": 6,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: SELL signal within tight consolidation range with dow": 2,
+   "[MA] regime=consolidation(52%) | OUTLOOK: Market consolidating in support zone; BUY signal suggests ": 6,
+   "[MA] regime=trend(68%) bias=bearish shifting_to_trend | OUTLOOK: Short move likely 6-12h as bearish ": 3,
+   "[MA] regime=consolidation(62%) bias=bearish shifting_to_range | OUTLOOK: ETH consolidating after tre": 1,
+   "[MA] regime=consolidation(71%) | OUTLOOK: Consolidation forming\u2014OI declining, funding flat. Await vo": 2,
+   "[MA] regime=consolidation(70%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation breakout to d": 1,
+   "[MA] regime=range(60%) bias=bullish | OUTLOOK: Range $59.4K\u2013$63.3K; ensemble targets TP1 $63.3K uppe": 6,
+   "[MA] regime=range(60%) bias=bearish uncertain | OUTLOOK: Ranging market with downside bias. HYPE_LON": 3,
+   "[MA] regime=consolidation(68%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation breaking high": 4,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: Range-bound with positive funding bias favoring short": 1,
+   "[MA] regime=consolidation(60%) bias=bearish shifting_to_range | OUTLOOK: Consolidation in squeeze br": 3,
+   "[MA] regime=consolidation(60%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation coiling for b": 6,
+   "[MA] regime=consolidation(68%) bias=bearish | OUTLOOK: Consolidating with bearish drift. BUY signal ": 1,
+   "[MA] regime=range(70%) bias=bullish | OUTLOOK: BTC consolidating in range; ensemble targets TP1=63.1": 6,
+   "[MA] regime=consolidation(64%) bias=bearish | OUTLOOK: Consolidating with bearish structural bias. H": 3,
+   "[MA] regime=consolidation(65%) uncertain | OUTLOOK: Consolidation likely forming after recent bearis": 6,
+   "[MA] regime=consolidation(60%) uncertain | OUTLOOK: HYPE consolidating with slight ensemble bullish ": 2,
+   "[MA] regime=consolidation(68%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation breaks higher": 6,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Consolidation forming with downside-bias compression. OI c": 4,
+   "[MA] regime=range(65%) bias=bullish | OUTLOOK: Range-bound consolidation, upside bias. Ensemble BUY ": 6,
+   "[MA] regime=trending_bull(68%) bias=bullish | OUTLOOK: Bullish regime likely persists 4-12h (expandi": 2,
+   "[MA] regime=high_volatility(70%) bias=bearish shifting_to_trend | OUTLOOK: High-vol bearish; downsid": 3,
+   "[MA] regime=consolidation(68%) bias=bullish | OUTLOOK: Consolidation with bullish breakout bias. OI ": 6,
+   "[MA] regime=consolidation(68%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation squeeze prece": 3,
+   "[MA] regime=consolidation(60%) bias=bullish | OUTLOOK: Range-bound consolidation, bullish break towa": 6,
+   "[MA] regime=consolidation(45%) bias=bullish | OUTLOOK: OI exhaustion into consolidation; funding adv": 3,
+   "[MA] regime=trend(65%) bias=bullish shifting_to_range | OUTLOOK: BTC should target TP1 $62,374 if en": 4,
+   "[MA] regime=range(62%) bias=bearish uncertain | OUTLOOK: SHORT aligns with liquidation pressure (OI-": 2,
+   "[MA] regime=consolidation(67%) | OUTLOOK: Consolidation phase with structural bearish lean. OI contr": 4,
+   "[MA] regime=high_volatility(62%) bias=bearish uncertain | OUTLOOK: OI contraction + elevated OI_vol ": 3,
+   "[MA] regime=consolidation(60%) bias=bullish shifting_to_high_volatility | OUTLOOK: Consolidation wit": 3,
+   "[MA] regime=trend(68%) bias=bullish | OUTLOOK: Trend likely holds 4-6h if ensemble thesis valid; TP1": 6,
+   "[MA] regime=consolidation(62%) bias=bullish uncertain | OUTLOOK: Shorts covering into bullish fundin": 2,
+   "[MA] regime=consolidation(66%) bias=bearish | OUTLOOK: Consolidation with OI divergence (distributio": 6,
+   "[MA] regime=consolidation(63%) bias=bearish | OUTLOOK: Consolidated price targets bearish breakout; ": 3,
+   "[MA] regime=range(65%) shifting_to_trend | OUTLOOK: Range hold with bullish BUY setup (77% conf). Ne": 6,
+   "[MA] regime=trending_bear(65%) bias=bearish | OUTLOOK: Downtrend likely continues on established ADX": 4,
+   "[MA] regime=consolidation(55%) bias=bullish shifting_to_trend | OUTLOOK: BTC consolidating with bull": 7,
+   "[MA] regime=range(72%) bias=bearish | OUTLOOK: Range consolidation, bearish thesis vs regime toxicit": 2,
+   "[MA] regime=range(65%) | OUTLOOK: Range consolidation resisting breakout; SELL signal conflicted by ": 2,
+   "[MA] regime=consolidation(67%) bias=bullish shifting_to_trend | OUTLOOK: BTC consolidating with bull": 6,
+   "[MA] regime=range(68%) bias=bearish | OUTLOOK: Range holding or breaking lower; avoid directional lo": 6,
+   "[MA] regime=consolidation(62%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation squeeze proba": 3,
+   "[MA] regime=consolidation(61%) uncertain | OUTLOOK: Consolidation persists. BUY signal (ensemble, 77": 6,
+   "[MA] regime=trend(60%) bias=bearish shifting_to_trend | OUTLOOK: Trend formation consolidating with ": 3,
+   "[MA] regime=trend(68%) bias=bullish | OUTLOOK: Modest uptrend forming; early phase with tight stops;": 6,
+   "[MA] regime=range(60%) | OUTLOOK: Sideways action; ETH BUY at 65% is marginal entry; breakout requir": 4,
+   "[MA] regime=range(72%) | OUTLOOK: Consolidating in range 60.7\u201365.3; ensemble BUY targets TP1 65.3 bu": 3,
+   "[MA] regime=trend(64%) bias=bearish | OUTLOOK: SHORT toward TP1(-3.5%) in 4-12h; weak trend confirma": 3,
+   "[MA] regime=trending_bull(72%) bias=bullish | OUTLOOK: BTC likely trending toward TP1 ($62,931) as e": 4,
+   "[MA] regime=trending_bull(66%) bias=bullish | OUTLOOK: OI expansion + bullish divergence support pri": 2,
+   "[MA] regime=trend(65%) bias=bullish | OUTLOOK: Expect upside continuation toward TP1 66.49 (+4.6%) o": 2,
+   "[MA] regime=consolidation(65%) bias=bullish shifting_to_trend | OUTLOOK: HYPE consolidating tight ra": 2,
+   "[MA] regime=trending_bull(70%) bias=bullish | OUTLOOK: OI expansion + bullish divergence framework s": 1,
+   "[MA] regime=consolidation(48%) bias=bullish uncertain | OUTLOOK: Consolidation with bullish lean; po": 6,
+   "[MA] regime=consolidation(70%) bias=bullish shifting_to_trend | OUTLOOK: Breakout higher within 2-8h": 4,
+   "[MA] regime=trend(54%) bias=bullish | OUTLOOK: Modest uptrend forming\u2014OI expanding, funding supports": 6,
+   "[MA] regime=trend(67%) bias=bullish | OUTLOOK: Early trend forming toward $66 TP1; OI expansion driv": 6,
+   "[MA] regime=trending_bull(70%) bias=bullish | OUTLOOK: OI expansion + sustained bullish funding mome": 7,
+   "[MA] regime=consolidation(60%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation breaks bullis": 4,
+   "[MA] regime=consolidation(51%) bias=bullish | OUTLOOK: Consolidation breakout bullish; TP1 target 61": 5,
+   "[MA] regime=high_volatility(55%) bias=bearish | OUTLOOK: High vol + bearish funding alignment = down": 3,
+   "[MA] regime=range(62%) bias=bullish shifting_to_trend | OUTLOOK: SOL consolidating with bullish setu": 4,
+   "[MA] regime=trend(60%) bias=bullish shifting_to_trend | OUTLOOK: HYPE trends higher toward 64-68 if ": 3,
+   "[MA] regime=consolidation(78%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation squeezing wit": 6,
+   "[MA] regime=trend(58%) bias=bullish uncertain | OUTLOOK: Shallow uptrend forming but momentum fragil": 2,
+   "[MA] regime=range(70%) bias=bullish shifting_to_trend | OUTLOOK: Range consolidation with breakout a": 2,
+   "[MA] regime=range(60%) | OUTLOOK: Range-bound oscillation; SHORT signal conflicts with 100% LONG por": 3,
+   "[MA] regime=consolidation(65%) | OUTLOOK: SOL consolidating mid-range with declining momentum; break": 3,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: SHORT toward TP1 $55.79; exploit HYPE SHORT edge with": 3,
+   "[MA] regime=consolidation(68%) shifting_to_range | OUTLOOK: Consolidation forming, 4-8h likely. Fund": 2,
+   "[MA] regime=range(70%) bias=bearish | OUTLOOK: Range-bound with tactical SHORT bias: pullback to TP1": 3,
+   "[MA] regime=consolidation(70%) bias=bullish | OUTLOOK: HYPE consolidating bullish; SHORT signal tact": 2,
+   "[MA] regime=range(72%) | OUTLOOK: SOL consolidating with micro bullish OI divergence; funding drag b": 3,
+   "[MA] regime=consolidation(50%) bias=bullish | OUTLOOK: Slight bullish bias from OI divergence + ense": 1,
+   "[MA] regime=trend(64%) bias=bullish shifting_to_trend | OUTLOOK: BTC entering early uptrend. OI expa": 2,
+   "[MA] regime=consolidation(63%) bias=bullish shifting_to_trend | OUTLOOK: Expects bullish breakout ab": 1,
+   "[MA] regime=consolidation(48%) uncertain | OUTLOOK: Consolidating near 1614.9; ensemble BUY suggests": 1,
+   "[MA] regime=trending_bull(78%) bias=bullish shifting_to_trend | OUTLOOK: Trend extends higher on ADX": 1,
+   "[MA] regime=consolidation(68%) bias=bearish | OUTLOOK: Expect sideways action with downside bias. BU": 2,
+   "[MA] regime=range(50%) bias=bearish uncertain | OUTLOOK: Price oscillates within range; breakout if ": 3,
+   "[MA] regime=range(53%) bias=bullish uncertain | OUTLOOK: Range-bound with bullish tilt. Modest OI ex": 3,
+   "[MA] regime=consolidation(74%) bias=bearish | OUTLOOK: SOL consolidating with falling funding moment": 3,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: Range-bound; SELL signal in historically toxic range ": 3,
+   "[MA] regime=range(60%) | OUTLOOK: Range-bound test toward TP1 $1688.14; regime-signal mismatch\u2014direc": 2,
+   "[MA] regime=consolidation(48%) bias=bearish | OUTLOOK: Consolidation likely; bearish funding + 0% SO": 3,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: Range regime 50% WR historically. SHORT aligns with H": 3,
+   "[MA] regime=consolidation(60%) bias=bearish | OUTLOOK: Consolidation confirmed; avoid LONG entries (": 3,
+   "[MA] regime=consolidation(72%) | OUTLOOK: Consolidation squeeze holding \u2014 breakout imminent, BUY ali": 3,
+   "[MA] regime=range(60%) | OUTLOOK: Range-bound sideways; SHORT signal risky (25-50% WR in range regim": 3,
+   "[MA] regime=consolidation(65%) bias=bearish | OUTLOOK: Consolidation squeeze; SOL SHORTS 67% vs LONG": 2,
+   "[MA] regime=range(64%) | OUTLOOK: Range-bound oscillation; directional SHORT struggles in regime (25": 1,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Consolidation squeeze with no conviction. SHORT signal con": 3,
+   "[MA] regime=range(52%) bias=bearish | OUTLOOK: BTC breaks downside to 58786 on volume spike; consoli": 3,
+   "[MA] regime=range(62%) uncertain | OUTLOOK: Range compression likely persisting 4-12h. Ensemble SELL": 3,
+   "[MA] regime=trend(40%) bias=bearish uncertain | OUTLOOK: Bearish structure probable but low convicti": 2,
+   "[MA] regime=trending_bear(62%) bias=bearish shifting_to_trend | OUTLOOK: BTC transitioning from cons": 2,
+   "[MA] regime=consolidation(70%) bias=bearish | OUTLOOK: Consolidation persists 4-6h; ensemble bearish": 2,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: ETH consolidating; SELL signal structure sound (": 3,
+   "[MA] regime=range(60%) | OUTLOOK: Tight range-bound market; 1-2% band expected; BUY signal likely me": 6,
+   "[MA] regime=range(52%) bias=bullish uncertain | OUTLOOK: Ensemble bullish thesis toward TP1 (66104) ": 2,
+   "[MA] regime=consolidation(45%) | OUTLOOK: Consolidation regime persists; empirical 0% WR in this env": 2,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Consolidation suspected; ensemble signal structu": 8,
+   "[MA] regime=range(63%) uncertain | OUTLOOK: ETH bound in 1640-1767 range; high whipsaw risk in cold ": 7,
+   "[MA] regime=range(50%) bias=bearish uncertain | OUTLOOK: Range-bound environment with downside direc": 1,
+   "[MA] regime=trend(65%) bias=bullish | OUTLOOK: Modest bullish continuation likely; signal structure ": 2,
+   "[MA] regime=consolidation(65%) bias=bullish uncertain | OUTLOOK: Consolidation with bullish breakout": 6,
+   "[MA] regime=range(54%) bias=bullish shifting_to_trend | OUTLOOK: BTC probing range breakout at TP1 $": 6,
+   "[MA] regime=range(48%) bias=bullish uncertain | OUTLOOK: Range-bound with bullish directional bias b": 6,
+   "[MA] regime=range(50%) | THESIS: BTC targeting $65.9k TP1 in trending_bull, but OI -8.3% while price": 2,
+   "[MA] regime=trending_bull(62%) bias=bullish | OUTLOOK: Bullish trend confirmed (ADX28+EMA+MACD), but": 4,
+   "[MA] regime=trending_bull(62%) bias=bullish shifting_to_trend | OUTLOOK: Bull structure intact but l": 1,
+   "[MA] regime=range(65%) bias=bullish | OUTLOOK: BTC attempts range breakout above TP1 (66.2); retest ": 3,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Consolidation likely mean-reverting; avoid trend": 3,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidation with ensemble false-signal risk; h": 1,
+   "[MA] regime=trending_bull(70%) bias=bullish | OUTLOOK: Rally likely 6-12h if ADX holds >25; alts fol": 1,
+   "[MA] regime=consolidation(32%) uncertain | OUTLOOK: Cannot classify with conviction; missing critica": 3,
+   "[MA] regime=range(55%) bias=bullish | OUTLOOK: Range with bullish directional bias from ensemble con": 1,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Range-bound consolidation; breakout direction un": 2,
+   "[MA] regime=consolidation(58%) | OUTLOOK: HYPE consolidating; mean-reversion hostile to BUY. Known l": 2,
+   "[MA] regime=range(58%) | OUTLOOK: Price bound in range; BUY is bounce entry within wider band; SHORT": 2,
+   "[MA] regime=consolidation(58%) uncertain | OUTLOOK: Consolidation deteriorating to range/panic; mean": 2,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: SOL consolidating sideways $65-70 range; BUY sig": 2,
+   "[MA] regime=consolidation(72%) | OUTLOOK: consolidation persists; HYPE_LONG is structural mismatch i": 2,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: BTC consolidating in range-bound support/resistance; ": 1,
+   "[MA] regime=consolidation(50%) | OUTLOOK: ETH consolidating without directional confirmation. BUY si": 1,
+   "[MA] regime=consolidation(56%) | OUTLOOK: Sideways squeeze phase. BUY at 35% confidence below qualit": 1,
+   "[MA] regime=range(50%) | OUTLOOK: BTC likely ranges 62,800-64,100 with high SL hit risk; signal well": 1,
+   "[MA] regime=consolidation(58%) | OUTLOOK: Consolidation hostile to trend trades; mean-reversion only": 3,
+   "[MA] regime=range(48%) bias=bullish shifting_to_trend | OUTLOOK: Range trade probing north; vol regi": 3,
+   "[MA] regime=consolidation(36%) | OUTLOOK: Consolidation mean-reversion dynamics conflict with HYPE m": 3,
+   "[MA] regime=consolidation(32%) uncertain | OUTLOOK: Insufficient technical data for confident classi": 1,
+   "[MA] regime=range(62%) bias=bullish shifting_to_trend | OUTLOOK: Range support breakout (SL 65.76) t": 1,
+   "[MA] regime=consolidation(45%) | OUTLOOK: Tight consolidation 4-8h; bounce likely from oversold 8-lo": 3,
+   "[MA] regime=consolidation(42%) bias=bullish shifting_to_high_volatility | OUTLOOK: Consolidation bre": 3,
+   "[MA] regime=consolidation(72%) bias=bearish | OUTLOOK: Consolidation trap highly probable: HYPE LONG": 3,
+   "[MA] regime=consolidation(58%) | OUTLOOK: Range-bound consolidation; mean-reversion likely unless OI": 1,
+   "[MA] regime=range(58%) | OUTLOOK: Price confined within range bounds 4-8h, mean reversion likely, no": 1,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Consolidation with declining volatility; weak si": 3,
+   "[MA] regime=range(55%) bias=bullish uncertain | OUTLOOK: Range bounce attempt; strong downside risk ": 3,
+   "[MA] regime=consolidation(68%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation squeeze break": 3,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Range-bound, mean-reverting environment. Avoid momentum lo": 3,
+   "[MA] regime=consolidation(68%) bias=bearish | OUTLOOK: Consolidation persisting; HYPE momentum trade": 5,
+   "[MA] regime=range(40%) bias=bullish | OUTLOOK: Consolidating range with bullish bounce potential; si": 3,
+   "[MA] regime=range(70%) | OUTLOOK: Neutral chop in tight consolidation; BUY signals upper band retest": 3,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Mean reversion likely. HYPE LONG in consolidation historic": 4,
+   "[MA] regime=consolidation(40%) | OUTLOOK: Likely range-bound; consolidation regime hostile to BUY se": 3,
+   "[MA] regime=range(30%) | OUTLOOK: Consolidating sideways; SOL LONG structurally fails (0% WR); skip ": 3,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Consolidation persists; HYPE LONG likely mean-reverts to S": 8,
+   "[MA] regime=range(50%) | OUTLOOK: Choppy sideways grinding. Current signal fails gate (conf<floor). ": 3,
+   "[MA] regime=range(56%) bias=bearish | OUTLOOK: Range consolidation persisting; SOL LONG historically": 2,
+   "[MA] regime=consolidation(15%) uncertain | OUTLOOK: Expect sideways chop; directional signals challe": 6,
+   "[MA] regime=range(60%) bias=bullish | OUTLOOK: ETH consolidating 1706-1720 base; 1775 breakout likel": 3,
+   "[MA] regime=range(62%) | OUTLOOK: SOL consolidating in choppy range; BUY signal weak + SOL_LONG 0% W": 4,
+   "[MA] regime=consolidation(58%) bias=bearish shifting_to_high_volatility | OUTLOOK: Consolidation lik": 5,
+   "[MA] regime=consolidation(33%) uncertain | OUTLOOK: consolidation breakout pending; current strategi": 5,
+   "[MA] regime=range(43%) | OUTLOOK: Horizontal consolidation. Momentum insufficient for breakout. SOL ": 8,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Mean reversion expected within 4h; consolidation unfavorab": 4,
+   "[MA] regime=consolidation(25%) uncertain | OUTLOOK: Insufficient market data for directional call; a": 4,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Range-bound consolidation. SOL SHORT faces mean-reversion ": 6,
+   "[MA] regime=range(60%) bias=bearish shifting_to_trend | OUTLOOK: SHORT targets 10.8-16.6% downside i": 4,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Tight consolidation, range-bound; breakout direc": 4,
+   "[MA] regime=range(65%) | OUTLOOK: Price oscillates within 61.3\u201367.5 band; ensemble SHORT targets TP1": 2,
+   "[MA] regime=consolidation(40%) bias=bearish | OUTLOOK: Consolidation regime mean-reverts short entri": 6,
+   "[MA] regime=consolidation(48%) | OUTLOOK: Consolidation persists; mean-reversion pressure if upper b": 6,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Mean-reversion consolidation conflicts SELL thesis; HYPE r": 6,
+   "[MA] regime=range(52%) | OUTLOOK: Range consolidation; SOL shorts historically fail here; watch for ": 6,
+   "[MA] regime=range(38%) bias=bearish uncertain | OUTLOOK: Downside expected within tight range; SL=2.": 5,
+   "[MA] regime=consolidation(57%) bias=bearish uncertain | OUTLOOK: Consolidation with downside test li": 6,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: SOL likely range-bound; ensemble consensus vs. regime": 5,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidation assumed. Require multi-TF candlest": 3,
+   "[MA] regime=consolidation(68%) bias=bearish shifting_to_trend | OUTLOOK: SHORT consolidation breakdo": 6,
+   "[MA] regime=consolidation(60%) bias=bearish | OUTLOOK: tight oscillating band with downside testing;": 4,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: ETH consolidating with squeezed volatility; ense": 2,
+   "[MA] regime=range(35%) bias=bearish uncertain | OUTLOOK: Downside rotation possible if price mean-re": 4,
+   "[MA] regime=range(60%) | OUTLOOK: Range-bound chop expected; false breakout risk high; wait for vol/": 3,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: SOL consolidating near support at 65.54 SL. BUY targets ": 4,
+   "[MA] regime=range(65%) bias=bearish shifting_to_range | OUTLOOK: HYPE SHORT at 62.004 targets 56.136": 3,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Consolidation state; price range-bound with stru": 6,
+   "[MA] regime=range(47%) bias=bullish | OUTLOOK: Range-bound; SOL structurally weak on LONGS (0% WR); ": 6,
+   "[MA] regime=consolidation(48%) | OUTLOOK: Price consolidating tight band; SHORT poor fit for mean-re": 2,
+   "[MA] regime=range(58%) | OUTLOOK: Sideways consolidation \u00b11-2% over 4-12h; mean-reversion probabilit": 6,
+   "[MA] regime=consolidation(72%) | OUTLOOK: Price range-bound; mean reversion bias. SOL_BUY has 0% edg": 6,
+   "[MA] regime=consolidation(62%) | OUTLOOK: Consolidation persists 4-12h; SHORT faces mean-reversion h": 3,
+   "[MA] regime=range(65%) | OUTLOOK: Range consolidation 4-12h. Mean-reversion bias dominates. Signal c": 4,
+   "[MA] regime=range(62%) | OUTLOOK: 2-3% consolidation band; no directional conviction. Breakout pendi": 4,
+   "[MA] regime=consolidation(62%) | OUTLOOK: Tight consolidation 4-12h; watch OI/funding shift or BB sq": 6,
+   "[MA] regime=consolidation(61%) | OUTLOOK: Consolidation likely persists; HYPE SHORT shows 100% WR (n": 3,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Tight consolidation, mean-reversion dominant. Breakout imm": 6,
+   "[MA] regime=consolidation(35%) | OUTLOOK: Consolidation default due to insufficient technical data \u2014": 5,
+   "[MA] regime=range(60%) uncertain | OUTLOOK: HYPE consolidating in $56.09\u2013$66.05 band (TP1-SL bounds)": 3,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Consolidation likely to resolve mean-reversion o": 5,
+   "[MA] regime=consolidation(42%) bias=bearish uncertain | OUTLOOK: Consolidation downside breakout att": 4,
+   "[MA] regime=consolidation(68%) uncertain | OUTLOOK: Price confined to tight range; directional signa": 3,
+   "[MA] regime=range(50%) | OUTLOOK: Range consolidation, mean-reversion hostile to shorts. SOL SHORT r": 3,
+   "[MA] regime=range(55%) | OUTLOOK: Range-bound with tight SL; high risk of false breakout; HYPE_LONG ": 3,
+   "[MA] regime=consolidation(42%) bias=bearish uncertain | OUTLOOK: Consolidation persisting; ETH SHORT": 3,
+   "[MA] regime=range(35%) | OUTLOOK: Range consolidation persists; SOL SHORT historically fails in RANG": 3,
+   "[MA] regime=consolidation(62%) uncertain | OUTLOOK: Consolidation with bearish ensemble signal; vola": 3,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Consolidation-bound ETH; mean-reversion likely. ": 3,
+   "[MA] regime=range(70%) | OUTLOOK: Sideways consolidation with mean-reversion pressure; SOL SHORT reg": 3,
+   "[MA] regime=consolidation(62%) | OUTLOOK: Price consolidating 57-66 zone via mean reversion; SHORT a": 3,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: Range-bound consolidation; mean-reversion bounce like": 3,
+   "[MA] regime=range(52%) bias=bearish uncertain | OUTLOOK: Range-bound with downside bias to TP1 (4.48": 3,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Range-bound with mean-reversion bias; avoid momentum short": 3,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: ETH ranging with weak downside bias. Ensemble signal ": 2,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Consolidation persists; mean reversion bias. SOL SHORT str": 3,
+   "[MA] regime=consolidation(35%) bias=bearish | OUTLOOK: Consolidation breaking lower toward TP1 57.22": 3,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: SOL bound in choppy 2% band; SHORT thesis vulnerable ": 3,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Range-bound mean-reversion setup; price oscillating tight ": 6,
+   "[MA] regime=range(65%) | OUTLOOK: Range-bound with weak SHORT. Low confidence reflects hostile regim": 3,
+   "[MA] regime=consolidation(60%) bias=bearish uncertain | OUTLOOK: Consolidation regime, HYPE mean-rev": 2,
+   "[MA] regime=consolidation(58%) bias=bearish | OUTLOOK: SHORT breakout setup R:R=1.5 viable if consol": 3,
+   "[MA] regime=range(58%) | OUTLOOK: Side-ways market with weak directional signals; mean-reversion bia": 6,
+   "[MA] regime=range(50%) | OUTLOOK: Consolidating tight band; SHORT historically hostile in SOL RANGE;": 3,
+   "[MA] regime=consolidation(48%) bias=bearish uncertain | OUTLOOK: Consolidation persists; SHORT contr": 3,
+   "[MA] regime=consolidation(40%) | OUTLOOK: Mean-reverting consolidation; weak signal suggests range-c": 5,
+   "[MA] regime=consolidation(66%) | OUTLOOK: Mean reversion expected; SOL shorts structurally weak in c": 2,
+   "[MA] regime=range(52%) | OUTLOOK: Range-bound consolidation; ETH SHORT historically hostile in this ": 2,
+   "[MA] regime=consolidation(48%) bias=bearish | OUTLOOK: Consolidation + SHORT fades bounce resistance": 2,
+   "[MA] regime=range(58%) bias=bearish uncertain | OUTLOOK: Ranging consolidation; ensemble signal high": 3,
+   "[MA] regime=consolidation(62%) bias=bearish | OUTLOOK: Consolidation with bearish directional bias; ": 3,
+   "[MA] regime=consolidation(62%) bias=bearish uncertain | OUTLOOK: Price consolidating near $59.53; vu": 3,
+   "[MA] regime=range(50%) | OUTLOOK: Range-bound; ETH SHORT historically loses in range\u2014recommend skip ": 2,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: HYPE consolidating within range band 55-62. Moderate ": 1,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Consolidation mean-reverts on vol containment; breakout on": 2,
+   "[MA] regime=range(58%) | OUTLOOK: Range consolidation with mean-reversion tilt. SOL SHORT is known l": 1,
+   "[MA] regime=range(66%) | OUTLOOK: Oscillating sideways in tight band; SELL directional setup fights ": 9,
+   "[MA] regime=consolidation(60%) bias=bearish | OUTLOOK: Mean-reversion likely; retrying failed setup ": 3,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: Range-bound with mean-reversion pressure; SOL SHORT i": 2,
+   "[MA] regime=consolidation(62%) | OUTLOOK: Tight consolidation with BB squeeze. Await volume + OI exp": 3,
+   "[MA] regime=consolidation(42%) bias=bearish | OUTLOOK: ETH consolidating; signal fails quality gate ": 4,
+   "[MA] regime=consolidation(64%) | OUTLOOK: HYPE consolidates sideways; SHORT signal lacks historical ": 6,
+   "[MA] regime=range(58%) uncertain | OUTLOOK: Range/choppy regime confirmed by loss streak and zero ga": 6,
+   "[MA] regime=consolidation(58%) bias=bearish | OUTLOOK: HYPE consolidating tight range; SELL signal b": 9,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: Mean reversion expected; shorts lose in range; consol": 4,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Consolidation with mean-reversion bias. Range-bo": 4,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: SHORT directional signal but range regime structurall": 6,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidating band; mean reversion expected; SHO": 6,
+   "[MA] regime=consolidation(40%) | OUTLOOK: Consolidating range-bound; weak SELL lacks conviction and ": 6,
+   "[MA] regime=range(62%) | OUTLOOK: Range-bound consolidation; SELL signal faces structural headwinds ": 6,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidation phase; SELL signal at marginal con": 5,
+   "[MA] regime=consolidation(48%) | OUTLOOK: Consolidating with low conviction; expect range-bound chop": 4,
+   "[MA] regime=range(63%) bias=bearish | OUTLOOK: Range mean-revert expected; SOL SHORT historically we": 1,
+   "[MA] regime=consolidation(40%) bias=bearish | OUTLOOK: Consolidation regime hostile to HYPE SHORT; s": 4,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Consolidation likely given tight ATR and system ": 2,
+   "[MA] regime=range(57%) | OUTLOOK: SOL range-bound consolidation 63.2-66.5; TP1 61.81 reachable via m": 2,
+   "[MA] regime=range(58%) bias=bearish uncertain | OUTLOOK: BTC SHORT workable in range (mean-revert ed": 2,
+   "[MA] regime=range(70%) | OUTLOOK: Lateral mean-reversion action; ETH SHORT 0% WR historically in ran": 2,
+   "[MA] regime=consolidation(35%) | OUTLOOK: Consolidation implies mean-reversion in tight band; direct": 2,
+   "[MA] regime=consolidation(48%) | OUTLOOK: Consolidation probable; range mean reversion more likely t": 4,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: Price consolidating 4-12h; SHORT position aligned wit": 2,
+   "[MA] regime=consolidation(48%) bias=bearish | OUTLOOK: Consolidation = mean-reversion regime; ETH SH": 1,
+   "[MA] regime=range(58%) | OUTLOOK: Range-bound oscillation likely; SOL SHORT at confidence floor with": 2,
+   "[MA] regime=consolidation(45%) | OUTLOOK: Mean-reversion regime. Signal quality insufficient (conf=3": 4,
+   "[MA] regime=consolidation(57%) bias=bearish shifting_to_range | OUTLOOK: Consolidation\u2192range; SHORT ": 2,
+   "[MA] regime=range(62%) | OUTLOOK: Range consolidating; declining profitability suggests momentum wea": 2,
+   "[MA] regime=consolidation(45%) bias=bearish | OUTLOOK: Consolidation structure detected; SHORT signa": 2,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Consolidation default. SHORT signal (40% conf) w": 4,
+   "[MA] regime=consolidation(52%) bias=bearish shifting_to_range | OUTLOOK: BTC consolidating around $6": 2,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Tight consolidation; ETH SHORT mean-reversion risk in narr": 2,
+   "[MA] regime=range(45%) bias=bearish | OUTLOOK: SOL in range regime; short at 65.06 targets TP1 62.04": 2,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Consolidation regime contradicts SELL bias; sign": 4,
+   "[MA] regime=range(68%) bias=bearish uncertain | OUTLOOK: BTC consolidated in tight range; oversold R": 2,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Consolidation-bound; ETH SHORT lacks structural edge, expe": 3,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: Range-bound with mild downside lean; support test at ": 3,
+   "[MA] regime=consolidation(63%) bias=bearish | OUTLOOK: Consolidating indecision with weak bearish le": 3,
+   "[MA] regime=consolidation(68%) bias=bearish | OUTLOOK: SHORT mean-revert to 52.32 in consolidation b": 4,
+   "[MA] regime=consolidation(28%) uncertain | OUTLOOK: System health degraded (Critic 0% accurate, tune": 2,
+   "[MA] regime=consolidation(65%) uncertain | OUTLOOK: Price mean-reverts 55\u201360 band. Consolidation per": 4,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Consolidation implies mean-reverting environment": 3,
+   "[MA] regime=range(40%) bias=bearish | OUTLOOK: ETH range-bound; SHORT setup but structural mismatch ": 3,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Consolidation holding; directional breakout within 4-12h p": 6,
+   "[MA] regime=consolidation(48%) | OUTLOOK: Consolidation likely; tight stop increases SL-hit risk; me": 3,
+   "[MA] regime=range(62%) | OUTLOOK: Range consolidation; SHORT setup conflicts with mean-reversion bia": 2,
+   "[MA] regime=consolidation(45%) bias=bearish uncertain | OUTLOOK: SHORT probe into consolidation; mea": 4,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: Downside to TP1 $59,399 with 2:1 R:R; BTC_SHORT edge ": 3,
+   "[MA] regime=range(65%) | OUTLOOK: mean reversion within tight bands; no directional alpha; avoid dir": 3,
+   "[MA] regime=consolidation(52%) | OUTLOOK: Consolidation; expect range-bound chop until OI/volume exp": 4,
+   "[MA] regime=consolidation(60%) bias=bearish | OUTLOOK: Consolidation likely resolving downward; BTC ": 2,
+   "[MA] regime=range(58%) | OUTLOOK: Tight consolidation; mean reversion likely; support/resistance hol": 2,
+   "[MA] regime=consolidation(60%) bias=bearish uncertain | OUTLOOK: Consolidation regime suspected; HYP": 4,
+   "[MA] regime=consolidation(42%) | OUTLOOK: Consolidation zone, historically 0% WR; SHORT signal sugge": 3,
+   "[MA] regime=consolidation(30%) uncertain | OUTLOOK: sideways in tight chop; direction unclear; await": 4,
+   "[MA] regime=range(62%) | OUTLOOK: Mean reversion in tight band; avoid directional bias; ETH SHORT = ": 3,
+   "[MA] regime=range(32%) bias=bearish | OUTLOOK: Short setup in range-bound BTC; target support levels": 3,
+   "[MA] regime=range(67%) bias=bearish | OUTLOOK: Range-bound market; SHORT from 55.16 targeting 50.50 ": 6,
+   "[MA] regime=consolidation(63%) | OUTLOOK: Consolidation likely; ETH SHORT has poor regime edge (0-25": 3,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Regime indeterminate; classify as consolidation ": 3,
+   "[MA] regime=consolidation(55%) bias=bearish | OUTLOOK: SHORT setup aligns with consolidation mean-re": 6,
+   "[MA] regime=range(50%) bias=bearish | OUTLOOK: ETH likely consolidating 1623.1\u00b127.6 band; bearish pr": 1,
+   "[MA] regime=consolidation(55%) | OUTLOOK: BTC consolidating range. Current SHORT at 35% confidence i": 3,
+   "[MA] regime=consolidation(58%) | OUTLOOK: Consolidation mean-reversion regime. SHORT 100% WR (n=1) v": 6,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Consolidation unresolved; signal quality degrade": 3,
+   "[MA] regime=consolidation(52%) bias=bearish shifting_to_high_volatility | OUTLOOK: Consolidation pha": 6,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Market in consolidation squeeze; ensemble SHORT too weak (": 2,
+   "[MA] regime=consolidation(62%) bias=bearish shifting_to_trend | OUTLOOK: HYPE consolidation near 55.": 4,
+   "[MA] regime=range(45%) | OUTLOOK: Range-bound; ETH SHORT risky (20% WR history, 0% WR in range prove": 2,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: Range-edge SHORT at low conviction (43% conf). BTC_SH": 3,
+   "[MA] regime=range(50%) bias=bearish uncertain | OUTLOOK: Range consolidation likely; SELL at 50% con": 6,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Tight consolidation; ETH SHORT historically fail": 1,
+   "[MA] regime=range(62%) uncertain | OUTLOOK: Lateral consolidation $59.5k-$62k expected; SELL signal ": 1,
+   "[MA] regime=range(52%) | OUTLOOK: Consolidating sideways, range-bound, directional bias unclear next": 1,
+   "[MA] regime=consolidation(50%) | OUTLOOK: Tight consolidation. Await volume spike + OI expansion + f": 1,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: BTC consolidating in range; mean-revert bias toward T": 2,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: Consolidation resolving toward trend within 4-8h": 2,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: Consolidation resolving toward support or resist": 2,
+   "[MA] regime=consolidation(65%) bias=bearish shifting_to_range | OUTLOOK: BTC consolidating at potent": 2,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Consolidating/breaking down; HYPE_LONG proven lo": 3,
+   "[MA] regime=consolidation(56%) | OUTLOOK: Consolidation setup ready for breakout; enforce 55% confid": 3,
+   "[MA] regime=consolidation(58%) shifting_to_range | OUTLOOK: Consolidation phase with zero directiona": 3,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Market consolidating; pipeline gates blocking en": 3,
+   "[MA] regime=range(60%) | OUTLOOK: SOL range-bound $72.84\u2013$76.54; bullish signal weakened by SOL_LONG": 3,
+   "[MA] regime=range(52%) bias=bearish uncertain | OUTLOOK: BTC pressured to TP1 (3.1%) if range holds;": 3,
+   "[MA] regime=range(58%) | OUTLOOK: sideways consolidation pressure; signal below confidence floor (55": 3,
+   "[MA] regime=consolidation(32%) uncertain | OUTLOOK: Consolidation; breakout pending; confidence gate": 3,
+   "[MA] regime=range(50%) uncertain | OUTLOOK: Range-bound; BTC SELL fails confidence gate; skip entry;": 3,
+   "[MA] regime=range(58%) | OUTLOOK: HYPE range-bound; BUY signal weak vs historical 0% WR; expect chop": 3,
+   "[MA] regime=consolidation(42%) | OUTLOOK: Tight consolidation expected; mean-reversion bias; signal ": 3,
+   "[MA] regime=consolidation(70%) | OUTLOOK: Consolidation phase pending breakout either direction. Sig": 3,
+   "[MA] regime=consolidation(45%) bias=bearish | OUTLOOK: Consolidation likely breaks lower; support $6": 3,
+   "[MA] regime=consolidation(62%) bias=bullish shifting_to_trend | OUTLOOK: SOL consolidation with bull": 3,
+   "[MA] regime=consolidation(55%) bias=bearish uncertain | OUTLOOK: Consolidation persisting with break": 3,
+   "[MA] regime=consolidation(35%) | OUTLOOK: Consolidation persisting; signal rejected at gate; range-b": 3,
+   "[MA] regime=range(62%) | OUTLOOK: SOL in contained range; BUY signal moderate conviction; monitor fo": 3,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: Bearish targets 64219-62763 within 4-12h if range hol": 1,
+   "confidence_floor_58": 1962,
+   "[MA] regime=range(60%) bias=bullish shifting_to_trend | OUTLOOK: Range consolidation with ensemble c": 3,
+   "[MA] regime=consolidation(60%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation resolving bul": 2,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidation regime with ensemble BUY signal at": 3,
+   "[MA] regime=consolidation(40%) | OUTLOOK: ETH appears to be stabilizing after recent drawdown; conso": 3,
+   "trend_adj_floor_58": 84,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: HYPE consolidating; historical HYPE_LONG underpe": 1,
+   "[MA] regime=consolidation(35%) bias=bearish uncertain | OUTLOOK: Consolidation most likely; SOL long": 3,
+   "[MA] regime=trend(66%) bias=bullish | OUTLOOK: SOL breakout trend above SL 72.93, target TP1 76.85 w": 1,
+   "[MA] regime=trend(65%) bias=bullish | OUTLOOK: BTC advances toward TP1 ($67,124) on sustained direct": 2,
+   "[MA] regime=consolidation(62%) bias=bullish shifting_to_high_volatility | OUTLOOK: BTC consolidation": 2,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Consolidation likely holds 4-12h; may resolve up": 1,
+   "[MA] regime=consolidation(45%) bias=bullish uncertain | OUTLOOK: BTC consolidating with nascent bull": 3,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidation; ETH LONG historically fails this ": 2,
+   "[MA] regime=trending_bull(70%) bias=bullish | OUTLOOK: BTC bullish toward TP1 66435 (TP2 67009) with": 3,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Consolidation; SELL signal blocked at gate; awai": 3,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Consolidation-trapped with low conviction; ensem": 2,
+   "[MA] regime=consolidation(28%) uncertain | OUTLOOK: Consolidation default due to insufficient market": 2,
+   "[MA] regime=range(38%) uncertain | OUTLOOK: Consolidative range with early bullish signal; requires ": 3,
+   "[MA] regime=consolidation(32%) bias=bearish uncertain | OUTLOOK: Avoid. SOL_LONG proven loser (0% WR": 3,
+   "[MA] regime=consolidation(58%) bias=bullish uncertain | OUTLOOK: Tight consolidation with upside set": 1,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation holding; SOL_LONG 0% WR historical (avoid lo": 3,
+   "[MA] regime=consolidation(35%) | OUTLOOK: Consolidation likely; HYPE_LONG setup has zero historical ": 3,
+   "[MA] regime=range(58%) bias=bullish | OUTLOOK: Range-bound; scalp TP1 target at +154bps within 4-8h ": 3,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Regime classification constrained by data sparsi": 3,
+   "[MA] regime=range(30%) uncertain | OUTLOOK: Market regime ambiguous due to data sparsity. Range-boun": 3,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: BTC range-bound; SHORT exploits mean reversion edge; ": 3,
+   "[MA] regime=consolidation(40%) | OUTLOOK: Consolidation phase with breakout pending. Monitor volume/": 1,
+   "[MA] regime=consolidation(70%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation break lower t": 3,
+   "[MA] regime=consolidation(58%) | OUTLOOK: Consolidation squeeze confirmed, SOL SELL technically vali": 3,
+   "[MA] regime=consolidation(56%) | OUTLOOK: Tight consolidation range likely persistent; breakout dire": 1,
+   "[MA] regime=consolidation(58%) bias=bearish | OUTLOOK: Consolidation with bearish lean. SELL entry 7": 2,
+   "[MA] regime=range(48%) bias=bearish | OUTLOOK: BTC_SHORT proven edge (62% WR) in range; ensemble con": 2,
+   "[MA] regime=range(65%) bias=bearish | OUTLOOK: Range-bound SOL downside to TP1 70.05; weak regime ed": 2,
+   "[MA] regime=range(42%) bias=bearish uncertain | OUTLOOK: Marginal bearish signal in range regime; be": 1,
+   "[MA] regime=consolidation(42%) bias=bearish weakening | OUTLOOK: SOL tight consolidation, high regim": 3,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: Range consolidation with bearish ensemble signal. ETH": 3,
+   "[MA] regime=consolidation(55%) bias=bearish uncertain | OUTLOOK: Consolidation tightens before break": 2,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: BTC SHORT targets TP1 at 63909 (\u22121.51%) in range envi": 1,
+   "[MA] regime=consolidation(62%) bias=bearish | OUTLOOK: ETH consolidating with downside bias. WARNING": 1,
+   "[MA] regime=trending_bear(70%) bias=bearish | OUTLOOK: Bearish continuation likely; 1h EMA20>EMA50 m": 1,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: SHORT entry defensible if price trades tight band aro": 3,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Consolidation regime historically 0% WR for ETH ": 3,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: Range-bound consolidation with downside bias; BTC SEL": 1,
+   "[MA] regime=consolidation(40%) bias=bearish uncertain | OUTLOOK: SHORT in inferred consolidation; sy": 3,
+   "[MA] regime=consolidation(25%) uncertain | OUTLOOK: Consolidation regime assumed; ensemble SHORT at ": 2,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: SOL consolidating 67.0\u201374.0; SELL aligns with range l": 2,
+   "[MA] regime=consolidation(60%) shifting_to_high_volatility | OUTLOOK: Bollinger squeeze with oversol": 1,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: HYPE consolidating mid-70s; SELL at 71 positioned for": 2,
+   "[MA] regime=range(62%) bias=bearish uncertain | OUTLOOK: Range-bound; ensemble identifies SHORT brea": 2,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: Range consolidation likely 69-74; SHORT thesis vulner": 1,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Consolidation tightening; breakout imminent 2-8h; ETH shor": 1,
+   "[MA] regime=range(61%) uncertain | OUTLOOK: HYPE SHORT ensemble probable range regime; thesis valid ": 3,
+   "[MA] regime=consolidation(67%) uncertain | OUTLOOK: Tight consolidation; possible vol squeeze formin": 3,
+   "[MA] regime=range(68%) bias=bearish | OUTLOOK: SOL in tight range; SELL signal carries 0% WR in rang": 2,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Market likely consolidating/range-bound with wea": 2,
+   "[MA] regime=consolidation(52%) | OUTLOOK: SOL consolidating 71.78\u201375.39; LONG bias with breakout abo": 1,
+   "[MA] regime=consolidation(38%) bias=bullish | OUTLOOK: Tight consolidation holding; BTC correlation ": 1,
+   "[MA] regime=consolidation(70%) | OUTLOOK: Consolidation holding; ETH SHORT has 0% historical WR in t": 2,
+   "[MA] regime=consolidation(65%) bias=bullish shifting_to_trend | OUTLOOK: SOL consolidation breaks to": 2,
+   "[MA] regime=consolidation(44%) uncertain | OUTLOOK: Post-drawdown consolidation. BTC BUY at 57% conf": 3,
+   "[MA] regime=consolidation(54%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation resolving up;": 2,
+   "[MA] regime=range(60%) bias=bullish | OUTLOOK: Range scalp: tight stops protect downside, defined ta": 2,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: High consolidation risk - system recalibrating f": 3,
+   "[MA] regime=trending_bull(68%) bias=bullish | OUTLOOK: Strong ensemble conviction (75% conf) signals": 3,
+   "[MA] regime=range(52%) uncertain | OUTLOOK: ETH BUY may work if consolidating near support (1740.9);": 2,
+   "[MA] regime=consolidation(58%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation showing early": 1,
+   "[MA] regime=consolidation(62%) | OUTLOOK: Consolidation breakout attempt, monitor resistance 67907 (": 1,
+   "[MA] regime=consolidation(65%) bias=bearish shifting_to_trend | OUTLOOK: ETH consolidating; SELL sig": 2,
+   "[MA] regime=consolidation(58%) bias=bearish uncertain | OUTLOOK: SELL setup targets 1581.51 over 4-1": 1,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: BTC stabilizing into range post-volatility. SELL vali": 3,
+   "[MA] regime=range(48%) bias=bearish | OUTLOOK: Weak bearish signal in ambiguous market; expect range": 3,
+   "[MA] regime=consolidation(38%) | OUTLOOK: Consolidation awaiting directional breakout; neutral bias.": 3,
+   "[MA] regime=consolidation(39%) bias=bearish uncertain | OUTLOOK: Consolidation likely to resolve via": 2,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: Range-bound with downside directional pressure in 4-1": 2,
+   "[MA] regime=consolidation(51%) bias=bearish uncertain | OUTLOOK: Consolidation regime likely but unc": 2,
+   "[MA] regime=range(48%) bias=bearish | OUTLOOK: If range holds, TP1 (61,510) = 3.8% downside. System ": 2,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Unable to classify regime confidently without OH": 2,
+   "[MA] regime=consolidation(58%) bias=bearish | OUTLOOK: Consolidation structure breaks on OI/funding ": 2,
+   "[MA] regime=range(63%) bias=bearish | OUTLOOK: Consolidates in range with oversold RSI; mild bounce ": 1,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: range-bound, await directional breakout signal |": 2,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidation breakout likely 2-4h; downside bia": 2,
+   "[MA] regime=range(56%) bias=bearish uncertain | OUTLOOK: Range consolidation with downside bias; BTC": 2,
+   "[MA] regime=consolidation(52%) | OUTLOOK: Consolidation holding near 1750; neutral-to-slight-upside ": 2,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Insufficient real-time data for high-confidence ": 2,
+   "[MA] regime=range(38%) bias=bearish | OUTLOOK: Downside test of TP1 probable if range breaks; BTC SH": 2,
+   "[MA] regime=consolidation(52%) bias=bearish uncertain | OUTLOOK: ETH consolidation with downside dir": 2,
+   "[MA] regime=consolidation(50%) bias=bearish uncertain | OUTLOOK: SOL consolidating 4-12h; ensemble p": 2,
+   "[MA] regime=range(65%) bias=bearish uncertain | OUTLOOK: Range-bound sideways 4-8h with BB squeeze b": 2,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation persists; HYPE_LONG historically 0% WR in th": 2,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: Range-bound consolidation; SHORT bias intact but SOL ": 2,
+   "[MA] regime=consolidation(38%) bias=bearish uncertain | OUTLOOK: Low-conviction consolidation, beari": 2,
+   "[MA] regime=range(72%) bias=bearish shifting_to_trend | OUTLOOK: Consolidating with downside bias; v": 2,
+   "[MA] regime=high_volatility(58%) bias=bearish | OUTLOOK: ETH potential move toward TP1 (1671.5, ~-5%": 2,
+   "[MA] regime=trend(62%) bias=bearish | OUTLOOK: Weak bearish trend forming; SOL SHORT positioned for ": 2,
+   "[MA] regime=consolidation(55%) bias=bearish shifting_to_range | OUTLOOK: Consolidation with weak bea": 2,
+   "[MA] regime=consolidation(58%) bias=bearish uncertain | OUTLOOK: Likely consolidation or tight range": 1,
+   "[MA] regime=consolidation(52%) uncertain | OUTLOOK: Consolidation with weak directional setup. SOL S": 3,
+   "[MA] regime=range(67%) | OUTLOOK: Range consolidation post-vol. Macro bearish (EMA, MACD, VWAP<price": 2,
+   "[MA] regime=range(40%) bias=bearish uncertain | OUTLOOK: Flat-to-down consolidation; BTC SHORT 50% W": 3,
+   "[MA] regime=range(68%) bias=bearish uncertain | OUTLOOK: ETH consolidating tight band; ensemble SELL": 2,
+   "[MA] regime=range(40%) bias=bearish uncertain | OUTLOOK: Range consolidation with downside pressure;": 3,
+   "[MA] regime=consolidation(38%) bias=bearish | OUTLOOK: BTC consolidating; SELL edge valid in range/c": 2,
+   "[MA] regime=trend(48%) bias=bearish | OUTLOOK: Weak downtrend setup; TP1 ~80bps reachable 2-4h; moni": 1,
+   "[MA] regime=range(57%) bias=bearish uncertain | OUTLOOK: Range-bound price action; BTC SHORT thesis ": 2,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: Range-bound chop. SOL SHORT enters validated regime m": 2,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: Range consolidation with downside target at 66.97 if ": 2,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: TP1 at 62.23; post-TP1 consolidation risk; portfolio ": 2,
+   "[MA] regime=consolidation(60%) bias=bearish uncertain | OUTLOOK: Consolidation continues with downsi": 2,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation band holds; SOL SHORT faces mean-reversion h": 3,
+   "[MA] regime=range(60%) bias=bearish uncertain | OUTLOOK: Range-bound SHORT toward TP1 61.57. Monitor": 1,
+   "[MA] regime=consolidation(52%) bias=bearish | OUTLOOK: SOL consolidating with short pressure; confid": 2,
+   "[MA] regime=trending_bear(55%) bias=bearish | OUTLOOK: Bearish trend (ADX=27) structurally intact. L": 1,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: Range with downside signal; support test probable; wa": 2,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: Range-bound; SHORT targets -5% (TP1) to -10% (TP2); m": 2,
+   "[MA] regime=range(55%) bias=bearish uncertain | OUTLOOK: downside into 68.69\u201365.71 range; tight 2% S": 3,
+   "[MA] regime=range(45%) bias=bearish uncertain | OUTLOOK: Choppy range with soft downside bias; weak ": 1,
+   "[MA] regime=consolidation(30%) uncertain | OUTLOOK: Cannot predict; insufficient market data for reg": 3,
+   "[MA] regime=range(70%) bias=bearish shifting_to_high_volatility | OUTLOOK: Range compression with im": 1,
+   "[MA] regime=trending_bear(65%) bias=bearish shifting_to_range | OUTLOOK: Bearish continuation 1-4h v": 1,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Sideways consolidation presumed; HYPE_LONG histo": 3,
+   "[MA] regime=trending_bear(65%) bias=bearish weakening | OUTLOOK: Downside pressure toward support; l": 1,
+   "[MA] regime=range(50%) uncertain | OUTLOOK: Regime indeterminate due to missing technical context. E": 3,
+   "[MA] regime=consolidation(58%) | OUTLOOK: Consolidation squeeze breakout attempt; HYPE LONG structur": 3,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: Range-bound with downside bias. Warn: SOL SHORT 0% WR": 3,
+   "[MA] regime=consolidation(52%) | OUTLOOK: Range-bound consolidation. HYPE_LONG consolidation histori": 3,
+   "[MA] regime=range(62%) bias=bearish uncertain | OUTLOOK: Range consolidation 1-2h then breakout down": 2,
+   "[MA] regime=range(58%) | OUTLOOK: SHORT in bounded range; TP1 at 65.24 viable if range holds, wider ": 1,
+   "[MA] regime=consolidation(35%) bias=bearish uncertain | OUTLOOK: Consolidation regime historically 0": 3,
+   "[MA] regime=consolidation(58%) bias=bullish uncertain | OUTLOOK: Consolidation false breakout risk; ": 2,
+   "[MA] regime=consolidation(48%) bias=bearish uncertain | OUTLOOK: Consolidation regime: 0% WR histori": 1,
+   "[MA] regime=range(45%) bias=bearish | OUTLOOK: BTC in tight range with downside bias; SHORT edge (42": 3,
+   "[MA] regime=consolidation(35%) bias=bearish uncertain | OUTLOOK: Consolidation; HYPE_LONG structural": 1,
+   "[MA] regime=range(45%) bias=bearish uncertain | OUTLOOK: SOL SHORT testing 67.7; tight stop critical": 2,
+   "[MA] regime=trending_bear(78%) bias=bearish | OUTLOOK: Downside pressure sustained; oversold RSI + b": 1,
+   "[MA] regime=consolidation(38%) bias=bearish uncertain | OUTLOOK: Ensemble SELL valid if consolidatio": 2,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: HYPE consolidating with potential breakout; ense": 2,
+   "[MA] regime=consolidation(40%) bias=bearish uncertain | OUTLOOK: Downside breakout expected toward T": 1,
+   "[MA] regime=range(22%) bias=bearish uncertain | OUTLOOK: ETH SHORT in range historically 0% WR; extr": 2,
+   "[MA] regime=range(50%) bias=bearish | OUTLOOK: SOL consolidating near 68.7; SHORT targets reversal t": 1,
+   "[MA] regime=range(50%) bias=bearish uncertain | OUTLOOK: SHORT probes TP1 support ($61.15); consolid": 2,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: BTC SHORT in range-mode consolidation; ensemble edge ": 2,
+   "[MA] regime=range(65%) | OUTLOOK: ETH in range; SHORT at 60% conf underperforms trending setup. Moni": 1,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: SOL range-bound 4-12h, weak bearish lean fading; high": 1,
+   "[MA] regime=trending_bear(82%) bias=bearish | OUTLOOK: Established downtrend continues; oversold RSI": 2,
+   "[MA] regime=range(40%) bias=bearish uncertain | OUTLOOK: Range-bound with downside directional lean;": 2,
+   "[MA] regime=consolidation(48%) | OUTLOOK: Consolidation structure likely 4-8h; breakout direction un": 2,
+   "[MA] regime=consolidation(30%) uncertain | OUTLOOK: Require current OHLCV, volume ratio, OI delta, f": 2,
+   "[MA] regime=trending_bear(70%) bias=bearish shifting_to_high_volatility | OUTLOOK: Trend exhausting ": 2,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Consolidation is documented weak zone for HYPE; ": 2,
+   "[MA] regime=consolidation(58%) | OUTLOOK: Consolidation phase; ensemble finding edge pockets but reg": 1,
+   "[MA] regime=consolidation(32%) uncertain | OUTLOOK: Regime indeterminate without volume/OI/funding/A": 2,
+   "[MA] regime=trending_bear(80%) bias=bearish shifting_to_high_volatility | OUTLOOK: Downtrend continu": 1,
+   "[MA] regime=range(55%) | OUTLOOK: Market oscillating in horizontal range; SHORT targets lower TP (62": 2,
+   "[MA] regime=range(50%) bias=bearish uncertain | OUTLOOK: ETH likely range-bound 1634-1720; SHORT tar": 2,
+   "[MA] regime=range(35%) bias=bearish uncertain | OUTLOOK: Range-bound oscillation likely; SHORT edge ": 2,
+   "[MA] regime=range(55%) bias=bearish uncertain | OUTLOOK: Range-bound mean reversion within TP2 zone;": 2,
+   "[MA] regime=range(50%) bias=bearish | OUTLOOK: Range-bound consolidation; local SELL structure intac": 2,
+   "[MA] regime=consolidation(45%) bias=bearish uncertain | OUTLOOK: tight consolidation with downside r": 2,
+   "[MA] regime=trending_bear(80%) bias=bearish | OUTLOOK: Trend continues downside; HYPE leads SOL/BTC/": 2,
+   "[MA] regime=consolidation(45%) bias=bearish | OUTLOOK: Consolidation historically mean-reverts; SOL_": 2,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Insufficient data for confident classification; ": 2,
+   "[MA] regime=range(50%) bias=bearish uncertain | OUTLOOK: HYPE SHORT opposite-direction vs HYPE LONG ": 2,
+   "[MA] regime=trending_bear(82%) bias=bearish | OUTLOOK: Downtrend structure confirmed. Warning: trend": 2,
+   "[MA] regime=range(50%) | OUTLOOK: Range consolidation; SELL at 69.8 elevated mean-reversion risk giv": 2,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidation likely entering breakout window; d": 2,
+   "[MA] regime=consolidation(40%) bias=bearish uncertain | OUTLOOK: HYPE SHORT targets TP1 62.60 over 4": 2,
+   "[MA] regime=trending_bear(70%) bias=bearish | OUTLOOK: Downtrend intact; consolidation pullback with": 1,
+   "[MA] regime=consolidation(45%) | OUTLOOK: Consolidation suspected. Avoid breakout entries until 1h/6": 2,
+   "[MA] regime=consolidation(38%) bias=bearish uncertain | OUTLOOK: BTC consolidation with bearish brea": 2,
+   "[MA] regime=range(62%) bias=bearish | OUTLOOK: Range-bound with bearish bias; support test expected,": 2,
+   "[MA] regime=range(50%) bias=bearish | OUTLOOK: Range-bound HYPE short edge targeting TP1 61.42 (9% m": 2,
+   "[MA] regime=consolidation(28%) uncertain | OUTLOOK: Consolidation assumed; expect sideways price osc": 2,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: ETH SHORT viable but range regime historically 14% WR": 2,
+   "[MA] regime=range(45%) bias=bearish uncertain | OUTLOOK: HYPE SHORT in probable range; HYPE shorts 1": 3,
+   "[MA] regime=consolidation(48%) bias=bearish | OUTLOOK: Consolidating near 69.3, ensemble bearish but": 1,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Consolidation with down-break setup; validate wi": 1,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: Range consolidation with binary breakout; mean revers": 3,
+   "[MA] regime=range(63%) bias=bearish | OUTLOOK: Downside to TP1 (61.83) if range holds; upside trunca": 3,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Regime classification unreliable due to missing ": 1,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Consolidation likely; sideways chop between 1654": 9,
+   "[MA] regime=range(55%) uncertain | OUTLOOK: Loose-band range oscillation 62-72; SHORT enters near hi": 3,
+   "[MA] regime=range(70%) | OUTLOOK: Range consolidation; downside to TP1 (1674.53) likely short-term b": 8,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Consolidation pattern expected; mean reversion l": 4,
+   "[MA] regime=consolidation(40%) bias=bearish uncertain | OUTLOOK: Consolidation most likely given inc": 4,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Regime indeterminate without technicals (price s": 2,
+   "[MA] regime=consolidation(45%) | OUTLOOK: Consolidating; SHORT signal 70% conf with 3.1:1 RR setup; ": 9,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Tight range consolidation likely. Insufficient t": 2,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: Range-bound SHORT: TP1 target 61.77 (-7.8%), SL 70.49": 3,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Regime classification inconclusive due to incomp": 6,
+   "[MA] regime=range(60%) bias=bearish uncertain | OUTLOOK: Range-bound SHORT setup on HYPE: entry 67.0": 7,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Consolidation likely side-to-side; SHORT vulnera": 3,
+   "[MA] regime=consolidation(40%) bias=bearish uncertain | OUTLOOK: SHORT consolidation breakout target": 9,
+   "[MA] regime=consolidation(50%) bias=bearish uncertain | OUTLOOK: SHORT setup with tight SL (1.9%); h": 2,
+   "[MA] regime=consolidation(58%) bias=bearish | OUTLOOK: SHORT aligns with HYPE_SHORT historical edge ": 6,
+   "[MA] regime=range(48%) | OUTLOOK: SOL range-bound; bearish signal conflicts with neutral regime; kno": 3,
+   "[MA] regime=range(58%) bias=bearish | OUTLOOK: range-bound consolidation probable breakout lower; SH": 6,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: Consolidation default applied due to insufficien": 3,
+   "[MA] regime=consolidation(35%) bias=bearish | OUTLOOK: Consolidation likely holds; downside breakout": 7,
+   "[MA] regime=range(48%) bias=bearish uncertain | OUTLOOK: Mean reversion to support likely within 4-1": 3,
+   "[MA] regime=range(60%) bias=bearish uncertain | OUTLOOK: Range consolidation 66-70; SELL needs volum": 3,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Range-bound consolidation; SHORT breakout attemp": 9,
+   "[MA] regime=range(40%) bias=bearish uncertain | OUTLOOK: SHORT in range; tight 6% stop indicates sca": 3,
+   "[MA] regime=consolidation(44%) bias=bearish | OUTLOOK: Consolidation regime carries high mean-revers": 9,
+   "[MA] regime=range(50%) bias=bearish shifting_to_range | OUTLOOK: SHORT structurally preferred in HYP": 2,
+   "[MA] regime=consolidation(48%) bias=bearish uncertain | OUTLOOK: Tight-range environment with downsi": 3,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: SOL range-bound near $68.21; SELL structurally sound ": 3,
+   "[MA] regime=range(52%) bias=bearish | OUTLOOK: Mean-revert bounce toward TP1 ($65.70) probable if ra": 3,
+   "[MA] regime=consolidation(40%) bias=bearish uncertain | OUTLOOK: Consolidation with uncertain breako": 1,
+   "[MA] regime=consolidation(42%) bias=bullish shifting_to_trend | OUTLOOK: Tight consolidation with bu": 2,
+   "[MA] regime=consolidation(65%) bias=bullish uncertain | OUTLOOK: Consolidation attempting bullish br": 3,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Consolidation regime\u2014avoid per RULES (0% WR n=6)": 2,
+   "[MA] regime=consolidation(55%) bias=bullish | OUTLOOK: Price consolidating in tight range; moderate ": 2,
+   "[MA] regime=range(38%) bias=bullish uncertain | OUTLOOK: Range consolidation with bullish directiona": 3,
+   "[MA] regime=trend(62%) bias=bullish shifting_to_trend | OUTLOOK: BTC tests TP1 (64,631) if weak uptr": 3,
+   "[MA] regime=consolidation(55%) bias=bearish uncertain | OUTLOOK: Consolidation; ensemble BUY may be ": 2,
+   "[MA] regime=trend(65%) bias=bullish | OUTLOOK: Weak bullish trend forming, likely test TP1 (64880) i": 3,
+   "[MA] regime=range(62%) bias=bullish uncertain | OUTLOOK: Ensemble targets +2.5-4.9% bullish BTC LONG": 1,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Consolidation with bounded range; signal confide": 3,
+   "[MA] regime=consolidation(45%) bias=bearish shifting_to_trend | OUTLOOK: Consolidating with directio": 2,
+   "[MA] regime=high_volatility(68%) shifting_to_high_volatility | OUTLOOK: Vol mean-revert or breakout ": 1,
+   "[MA] regime=range(62%) bias=bullish | OUTLOOK: Range breakout upside; ensemble confluence supports d": 1,
+   "[MA] regime=consolidation(60%) bias=bearish uncertain | OUTLOOK: Tight consolidation with downside d": 3,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: Downside consolidation; TP1 likely if support holds; ": 3,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Tight consolidation probable; BTC SHORT has 36% ": 2,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: SOL consolidating in range; SHORT targets 67.96 with ": 3,
+   "[MA] regime=consolidation(48%) bias=bearish uncertain | OUTLOOK: Likely consolidating; SOL_SHORT fai": 3,
+   "[MA] regime=consolidation(55%) bias=bearish | OUTLOOK: Consolidation breakout test of SL (63,916) or": 1,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: Price oscillates toward SL 69.58 or TP1 67.82 within ": 3,
+   "[MA] regime=range(58%) bias=bullish | OUTLOOK: Range-bound with bullish bias; system 14% WR in range": 1,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: Range consolidation; SOL_SHORT 0% WR in this regime (": 3,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: Consolidation chop, SHORT entering tight range, ": 1,
+   "[MA] regime=range(65%) bias=bullish | OUTLOOK: Bullish range probe; TP1 1744.44 is key resistance, m": 6,
+   "[MA] regime=range(65%) bias=bearish shifting_to_range | OUTLOOK: Range pullback expected targeting 1": 3,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Regime classification confidence too low\u2014unable ": 3,
+   "[MA] regime=range(55%) bias=bearish | OUTLOOK: Range SHORT with historical headwind (0% WR); ensembl": 1,
+   "[MA] regime=consolidation(48%) bias=bearish | OUTLOOK: Consolidation regime suspected; ETH SHORT 0% ": 3,
+   "[MA] regime=consolidation(60%) bias=bearish | OUTLOOK: Consolidation squeeze near $1707 with bearish": 1,
+   "[MA] regime=consolidation(72%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation squeeze relea": 5,
+   "[MA] regime=consolidation(60%) bias=bullish | OUTLOOK: BTC consolidation squeeze with BUY targeting ": 6,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Consolidation with uncertain breakout direction;": 4,
+   "[MA] regime=range(62%) bias=bullish | OUTLOOK: Price consolidating within loose range with upside bi": 1,
+   "[MA] regime=range(65%) | OUTLOOK: Range-bound oscillation near current levels. MFI overbought sugges": 2,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Consolidation trap active: historical 0% WR n=7,": 3,
+   "[MA] regime=consolidation(58%) | OUTLOOK: Consolidation chop zone. SOL_SHORT in range historically f": 5,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Directional trap; consolidation regime 0% WR his": 3,
+   "[MA] regime=range(50%) | OUTLOOK: Range consolidation; ETH_LONG historically fails in range (0% WR p": 3,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation stable; avoid LONG on marginal confidence; s": 3,
+   "[MA] regime=range(68%) bias=bearish | OUTLOOK: Range market holding. ETH LONG in range = 0% WR histo": 4,
+   "[MA] regime=range(65%) bias=bearish uncertain | OUTLOOK: BTC consolidating or micro-trending; SHORT ": 6,
+   "[MA] regime=consolidation(35%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation compressing t": 6,
+   "[MA] regime=consolidation(65%) shifting_to_trend | OUTLOOK: Consolidation holding with bullish struc": 4,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Consolidation likely to persist; neutral bias without brea": 1,
+   "[MA] regime=consolidation(45%) bias=bullish | OUTLOOK: BTC consolidation likely\u2014high false-breakout ": 3,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Cannot classify with one price snapshot. Await c": 1,
+   "[MA] regime=consolidation(40%) uncertain | OUTLOOK: Consolidation likely, BUY signal 65% confidence ": 2,
+   "trend_adj_floor_62": 142,
+   "confidence_floor_62": 3302,
+   "[MA] regime=consolidation(62%) bias=bullish | OUTLOOK: BTC consolidating; BUY signal attempts upside": 3,
+   "[MA] regime=consolidation(50%) | OUTLOOK: ETH likely to consolidate 1714\u20131776 zone; new LONG+existin": 3,
+   "[MA] regime=range(60%) bias=bullish | OUTLOOK: BTC oscillating in ~2% band near 63998; TP1 (65215) r": 3,
+   "[MA] regime=consolidation(38%) uncertain | OUTLOOK: Consolidating in range; breakout direction uncer": 3,
+   "[MA] regime=consolidation(45%) bias=bullish shifting_to_trend | OUTLOOK: Tight consolidation with ea": 3,
+   "[MA] regime=range(70%) | OUTLOOK: ETH consolidating in tight range; BUY thesis at risk from mean-rev": 3,
+   "[MA] regime=range(60%) uncertain | OUTLOOK: Range-bound consolidation persists; BTC BUY signal faces": 3,
+   "[MA] regime=consolidation(68%) bias=bearish weakening | OUTLOOK: Consolidation signature: tight stop": 3,
+   "[MA] regime=range(50%) uncertain | OUTLOOK: System's best regime performance in unknown (50% WR n=16": 3,
+   "[MA] regime=consolidation(32%) uncertain | OUTLOOK: Consolidation regime historically unprofitable; ": 3,
+   "[MA] regime=consolidation(58%) bias=bearish uncertain | OUTLOOK: BTC consolidating; BUY signal confl": 3,
+   "[MA] regime=range(50%) uncertain | OUTLOOK: Regime indeterminate. BTC SHORT edge strong (36% WR +$38": 3,
+   "[MA] regime=range(50%) uncertain | OUTLOOK: Regime unclassifiable without technical indicators. Syst": 3,
+   "[MA] regime=consolidation(52%) uncertain | OUTLOOK: Consolidation with degraded system health. Gate ": 3,
+   "[MA] regime=consolidation(62%) bias=bullish | OUTLOOK: Range-bound consolidation; BTC BUY contradict": 3,
+   "[MA] regime=consolidation(60%) bias=bullish | OUTLOOK: Consolidation with bullish ensemble signal (B": 3,
+   "[MA] regime=consolidation(38%) | OUTLOOK: Tight consolidation with bullish breakout attempt; directi": 3,
+   "[MA] regime=range(60%) bias=bullish | OUTLOOK: Range-bound scalp upside toward TP1 (+1.1%) over 4-12": 3,
+   "[MA] regime=range(58%) bias=bullish | OUTLOOK: Range consolidation breakout targeting TP1 64,961 (+1": 1,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Consolidation is risk-managed default; expect me": 2,
+   "[MA] regime=consolidation(50%) shifting_to_trend | OUTLOOK: Consolidation weakening with BUY signal ": 2,
+   "[MA] regime=range(50%) bias=bearish uncertain | OUTLOOK: BTC in trading range with downside bias; si": 2,
+   "[MA] regime=consolidation(65%) bias=bullish | OUTLOOK: Consolidation tightness with impending breako": 2,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: BTC SHORT targets TP1 (~63264) within 6-12h window; r": 2,
+   "[MA] regime=consolidation(85%) uncertain | OUTLOOK: Consolidation break within 4-12h; SHORT portfoli": 1,
+   "[MA] regime=consolidation(65%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation breaking upwa": 2,
+   "[MA] regime=consolidation(42%) uncertain | OUTLOOK: Consolidation likely. Portfolio 100% directional": 1,
+   "[MA] regime=consolidation(58%) bias=bearish uncertain | OUTLOOK: Consolidation squeeze likely tighte": 1,
+   "[MA] regime=consolidation(56%) bias=bearish uncertain | OUTLOOK: Consolidation range; SHORT thesis f": 1,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Consolidation chop; expect quick exit if thesis ": 3,
+   "[MA] regime=range(50%) bias=bullish | OUTLOOK: Weak bullish setup targeting 65881 (TP1) within 6-12h": 2,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation persists; SHORT thesis structurally weak (9%": 2,
+   "[MA] regime=range(50%) | THESIS: BTC consolidating in $63.3k-$64.5k range with bullish bias but no b": 1,
+   "[MA] regime=range(78%) shifting_to_high_volatility | OUTLOOK: Range-bound 64000-64500; bullish MACD/": 1,
+   "[MA] regime=consolidation(72%) shifting_to_range | OUTLOOK: Consolidation tightening toward breakout": 1,
+   "[MA] regime=consolidation(82%) bias=bullish | OUTLOOK: Bullish directional bias within consolidation": 2,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Consolidation neutral; signal bullish +1.89-5% target but ": 1,
+   "[MA] regime=consolidation(68%) bias=bullish | OUTLOOK: Tight range consolidation; signal confidence ": 3,
+   "[MA] regime=range(42%) bias=bullish shifting_to_trend | OUTLOOK: ETH consolidating tight range; BUY ": 1,
+   "[MA] regime=consolidation(62%) | OUTLOOK: Consolidation to persist; neutral outlook. BUY signal test": 1,
+   "[MA] regime=range(62%) bias=bullish shifting_to_high_volatility | OUTLOOK: EMA convergence + vol com": 2,
+   "[MA] regime=consolidation(62%) uncertain | OUTLOOK: Consolidation structure deteriorating; extreme S": 3,
+   "[MA] regime=consolidation(70%) uncertain | OUTLOOK: Consolidation regime likely; SOL SHORT structura": 1,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: Consolidation breakout SHORT at 1721.40. Equal-p": 1,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Range-bound consolidation persists; monitor volume spike a": 1,
+   "confidence_floor_53": 22,
+   "confidence_floor_54": 37,
+   "confidence_floor_52": 10,
+   "trend_adj_floor_55": 5,
+   "confidence_floor_51": 4,
+   "confidence_floor_56": 72,
+   "confidence_floor_46": 6,
+   "confidence_floor_40": 1,
+   "confidence_floor_36": 1,
+   "confidence_floor_45": 3,
+   "confidence_floor_48": 7,
+   "confidence_floor_44": 5,
+   "confidence_floor_38": 2,
+   "confidence_floor_39": 3,
+   "confidence_floor_41": 1,
+   "trend_adj_floor_64": 1,
+   "confidence_floor_65": 1,
+   "trend_adj_floor_59": 1,
+   "trend_adj_floor_57": 1,
+   "confidence_floor_59": 1,
+   "trend_adj_floor_54": 7,
+   "confidence_floor_49": 4,
+   "confidence_floor_42": 2,
+   "confidence_floor_37": 1,
+   "confidence_floor_34": 1,
+   "trend_adj_floor_56": 1,
+   "confidence_floor_50": 4,
+   "confidence_floor_47": 3,
+   "trend_adj_floor_53": 3,
+   "trend_adj_floor_52": 1,
+   "confidence_floor_43": 1,
+   "[MA] regime=consolidation(28%) bias=bearish uncertain | OUTLOOK: Consolidation mean-reversion regime": 1,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation squeeze persists; SELL signal well below con": 1,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation zone likely; directional bias suppressed. BT": 2,
+   "[MA] regime=consolidation(55%) bias=bearish uncertain | OUTLOOK: Consolidation environment kills SHO": 3,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Range bounce toward TP1 ($71.42) likely; continuation to T": 2,
+   "[MA] regime=consolidation(60%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation breakout test": 3,
+   "[MA] regime=consolidation(52%) | OUTLOOK: tight_range_consolidation_next_4-12h_expect_swing_or_break": 1,
+   "confidence_floor_66": 13443,
+   "trend_adj_floor_66": 854,
+   "[MA] regime=consolidation(35%) | OUTLOOK: Consolidation with bullish bias pending; ensemble predicts": 3,
+   "[MA] regime=consolidation(42%) shifting_to_range | OUTLOOK: Sideways-to-down consolidation expected.": 2,
+   "[MA] regime=consolidation(58%) bias=bearish | OUTLOOK: Tight consolidation with downside probe; hist": 1,
+   "[MA] regime=consolidation(42%) bias=bearish uncertain | OUTLOOK: Range-bound consolidation; SHORT th": 1,
+   "[MA] regime=consolidation(50%) uncertain | OUTLOOK: Consolidation with mean-reversion risk; extreme ": 2,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Consolidation with squeeze risk. SHORT positioning vulnera": 1,
+   "[MA] regime=consolidation(68%) bias=bearish | OUTLOOK: Consolidation systematically kills BTC SHORT ": 1,
+   "[MA] regime=consolidation(65%) bias=bearish | OUTLOOK: Price consolidating in tight band with downsi": 4,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation (neutral bias). Bearish signal mismatch in c": 2,
+   "[MA] regime=consolidation(68%) bias=bearish | OUTLOOK: Consolidation SHORT via trailing stop \u2014 RSI-b": 2,
+   "[MA] regime=range(42%) bias=bearish shifting_to_trend | OUTLOOK: Range-bound consolidation; downside": 2,
+   "[MA] regime=consolidation(70%) shifting_to_high_volatility | OUTLOOK: Squeeze breakout imminent, dir": 1,
+   "test_reason": 20,
+   "[MA] regime=consolidation(28%) uncertain | OUTLOOK: Cannot forecast direction without volume/OI/fund": 1,
+   "[MA] regime=consolidation(48%) | OUTLOOK: Consolidation persists; SOL longs underperform this regime": 3,
+   "[MA] regime=consolidation(62%) | OUTLOOK: SOL consolidating in squeeze; ensemble predicts upside bre": 1,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation persists 4\u201312h. Ensemble BTC SHORT (71% conf": 2,
+   "[MA] regime=consolidation(68%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation with upside b": 1,
+   "[MA] regime=consolidation(60%) bias=bullish shifting_to_trend | OUTLOOK: Consolidation upper bound t": 2,
+   "[MA] regime=consolidation(52%) | OUTLOOK: Consolidation range likely continues; ETH_LONG historicall": 1,
+   "[MA] regime=trend(55%) bias=bullish | OUTLOOK: HYPE continues weak uptrend toward TP1; takedown risk": 1,
+   "[MA] regime=consolidation(73%) bias=bearish uncertain | OUTLOOK: SOL consolidation SHORT breakout; e": 1,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Consolidation with BB squeeze forming. 70% confidence BTC ": 1,
+   "[MA] regime=consolidation(60%) bias=bearish | OUTLOOK: Consolidation with downside thesis; SHORT con": 1,
+   "[MA] regime=consolidation(55%) bias=bearish | OUTLOOK: Consolidation break lower to TP1 (61.68) if s": 1,
+   "[MA] regime=consolidation(38%) bias=bearish uncertain | OUTLOOK: Range-bound consolidation, 2% \u00b1. 10": 1,
+   "[MA] regime=consolidation(56%) shifting_to_range | OUTLOOK: Consolidation holding. SELL signal gener": 3,
+   "[MA] regime=consolidation(54%) bias=bearish | OUTLOOK: Consolidation range persisting 4-12h around 5": 2,
+   "[MA] regime=consolidation(68%) bias=bearish | OUTLOOK: Consolidation SHORT-biased with breakout pend": 1,
+   "[MA] regime=consolidation(54%) | OUTLOOK: Consolidation range 1366-1621; mean-reversion likely on ex": 1,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation regime is hostile (historic 29% WR). BUY sig": 3,
+   "[MA] regime=range(70%) bias=bearish | OUTLOOK: SOL consolidating 70-76 band; LONGs disadvantaged, SH": 3,
+   "confidence_floor_71": 8822,
+   "trend_adj_floor_71": 417,
+   "[MA] regime=range(68%) | OUTLOOK: Range-bound consolidation with no directional edge. Signal below q": 3,
+   "[MA] regime=consolidation(35%) uncertain | OUTLOOK: Complete technical data required for reliable cl": 1,
+   "[MA] regime=consolidation(60%) uncertain | OUTLOOK: Consolidation breakout attempt likely bullish, b": 3,
+   "[MA] regime=range(70%) | OUTLOOK: Range consolidation; SOL longs historically underperform\u2014monitor f": 3,
+   "[MA] regime=consolidation(55%) uncertain | OUTLOOK: Consolidation regime, SOL_LONG structurally toxi": 2,
+   "[MA] regime=range(62%) | OUTLOOK: Price likely oscillates within range with eventual mean reversion ": 3,
+   "[MA] regime=range(58%) bias=bullish | OUTLOOK: Range-hold with breakout edge; TP1 $61,703 is realist": 3,
+   "[MA] regime=consolidation(45%) uncertain | OUTLOOK: Sideways chop likely 4-8h; neutral momentum; bre": 1,
+   "[MA] regime=consolidation(60%) bias=bearish uncertain | OUTLOOK: Consolidation hold likely; SOL LONG": 2,
+   "[MA] regime=consolidation(42%) bias=bearish | OUTLOOK: Consolidation with 29% WR; SOL longs structur": 1,
+   "[MA] regime=consolidation(35%) bias=bullish uncertain | OUTLOOK: Consolidation range test; poor BTC_": 3,
+   "[MA] regime=consolidation(58%) uncertain | OUTLOOK: Low-vol squeeze suggests imminent breakout. Ense": 1,
+   "[MA] regime=consolidation(67%) bias=bullish | OUTLOOK: Consolidation squeeze breaking upward per ens": 3,
+   "[MA] regime=range(72%) bias=bullish | OUTLOOK: Bullish continuation toward TP1 (62500) then TP2 (650": 3,
+   "[MA] regime=consolidation(60%) | OUTLOOK: Consolidation chop. ETH longs structurally fail (0/4 WR). ": 3,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Consolidation squeeze candidate; HYPE_LONG edge weak; gate": 2,
+   "[MA] regime=range(62%) | OUTLOOK: Range regime is mean-reversion hostile to directional bias; SOL LO": 3,
+   "[MA] regime=consolidation(35%) bias=bullish uncertain | OUTLOOK: Consolidation attempting breakout; ": 3,
+   "[MA] regime=consolidation(32%) uncertain | OUTLOOK: Market indicators unavailable for directional ca": 3,
+   "[MA] regime=consolidation(68%) | OUTLOOK: Consolidating 59.1k-61.9k range; requires volume expansion": 2,
+   "[MA] regime=range(52%) bias=bearish | OUTLOOK: SOL range with tight ATR. Longs historically fail\u2014sig": 1,
+   "[MA] regime=consolidation(50%) bias=bearish | OUTLOOK: Consolidation mean reversion down likely; tig": 3,
+   "[MA] regime=consolidation(42%) bias=bullish | OUTLOOK: Consolidation squeeze with nascent breakout a": 2,
+   "[MA] regime=consolidation(50%) bias=bearish | OUTLOOK: Ensemble SHORT conviction high but consolidat": 1,
+   "[MA] regime=consolidation(48%) | OUTLOOK: Consolidation range with ambiguous directional conviction;": 3,
+   "[MA] regime=consolidation(45%) bias=bearish uncertain | OUTLOOK: Consolidation breakout imminent. En": 3,
+   "[MA] regime=consolidation(75%) bias=bearish | OUTLOOK: Consolidation likely mean-reverting or breako": 2,
+   "[MA] regime=range(68%) bias=bearish | OUTLOOK: Range-bound consolidation. SOL longs documented loss ": 2,
+   "[MA] regime=range(50%) uncertain | OUTLOOK: Sideways equilibrium with ensemble multi-strategy breako": 3,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Tight consolidation with breakout direction unclear. Await": 2,
+   "[MA] regime=consolidation(60%) bias=bullish shifting_to_trend | OUTLOOK: Squeeze pattern (high OI Vo": 3,
+   "[MA] regime=consolidation(52%) shifting_to_trend | OUTLOOK: Consolidated range with falling funding ": 3,
+   "[MA] regime=trend(65%) bias=bullish | OUTLOOK: ETH consolidating into trend, likely to test TP1 $168": 3,
+   "[MA] regime=range(60%) bias=bullish shifting_to_trend | OUTLOOK: BTC consolidating above 59.1k suppo": 3,
+   "[MA] regime=trending_bull(65%) bias=bullish | OUTLOOK: Structural setup favors bulls (expanding OI +": 3,
+   "[MA] regime=trend(60%) bias=bullish shifting_to_trend | OUTLOOK: Bullish momentum toward TP1=$62.2k ": 4,
+   "[MA] regime=trend(58%) bias=bullish | OUTLOOK: Trend formation emerging; bullish if OI continues ris": 3,
+   "[MA] regime=range(55%) bias=bullish shifting_to_trend | OUTLOOK: Range tightening with emerging bull": 4,
+   "[MA] regime=trending_bull(68%) bias=bullish | OUTLOOK: ETH in bullish trend regime. OI expansion + p": 1,
+   "[MA] regime=consolidation(58%) shifting_to_trend | OUTLOOK: Consolidation with rising OI suggests pr": 3,
+   "[MA] regime=consolidation(65%) shifting_to_trend | OUTLOOK: Consolidation breakout forming; OI accum": 3,
+   "[MA] regime=range(62%) bias=bullish | OUTLOOK: BTC consolidating in stable OI with mild bullish bias": 3,
+   "[MA] regime=range(54%) | OUTLOOK: Range-bound neutral. Ensemble 67% bullish vs range regime toxic(11": 3,
+   "[MA] regime=consolidation(62%) bias=bullish | OUTLOOK: BTC consolidating near $60.4k with bullish en": 3,
+   "[MA] regime=consolidation(71%) shifting_to_trend | OUTLOOK: BTC consolidating under funding squeeze;": 1,
+   "[MA] regime=consolidation(60%) bias=bearish | OUTLOOK: Range-bound consolidation with weak bearish t": 2,
+   "[MA] regime=consolidation(62%) bias=bearish uncertain | OUTLOOK: Consolidation coil near 58867; weak": 3,
+   "[MA] regime=consolidation(65%) bias=bearish shifting_to_high_volatility | OUTLOOK: Consolidation wea": 1,
+   "[MA] regime=consolidation(52%) shifting_to_high_volatility | OUTLOOK: Consolidation with squeeze bui": 3,
+   "[MA] regime=trend(50%) bias=bearish | OUTLOOK: Weak downtrend forming; OI expanding modestly, shorts": 3,
+   "[MA] regime=trending_bear(72%) bias=bearish consolidation\u2192trending_bear | OUTLOOK: BTC trending lowe": 2,
+   "[MA] regime=consolidation(59%) bias=bearish shifting_to_trend | OUTLOOK: Downside breakout likely if": 2,
+   "[MA] regime=trend(52%) bias=bearish shifting_to_trend | OUTLOOK: Early bearish trend if price confir": 3,
+   "[MA] regime=consolidation(55%) bias=bearish shifting_to_trend | OUTLOOK: Consolidation break downsid": 1,
+   "[MA] regime=range(58%) bias=bullish shifting_to_trend | OUTLOOK: Range consolidation with bullish br": 2,
+   "[MA] regime=trend(60%) bias=bullish | OUTLOOK: Weak trend forming with OI support; HYPE_LONG has 0% ": 3,
+   "[MA] regime=consolidation(65%) | OUTLOOK: Consolidation structure (stable OI, tight vol, negative fu": 1,
+   "[MA] regime=consolidation(55%) | OUTLOOK: Consolidation with ensemble-detected support bounce (TP1=6": 2,
+   "[MA] regime=consolidation(70%) | OUTLOOK: Consolidation chop confirmed by 9-loss streak and flat pos": 2,
+   "[MA] regime=consolidation(60%) bias=bearish | OUTLOOK: Consolidation equilibrium favors SHORT if TP1": 3,
+   "[MA] regime=consolidation(50%) | OUTLOOK: Range sideways 4-12h; SHORT breakout possible if support b": 3,
+   "[MA] regime=range(60%) bias=bearish | OUTLOOK: Price ranging 1469-1603 band; ensemble SHORT thesis v": 1,
+   "[MA] regime=consolidation(65%) bias=bearish | OUTLOOK: HYPE consolidating under liquidation pressure": 1
+  }
+ },
+ "rules": [
+  {
+   "rule_id": "rule_1782943388_0",
+   "action": "boost",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "BTC",
+    "regime": "trend"
+   },
+   "hypothesis": "BTC performs strongly in trend regime",
+   "cf_matches_raw": 2975,
+   "cf_episodes": 57,
+   "raw": {
+    "saved_pct": 1418.67,
+    "missed_pct": 1349.44,
+    "net_pct": 69.24,
+    "losers": 1639,
+    "winners": 1251
+   },
+   "episode": {
+    "saved_pct": 35.16,
+    "missed_pct": 57.36,
+    "net_pct": -22.19,
+    "losers": 33,
+    "winners": 23,
+    "net_usd": -158.52,
+    "net_boost_pct": 22.19,
+    "net_boost_usd": 158.52
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 5.41,
+     "missed_pct": 12.19,
+     "net_pct": -6.78,
+     "losers": 4,
+     "winners": 6,
+     "net_usd": -48.44
+    },
+    "2026-06-13": {
+     "saved_pct": 25.6,
+     "missed_pct": 43.85,
+     "net_pct": -18.25,
+     "losers": 26,
+     "winners": 15,
+     "net_usd": -130.37
+    },
+    "2026-06-27": {
+     "saved_pct": 4.16,
+     "missed_pct": 1.32,
+     "net_pct": 2.84,
+     "losers": 3,
+     "winners": 2,
+     "net_usd": 20.29
+    }
+   },
+   "actual_trades_matched": 9,
+   "actual_trades_pnl_usd": -124.71,
+   "verdict": "DOLLAR-POSITIVE boost (keep)"
+  },
+  {
+   "rule_id": "rule_1782943853_1",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "HYPE",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "HYPE LONG in trend regime: 0% WR (0/6 trades). Either HYPE structurally short-biased in trends, or t",
+   "cf_matches_raw": 2639,
+   "cf_episodes": 70,
+   "raw": {
+    "saved_pct": 2609.03,
+    "missed_pct": 2427.02,
+    "net_pct": 182.01,
+    "losers": 1294,
+    "winners": 1345
+   },
+   "episode": {
+    "saved_pct": 101.03,
+    "missed_pct": 191.0,
+    "net_pct": -89.96,
+    "losers": 29,
+    "winners": 41,
+    "net_usd": -642.64
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 8.96,
+     "missed_pct": 0.0,
+     "net_pct": 8.96,
+     "losers": 3,
+     "winners": 0,
+     "net_usd": 64.0
+    },
+    "2026-06-13": {
+     "saved_pct": 84.57,
+     "missed_pct": 185.77,
+     "net_pct": -101.2,
+     "losers": 21,
+     "winners": 36,
+     "net_usd": -722.91
+    },
+    "2026-06-27": {
+     "saved_pct": 7.51,
+     "missed_pct": 5.23,
+     "net_pct": 2.28,
+     "losers": 5,
+     "winners": 5,
+     "net_usd": 16.27
+    }
+   },
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "DOLLAR-NEGATIVE if it blocks (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1782943853_2",
+   "action": "boost",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "HYPE",
+    "regime": "trend",
+    "side": "BUY"
+   },
+   "hypothesis": "HYPE LONG in trend has 0% WR edge (n=7) \u2014 implement veto rule or require consensus >0.5 to proceed",
+   "cf_matches_raw": 2206,
+   "cf_episodes": 80,
+   "raw": {
+    "saved_pct": 3813.01,
+    "missed_pct": 865.27,
+    "net_pct": 2947.73,
+    "losers": 1694,
+    "winners": 502
+   },
+   "episode": {
+    "saved_pct": 223.7,
+    "missed_pct": 66.85,
+    "net_pct": 156.85,
+    "losers": 63,
+    "winners": 17,
+    "net_usd": 1120.43,
+    "net_boost_pct": -156.85,
+    "net_boost_usd": -1120.43
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 14.7,
+     "missed_pct": 16.86,
+     "net_pct": -2.16,
+     "losers": 5,
+     "winners": 7,
+     "net_usd": -15.41
+    },
+    "2026-06-13": {
+     "saved_pct": 201.4,
+     "missed_pct": 42.13,
+     "net_pct": 159.27,
+     "losers": 53,
+     "winners": 8,
+     "net_usd": 1137.74
+    },
+    "2026-06-27": {
+     "saved_pct": 7.6,
+     "missed_pct": 7.87,
+     "net_pct": -0.27,
+     "losers": 5,
+     "winners": 2,
+     "net_usd": -1.91
+    }
+   },
+   "actual_trades_matched": 3,
+   "actual_trades_pnl_usd": -337.42,
+   "verdict": "DOLLAR-NEGATIVE boost (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1782943853_3",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer solo will remain <25% WR\u2014multi-agreement required for viability",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943853_4",
+   "action": "boost",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "regime": "trend",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer has zero edge in trending_bull (0% WR, 3 trades); disable in all trending regimes",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0,
+    "net_boost_pct": 0,
+    "net_boost_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_5",
+   "action": "veto",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "regime": "range",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer in range regimes has 11% WR vs 30% portfolio average. Implement hard veto at ensem",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_6",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "HYPE",
+    "regime": "range",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "Blacklist confidence_scorer on HYPE until WR recovers above 20%, or enforce minimum 2-strategy agree",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_7",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "HYPE",
+    "regime": "range",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "Implement hard gate-exit: confidence_scorer signals in range regimes must see volume breakout within",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_8",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "BTC",
+    "side": "SELL",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer underperforms on BTC shorts (18% WR vs 28% system baseline). Test: require 2-strat",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_9",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "Reject all unknown-regime entries at gate. On XRP, cap confidence_scorer position size to 0.5x (21% ",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_10",
+   "action": "boost",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "regime": "range",
+    "side": "SELL",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "Confidence_scorer SHORT in range has structural negative edge (11% WR); implement hard entry filter ",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0,
+    "net_boost_pct": 0,
+    "net_boost_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_11",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "BTC",
+    "regime": "consolidation"
+   },
+   "hypothesis": "BTC trades in consolidation with solo signals (confidence <65%) face >60% dead-capital risk. Require",
+   "cf_matches_raw": 3234,
+   "cf_episodes": 81,
+   "raw": {
+    "saved_pct": 1496.53,
+    "missed_pct": 1316.35,
+    "net_pct": 180.18,
+    "losers": 1876,
+    "winners": 1328
+   },
+   "episode": {
+    "saved_pct": 49.51,
+    "missed_pct": 46.98,
+    "net_pct": 2.53,
+    "losers": 50,
+    "winners": 31,
+    "net_usd": 18.06
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 4.27,
+     "missed_pct": 16.38,
+     "net_pct": -12.1,
+     "losers": 4,
+     "winners": 10,
+     "net_usd": -86.46
+    },
+    "2026-06-13": {
+     "saved_pct": 37.77,
+     "missed_pct": 27.91,
+     "net_pct": 9.87,
+     "losers": 40,
+     "winners": 17,
+     "net_usd": 70.48
+    },
+    "2026-06-27": {
+     "saved_pct": 7.46,
+     "missed_pct": 2.7,
+     "net_pct": 4.76,
+     "losers": 6,
+     "winners": 4,
+     "net_usd": 34.03
+    }
+   },
+   "actual_trades_matched": 12,
+   "actual_trades_pnl_usd": 32.42,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1782943854_12",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "consolidation"
+   },
+   "hypothesis": "Solo LLM signals in consolidation with <65% confidence have <25% WR. Require 2+ strategy agreement o",
+   "cf_matches_raw": 2752,
+   "cf_episodes": 81,
+   "raw": {
+    "saved_pct": 2307.68,
+    "missed_pct": 2540.97,
+    "net_pct": -233.29,
+    "losers": 1567,
+    "winners": 1091
+   },
+   "episode": {
+    "saved_pct": 85.28,
+    "missed_pct": 73.06,
+    "net_pct": 12.22,
+    "losers": 47,
+    "winners": 34,
+    "net_usd": 87.27
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 21.14,
+     "missed_pct": 20.94,
+     "net_pct": 0.19,
+     "losers": 11,
+     "winners": 12,
+     "net_usd": 1.37
+    },
+    "2026-06-13": {
+     "saved_pct": 54.87,
+     "missed_pct": 42.42,
+     "net_pct": 12.45,
+     "losers": 30,
+     "winners": 15,
+     "net_usd": 88.94
+    },
+    "2026-06-27": {
+     "saved_pct": 9.27,
+     "missed_pct": 9.69,
+     "net_pct": -0.43,
+     "losers": 6,
+     "winners": 7,
+     "net_usd": -3.04
+    }
+   },
+   "actual_trades_matched": 9,
+   "actual_trades_pnl_usd": -35.3,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1782943854_13",
+   "action": "veto",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "trend",
+    "side": "BUY"
+   },
+   "hypothesis": "SOL LONG in unknown regime has <20% WR vs >50% in trend/consolidation. Implement hard rule: block un",
+   "cf_matches_raw": 2727,
+   "cf_episodes": 29,
+   "raw": {
+    "saved_pct": 1881.59,
+    "missed_pct": 1409.76,
+    "net_pct": 471.83,
+    "losers": 1653,
+    "winners": 1074
+   },
+   "episode": {
+    "saved_pct": 25.68,
+    "missed_pct": 22.73,
+    "net_pct": 2.96,
+    "losers": 18,
+    "winners": 11,
+    "net_usd": 21.11
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 1.12,
+     "missed_pct": 2.29,
+     "net_pct": -1.18,
+     "losers": 2,
+     "winners": 2,
+     "net_usd": -8.41
+    },
+    "2026-06-13": {
+     "saved_pct": 20.68,
+     "missed_pct": 17.99,
+     "net_pct": 2.69,
+     "losers": 14,
+     "winners": 8,
+     "net_usd": 19.22
+    },
+    "2026-06-27": {
+     "saved_pct": 3.89,
+     "missed_pct": 2.45,
+     "net_pct": 1.44,
+     "losers": 2,
+     "winners": 1,
+     "net_usd": 10.3
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -31.0,
+   "verdict": "DOLLAR-POSITIVE (keep)"
+  },
+  {
+   "rule_id": "rule_1782943854_14",
+   "action": "veto",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "side": "BUY",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "SOL LONG in unknown regime should be hard-blocked at entry gate. Prior rule 'require regime certaint",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_15",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "BTC",
+    "regime": "trend",
+    "side": "SELL",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "Implement gate: reject confidence_scorer BTC SHORT in unknown/trend/range regimes. Only enter with 2",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_16",
+   "action": "boost",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "BTC",
+    "side": "SELL",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "Gating layer doesn't check strategy-regime-side edge stats. Weak combos (confidence_scorer SHORT BTC",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0,
+    "net_boost_pct": 0,
+    "net_boost_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_17",
+   "action": "boost",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "HYPE",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer has no edge on HYPE (9% WR, n=11). Gating this combo would have prevented $-565 in",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0,
+    "net_boost_pct": 0,
+    "net_boost_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_18",
+   "action": "veto",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer on HYPE is a decay signal (9% WR). Entry gate must veto solo HYPE signals or requi",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_19",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "regime": "trend",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "LLM_FIRST entries in 'unknown' regime frequently misclassify actual market regime as trend. Validate",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_20",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "trend",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer requires regime=trend OR regime=unknown; consolidation + range have <35% WR",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943854_21",
+   "action": "veto",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "trend",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer solo in ambiguous consolidation has <35% true WR because regime drifts to trend (0",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943855_22",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "consolidation"
+   },
+   "hypothesis": "Consolidation regime requires 2+ strategy agreement to proceed. Test: gate all single-signal consoli",
+   "cf_matches_raw": 2752,
+   "cf_episodes": 81,
+   "raw": {
+    "saved_pct": 2307.68,
+    "missed_pct": 2540.97,
+    "net_pct": -233.29,
+    "losers": 1567,
+    "winners": 1091
+   },
+   "episode": {
+    "saved_pct": 85.28,
+    "missed_pct": 73.06,
+    "net_pct": 12.22,
+    "losers": 47,
+    "winners": 34,
+    "net_usd": 87.27
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 21.14,
+     "missed_pct": 20.94,
+     "net_pct": 0.19,
+     "losers": 11,
+     "winners": 12,
+     "net_usd": 1.37
+    },
+    "2026-06-13": {
+     "saved_pct": 54.87,
+     "missed_pct": 42.42,
+     "net_pct": 12.45,
+     "losers": 30,
+     "winners": 15,
+     "net_usd": 88.94
+    },
+    "2026-06-27": {
+     "saved_pct": 9.27,
+     "missed_pct": 9.69,
+     "net_pct": -0.43,
+     "losers": 6,
+     "winners": 7,
+     "net_usd": -3.04
+    }
+   },
+   "actual_trades_matched": 9,
+   "actual_trades_pnl_usd": -35.3,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1782943855_23",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "consolidation",
+    "side": "BUY"
+   },
+   "hypothesis": "Consolidation LONG entries with 1-strategy agreement have low regime fit (<0.5) and trigger exit inv",
+   "cf_matches_raw": 1625,
+   "cf_episodes": 37,
+   "raw": {
+    "saved_pct": 1545.29,
+    "missed_pct": 1416.44,
+    "net_pct": 128.85,
+    "losers": 1096,
+    "winners": 526
+   },
+   "episode": {
+    "saved_pct": 42.7,
+    "missed_pct": 25.58,
+    "net_pct": 17.13,
+    "losers": 26,
+    "winners": 11,
+    "net_usd": 122.35
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 6.54,
+     "missed_pct": 4.49,
+     "net_pct": 2.05,
+     "losers": 5,
+     "winners": 2,
+     "net_usd": 14.65
+    },
+    "2026-06-13": {
+     "saved_pct": 31.03,
+     "missed_pct": 14.13,
+     "net_pct": 16.9,
+     "losers": 18,
+     "winners": 5,
+     "net_usd": 120.71
+    },
+    "2026-06-27": {
+     "saved_pct": 5.14,
+     "missed_pct": 6.96,
+     "net_pct": -1.82,
+     "losers": 3,
+     "winners": 4,
+     "net_usd": -13.01
+    }
+   },
+   "actual_trades_matched": 2,
+   "actual_trades_pnl_usd": 0.4,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1782943855_24",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "HYPE",
+    "regime": "trend",
+    "strategy": "regime_trend"
+   },
+   "hypothesis": "Monitor regime shifts during holds. If regime shifts to one where setup has 0% historical WR, exit w",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1782943855_25",
+   "action": "penalize",
+   "active": true,
+   "provenance": "current",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "consolidation",
+    "side": "BUY"
+   },
+   "hypothesis": "Consolidation LONGs with MFE=0 at 1h mark lack thesis conviction. Implement mechanical rule: if MFE=",
+   "cf_matches_raw": 1625,
+   "cf_episodes": 37,
+   "raw": {
+    "saved_pct": 1545.29,
+    "missed_pct": 1416.44,
+    "net_pct": 128.85,
+    "losers": 1096,
+    "winners": 526
+   },
+   "episode": {
+    "saved_pct": 42.7,
+    "missed_pct": 25.58,
+    "net_pct": 17.13,
+    "losers": 26,
+    "winners": 11,
+    "net_usd": 122.35
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 6.54,
+     "missed_pct": 4.49,
+     "net_pct": 2.05,
+     "losers": 5,
+     "winners": 2,
+     "net_usd": 14.65
+    },
+    "2026-06-13": {
+     "saved_pct": 31.03,
+     "missed_pct": 14.13,
+     "net_pct": 16.9,
+     "losers": 18,
+     "winners": 5,
+     "net_usd": 120.71
+    },
+    "2026-06-27": {
+     "saved_pct": 5.14,
+     "missed_pct": 6.96,
+     "net_pct": -1.82,
+     "losers": 3,
+     "winners": 4,
+     "net_usd": -13.01
+    }
+   },
+   "actual_trades_matched": 2,
+   "actual_trades_pnl_usd": 0.4,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1777922205_0",
+   "action": "boost",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "regime": "trend"
+   },
+   "hypothesis": "BTC performs strongly in trend regime",
+   "cf_matches_raw": 2975,
+   "cf_episodes": 57,
+   "raw": {
+    "saved_pct": 1418.67,
+    "missed_pct": 1349.44,
+    "net_pct": 69.24,
+    "losers": 1639,
+    "winners": 1251
+   },
+   "episode": {
+    "saved_pct": 35.16,
+    "missed_pct": 57.36,
+    "net_pct": -22.19,
+    "losers": 33,
+    "winners": 23,
+    "net_usd": -158.52,
+    "net_boost_pct": 22.19,
+    "net_boost_usd": 158.52
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 5.41,
+     "missed_pct": 12.19,
+     "net_pct": -6.78,
+     "losers": 4,
+     "winners": 6,
+     "net_usd": -48.44
+    },
+    "2026-06-13": {
+     "saved_pct": 25.6,
+     "missed_pct": 43.85,
+     "net_pct": -18.25,
+     "losers": 26,
+     "winners": 15,
+     "net_usd": -130.37
+    },
+    "2026-06-27": {
+     "saved_pct": 4.16,
+     "missed_pct": 1.32,
+     "net_pct": 2.84,
+     "losers": 3,
+     "winners": 2,
+     "net_usd": 20.29
+    }
+   },
+   "actual_trades_matched": 9,
+   "actual_trades_pnl_usd": -124.71,
+   "verdict": "DOLLAR-POSITIVE boost (keep)"
+  },
+  {
+   "rule_id": "hype_long_veto_v1",
+   "action": "veto",
+   "active": false,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "HYPE",
+    "side": "BUY"
+   },
+   "hypothesis": "HYPE BUY is a net-negative setup: 23% WR on 35 live trades, -$77.26 total loss",
+   "cf_matches_raw": 5833,
+   "cf_episodes": 189,
+   "raw": {
+    "saved_pct": 9586.05,
+    "missed_pct": 3348.93,
+    "net_pct": 6237.11,
+    "losers": 3916,
+    "winners": 1795
+   },
+   "episode": {
+    "saved_pct": 412.05,
+    "missed_pct": 257.98,
+    "net_pct": 154.08,
+    "losers": 120,
+    "winners": 69,
+    "net_usd": 1100.63
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 34.29,
+     "missed_pct": 25.46,
+     "net_pct": 8.83,
+     "losers": 13,
+     "winners": 14,
+     "net_usd": 63.09
+    },
+    "2026-06-13": {
+     "saved_pct": 362.81,
+     "missed_pct": 199.03,
+     "net_pct": 163.78,
+     "losers": 100,
+     "winners": 48,
+     "net_usd": 1169.97
+    },
+    "2026-06-27": {
+     "saved_pct": 14.95,
+     "missed_pct": 33.49,
+     "net_pct": -18.54,
+     "losers": 7,
+     "winners": 7,
+     "net_usd": -132.43
+    }
+   },
+   "actual_trades_matched": 9,
+   "actual_trades_pnl_usd": -591.9,
+   "verdict": "DOLLAR-POSITIVE (keep)"
+  },
+  {
+   "rule_id": "sol_long_veto_v1",
+   "action": "veto",
+   "active": false,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "SOL",
+    "side": "BUY"
+   },
+   "hypothesis": "SOL BUY is a net-negative setup: 24% WR on 34 live trades, -$21.89 total loss",
+   "cf_matches_raw": 5155,
+   "cf_episodes": 57,
+   "raw": {
+    "saved_pct": 4279.43,
+    "missed_pct": 3269.08,
+    "net_pct": 1010.34,
+    "losers": 3326,
+    "winners": 1826
+   },
+   "episode": {
+    "saved_pct": 61.9,
+    "missed_pct": 36.3,
+    "net_pct": 25.6,
+    "losers": 38,
+    "winners": 19,
+    "net_usd": 182.9
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 6.24,
+     "missed_pct": 4.79,
+     "net_pct": 1.45,
+     "losers": 5,
+     "winners": 2,
+     "net_usd": 10.39
+    },
+    "2026-06-13": {
+     "saved_pct": 44.02,
+     "missed_pct": 22.29,
+     "net_pct": 21.73,
+     "losers": 27,
+     "winners": 11,
+     "net_usd": 155.25
+    },
+    "2026-06-27": {
+     "saved_pct": 11.64,
+     "missed_pct": 9.22,
+     "net_pct": 2.42,
+     "losers": 6,
+     "winners": 6,
+     "net_usd": 17.26
+    }
+   },
+   "actual_trades_matched": 4,
+   "actual_trades_pnl_usd": -35.51,
+   "verdict": "DOLLAR-POSITIVE (keep)"
+  },
+  {
+   "rule_id": "night_session_block_v1",
+   "action": "veto",
+   "active": false,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "hour_utc_min": 0,
+    "hour_utc_max": 6
+   },
+   "hypothesis": "Night session 00:00-06:00 UTC yields only 19% WR on 27 live trades, -$136.83 total loss",
+   "cf_matches_raw": 10252,
+   "cf_episodes": 190,
+   "raw": {
+    "saved_pct": 9046.32,
+    "missed_pct": 8760.86,
+    "net_pct": 285.46,
+    "losers": 6242,
+    "winners": 3759
+   },
+   "episode": {
+    "saved_pct": 221.69,
+    "missed_pct": 198.68,
+    "net_pct": 23.01,
+    "losers": 109,
+    "winners": 81,
+    "net_usd": 164.39
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 54.19,
+     "missed_pct": 117.35,
+     "net_pct": -63.16,
+     "losers": 23,
+     "winners": 32,
+     "net_usd": -451.18
+    },
+    "2026-06-13": {
+     "saved_pct": 127.44,
+     "missed_pct": 62.26,
+     "net_pct": 65.18,
+     "losers": 58,
+     "winners": 36,
+     "net_usd": 465.61
+    },
+    "2026-06-27": {
+     "saved_pct": 40.06,
+     "missed_pct": 19.06,
+     "net_pct": 20.99,
+     "losers": 28,
+     "winners": 13,
+     "net_usd": 149.97
+    }
+   },
+   "actual_trades_matched": 21,
+   "actual_trades_pnl_usd": 375.46,
+   "verdict": "DOLLAR-POSITIVE (keep)"
+  },
+  {
+   "rule_id": "illiquid_regime_penalize_v1",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "regime": "illiquid"
+   },
+   "hypothesis": "Illiquid regime yields only 28% WR on 57 trades with 71.9% noise-stop rate",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 2,
+   "actual_trades_pnl_usd": 18.7,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "hype_short_veto_v1",
+   "action": "veto",
+   "active": false,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "HYPE",
+    "side": "SELL"
+   },
+   "hypothesis": "HYPE SELL is net-negative EV: -$16.65 per trade on 239 live trades",
+   "cf_matches_raw": 5323,
+   "cf_episodes": 190,
+   "raw": {
+    "saved_pct": 6297.92,
+    "missed_pct": 6768.79,
+    "net_pct": -470.87,
+    "losers": 2602,
+    "winners": 2676
+   },
+   "episode": {
+    "saved_pct": 401.88,
+    "missed_pct": 470.18,
+    "net_pct": -68.3,
+    "losers": 97,
+    "winners": 93,
+    "net_usd": -487.88
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 53.93,
+     "missed_pct": 52.34,
+     "net_pct": 1.59,
+     "losers": 14,
+     "winners": 7,
+     "net_usd": 11.37
+    },
+    "2026-06-13": {
+     "saved_pct": 333.93,
+     "missed_pct": 414.02,
+     "net_pct": -80.09,
+     "losers": 76,
+     "winners": 80,
+     "net_usd": -572.09
+    },
+    "2026-06-27": {
+     "saved_pct": 14.01,
+     "missed_pct": 3.82,
+     "net_pct": 10.2,
+     "losers": 7,
+     "winners": 6,
+     "net_usd": 72.84
+    }
+   },
+   "actual_trades_matched": 11,
+   "actual_trades_pnl_usd": 17.41,
+   "verdict": "DOLLAR-NEGATIVE (retire candidate)"
+  },
+  {
+   "rule_id": "btc_short_conf70_80_penalize_v1",
+   "action": "penalize",
+   "active": false,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "side": "SELL",
+    "confidence_min": 70.0,
+    "confidence_max": 80.0
+   },
+   "hypothesis": "BTC SELL at 70-79% confidence is the single largest loss bucket across all setups",
+   "cf_matches_raw": 120,
+   "cf_episodes": 15,
+   "raw": {
+    "saved_pct": 45.18,
+    "missed_pct": 103.15,
+    "net_pct": -57.97,
+    "losers": 46,
+    "winners": 74
+   },
+   "episode": {
+    "saved_pct": 8.65,
+    "missed_pct": 7.34,
+    "net_pct": 1.32,
+    "losers": 8,
+    "winners": 7,
+    "net_usd": 9.4
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 2.13,
+     "missed_pct": 3.4,
+     "net_pct": -1.27,
+     "losers": 2,
+     "winners": 3,
+     "net_usd": -9.11
+    },
+    "2026-06-13": {
+     "saved_pct": 5.31,
+     "missed_pct": 3.93,
+     "net_pct": 1.38,
+     "losers": 5,
+     "winners": 4,
+     "net_usd": 9.83
+    },
+    "2026-06-27": {
+     "saved_pct": 1.21,
+     "missed_pct": 0.0,
+     "net_pct": 1.21,
+     "losers": 1,
+     "winners": 0,
+     "net_usd": 8.67
+    }
+   },
+   "actual_trades_matched": 3,
+   "actual_trades_pnl_usd": -159.7,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "btc_short_90plus_boost_v1",
+   "action": "boost",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "side": "SELL",
+    "confidence_min": 90.0
+   },
+   "hypothesis": "BTC SELL at 90%+ confidence is the #1 edge: 67% WR, +$102.92/trade EV on 43 trades. Strongly contrad",
+   "cf_matches_raw": 3,
+   "cf_episodes": 2,
+   "raw": {
+    "saved_pct": 8.37,
+    "missed_pct": 0,
+    "net_pct": 8.37,
+    "losers": 3,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 5.37,
+    "missed_pct": 0,
+    "net_pct": 5.37,
+    "losers": 2,
+    "winners": 0,
+    "net_usd": 38.33,
+    "net_boost_pct": -5.37,
+    "net_boost_usd": -38.33
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 2.37,
+     "missed_pct": 0.0,
+     "net_pct": 2.37,
+     "losers": 1,
+     "winners": 0,
+     "net_usd": 16.9
+    },
+    "2026-06-27": {
+     "saved_pct": 3.0,
+     "missed_pct": 0.0,
+     "net_pct": 3.0,
+     "losers": 1,
+     "winners": 0,
+     "net_usd": 21.43
+    }
+   },
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "eth_trending_regime_boost_v1",
+   "action": "boost",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "ETH",
+    "regime": "trend"
+   },
+   "hypothesis": "ETH in TRENDING regime = 71% WR, +$9.49/trade EV on 7 live trades. Strongest cross-regime edge after",
+   "cf_matches_raw": 3014,
+   "cf_episodes": 39,
+   "raw": {
+    "saved_pct": 2396.2,
+    "missed_pct": 653.39,
+    "net_pct": 1742.81,
+    "losers": 2074,
+    "winners": 727
+   },
+   "episode": {
+    "saved_pct": 37.08,
+    "missed_pct": 18.5,
+    "net_pct": 18.58,
+    "losers": 24,
+    "winners": 14,
+    "net_usd": 132.7,
+    "net_boost_pct": -18.58,
+    "net_boost_usd": -132.7
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 6.66,
+     "missed_pct": 2.64,
+     "net_pct": 4.01,
+     "losers": 4,
+     "winners": 1,
+     "net_usd": 28.66
+    },
+    "2026-06-13": {
+     "saved_pct": 24.07,
+     "missed_pct": 15.26,
+     "net_pct": 8.82,
+     "losers": 17,
+     "winners": 11,
+     "net_usd": 62.98
+    },
+    "2026-06-27": {
+     "saved_pct": 6.35,
+     "missed_pct": 0.61,
+     "net_pct": 5.75,
+     "losers": 3,
+     "winners": 2,
+     "net_usd": 41.06
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -0.92,
+   "verdict": "DOLLAR-NEGATIVE boost (retire candidate)"
+  },
+  {
+   "rule_id": "conf_floor_70_v1",
+   "action": "penalize",
+   "active": false,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "confidence_min": 60.0,
+    "confidence_max": 70.0
+   },
+   "hypothesis": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst per",
+   "cf_matches_raw": 9344,
+   "cf_episodes": 433,
+   "raw": {
+    "saved_pct": 8245.36,
+    "missed_pct": 10830.85,
+    "net_pct": -2585.5,
+    "losers": 4737,
+    "winners": 4258
+   },
+   "episode": {
+    "saved_pct": 615.11,
+    "missed_pct": 631.17,
+    "net_pct": -16.06,
+    "losers": 244,
+    "winners": 188,
+    "net_usd": -114.74
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 79.5,
+     "missed_pct": 188.1,
+     "net_pct": -108.6,
+     "losers": 36,
+     "winners": 53,
+     "net_usd": -775.76
+    },
+    "2026-06-13": {
+     "saved_pct": 480.28,
+     "missed_pct": 415.04,
+     "net_pct": 65.24,
+     "losers": 173,
+     "winners": 111,
+     "net_usd": 466.01
+    },
+    "2026-06-27": {
+     "saved_pct": 55.33,
+     "missed_pct": 28.03,
+     "net_pct": 27.3,
+     "losers": 35,
+     "winners": 24,
+     "net_usd": 195.01
+    }
+   },
+   "actual_trades_matched": 49,
+   "actual_trades_pnl_usd": -381.72,
+   "verdict": "DOLLAR-NEGATIVE if it blocks (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1780756282_10",
+   "action": "penalize",
+   "active": false,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "side": "SELL"
+   },
+   "hypothesis": "Illiquid regimes eliminate false breakouts. BTC SHORT illiquid + high-conf (85%+) should achieve 70%",
+   "cf_matches_raw": 5140,
+   "cf_episodes": 59,
+   "raw": {
+    "saved_pct": 2343.26,
+    "missed_pct": 2410.35,
+    "net_pct": -67.08,
+    "losers": 2822,
+    "winners": 2203
+   },
+   "episode": {
+    "saved_pct": 40.01,
+    "missed_pct": 82.78,
+    "net_pct": -42.77,
+    "losers": 26,
+    "winners": 33,
+    "net_usd": -305.49
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 5.95,
+     "missed_pct": 21.21,
+     "net_pct": -15.26,
+     "losers": 3,
+     "winners": 8,
+     "net_usd": -109.01
+    },
+    "2026-06-13": {
+     "saved_pct": 21.69,
+     "missed_pct": 60.21,
+     "net_pct": -38.52,
+     "losers": 17,
+     "winners": 23,
+     "net_usd": -275.15
+    },
+    "2026-06-27": {
+     "saved_pct": 12.37,
+     "missed_pct": 1.36,
+     "net_pct": 11.01,
+     "losers": 6,
+     "winners": 2,
+     "net_usd": 78.67
+    }
+   },
+   "actual_trades_matched": 22,
+   "actual_trades_pnl_usd": 331.77,
+   "verdict": "DOLLAR-NEGATIVE if it blocks (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1780907413_11",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "ETH",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "SHORT_ETH only viable in consolidation/range regime; avoid uptrend/rally contexts where counter-thes",
+   "cf_matches_raw": 2155,
+   "cf_episodes": 25,
+   "raw": {
+    "saved_pct": 1678.98,
+    "missed_pct": 550.06,
+    "net_pct": 1128.92,
+    "losers": 1322,
+    "winners": 620
+   },
+   "episode": {
+    "saved_pct": 24.85,
+    "missed_pct": 13.34,
+    "net_pct": 11.51,
+    "losers": 14,
+    "winners": 10,
+    "net_usd": 82.2
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 5.49,
+     "missed_pct": 0.0,
+     "net_pct": 5.49,
+     "losers": 2,
+     "winners": 0,
+     "net_usd": 39.21
+    },
+    "2026-06-13": {
+     "saved_pct": 15.15,
+     "missed_pct": 12.74,
+     "net_pct": 2.42,
+     "losers": 10,
+     "winners": 8,
+     "net_usd": 17.27
+    },
+    "2026-06-27": {
+     "saved_pct": 4.21,
+     "missed_pct": 0.61,
+     "net_pct": 3.6,
+     "losers": 2,
+     "winners": 2,
+     "net_usd": 25.72
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -0.92,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1781025758_12",
+   "action": "veto",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "regime": "consolidation",
+    "side": "SELL"
+   },
+   "hypothesis": "Risk gate rule: auto-reject if confidence\u22640.0 OR (symbol==BTC AND regime==consolidation AND side==SH",
+   "cf_matches_raw": 2045,
+   "cf_episodes": 41,
+   "raw": {
+    "saved_pct": 806.73,
+    "missed_pct": 873.87,
+    "net_pct": -67.14,
+    "losers": 1109,
+    "winners": 906
+   },
+   "episode": {
+    "saved_pct": 20.64,
+    "missed_pct": 38.28,
+    "net_pct": -17.64,
+    "losers": 21,
+    "winners": 20,
+    "net_usd": -126.0
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 3.58,
+     "missed_pct": 13.2,
+     "net_pct": -9.62,
+     "losers": 2,
+     "winners": 6,
+     "net_usd": -68.69
+    },
+    "2026-06-13": {
+     "saved_pct": 13.83,
+     "missed_pct": 22.52,
+     "net_pct": -8.69,
+     "losers": 16,
+     "winners": 11,
+     "net_usd": -62.09
+    },
+    "2026-06-27": {
+     "saved_pct": 3.23,
+     "missed_pct": 2.56,
+     "net_pct": 0.67,
+     "losers": 3,
+     "winners": 3,
+     "net_usd": 4.78
+    }
+   },
+   "actual_trades_matched": 8,
+   "actual_trades_pnl_usd": 64.73,
+   "verdict": "DOLLAR-NEGATIVE (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1781029979_13",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "ETH",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "SHORT_ETH restricted to range/consolidation regimes (0% WR in trending). Test: measure SHORT_ETH WR ",
+   "cf_matches_raw": 2155,
+   "cf_episodes": 25,
+   "raw": {
+    "saved_pct": 1678.98,
+    "missed_pct": 550.06,
+    "net_pct": 1128.92,
+    "losers": 1322,
+    "winners": 620
+   },
+   "episode": {
+    "saved_pct": 24.85,
+    "missed_pct": 13.34,
+    "net_pct": 11.51,
+    "losers": 14,
+    "winners": 10,
+    "net_usd": 82.2
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 5.49,
+     "missed_pct": 0.0,
+     "net_pct": 5.49,
+     "losers": 2,
+     "winners": 0,
+     "net_usd": 39.21
+    },
+    "2026-06-13": {
+     "saved_pct": 15.15,
+     "missed_pct": 12.74,
+     "net_pct": 2.42,
+     "losers": 10,
+     "winners": 8,
+     "net_usd": 17.27
+    },
+    "2026-06-27": {
+     "saved_pct": 4.21,
+     "missed_pct": 0.61,
+     "net_pct": 3.6,
+     "losers": 2,
+     "winners": 2,
+     "net_usd": 25.72
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -0.92,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1781029979_14",
+   "action": "veto",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "consolidation",
+    "side": "BUY"
+   },
+   "hypothesis": "Block confidence\u22640.1 entries via gating to prevent SOL LONG losses in consolidation. Validate gate r",
+   "cf_matches_raw": 1625,
+   "cf_episodes": 37,
+   "raw": {
+    "saved_pct": 1545.29,
+    "missed_pct": 1416.44,
+    "net_pct": 128.85,
+    "losers": 1096,
+    "winners": 526
+   },
+   "episode": {
+    "saved_pct": 42.7,
+    "missed_pct": 25.58,
+    "net_pct": 17.13,
+    "losers": 26,
+    "winners": 11,
+    "net_usd": 122.35
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 6.54,
+     "missed_pct": 4.49,
+     "net_pct": 2.05,
+     "losers": 5,
+     "winners": 2,
+     "net_usd": 14.65
+    },
+    "2026-06-13": {
+     "saved_pct": 31.03,
+     "missed_pct": 14.13,
+     "net_pct": 16.9,
+     "losers": 18,
+     "winners": 5,
+     "net_usd": 120.71
+    },
+    "2026-06-27": {
+     "saved_pct": 5.14,
+     "missed_pct": 6.96,
+     "net_pct": -1.82,
+     "losers": 3,
+     "winners": 4,
+     "net_usd": -13.01
+    }
+   },
+   "actual_trades_matched": 2,
+   "actual_trades_pnl_usd": 0.4,
+   "verdict": "DOLLAR-POSITIVE (keep)"
+  },
+  {
+   "rule_id": "rule_1781042973_15",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "regime": "range",
+    "side": "BUY"
+   },
+   "hypothesis": "BTC LONG thesis collapse \u2192 exit always correct. Survival depends on position size: <3.0x survives ra",
+   "cf_matches_raw": 1189,
+   "cf_episodes": 40,
+   "raw": {
+    "saved_pct": 689.8,
+    "missed_pct": 442.47,
+    "net_pct": 247.33,
+    "losers": 767,
+    "winners": 422
+   },
+   "episode": {
+    "saved_pct": 28.87,
+    "missed_pct": 8.7,
+    "net_pct": 20.17,
+    "losers": 29,
+    "winners": 11,
+    "net_usd": 144.06
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 0.69,
+     "missed_pct": 3.18,
+     "net_pct": -2.49,
+     "losers": 2,
+     "winners": 4,
+     "net_usd": -17.77
+    },
+    "2026-06-13": {
+     "saved_pct": 23.94,
+     "missed_pct": 5.38,
+     "net_pct": 18.56,
+     "losers": 24,
+     "winners": 6,
+     "net_usd": 132.57
+    },
+    "2026-06-27": {
+     "saved_pct": 4.23,
+     "missed_pct": 0.14,
+     "net_pct": 4.1,
+     "losers": 3,
+     "winners": 1,
+     "net_usd": 29.25
+    }
+   },
+   "actual_trades_matched": 4,
+   "actual_trades_pnl_usd": -32.31,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1781080478_16",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "Regime invalidation (trending\u2192range) exit trigger on high-leverage shorts (>5x, 4-6h holds) prevents",
+   "cf_matches_raw": 9934,
+   "cf_episodes": 174,
+   "raw": {
+    "saved_pct": 7924.27,
+    "missed_pct": 5368.93,
+    "net_pct": 2555.35,
+    "losers": 5575,
+    "winners": 3717
+   },
+   "episode": {
+    "saved_pct": 188.95,
+    "missed_pct": 304.58,
+    "net_pct": -115.63,
+    "losers": 84,
+    "winners": 87,
+    "net_usd": -825.98
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 19.0,
+     "missed_pct": 38.86,
+     "net_pct": -19.86,
+     "losers": 7,
+     "winners": 9,
+     "net_usd": -141.87
+    },
+    "2026-06-13": {
+     "saved_pct": 133.66,
+     "missed_pct": 258.27,
+     "net_pct": -124.61,
+     "losers": 55,
+     "winners": 67,
+     "net_usd": -890.16
+    },
+    "2026-06-27": {
+     "saved_pct": 36.3,
+     "missed_pct": 7.45,
+     "net_pct": 28.84,
+     "losers": 22,
+     "winners": 11,
+     "net_usd": 206.05
+    }
+   },
+   "actual_trades_matched": 10,
+   "actual_trades_pnl_usd": -124.31,
+   "verdict": "DOLLAR-NEGATIVE if it blocks (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1781637145_17",
+   "action": "boost",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "SOL SHORT edge is robust to low confidence; conservative sizing (2x) + long hold (6h) capture trend",
+   "cf_matches_raw": 1629,
+   "cf_episodes": 33,
+   "raw": {
+    "saved_pct": 1663.53,
+    "missed_pct": 1138.95,
+    "net_pct": 524.58,
+    "losers": 983,
+    "winners": 530
+   },
+   "episode": {
+    "saved_pct": 30.65,
+    "missed_pct": 49.52,
+    "net_pct": -18.87,
+    "losers": 16,
+    "winners": 17,
+    "net_usd": -134.82,
+    "net_boost_pct": 18.87,
+    "net_boost_usd": 134.82
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 0.0,
+     "missed_pct": 28.42,
+     "net_pct": -28.42,
+     "losers": 0,
+     "winners": 5,
+     "net_usd": -202.98
+    },
+    "2026-06-13": {
+     "saved_pct": 14.56,
+     "missed_pct": 20.98,
+     "net_pct": -6.42,
+     "losers": 8,
+     "winners": 11,
+     "net_usd": -45.84
+    },
+    "2026-06-27": {
+     "saved_pct": 16.09,
+     "missed_pct": 0.13,
+     "net_pct": 15.96,
+     "losers": 8,
+     "winners": 1,
+     "net_usd": 114.0
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -3.93,
+   "verdict": "DOLLAR-POSITIVE boost (keep)"
+  },
+  {
+   "rule_id": "rule_1781637145_18",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "consolidation",
+    "side": "SELL"
+   },
+   "hypothesis": "Entry gate auto-rejects SHORT if regime=consolidation OR confidence<0.1. Measure WR lift.",
+   "cf_matches_raw": 1127,
+   "cf_episodes": 44,
+   "raw": {
+    "saved_pct": 762.4,
+    "missed_pct": 1124.53,
+    "net_pct": -362.14,
+    "losers": 471,
+    "winners": 565
+   },
+   "episode": {
+    "saved_pct": 42.57,
+    "missed_pct": 47.48,
+    "net_pct": -4.91,
+    "losers": 21,
+    "winners": 23,
+    "net_usd": -35.08
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 14.6,
+     "missed_pct": 16.46,
+     "net_pct": -1.86,
+     "losers": 6,
+     "winners": 10,
+     "net_usd": -13.28
+    },
+    "2026-06-13": {
+     "saved_pct": 23.84,
+     "missed_pct": 28.29,
+     "net_pct": -4.45,
+     "losers": 12,
+     "winners": 10,
+     "net_usd": -31.77
+    },
+    "2026-06-27": {
+     "saved_pct": 4.13,
+     "missed_pct": 2.74,
+     "net_pct": 1.4,
+     "losers": 3,
+     "winners": 3,
+     "net_usd": 9.97
+    }
+   },
+   "actual_trades_matched": 7,
+   "actual_trades_pnl_usd": -35.7,
+   "verdict": "DOLLAR-NEGATIVE if it blocks (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1781637145_19",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "range"
+   },
+   "hypothesis": "Gate rule: reject confidence<10 OR regime in [consolidation,range] before order execution. Confidenc",
+   "cf_matches_raw": 2752,
+   "cf_episodes": 81,
+   "raw": {
+    "saved_pct": 2307.68,
+    "missed_pct": 2540.97,
+    "net_pct": -233.29,
+    "losers": 1567,
+    "winners": 1091
+   },
+   "episode": {
+    "saved_pct": 85.28,
+    "missed_pct": 73.06,
+    "net_pct": 12.22,
+    "losers": 47,
+    "winners": 34,
+    "net_usd": 87.27
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 21.14,
+     "missed_pct": 20.94,
+     "net_pct": 0.19,
+     "losers": 11,
+     "winners": 12,
+     "net_usd": 1.37
+    },
+    "2026-06-13": {
+     "saved_pct": 54.87,
+     "missed_pct": 42.42,
+     "net_pct": 12.45,
+     "losers": 30,
+     "winners": 15,
+     "net_usd": 88.94
+    },
+    "2026-06-27": {
+     "saved_pct": 9.27,
+     "missed_pct": 9.69,
+     "net_pct": -0.43,
+     "losers": 6,
+     "winners": 7,
+     "net_usd": -3.04
+    }
+   },
+   "actual_trades_matched": 9,
+   "actual_trades_pnl_usd": -35.3,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1781654767_20",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "ETH",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "ETH SHORT in relief bounce regime has inverted EV (fee drag 3.5% > TP 1.5%). Require: downtrend conf",
+   "cf_matches_raw": 2155,
+   "cf_episodes": 25,
+   "raw": {
+    "saved_pct": 1678.98,
+    "missed_pct": 550.06,
+    "net_pct": 1128.92,
+    "losers": 1322,
+    "winners": 620
+   },
+   "episode": {
+    "saved_pct": 24.85,
+    "missed_pct": 13.34,
+    "net_pct": 11.51,
+    "losers": 14,
+    "winners": 10,
+    "net_usd": 82.2
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 5.49,
+     "missed_pct": 0.0,
+     "net_pct": 5.49,
+     "losers": 2,
+     "winners": 0,
+     "net_usd": 39.21
+    },
+    "2026-06-13": {
+     "saved_pct": 15.15,
+     "missed_pct": 12.74,
+     "net_pct": 2.42,
+     "losers": 10,
+     "winners": 8,
+     "net_usd": 17.27
+    },
+    "2026-06-27": {
+     "saved_pct": 4.21,
+     "missed_pct": 0.61,
+     "net_pct": 3.6,
+     "losers": 2,
+     "winners": 2,
+     "net_usd": 25.72
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -0.92,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1781693230_21",
+   "action": "boost",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "ETH",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "ETH SHORT has profitable edge in range regime with 8h+ hold time requirement. Validate separately fr",
+   "cf_matches_raw": 2155,
+   "cf_episodes": 25,
+   "raw": {
+    "saved_pct": 1678.98,
+    "missed_pct": 550.06,
+    "net_pct": 1128.92,
+    "losers": 1322,
+    "winners": 620
+   },
+   "episode": {
+    "saved_pct": 24.85,
+    "missed_pct": 13.34,
+    "net_pct": 11.51,
+    "losers": 14,
+    "winners": 10,
+    "net_usd": 82.2,
+    "net_boost_pct": -11.51,
+    "net_boost_usd": -82.2
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 5.49,
+     "missed_pct": 0.0,
+     "net_pct": 5.49,
+     "losers": 2,
+     "winners": 0,
+     "net_usd": 39.21
+    },
+    "2026-06-13": {
+     "saved_pct": 15.15,
+     "missed_pct": 12.74,
+     "net_pct": 2.42,
+     "losers": 10,
+     "winners": 8,
+     "net_usd": 17.27
+    },
+    "2026-06-27": {
+     "saved_pct": 4.21,
+     "missed_pct": 0.61,
+     "net_pct": 3.6,
+     "losers": 2,
+     "winners": 2,
+     "net_usd": 25.72
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -0.92,
+   "verdict": "DOLLAR-NEGATIVE boost (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1781693230_22",
+   "action": "boost",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "HYPE",
+    "regime": "trend",
+    "side": "BUY"
+   },
+   "hypothesis": "HYPE LONG only profitable in positive_trending regime (80% WR validated). Range/bearish = automatic ",
+   "cf_matches_raw": 2206,
+   "cf_episodes": 80,
+   "raw": {
+    "saved_pct": 3813.01,
+    "missed_pct": 865.27,
+    "net_pct": 2947.73,
+    "losers": 1694,
+    "winners": 502
+   },
+   "episode": {
+    "saved_pct": 223.7,
+    "missed_pct": 66.85,
+    "net_pct": 156.85,
+    "losers": 63,
+    "winners": 17,
+    "net_usd": 1120.43,
+    "net_boost_pct": -156.85,
+    "net_boost_usd": -1120.43
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 14.7,
+     "missed_pct": 16.86,
+     "net_pct": -2.16,
+     "losers": 5,
+     "winners": 7,
+     "net_usd": -15.41
+    },
+    "2026-06-13": {
+     "saved_pct": 201.4,
+     "missed_pct": 42.13,
+     "net_pct": 159.27,
+     "losers": 53,
+     "winners": 8,
+     "net_usd": 1137.74
+    },
+    "2026-06-27": {
+     "saved_pct": 7.6,
+     "missed_pct": 7.87,
+     "net_pct": -0.27,
+     "losers": 5,
+     "winners": 2,
+     "net_usd": -1.91
+    }
+   },
+   "actual_trades_matched": 3,
+   "actual_trades_pnl_usd": -337.42,
+   "verdict": "DOLLAR-NEGATIVE boost (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1781693230_23",
+   "action": "boost",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "SHORT signals in RANGE regime have structural thesis-degradation risk. Fee drag often negates edge. ",
+   "cf_matches_raw": 9934,
+   "cf_episodes": 174,
+   "raw": {
+    "saved_pct": 7924.27,
+    "missed_pct": 5368.93,
+    "net_pct": 2555.35,
+    "losers": 5575,
+    "winners": 3717
+   },
+   "episode": {
+    "saved_pct": 188.95,
+    "missed_pct": 304.58,
+    "net_pct": -115.63,
+    "losers": 84,
+    "winners": 87,
+    "net_usd": -825.98,
+    "net_boost_pct": 115.63,
+    "net_boost_usd": 825.98
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 19.0,
+     "missed_pct": 38.86,
+     "net_pct": -19.86,
+     "losers": 7,
+     "winners": 9,
+     "net_usd": -141.87
+    },
+    "2026-06-13": {
+     "saved_pct": 133.66,
+     "missed_pct": 258.27,
+     "net_pct": -124.61,
+     "losers": 55,
+     "winners": 67,
+     "net_usd": -890.16
+    },
+    "2026-06-27": {
+     "saved_pct": 36.3,
+     "missed_pct": 7.45,
+     "net_pct": 28.84,
+     "losers": 22,
+     "winners": 11,
+     "net_usd": 206.05
+    }
+   },
+   "actual_trades_matched": 10,
+   "actual_trades_pnl_usd": -124.31,
+   "verdict": "DOLLAR-POSITIVE boost (keep)"
+  },
+  {
+   "rule_id": "rule_1781693230_24",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "regime": "trend"
+   },
+   "hypothesis": "Trending\u2192Range shift + confidence<0.1 = close position immediately. Avoid late-stage whipsaws in reg",
+   "cf_matches_raw": 17217,
+   "cf_episodes": 323,
+   "raw": {
+    "saved_pct": 15301.02,
+    "missed_pct": 8060.22,
+    "net_pct": 7240.8,
+    "losers": 10661,
+    "winners": 5904
+   },
+   "episode": {
+    "saved_pct": 468.79,
+    "missed_pct": 406.5,
+    "net_pct": 62.28,
+    "losers": 195,
+    "winners": 125,
+    "net_usd": 444.92
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 36.84,
+     "missed_pct": 62.4,
+     "net_pct": -25.56,
+     "losers": 18,
+     "winners": 21,
+     "net_usd": -182.58
+    },
+    "2026-06-13": {
+     "saved_pct": 375.08,
+     "missed_pct": 326.34,
+     "net_pct": 48.75,
+     "losers": 142,
+     "winners": 90,
+     "net_usd": 348.22
+    },
+    "2026-06-27": {
+     "saved_pct": 56.86,
+     "missed_pct": 17.77,
+     "net_pct": 39.1,
+     "losers": 35,
+     "winners": 14,
+     "net_usd": 279.28
+    }
+   },
+   "actual_trades_matched": 15,
+   "actual_trades_pnl_usd": -497.98,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1781700110_25",
+   "action": "veto",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "consolidation"
+   },
+   "hypothesis": "Consolidation regime + confidence<10 = non-viable entry conditions (0% combined WR). Test: implement",
+   "cf_matches_raw": 2752,
+   "cf_episodes": 81,
+   "raw": {
+    "saved_pct": 2307.68,
+    "missed_pct": 2540.97,
+    "net_pct": -233.29,
+    "losers": 1567,
+    "winners": 1091
+   },
+   "episode": {
+    "saved_pct": 85.28,
+    "missed_pct": 73.06,
+    "net_pct": 12.22,
+    "losers": 47,
+    "winners": 34,
+    "net_usd": 87.27
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 21.14,
+     "missed_pct": 20.94,
+     "net_pct": 0.19,
+     "losers": 11,
+     "winners": 12,
+     "net_usd": 1.37
+    },
+    "2026-06-13": {
+     "saved_pct": 54.87,
+     "missed_pct": 42.42,
+     "net_pct": 12.45,
+     "losers": 30,
+     "winners": 15,
+     "net_usd": 88.94
+    },
+    "2026-06-27": {
+     "saved_pct": 9.27,
+     "missed_pct": 9.69,
+     "net_pct": -0.43,
+     "losers": 6,
+     "winners": 7,
+     "net_usd": -3.04
+    }
+   },
+   "actual_trades_matched": 9,
+   "actual_trades_pnl_usd": -35.3,
+   "verdict": "DOLLAR-POSITIVE (keep)"
+  },
+  {
+   "rule_id": "rule_1781700110_26",
+   "action": "veto",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "SOL SHORT only viable in TREND regime. RANGE permanently hostile to SHORT bias. Block all SOL SHORT ",
+   "cf_matches_raw": 1629,
+   "cf_episodes": 33,
+   "raw": {
+    "saved_pct": 1663.53,
+    "missed_pct": 1138.95,
+    "net_pct": 524.58,
+    "losers": 983,
+    "winners": 530
+   },
+   "episode": {
+    "saved_pct": 30.65,
+    "missed_pct": 49.52,
+    "net_pct": -18.87,
+    "losers": 16,
+    "winners": 17,
+    "net_usd": -134.82
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 0.0,
+     "missed_pct": 28.42,
+     "net_pct": -28.42,
+     "losers": 0,
+     "winners": 5,
+     "net_usd": -202.98
+    },
+    "2026-06-13": {
+     "saved_pct": 14.56,
+     "missed_pct": 20.98,
+     "net_pct": -6.42,
+     "losers": 8,
+     "winners": 11,
+     "net_usd": -45.84
+    },
+    "2026-06-27": {
+     "saved_pct": 16.09,
+     "missed_pct": 0.13,
+     "net_pct": 15.96,
+     "losers": 8,
+     "winners": 1,
+     "net_usd": 114.0
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -3.93,
+   "verdict": "DOLLAR-NEGATIVE (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1781720035_27",
+   "action": "veto",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "ETH",
+    "regime": "range",
+    "side": "SELL"
+   },
+   "hypothesis": "ETH SHORTs in consolidation/range regime have 0% historical win rate (n=4). Block entry or require b",
+   "cf_matches_raw": 2349,
+   "cf_episodes": 38,
+   "raw": {
+    "saved_pct": 728.07,
+    "missed_pct": 3856.51,
+    "net_pct": -3128.44,
+    "losers": 1071,
+    "winners": 1259
+   },
+   "episode": {
+    "saved_pct": 25.38,
+    "missed_pct": 59.78,
+    "net_pct": -34.41,
+    "losers": 17,
+    "winners": 21,
+    "net_usd": -245.78
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 11.94,
+     "missed_pct": 38.64,
+     "net_pct": -26.71,
+     "losers": 6,
+     "winners": 7,
+     "net_usd": -190.77
+    },
+    "2026-06-13": {
+     "saved_pct": 8.52,
+     "missed_pct": 17.57,
+     "net_pct": -9.05,
+     "losers": 8,
+     "winners": 10,
+     "net_usd": -64.64
+    },
+    "2026-06-27": {
+     "saved_pct": 4.92,
+     "missed_pct": 3.57,
+     "net_pct": 1.35,
+     "losers": 3,
+     "winners": 4,
+     "net_usd": 9.64
+    }
+   },
+   "actual_trades_matched": 12,
+   "actual_trades_pnl_usd": -202.23,
+   "verdict": "DOLLAR-NEGATIVE (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1781767546_28",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "SOL",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "SOL SHORT in trending regime is structurally losing (0-2 record). Regime classification failure: ent",
+   "cf_matches_raw": 1629,
+   "cf_episodes": 33,
+   "raw": {
+    "saved_pct": 1663.53,
+    "missed_pct": 1138.95,
+    "net_pct": 524.58,
+    "losers": 983,
+    "winners": 530
+   },
+   "episode": {
+    "saved_pct": 30.65,
+    "missed_pct": 49.52,
+    "net_pct": -18.87,
+    "losers": 16,
+    "winners": 17,
+    "net_usd": -134.82
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 0.0,
+     "missed_pct": 28.42,
+     "net_pct": -28.42,
+     "losers": 0,
+     "winners": 5,
+     "net_usd": -202.98
+    },
+    "2026-06-13": {
+     "saved_pct": 14.56,
+     "missed_pct": 20.98,
+     "net_pct": -6.42,
+     "losers": 8,
+     "winners": 11,
+     "net_usd": -45.84
+    },
+    "2026-06-27": {
+     "saved_pct": 16.09,
+     "missed_pct": 0.13,
+     "net_pct": 15.96,
+     "losers": 8,
+     "winners": 1,
+     "net_usd": 114.0
+    }
+   },
+   "actual_trades_matched": 1,
+   "actual_trades_pnl_usd": -3.93,
+   "verdict": "DOLLAR-NEGATIVE if it blocks (retire candidate)"
+  },
+  {
+   "rule_id": "rule_1781827393_29",
+   "action": "penalize",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "side": "BUY"
+   },
+   "hypothesis": "BTC LONG fails when momentum_weakening flag active (observed 0% WR n=3). Require momentum reversal o",
+   "cf_matches_raw": 2365,
+   "cf_episodes": 44,
+   "raw": {
+    "saved_pct": 1455.8,
+    "missed_pct": 739.23,
+    "net_pct": 716.57,
+    "losers": 1520,
+    "winners": 845
+   },
+   "episode": {
+    "saved_pct": 36.61,
+    "missed_pct": 9.73,
+    "net_pct": 26.88,
+    "losers": 34,
+    "winners": 10,
+    "net_usd": 192.0
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 0.63,
+     "missed_pct": 4.07,
+     "net_pct": -3.44,
+     "losers": 2,
+     "winners": 5,
+     "net_usd": -24.58
+    },
+    "2026-06-13": {
+     "saved_pct": 27.02,
+     "missed_pct": 5.52,
+     "net_pct": 21.5,
+     "losers": 26,
+     "winners": 4,
+     "net_usd": 153.57
+    },
+    "2026-06-27": {
+     "saved_pct": 8.96,
+     "missed_pct": 0.14,
+     "net_pct": 8.82,
+     "losers": 6,
+     "winners": 1,
+     "net_usd": 63.01
+    }
+   },
+   "actual_trades_matched": 7,
+   "actual_trades_pnl_usd": -38.25,
+   "verdict": "DOLLAR-POSITIVE if it blocks (keep; partial-block upper bound)"
+  },
+  {
+   "rule_id": "rule_1781827393_30",
+   "action": "veto",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "regime": "trend",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "SOL entry from confidence_scorer (0% WR n=5) and bollinger_squeeze (0% WR n=2) are dead money. Block",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1781878466_31",
+   "action": "veto",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "side": "SELL",
+    "strategy": "confidence_scorer"
+   },
+   "hypothesis": "confidence_scorer BTC SHORTs (29% WR) are losing. This win via trailing stop is luck within a losing",
+   "cf_matches_raw": 0,
+   "cf_episodes": 0,
+   "raw": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0
+   },
+   "episode": {
+    "saved_pct": 0,
+    "missed_pct": 0,
+    "net_pct": 0,
+    "losers": 0,
+    "winners": 0,
+    "net_usd": 0.0
+   },
+   "fortnights": {},
+   "actual_trades_matched": 0,
+   "actual_trades_pnl_usd": 0,
+   "verdict": "UNMEASURABLE (n<5 episodes)"
+  },
+  {
+   "rule_id": "rule_1781878466_32",
+   "action": "veto",
+   "active": true,
+   "provenance": "backup_20260619",
+   "conditions": {
+    "symbol": "BTC",
+    "regime": "trend",
+    "side": "SELL"
+   },
+   "hypothesis": "Block BTC SHORTs in trending regimes; if entry bypasses gate, Exit Agent closes within 1-2h before r",
+   "cf_matches_raw": 2067,
+   "cf_episodes": 37,
+   "raw": {
+    "saved_pct": 920.39,
+    "missed_pct": 1114.5,
+    "net_pct": -194.12,
+    "losers": 1096,
+    "winners": 886
+   },
+   "episode": {
+    "saved_pct": 23.02,
+    "missed_pct": 50.55,
+    "net_pct": -27.52,
+    "losers": 18,
+    "winners": 18,
+    "net_usd": -196.62
+   },
+   "fortnights": {
+    "2026-05-30": {
+     "saved_pct": 4.55,
+     "missed_pct": 10.44,
+     "net_pct": -5.89,
+     "losers": 2,
+     "winners": 4,
+     "net_usd": -42.09
+    },
+    "2026-06-13": {
+     "saved_pct": 16.25,
+     "missed_pct": 38.79,
+     "net_pct": -22.54,
+     "losers": 14,
+     "winners": 12,
+     "net_usd": -161.02
+    },
+    "2026-06-27": {
+     "saved_pct": 2.23,
+     "missed_pct": 1.32,
+     "net_pct": 0.91,
+     "losers": 2,
+     "winners": 2,
+     "net_usd": 6.5
+    }
+   },
+   "actual_trades_matched": 8,
+   "actual_trades_pnl_usd": -119.46,
+   "verdict": "DOLLAR-NEGATIVE (retire candidate)"
+  }
+ ]
+}
