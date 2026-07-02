@@ -966,3 +966,6 @@ Invariants 7/7 ALL CLEAR verified 06:07 (P0 closed: metadata survives recovery, 
 
 === 2026-07-02 ~11:00 UTC — PHANTOM PINGERS KILLED ===
 Found via /schedule + RemoteTrigger: THREE cloud routines (created Apr 24-25) firing hourly/hourly/2-hourly against the OLD repo Vince2kLyleStyle/WAGMI = the "bot offline day N" false alarms + ~60 cloud runs/day of quota drain since April. All three disabled (enabled:false confirmed). Quota reclaimed for real work.
+
+=== 2026-07-02 ~11:05 UTC — EQUITY RESET TO $5,000 (owner call) — NEW ERA MARKER ===
+Fresh baseline for the repaired-system era. Old state archived (risk_equity_state.pre_reset_2026-07-02.json, was $1,927.54/peak $1,962.38). Reset done with bot STOPPED (first attempt failed — old process survived wmic kill and kept in-memory equity; killed properly via PowerShell CommandLine match, lesson noted). Verified: fresh pid 29480 scan 1, heartbeat AND persisted both $5,000.00, invariants ALL CLEAR, 3 positions carried over (incl. the two ratchet-locked winners SOL/XRP). ALL analyses must treat 2026-07-02T11:05Z as an ERA BOUNDARY: pre-reset PnL = legacy era; the $5k era measures ONLY the repaired system.
