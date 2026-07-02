@@ -402,11 +402,33 @@ def main() -> int:
                     help="seconds between LLM pipelines (quota protection)")
     ap.add_argument("--run-id", default=None)
     ap.add_argument("--timeout-min", type=int, default=240)
+    ap.add_argument("--post-only", action="store_true",
+                    help="skip the run; post-process an existing run dir "
+                         "(salvage after a harness/session crash)")
+    ap.add_argument("--elapsed-min", type=float, default=0.0,
+                    help="wall minutes to report in --post-only mode")
     args = ap.parse_args()
 
     run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")
     run_dir = REPLAY_ROOT / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.post_only:
+        sandbox = run_dir / "sandbox"
+        before_raw = json.loads(
+            (run_dir / "isolation_before.json").read_text(encoding="utf-8"))
+        before = {k: tuple(v) for k, v in before_raw.items()}
+        after = snapshot_production_data()
+        isolation = diff_snapshots(before, after)
+        (run_dir / "isolation_report.json").write_text(
+            json.dumps(isolation, indent=2), encoding="utf-8")
+        trades = build_replay_trades_csv(sandbox, run_dir)
+        print(f"[HARNESS] {len(trades)} closes -> {run_dir / 'replay_trades.csv'}")
+        report_path = write_run_report(
+            run_id, run_dir, sandbox, trades, isolation,
+            args.elapsed_min, args)
+        print(f"[HARNESS] run report -> {report_path}")
+        return 0
 
     print(f"[HARNESS] run_id={run_id}")
     print("[HARNESS] building sandbox (code copy, empty data tree)...")
