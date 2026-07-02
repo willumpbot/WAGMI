@@ -23,6 +23,33 @@ def _load(key: str) -> Optional[Dict]:
     except Exception as e: logger.debug(f"Failed to load {key}: {e}")
     return None
 
+
+# SHIP S5 (2026-07-02): stale-stats gate (THE_STANDARD v1.3 §3b).
+# kelly_weights.json froze 2026-06-06 but kept entering agent prompts as
+# current. If mtime is older than STALE_STATS_MAX_AGE_DAYS (default 7),
+# exclude from the collected state (inject nothing) and WARN once.
+_STALE_WARNED: set = set()
+
+
+def _stale(key: str) -> bool:
+    import time
+    try:
+        max_age = float(os.environ.get("STALE_STATS_MAX_AGE_DAYS", "7"))
+    except (ValueError, TypeError):
+        max_age = 7.0
+    try:
+        age_days = (time.time() - os.path.getmtime(_PATHS[key])) / 86400.0
+    except OSError:
+        return False
+    if age_days > max_age:
+        if key not in _STALE_WARNED:
+            _STALE_WARNED.add(key)
+            logger.warning(
+                f"STALE-STATS: {_PATHS[key]} is {age_days:.1f} days old "
+                f"(max {max_age:g}) -- EXCLUDED from prompt injection (SHIP S5)")
+        return True
+    return False
+
 def _wr(outcomes: List, window: int = 10) -> Optional[float]:
     if not outcomes: return None
     r = outcomes[-window:]
@@ -49,8 +76,8 @@ def collect_all_feedback_states() -> Dict[str, Any]:
                         "status": _status(wt, w, t), "trials": round(t, 1)}
     r["strategy_weights"] = strats
 
-    # 2. Kelly fractions
-    kd = _load("kelly") or {}
+    # 2. Kelly fractions (SHIP S5: excluded entirely when the file is stale)
+    kd = {} if _stale("kelly") else (_load("kelly") or {})
     kf = {}
     for factor, frac in kd.get("weights", {}).items():
         nt = len(kd.get("trades", {}).get(factor, []))

@@ -43,6 +43,38 @@ def _load_json(path: Path) -> Optional[dict]:
     return None
 
 
+# SHIP S5 (2026-07-02): stale-stats gate. kelly_weights.json froze 2026-06-06
+# (factor-analytics triple silent death, DATA_CENSUS integrity flag #1) yet
+# was still injected into agent prompts as if current — banned under
+# THE_STANDARD v1.3 §3b (a stat computed on a dead writer is not an honest
+# statistic). If a stats file's mtime is older than STALE_STATS_MAX_AGE_DAYS
+# (default 7), inject NOTHING rather than stale numbers, and WARN once.
+_STALE_WARNED: set = set()
+
+
+def _stats_file_stale(path: Path, name: str) -> bool:
+    """True if the stats file on disk is too old to inject into prompts."""
+    import time
+    try:
+        max_age_days = float(os.environ.get("STALE_STATS_MAX_AGE_DAYS", "7"))
+    except (ValueError, TypeError):
+        max_age_days = 7.0
+    try:
+        age_days = (time.time() - os.path.getmtime(path)) / 86400.0
+    except OSError:
+        return False  # missing file: loaders already handle that
+    if age_days > max_age_days:
+        if name not in _STALE_WARNED:
+            _STALE_WARNED.add(name)
+            logger.warning(
+                "STALE-STATS: %s is %.1f days old (max %s) -- EXCLUDED from "
+                "prompt injection until its writer resumes (SHIP S5)",
+                name, age_days, max_age_days,
+            )
+        return True
+    return False
+
+
 def _load_recent_trades(max_trades: int = 100) -> List[dict]:
     """Load last N trades from trades.csv."""
     trades = []
@@ -424,6 +456,9 @@ def get_current_calibration() -> str:
 
 def get_current_kelly() -> str:
     """Compute current Kelly fractions from kelly_weights.json."""
+    # SHIP S5: frozen kelly file must not masquerade as current stats.
+    if _stats_file_stale(KELLY_WEIGHTS, "kelly_weights.json"):
+        return ""
     kelly = _load_json(KELLY_WEIGHTS)
     if not kelly:
         return "KELLY: No Kelly data available."
