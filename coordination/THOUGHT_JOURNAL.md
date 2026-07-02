@@ -985,3 +985,8 @@ Invariants 7/7, equity $5,001.85 (era: 5 closes net -$0.44 — tiny capped explo
 CAMPAIGN: C2 (low-liquidity stretch) COMPLETE: 1 close, 1W, +$0.05 — the brain stayed correctly flat in a dead window; caution is cheap now (fees $0.02). C3 (trend-down Nov 2025) at 161/180 calls, all considered-flats so far — the interesting question is whether it SHORTS the down-leg (its historical strength) or sits out. C4-C6 queued.
 EMERGING CAMPAIGN SHAPE (2 windows): trades trend-up (+3.2%), sits out dead markets (+0.0%) — the selectivity thesis reproducing in emulation.
 Note: HYPE LONG exploration at 14:51 (-$0.00) — the old hardcoded exploration block on HYPE_LONG is gone (consistent: owner's no-hardcoded-blocks + the veto retired itself on dollars; epsilon may probe it at 0.1x; the dollar-aware machinery re-judges continuously).
+
+=== 2026-07-02 ~20:50 UTC — engine pass: C3+C4 done, campaign scoreboard 4/6 ===
+Invariants 7/7, era 7 closes net -$3.57 (capped exploration churn), LL 200.
+CAMPAIGN SCOREBOARD (4 windows): C1 trend-up +$16.18 (2W1L) | C2 dead market +$0.05 (1W) | C3 trend-DOWN $0.00 (0 closes — SAT OUT the down-leg; did NOT short it) | C4 CHOP +$0.44 (2W0L — historical chop record was -$796; the repaired system didn't get chopped). Cumulative: +$16.67, 6 closes, 5W1L, ZERO losing windows. C5 (panic) running.
+OPEN QUESTION for the synthesis: C3's sit-out — shorts were the one historical skill, and the brain didn't take the trend-down window. Was it the entry-event filter starving short signals, or genuine skips? Must be answered in REPLAY_CAMPAIGN_RESULTS before any "edge confirmed" verdict — a long-only edge is a different (and rally-dependent) animal.
