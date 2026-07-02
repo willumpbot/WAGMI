@@ -1,0 +1,316 @@
+{
+  "entries": [
+    {
+      "rule_id": "rule_1777922205_0",
+      "statement": "BTC performs strongly in trend regime",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709332
+    },
+    {
+      "rule_id": "night_session_block_v1",
+      "statement": "Night session 00:00-06:00 UTC yields only 19% WR on 27 live trades, -$136.83 total loss",
+      "reason": "pre-existing retirement persisted to durable ledger (S4/veto-rescore/owner verdicts)",
+      "retired_at": 1782963656.6709373
+    },
+    {
+      "rule_id": "hype_short_veto_v1",
+      "statement": "HYPE SELL is net-negative EV: -$16.65 per trade on 239 live trades",
+      "reason": "pre-existing retirement persisted to durable ledger (S4/veto-rescore/owner verdicts)",
+      "retired_at": 1782963656.670939
+    },
+    {
+      "rule_id": "eth_trending_regime_boost_v1",
+      "statement": "ETH in TRENDING regime = 71% WR, +$9.49/trade EV on 7 live trades. Strongest cross-regime edge after BTC_TRENDING (80% WR, n=5). Regime x symbol interaction: trending regime filters out noise trades.",
+      "reason": "pre-existing retirement persisted to durable ledger (S4/veto-rescore/owner verdicts)",
+      "retired_at": 1782963656.6709416
+    },
+    {
+      "rule_id": "conf_floor_70_v1",
+      "statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes.",
+      "reason": "pre-existing retirement persisted to durable ledger (S4/veto-rescore/owner verdicts)",
+      "retired_at": 1782963656.6709423
+    },
+    {
+      "rule_id": "rule_1782863033_10",
+      "statement": "Consolidation SHORTs with RSI-extreme (23-26) + regime-transition thesis + trailing stops achieve 50%+ WR vs 14% baseline. Mechanism: long hold (8-14h) through chop captures full mean-reversion. Test ",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709447
+    },
+    {
+      "rule_id": "rule_1782863033_11",
+      "statement": "Consolidation SHORTs with extreme RSI + trailing stop achieve >30% WR vs 18% fixed-SL baseline. Trailing hold >12h correlates with regime-reversal capture in transitions.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670946
+    },
+    {
+      "rule_id": "rule_1782863033_12",
+      "statement": "Consolidation trades with trailing stops capture 40%+ MFE vs 20% with static stops, especially on SOL with 2h+ hold time",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709468
+    },
+    {
+      "rule_id": "rule_1782899959_13",
+      "statement": "Implement regime-change exit rule: Close all confidence_scorer positions on consolidation\u2192trend flip. 0% WR in trends is structural, not noise.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709476
+    },
+    {
+      "rule_id": "rule_1782899959_14",
+      "statement": "Auto-exit confidence_scorer SHORT when consolidation regime ends or trending detected. Edge drops to 0% in trending (n=5 validated); saves ~$1.74 per trade vs SL.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709483
+    },
+    {
+      "rule_id": "rule_1782899959_15",
+      "statement": "BTC LONGs in consolidation with confidence <60 or agreement <0.7 fail predictably. Test: block all such entries, measure WR vs baseline",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709492
+    },
+    {
+      "rule_id": "rule_1782899959_16",
+      "statement": "Confidence threshold separates winners: BTC LONG in consolidation with conf >60 should outperform conf <50 by 2:1+ WR ratio. Test on last 20 consolidation LONGs",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.67095
+    },
+    {
+      "rule_id": "rule_1782899959_17",
+      "statement": "Consolidation shorts with <50% confidence leak false positives. Require minimum 50% confidence OR 2+ strategy confluence at entry gate\u2014trailing stops can bail out bad entries but create survivorship b",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709507
+    },
+    {
+      "rule_id": "rule_1782899959_18",
+      "statement": "BTC SHORT with confidence<20 or regime=unknown has <10% WR. Block all (BTC:SHORT && (conf<20 || regime='unknown')) trades at risk gate.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709514
+    },
+    {
+      "rule_id": "rule_1782913352_19",
+      "statement": "Gate pipeline missing regime veto for BTC LONG. Add: IF symbol='BTC' AND side='LONG' AND regime IN ['RANGE','UNKNOWN']: SKIP entry.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670952
+    },
+    {
+      "rule_id": "rule_1782914276_20",
+      "statement": "HYPE SHORT has 0% WR regardless of confidence. Block permanently per validated rule (n=411, EV=-3.57%/trade).",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670953
+    },
+    {
+      "rule_id": "rule_1782914276_21",
+      "statement": "confidence_scorer demonstrates strategy-regime incompatibility across multiple regimes (trending_bull 0%, range 11%, trend 0%, unknown 10%). Recommend removing from ensemble or restricting to regimes ",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709535
+    },
+    {
+      "rule_id": "rule_1782930666_22",
+      "statement": "Gate rule: REJECT all regime=unknown entries. confidence_scorer only trade in stable/trend regimes\u201411% WR in range, 33% in consolidation make these lethal.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709545
+    },
+    {
+      "rule_id": "rule_1782937254_23",
+      "statement": "Consolidation regime favors SHORTs (recent: 5W SHORTs, 2W/2L LONGs in consolidation). LONG entries with confidence <50% have <25% WR. Blocking these entries improves consolidation+LONG from 28% WR to ",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709554
+    },
+    {
+      "rule_id": "rule_1782937254_24",
+      "statement": "confidence_scorer in consolidation LONG has sub-optimal 30% WR. Mute strategy or enforce >60% confidence gate in consolidation regime.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709569
+    },
+    {
+      "rule_id": "rule_1782937254_25",
+      "statement": "SOL directional trades in 'unknown' regime: 20% WR (n=15). Require explicit trend confirmation (2+ regime methods agree) before LONG/SHORT. Test: skip all 'unknown' regime entries.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709576
+    },
+    {
+      "rule_id": "rule_1782937254_26",
+      "statement": "Historical n=16 trades in unknown regime at 19% WR vs 29% baseline. Add hard rule: Require regime certainty (trend/range/consolidation) OR 2+ strategy agreement + >80% confidence to proceed in unknown",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709583
+    },
+    {
+      "rule_id": "rule_1782939699_27",
+      "statement": "Consolidation + SHORT + confidence <60% has high whipsaw rate. Adding 2-strategy requirement or confidence floor of 60% should cut losses. Test: skip all consolidation shorts with 1 strategy + <60% co",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670959
+    },
+    {
+      "rule_id": "rule_1782939699_28",
+      "statement": "HYPE in unknown regime needs min 2+ strategy confluence; single strategies fail systematically on this symbol-regime combo",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.67096
+    },
+    {
+      "rule_id": "rule_1782939699_29",
+      "statement": "HYPE in unknown regime: structurally avoid both sides. WR <20% expected.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709607
+    },
+    {
+      "rule_id": "rule_1782939699_30",
+      "statement": "Auto-exit confidence_scorer SHORT on consolidation\u2192trend shift. Predicted: 100% loss reduction vs. extended holds in mismatched regime.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709614
+    },
+    {
+      "rule_id": "rule_1782939699_31",
+      "statement": "confidence_scorer trades (esp SHORT): Implement regime-lock circuit. On consolidation\u2192TREND shift, close within 15min. Prevents 50-100bps MFE bleed. Test: regime-shift closes vs hold-through outcomes.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670962
+    },
+    {
+      "rule_id": "rule_1782943853_1",
+      "statement": "HYPE LONG in trend regime: 0% WR (0/6 trades). Either HYPE structurally short-biased in trends, or trend classifier misfires on HYPE. Test: ban HYPE LONG in trend, or restrict to RANGE regime + EMA al",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709642
+    },
+    {
+      "rule_id": "rule_1782943853_2",
+      "statement": "HYPE LONG in trend has 0% WR edge (n=7) \u2014 implement veto rule or require consensus >0.5 to proceed",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709647
+    },
+    {
+      "rule_id": "rule_1782943853_3",
+      "statement": "confidence_scorer solo will remain <25% WR\u2014multi-agreement required for viability",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709654
+    },
+    {
+      "rule_id": "rule_1782943853_4",
+      "statement": "confidence_scorer has zero edge in trending_bull (0% WR, 3 trades); disable in all trending regimes",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709664
+    },
+    {
+      "rule_id": "rule_1782943854_5",
+      "statement": "confidence_scorer in range regimes has 11% WR vs 30% portfolio average. Implement hard veto at ensemble level; expected portfolio WR improvement: 2-3%.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670967
+    },
+    {
+      "rule_id": "rule_1782943854_6",
+      "statement": "Blacklist confidence_scorer on HYPE until WR recovers above 20%, or enforce minimum 2-strategy agreement before entry; exit all range trades after 2h idle",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709678
+    },
+    {
+      "rule_id": "rule_1782943854_7",
+      "statement": "Implement hard gate-exit: confidence_scorer signals in range regimes must see volume breakout within 1-2h window OR auto-close thesis as invalid. 11% WR in ranges (n=9) + 10% WR on HYPE = -EV hold. Ex",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709685
+    },
+    {
+      "rule_id": "rule_1782943854_8",
+      "statement": "confidence_scorer underperforms on BTC shorts (18% WR vs 28% system baseline). Test: require 2-strategy minimum agreement for BTC shorts, or exclude confidence_scorer from BTC voting entirely.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670971
+    },
+    {
+      "rule_id": "rule_1782943854_9",
+      "statement": "Reject all unknown-regime entries at gate. On XRP, cap confidence_scorer position size to 0.5x (21% WR strategy, 33% WR on pair).",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709719
+    },
+    {
+      "rule_id": "rule_1782943854_10",
+      "statement": "Confidence_scorer SHORT in range has structural negative edge (11% WR); implement hard entry filter to prevent these capital-locking traps",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709726
+    },
+    {
+      "rule_id": "rule_1782943854_11",
+      "statement": "BTC trades in consolidation with solo signals (confidence <65%) face >60% dead-capital risk. Require 2+ strategy consensus or confidence >70% to avoid regime-lock kills.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709745
+    },
+    {
+      "rule_id": "rule_1782943854_12",
+      "statement": "Solo LLM signals in consolidation with <65% confidence have <25% WR. Require 2+ strategy agreement or >70% confidence in choppy regimes.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709752
+    },
+    {
+      "rule_id": "rule_1782943854_13",
+      "statement": "SOL LONG in unknown regime has <20% WR vs >50% in trend/consolidation. Implement hard rule: block unknown regime SOL LONG.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670976
+    },
+    {
+      "rule_id": "rule_1782943854_14",
+      "statement": "SOL LONG in unknown regime should be hard-blocked at entry gate. Prior rule 'require regime certainty >75%' was violated by LLM_FIRST. Historical data: SOL LONG in unknown=18% WR, confidence_scorer=-$",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.670977
+    },
+    {
+      "rule_id": "rule_1782943854_15",
+      "statement": "Implement gate: reject confidence_scorer BTC SHORT in unknown/trend/range regimes. Only enter with 2+ additional strategy confirmation.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709778
+    },
+    {
+      "rule_id": "rule_1782943854_16",
+      "statement": "Gating layer doesn't check strategy-regime-side edge stats. Weak combos (confidence_scorer SHORT BTC 0-15% WR) get signal-level approval. Add gate: require 2+ confluence or skip if WR<25%",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709785
+    },
+    {
+      "rule_id": "rule_1782943854_17",
+      "statement": "confidence_scorer has no edge on HYPE (9% WR, n=11). Gating this combo would have prevented $-565 in losses. Test: block single-signal confidence_scorer on HYPE; measure WR recovery on ensemble-only e",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709793
+    },
+    {
+      "rule_id": "rule_1782943854_18",
+      "statement": "confidence_scorer on HYPE is a decay signal (9% WR). Entry gate must veto solo HYPE signals or require 2+ strategy agreement to prevent repeated losses.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709797
+    },
+    {
+      "rule_id": "rule_1782943854_19",
+      "statement": "LLM_FIRST entries in 'unknown' regime frequently misclassify actual market regime as trend. Validate regime using 1h+6h trend bias before entry. confidence_scorer should be muted entirely in trend reg",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709807
+    },
+    {
+      "rule_id": "rule_1782943854_20",
+      "statement": "confidence_scorer requires regime=trend OR regime=unknown; consolidation + range have <35% WR",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709814
+    },
+    {
+      "rule_id": "rule_1782943854_21",
+      "statement": "confidence_scorer solo in ambiguous consolidation has <35% true WR because regime drifts to trend (0% WR). Require 3-strategy confluence OR regime_tight classification. Block XRP+confidence_scorer ent",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709821
+    },
+    {
+      "rule_id": "rule_1782943855_22",
+      "statement": "Consolidation regime requires 2+ strategy agreement to proceed. Test: gate all single-signal consolidation entries for 30 days, measure WR improvement vs control.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709828
+    },
+    {
+      "rule_id": "rule_1782943855_23",
+      "statement": "Consolidation LONG entries with 1-strategy agreement have low regime fit (<0.5) and trigger exit invalidation. Enforce 2+ strategy confluence before consolidation entries.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709838
+    },
+    {
+      "rule_id": "rule_1782943855_24",
+      "statement": "Monitor regime shifts during holds. If regime shifts to one where setup has 0% historical WR, exit within 15-30min. Confidence_scorer 8% WR on HYPE\u2014blacklist it; route to regime_trend or multi_tier_qu",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709845
+    },
+    {
+      "rule_id": "rule_1782943855_25",
+      "statement": "Consolidation LONGs with MFE=0 at 1h mark lack thesis conviction. Implement mechanical rule: if MFE=0 by 1h, exit within 10min regardless of stop distance. Prevents capital drag on dead theses.",
+      "reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]",
+      "retired_at": 1782963656.6709852
+    }
+  ]
+}
