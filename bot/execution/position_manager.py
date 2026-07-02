@@ -35,6 +35,17 @@ from execution.position_state import (
 from execution.precision import round_price, round_qty
 from execution.trade_profile import TradeProfile, ExitParams, MEDIUM, _BASE_PROFILES
 
+
+def _env_float(name: str, default: float) -> float:
+    """Read a float from environment, fall back to default."""
+    val = os.environ.get(name)
+    if val is not None:
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            pass
+    return default
+
 # Mechanical bot instrumentation (TIER 4)
 try:
     from llm.mechanical_bot_instrumentation import get_mechanical_bot_instrumentation
@@ -564,11 +575,10 @@ class PositionManager:
         # intraday wiggle. 58 historical trades closed within ±0.5% of
         # entry with no TP1 hit = -$47.77 of noise losses from this.
         #
-        # New profile-aware thresholds (SCALP keeps tight, MEDIUM/TREND
-        # get patience):
-        #   SCALP:  0.3R -> BE, 0.6R -> lock 0.3R  (as before)
-        #   MEDIUM: 0.6R -> BE, 1.0R -> lock 0.3R
-        #   TREND:  0.8R -> BE, 1.2R -> lock 0.4R
+        # Profile-aware thresholds (SHIP S1 2026-07-02 — exit-geometry backtest):
+        #   SCALP:  0.8R -> BE, 1.2R -> lock 0.3R
+        #   MEDIUM: 0.3R -> BE, 0.6R -> lock 0.3R  (env: PROFIT_LOCK_BE_R/LOCK_R)
+        #   TREND:  1.5R -> BE, 2.0R -> lock 0.4R
         if pos.state == OPEN:
             sl_dist = abs(pos.entry - pos.original_sl)
             if sl_dist > 0:
@@ -592,7 +602,20 @@ class PositionManager:
                 elif _entry_type == "TREND":
                     _be_trigger, _lock_trigger, _lock_frac = 1.5, 2.0, 0.4
                 else:  # MEDIUM default (and unknown)
-                    _be_trigger, _lock_trigger, _lock_frac = 1.2, 1.8, 0.3
+                    # SHIP S1 (2026-07-02): restore the Apr-1 "bread-and-butter"
+                    # ratchet. EXIT_GEOMETRY_BACKTEST_2026-07-02 variant S3:
+                    # BE 0.3R / lock 0.3R at 0.6R = +$1,589 vs -$344 at the
+                    # live 1.2R/1.8R (n=90, 70% WR, max DD $570). Every variant
+                    # with protection <=0.6R was strongly positive; every one
+                    # >=0.8R negative. The 04-20 raise to 1.2/1.8 left a
+                    # 0-1.19R unprotected dead zone (WIRING_AUDIT #4).
+                    # Flag-revertible: PROFIT_LOCK_BE_R=1.2 PROFIT_LOCK_LOCK_R=1.8
+                    # restores the previous behavior without a code change.
+                    _be_trigger = _env_float("PROFIT_LOCK_BE_R", 0.3)
+                    _lock_trigger = _env_float("PROFIT_LOCK_LOCK_R", 0.6)
+                    _lock_frac = 0.3
+
+                _sl_before_lock = pos.sl
 
                 # Breakeven trigger — fee buffer escapes microstructure noise
                 if unrealized_r >= _be_trigger:
@@ -664,6 +687,26 @@ class PositionManager:
                                 f"({_entry_type or 'MEDIUM'}): SL -> {lock_sl}"
                             )
 
+                # SHADOW-S1 validation (telemetry only, no behavior): whenever
+                # the ratchet moves SL, log what the pre-ship 1.2R/1.8R config
+                # would have done, so the first post-ship closes can be
+                # old-vs-new compared straight from the log.
+                if pos.sl != _sl_before_lock and _entry_type not in ("SCALP", "TREND"):
+                    _old_be, _old_lock = 1.2, 1.8
+                    if unrealized_r >= _old_lock:
+                        _old_wb = (pos.entry + sl_dist * 0.3) if is_long else (pos.entry - sl_dist * 0.3)
+                        _old_desc = f"{_old_wb:.6g}"
+                    elif unrealized_r >= _old_be:
+                        _fb = pos.entry * (self.taker_fee_bps * 2 / 10000.0 + 0.001)
+                        _old_wb = (pos.entry + _fb) if is_long else (pos.entry - _fb)
+                        _old_desc = f"{_old_wb:.6g}"
+                    else:
+                        _old_desc = f"unprotected({_sl_before_lock:.6g})"
+                    logger.info(
+                        f"[{symbol}] SHADOW-S1: r={unrealized_r:.2f} "
+                        f"new_sl={pos.sl:.6g} old_1.2/1.8_would_be={_old_desc}"
+                    )
+
         # 0b. Check stop loss — on flash crashes, SL must fire before early exit
         sl_hit = (current_price <= pos.sl) if is_long else (current_price >= pos.sl)
         if sl_hit:
@@ -726,7 +769,7 @@ class PositionManager:
                         _extended_stop += 1.0
                         logger.info(
                             f"[{symbol}] TIME STOP DEFERRED 1h: TP1 within "
-                            f"{_tp1_dist_pct*100:.2f}% ({current_price:.2f} → {_tp1:.2f})"
+                            f"{_tp1_dist_pct*100:.2f}% ({current_price:.2f} -> {_tp1:.2f})"
                         )
                     if hold_hours < _extended_stop:
                         pass  # deferred — TP1 proximity extended stop, skip close this tick
@@ -1307,7 +1350,22 @@ class PositionManager:
             total_range = pos.entry - pos.tp2
             peak_move = pos.entry - pos.peak_price
 
-        progress = min(peak_move / total_range, 1.0) if total_range > 0 else 0.0
+        # SHIP S1/V2 (2026-07-02, WIRING_AUDIT #5 fix): post-TP1 progress is
+        # measured FROM TP1, not from entry. The old entry-based formula
+        # insta-locked ~57.5% of peak the moment TP1 filled (progress jumped
+        # straight to the tp1/tp2 ratio), contradicting the cushion-BE set at
+        # TP1. Exit backtest V2: ~free (-$9 total, +0.5R). This function only
+        # runs in TRAILING state (post-TP1), so TP1-based progress is valid.
+        _old_progress = min(peak_move / total_range, 1.0) if total_range > 0 else 0.0
+        if is_long:
+            _tp1_move = pos.tp1 - pos.entry
+        else:
+            _tp1_move = pos.entry - pos.tp1
+        _post_tp1_range = total_range - _tp1_move
+        if _post_tp1_range > 0 and _tp1_move > 0:
+            progress = max(0.0, min((peak_move - _tp1_move) / _post_tp1_range, 1.0))
+        else:
+            progress = _old_progress
 
         # Profile-driven tighten curve (falls back to MEDIUM defaults)
         ep = pos.trade_profile.exit_params if pos.trade_profile else _BASE_PROFILES[MEDIUM]
@@ -1356,19 +1414,23 @@ class PositionManager:
         new_sl = round_price(pos.symbol, new_sl)
 
         # Only move SL in the protective direction
+        # (SHADOW-S1: old_prog is what the pre-ship entry-based progress would
+        # have been — telemetry for old-vs-new comparison on the first closes.)
         if is_long and new_sl > pos.sl:
             old_sl = pos.sl
             pos.sl = new_sl
             logger.info(
                 f"[{pos.symbol}] Trail SL: {old_sl} -> {new_sl} "
-                f"(peak={pos.peak_price} prog={progress:.0%})"
+                f"(peak={pos.peak_price} prog={progress:.0%} "
+                f"shadow_old_prog={_old_progress:.0%})"
             )
         elif not is_long and new_sl < pos.sl:
             old_sl = pos.sl
             pos.sl = new_sl
             logger.info(
                 f"[{pos.symbol}] Trail SL: {old_sl} -> {new_sl} "
-                f"(peak={pos.peak_price} prog={progress:.0%})"
+                f"(peak={pos.peak_price} prog={progress:.0%} "
+                f"shadow_old_prog={_old_progress:.0%})"
             )
 
     def _classify_outcome(self, pos: Position, action: str) -> str:
