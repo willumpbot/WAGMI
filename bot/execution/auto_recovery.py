@@ -135,6 +135,11 @@ def _position_to_dict(pos) -> Dict[str, Any]:
         "wallet_id": pos.wallet_id,
         "notes": pos.notes,
         "setup_type": pos.setup_type,
+        # Entry metadata (2026-07-02 spine fix): without these, positions restored
+        # after a restart close with entry_reasons={} and blank entry_type/driver/
+        # regime/volatility_band in trades.csv (unlabeled-close invariant violation).
+        "entry_reasons": pos.entry_reasons or {},
+        "trade_profile": pos.trade_profile.to_dict() if pos.trade_profile else None,
     }
     return d
 
@@ -159,6 +164,19 @@ def _dict_to_position(d: Dict[str, Any]):
             close_time = close_time.replace(tzinfo=timezone.utc)
     else:
         close_time = None
+
+    # Entry metadata round-trip (2026-07-02 spine fix)
+    entry_reasons = d.get("entry_reasons") or {}
+    if not isinstance(entry_reasons, dict):
+        entry_reasons = {}
+    trade_profile = None
+    tp_data = d.get("trade_profile")
+    if isinstance(tp_data, dict) and tp_data:
+        try:
+            from execution.trade_profile import TradeProfile
+            trade_profile = TradeProfile.from_dict(tp_data)
+        except Exception as e:
+            logger.warning(f"[RECOVERY] Failed to restore trade_profile for {d.get('symbol')}: {e}")
 
     pos = Position(
         symbol=d["symbol"],
@@ -191,6 +209,8 @@ def _dict_to_position(d: Dict[str, Any]):
         wallet_id=d.get("wallet_id", ""),
         notes=d.get("notes", ""),
         setup_type=d.get("setup_type", ""),
+        entry_reasons=entry_reasons,
+        trade_profile=trade_profile,
     )
     return pos
 
@@ -279,7 +299,9 @@ def load_position_state(
                 logger.info(
                     f"[RECOVERY] Loaded {symbol} {pos.side} from state file: "
                     f"state={pos.state} SL={pos.sl} TP1={pos.tp1} TP2={pos.tp2} "
-                    f"trailing_dist={pos.trailing_distance:.4f}"
+                    f"trailing_dist={pos.trailing_distance:.4f} "
+                    f"entry_type={pos.trade_profile.entry_type if pos.trade_profile else 'NONE'} "
+                    f"entry_reasons_keys={len(pos.entry_reasons or {})}"
                 )
             except Exception as e:
                 logger.warning(f"[RECOVERY] Failed to load {symbol}: {e}")

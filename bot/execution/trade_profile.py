@@ -197,6 +197,42 @@ class TradeProfile:
             "notes": self.notes,
         }
 
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "TradeProfile":
+        """Rebuild a TradeProfile from its to_dict() output.
+
+        Used by auto_recovery so restored positions keep their entry metadata
+        (entry_type/primary_driver/regime/volatility_band) across restarts —
+        otherwise closes of recovered positions write unlabeled trades.csv rows
+        (2026-07-02 HYPE 05:21Z spine leak). exit_params are re-derived from the
+        base profile for entry_type (env-aware), with the two persisted knobs
+        (tp1_close_pct, trailing_style) restored on a copy.
+        """
+        from dataclasses import replace
+
+        entry_type = d.get("entry_type") or MEDIUM
+        base = _BASE_PROFILES.get(entry_type, _BASE_PROFILES[MEDIUM])
+        try:
+            exit_params = replace(
+                base,
+                tp1_close_pct=float(d.get("tp1_close_pct", base.tp1_close_pct)),
+                trailing_style=d.get("trailing_style") or base.trailing_style,
+            )
+        except (TypeError, ValueError):
+            exit_params = base
+        return cls(
+            entry_type=entry_type,
+            entry_reasons=list(d.get("entry_reasons") or []),
+            primary_driver=d.get("primary_driver", "") or "",
+            confidence=float(d.get("confidence") or 0.0),
+            regime=d.get("regime", "") or "",
+            volatility_band=d.get("volatility_band", "") or "",
+            timeframe_bias=d.get("timeframe_bias", "") or "",
+            exit_params=exit_params,
+            expected_holding_time=d.get("expected_holding_time", "medium") or "medium",
+            notes=d.get("notes", "") or "",
+        )
+
 
 # ── Classification logic ─────────────────────────────────
 
