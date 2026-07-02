@@ -39,21 +39,37 @@ class CliResponse:
 
 
 def _claude_path() -> Optional[str]:
-    """Locate the claude CLI binary.
+    """Locate the claude CLI launcher.
 
-    On Windows, prefer .cmd file over shell script wrapper (which requires bash).
+    Preference order (Windows):
+      1. CLAUDE_CLI_PATH env override (explicit, un-mangled absolute path)
+      2. the native claude.exe DIRECTLY. The npm `claude.cmd` batch shim adds
+         a cmd.exe layer that breaks whenever npm touches the install
+         (observed killing replay VAL1 mid npm-update: "The batch file cannot
+         be found." / '"...npm\\node_modules\\...claude.exe"' is not
+         recognized) and re-parses quoted JSON argv. The exe is what the shim
+         execs anyway — calling it directly removes both failure modes.
+      3. the .cmd shim, then PATH search (legacy fallbacks)
     """
     import platform
 
-    # Windows: prioritize .cmd file (executable directly via cmd.exe)
+    override = os.getenv("CLAUDE_CLI_PATH", "").strip()
+    if override and os.path.exists(override):
+        return override
+
     if platform.system() == "Windows":
         candidates = [
+            os.path.expanduser(
+                "~/AppData/Roaming/npm/node_modules/@anthropic-ai/"
+                "claude-code/bin/claude.exe"),
+            os.path.expanduser("~/.local/bin/claude.exe"),
             os.path.expanduser("~/AppData/Roaming/npm/claude.cmd"),
             os.path.expanduser("~/AppData/Roaming/npm/claude.ps1"),
             os.path.expanduser("~/AppData/Roaming/npm/claude"),
         ]
     else:
         candidates = [
+            os.path.expanduser("~/.local/bin/claude"),
             os.path.expanduser("~/AppData/Roaming/npm/claude"),
             "/usr/local/bin/claude",
             os.path.expanduser("~/AppData/Roaming/npm/claude.cmd"),
@@ -73,6 +89,24 @@ def _claude_path() -> Optional[str]:
 
 
 CLAUDE_BIN = _claude_path()
+
+# Error signatures of a launcher that broke UNDER us (npm update replacing
+# claude.cmd / claude.exe mid-run). These are transient — re-resolve + retry.
+_TRANSIENT_LAUNCHER_ERRORS = (
+    "is not recognized as an internal or external command",
+    "batch file cannot be found",
+    "cannot find the file specified",
+    "cannot find the path specified",
+    "claude launcher missing",
+)
+
+
+def _get_claude_bin(refresh: bool = False) -> Optional[str]:
+    """Cached launcher path; re-resolves if the cached file vanished."""
+    global CLAUDE_BIN
+    if refresh or CLAUDE_BIN is None or not os.path.exists(CLAUDE_BIN):
+        CLAUDE_BIN = _claude_path()
+    return CLAUDE_BIN
 
 
 def call_agent(
@@ -100,10 +134,11 @@ def call_agent(
     Returns:
         CliResponse with ok/text/parsed/latency/error fields.
     """
-    if CLAUDE_BIN is None:
+    claude_bin = _get_claude_bin()
+    if claude_bin is None:
         return CliResponse(ok=False, error="claude CLI not found in PATH")
 
-    cmd = [CLAUDE_BIN, "--print",
+    cmd = [claude_bin, "--print",
            "--output-format", "json",
            "--model", model,
            "--max-budget-usd", str(max_budget_usd),
@@ -161,43 +196,64 @@ def call_agent(
                 subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000  # CREATE_NO_WINDOW
             )
 
-        start = time.time()
-        proc = None
-        try:
-            proc = subprocess.Popen(cmd, **_popen_kwargs)
-            stdout_data, stderr_data = proc.communicate(input=user_prompt, timeout=timeout)
-            latency = time.time() - start
+        class _Result:
+            def __init__(self, rc, out, err):
+                self.returncode, self.stdout, self.stderr = rc, out, err
 
-            class _Result:
-                def __init__(self, rc, out, err):
-                    self.returncode, self.stdout, self.stderr = rc, out, err
+        result = None
+        latency = 0.0
+        for attempt in (1, 2):
+            start = time.time()
+            proc = None
+            try:
+                proc = subprocess.Popen(cmd, **_popen_kwargs)
+                stdout_data, stderr_data = proc.communicate(input=user_prompt, timeout=timeout)
+                latency = time.time() - start
+                result = _Result(proc.returncode, stdout_data, stderr_data)
+            except subprocess.TimeoutExpired:
+                # Kill entire process tree to avoid grandchild pipe-handle leak
+                if proc is not None:
+                    if _win:
+                        subprocess.run(
+                            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                            capture_output=True,
+                        )
+                    else:
+                        proc.kill()
+                    try:
+                        proc.communicate(timeout=5)
+                    except Exception:
+                        pass
+                return CliResponse(ok=False, error=f"timeout after {timeout}s",
+                                   latency_s=time.time() - start, model=model)
+            except FileNotFoundError:
+                # Launcher file itself is gone (npm update churn) — retryable
+                latency = time.time() - start
+                result = _Result(1, "", "claude launcher missing (FileNotFoundError)")
+            except Exception as e:
+                if proc is not None:
+                    try:
+                        proc.kill()
+                        proc.communicate(timeout=3)
+                    except Exception:
+                        pass
+                return CliResponse(ok=False, error=f"subprocess error: {e}",
+                                   latency_s=time.time() - start, model=model)
 
-            result = _Result(proc.returncode, stdout_data, stderr_data)
-        except subprocess.TimeoutExpired:
-            # Kill entire process tree to avoid grandchild pipe-handle leak
-            if proc is not None:
-                if _win:
-                    subprocess.run(
-                        ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                        capture_output=True,
-                    )
-                else:
-                    proc.kill()
-                try:
-                    proc.communicate(timeout=5)
-                except Exception:
-                    pass
-            return CliResponse(ok=False, error=f"timeout after {timeout}s",
-                               latency_s=time.time() - start, model=model)
-        except Exception as e:
-            if proc is not None:
-                try:
-                    proc.kill()
-                    proc.communicate(timeout=3)
-                except Exception:
-                    pass
-            return CliResponse(ok=False, error=f"subprocess error: {e}",
-                               latency_s=time.time() - start, model=model)
+            if result.returncode == 0:
+                break
+            err_blob = (result.stderr or "") + (result.stdout or "")
+            transient = any(sig in err_blob for sig in _TRANSIENT_LAUNCHER_ERRORS)
+            if attempt == 1 and transient:
+                logger.warning(
+                    "claude launcher transiently broken (%s) — re-resolving "
+                    "and retrying once", err_blob.strip()[:120])
+                time.sleep(2.0)
+                new_bin = _get_claude_bin(refresh=True)
+                if new_bin:
+                    cmd[0] = new_bin
+                continue
+            break
     finally:
         if tmp_file:
             try:
@@ -275,7 +331,7 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
 
 def available() -> bool:
     """Is the Claude CLI usable right now?"""
-    return CLAUDE_BIN is not None
+    return _get_claude_bin() is not None
 
 
 # ------- Convenience agent wrappers (mirror the bot's current agent roles) -------
@@ -385,7 +441,7 @@ def risk(thesis: str, equity: float, positions: int, model: str = "sonnet") -> C
 if __name__ == "__main__":
     # Quick smoke test
     print(f"Claude CLI available: {available()}")
-    print(f"Binary: {CLAUDE_BIN}")
+    print(f"Binary: {_get_claude_bin()}")
     if available():
         resp = call_agent(
             "BTC at $75,888. Daily trend UP, RSI 61, above EMA20 by 3.8%. What regime?",
