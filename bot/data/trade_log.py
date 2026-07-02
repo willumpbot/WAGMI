@@ -24,6 +24,11 @@ _HEADERS = [
     "state_path", "outcome", "leverage", "confidence",
     "strategy", "entry_reasons",
     "entry_type", "primary_driver", "regime", "volatility_band",
+    # exit_type (2026-07-02): raw close action (SL/TP2/TRAILING_STOP/EARLY_EXIT/
+    # LLM_EXIT_AGENT/HOLD_LIMIT/ROTATE_*/...). The five boolean flags above only
+    # cover 4 actions, so e.g. LLM_EXIT_AGENT closes were unattributable
+    # (all-False flags). Appended LAST so positional readers stay valid.
+    "exit_type",
 ]
 
 
@@ -32,6 +37,34 @@ def _ensure_file():
     if not os.path.exists(_TRADES_FILE):
         with open(_TRADES_FILE, "w", newline="") as f:
             csv.writer(f).writerow(_HEADERS)
+        return
+    _migrate_exit_type_column()
+
+
+def _migrate_exit_type_column():
+    """One-time in-place migration: append exit_type to header, pad old rows.
+
+    Cheap header check on every call; full rewrite only if the column is missing.
+    """
+    try:
+        with open(_TRADES_FILE, "r", encoding="utf-8") as f:
+            header_line = f.readline()
+        if "exit_type" in header_line:
+            return
+        with open(_TRADES_FILE, "r", newline="", encoding="utf-8") as f:
+            rows = list(csv.reader(f))
+        if not rows:
+            return
+        rows[0] = list(rows[0]) + ["exit_type"]
+        width = len(rows[0])
+        migrated = [rows[0]] + [r + [""] * (width - len(r)) for r in rows[1:]]
+        tmp = _TRADES_FILE + ".tmp"
+        with open(tmp, "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerows(migrated)
+        os.replace(tmp, _TRADES_FILE)
+        logger.info(f"trades.csv migrated: exit_type column added ({len(migrated)-1} rows padded)")
+    except Exception as e:
+        logger.warning(f"trades.csv exit_type migration failed (non-fatal): {e}")
 
 
 def log_closed_trade(
@@ -77,6 +110,7 @@ def log_closed_trade(
         state_path, outcome, f"{leverage:.1f}", f"{confidence:.1f}",
         strategy, json.dumps(entry_reasons or {}),
         entry_type, primary_driver, regime, volatility_band,
+        action,  # exit_type: full attribution even when all flags are False
     ]
 
     try:
