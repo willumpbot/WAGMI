@@ -23,6 +23,25 @@ _RULES_FILE = os.path.join("data", "llm", "graduated_rules.json")
 # production path from a test-monkeypatched _RULES_FILE.
 _DEFAULT_RULES_FILE = _RULES_FILE
 
+# Retirement ledger (FALLACY_AUDIT 2026-07-02, D1 clobber-class fix): the
+# 2026-07-01 regeneration re-activated verdicted-retired rules because
+# retirement lived ONLY inside graduated_rules.json — any wipe/regeneration
+# lost it. This ledger is the durable record: any rule whose rule_id OR
+# hypothesis_statement appears here is forced active=False at load time and
+# can never be re-graduated, no matter who rewrites the rules file.
+_RETIRED_BASENAME = "retired_rule_ids.json"
+_DEFAULT_RETIRED_FILE = os.path.join(os.path.dirname(_RULES_FILE), _RETIRED_BASENAME)
+
+
+def _retired_file() -> str:
+    """Ledger lives next to the rules file — tests that monkeypatch _RULES_FILE
+    to a tmp dir automatically get a hermetic ledger too."""
+    return os.path.join(os.path.dirname(_RULES_FILE), _RETIRED_BASENAME)
+
+# Provenance tag for rules created going forward (THE_STANDARD §2b). Bumped
+# whenever the trade ledger's integrity regime changes.
+LEDGER_VERSION = "v2_post_fee_fix_2026-06"
+
 
 def _canon_side(s: str) -> str:
     """Canonicalize side vocabulary so the engine matches regardless of caller.
@@ -68,6 +87,12 @@ class GraduatedRule:
     pnl_saved: float = 0.0
     pnl_missed: float = 0.0
     active: bool = True
+    # Provenance (THE_STANDARD §2b, FALLACY_AUDIT D1): which data era and
+    # ledger-integrity version this rule was learned from. Empty = pre-standard
+    # rule (suspect by construction — shadow until dollar re-validated).
+    era: str = ""
+    ledger_version: str = ""
+    retired_reason: str = ""
 
     @property
     def accuracy(self) -> float:
@@ -137,6 +162,55 @@ class GraduatedRule:
         return True
 
 
+def _load_retired_ledger() -> Dict[str, Any]:
+    """Load the durable retirement ledger. Returns {ids: set, statements: set}."""
+    ids, statements = set(), set()
+    # Hermetic-test guard (mirrors _save): a pytest run must never see the
+    # production ledger unless the test explicitly monkeypatched _RULES_FILE.
+    _path = _retired_file()
+    if os.getenv("PYTEST_CURRENT_TEST") and _path == _DEFAULT_RETIRED_FILE:
+        return {"ids": ids, "statements": statements}
+    try:
+        if os.path.exists(_path):
+            with open(_path, "r") as f:
+                data = json.load(f)
+            for e in data.get("entries", []):
+                if e.get("rule_id"):
+                    ids.add(e["rule_id"])
+                if e.get("statement"):
+                    statements.add(e["statement"])
+    except Exception as e:
+        logger.warning(f"[GRAD-RULES] Retired-ledger load error: {e}")
+    return {"ids": ids, "statements": statements}
+
+
+def _append_retired_ledger(rule_id: str, statement: str, reason: str) -> None:
+    """Append a retirement verdict to the durable ledger (survives regeneration)."""
+    # Same pytest guard as _save(): tests must never write the production ledger.
+    _path = _retired_file()
+    if os.getenv("PYTEST_CURRENT_TEST") and _path == _DEFAULT_RETIRED_FILE:
+        return
+    try:
+        data = {"entries": []}
+        if os.path.exists(_path):
+            with open(_path, "r") as f:
+                data = json.load(f)
+        entries = data.setdefault("entries", [])
+        if any(e.get("rule_id") == rule_id for e in entries):
+            return
+        entries.append({
+            "rule_id": rule_id,
+            "statement": statement,
+            "reason": reason,
+            "retired_at": time.time(),
+        })
+        os.makedirs(os.path.dirname(_path), exist_ok=True)
+        with open(_path, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+    except Exception as e:
+        logger.warning(f"[GRAD-RULES] Retired-ledger append error: {e}")
+
+
 class GraduatedRulesEngine:
     def __init__(self):
         self._rules: List[GraduatedRule] = []
@@ -159,6 +233,19 @@ class GraduatedRulesEngine:
                     except Exception as _re:
                         logger.warning(f"[GRAD-RULES] Skip malformed rule {_r.get('rule_id', '?')}: {_re}")
                 self._rules = _loaded_rules
+                # Enforce the durable retirement ledger: regeneration/wipe of the
+                # rules file cannot resurrect a verdicted-retired rule.
+                _ledger = _load_retired_ledger()
+                for _rule in self._rules:
+                    if _rule.active and (_rule.rule_id in _ledger["ids"]
+                                         or _rule.hypothesis_statement in _ledger["statements"]):
+                        _rule.active = False
+                        if not _rule.retired_reason:
+                            _rule.retired_reason = "re-retired at load: retirement ledger verdict"
+                        logger.warning(
+                            f"[GRAD-RULES] Re-retired resurrected rule {_rule.rule_id} "
+                            f"(retirement ledger overrides rules-file active=true)"
+                        )
                 logger.info(f"[GRAD-RULES] Loaded {len(self._rules)} rules ({sum(1 for r in self._rules if r.active)} active)")
         except Exception as e:
             logger.warning(f"[GRAD-RULES] Load error: {e}")
@@ -178,12 +265,39 @@ class GraduatedRulesEngine:
             logger.warning(f"[GRAD-RULES] Save error: {e}")
 
     def graduate_hypothesis(self, hypothesis) -> Optional[GraduatedRule]:
-        """Convert a validated hypothesis into an executable rule."""
+        """Convert a validated hypothesis into a SHADOW rule (never enforcing).
+
+        THE_STANDARD §2b (FALLACY_AUDIT D1, 2026-07-02): the keyword parser
+        below is lossy — it graduated provably INVERTED rules (e.g. "HYPE LONG
+        0% WR" parsed into a BOOST) that hard-vetoed real setups pre-LLM.
+        Gates now enforced here:
+          - n >= 13 evidence required (was 10, fast-track 7)
+          - retirement-ledger statements can never re-graduate
+          - new rules ALWAYS land active=False (shadow). Dollar-positivity
+            cannot be verified from a Hypothesis object, and §2b forbids
+            enforcement without it. Promotion to active requires an explicit
+            dollar re-score (veto_rescore tooling) — not this code path.
+        """
         self._ensure_loaded()
 
         for r in self._rules:
             if r.hypothesis_statement == hypothesis.statement:
                 return None  # Already graduated
+
+        # Retirement ledger is permanent: a verdicted-retired statement cannot
+        # come back through re-graduation after a rules-file wipe/regeneration.
+        _ledger = _load_retired_ledger()
+        if hypothesis.statement in _ledger["statements"]:
+            logger.info(f"[GRAD-RULES] Refused graduation (retirement ledger): {hypothesis.statement[:60]}")
+            return None
+
+        # THE_STANDARD §1/§2b: nothing graduates below n>=13.
+        if getattr(hypothesis, "total_evidence", 0) < 13:
+            logger.info(
+                f"[GRAD-RULES] Refused graduation (n={getattr(hypothesis, 'total_evidence', 0)} < 13): "
+                f"{hypothesis.statement[:60]}"
+            )
+            return None
 
         conditions, action, adjustment = self._parse_hypothesis(hypothesis)
         if not conditions:
@@ -195,12 +309,15 @@ class GraduatedRulesEngine:
             action=action, conditions=conditions, adjustment=adjustment,
             confidence=hypothesis.confidence, evidence_ratio=hypothesis.evidence_ratio,
             total_evidence=hypothesis.total_evidence, created_at=time.time(),
+            era=time.strftime("%Y-%m"), ledger_version=LEDGER_VERSION,
+            active=False,
+            retired_reason="shadow: pending dollar-positive re-validation (THE_STANDARD 2b)",
         )
         self._rules.append(rule)
         self._save()
-        logger.info(f"[GRAD-RULES] Graduated: {rule.action} when {conditions}")
-        # Persist into knowledge_base.json so prompt_enricher injects into agent prompts
-        self._write_to_knowledge_base(rule, hypothesis)
+        logger.info(f"[GRAD-RULES] Graduated to SHADOW (not enforcing): {rule.action} when {conditions}")
+        # NOTE: no knowledge_base.json write for shadow rules — prompt injection
+        # of unvalidated keyword-parsed opinions is exactly what D1 quarantined.
         return rule
 
     def _write_to_knowledge_base(self, rule: "GraduatedRule", hypothesis: Any) -> None:
@@ -422,6 +539,8 @@ class GraduatedRulesEngine:
 
             if rule.times_applied >= 10 and rule.accuracy < 0.35:
                 rule.active = False
+                rule.retired_reason = f"auto-retired: acc={rule.accuracy:.0%} on n={rule.times_applied}"
+                _append_retired_ledger(rule.rule_id, rule.hypothesis_statement, rule.retired_reason)
                 logger.info(f"[GRAD-RULES] Auto-retired: {rule.hypothesis_statement[:50]} (acc={rule.accuracy:.0%})")
 
         if matched_count == 0:
@@ -492,6 +611,11 @@ class GraduatedRulesEngine:
             if (rule.times_applied >= 10 and rule.accuracy < 0.35
                     and rule.net_pnl_saved <= 0):
                 rule.active = False
+                rule.retired_reason = (
+                    f"auto-retired VETO: acc={rule.accuracy:.0%}, "
+                    f"net_pnl_saved={rule.net_pnl_saved:.2f}% on n={rule.times_applied}"
+                )
+                _append_retired_ledger(rule.rule_id, rule.hypothesis_statement, rule.retired_reason)
                 logger.info(
                     f"[GRAD-RULES] Auto-retired VETO: {rule.hypothesis_statement[:50]} "
                     f"(acc={rule.accuracy:.0%}, net_pnl_saved={rule.net_pnl_saved:.2f}%)"
@@ -520,6 +644,20 @@ class GraduatedRulesEngine:
                 rule.overridden_correct += 1
         if changed:
             self._save()
+
+    def retire_rule(self, rule_id: str, reason: str) -> bool:
+        """Verdicted retirement: deactivate a rule AND record it in the durable
+        ledger so no regeneration/wipe can resurrect it (FALLACY_AUDIT D1)."""
+        self._ensure_loaded()
+        for rule in self._rules:
+            if rule.rule_id == rule_id:
+                rule.active = False
+                rule.retired_reason = reason
+                _append_retired_ledger(rule.rule_id, rule.hypothesis_statement, reason)
+                self._save()
+                logger.info(f"[GRAD-RULES] Retired by verdict: {rule_id} ({reason[:80]})")
+                return True
+        return False
 
     def get_active_rules_summary(self) -> str:
         self._ensure_loaded()

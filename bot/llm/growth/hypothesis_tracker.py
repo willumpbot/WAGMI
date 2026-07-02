@@ -543,14 +543,14 @@ class HypothesisTracker:
                         f"[HYPO] INVALIDATED: {h.statement[:60]} "
                         f"({h.supporting_count}:{h.contradicting_count})"
                     )
-                # Wire anti-pattern → GraduatedRules as a PENALIZE rule
-                try:
-                    from llm.graduated_rules import get_graduated_rules_engine
-                    _rule = get_graduated_rules_engine().graduate_hypothesis(h)
-                    if _rule:
-                        logger.info(f"[HYPO→RULE] Anti-pattern rule: {_rule.action} (id={_rule.rule_id})")
-                except Exception as _ge:
-                    logger.debug(f"[HYPO→RULE] Anti-pattern graduation error: {_ge}")
+                # FALLACY_AUDIT D1 (2026-07-02): INVALIDATED hypotheses no longer
+                # graduate into executable rules. The keyword parser assigned
+                # actions from statement WORDING, so a refuted hypothesis (ratio
+                # <= 0.3) could land as a live BOOST/VETO — provably inverted
+                # rules fired pre-LLM. Invalidated hypotheses stay as
+                # anti_pattern knowledge only (negative knowledge compounds);
+                # any executable rule requires the validated path + THE_STANDARD
+                # 2b dollar re-validation.
 
             h.last_updated = time.time()
 

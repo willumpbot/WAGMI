@@ -20,7 +20,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "hype_long_veto_v1",
@@ -36,12 +37,12 @@
       "total_evidence": 35,
       "created_at": 1746382701.0,
       "last_applied": 1782822284.2041013,
-      "times_applied": 0,
+      "times_applied": 5,
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
       "pnl_saved": 0.0,
-      "pnl_missed": 0.0,
+      "pnl_missed": 80.0,
       "active": true
     },
     {
@@ -57,12 +58,12 @@
       "evidence_ratio": 0.24,
       "total_evidence": 34,
       "created_at": 1746382701.0,
-      "last_applied": 1782962034.405422,
-      "times_applied": 37,
-      "times_correct": 25,
+      "last_applied": 1782963192.0538695,
+      "times_applied": 42,
+      "times_correct": 30,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "pnl_saved": 3.3333333333333335,
+      "pnl_saved": 20.0,
       "pnl_missed": 16.858283897721286,
       "active": true
     },
@@ -80,12 +81,12 @@
       "total_evidence": 27,
       "created_at": 1746382701.0,
       "last_applied": 1782961669.5289986,
-      "times_applied": 52,
-      "times_correct": 42,
+      "times_applied": 89,
+      "times_correct": 63,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "pnl_saved": 0.0,
-      "pnl_missed": 0.0,
+      "pnl_saved": 75.08026117345798,
+      "pnl_missed": 232.0,
       "active": false
     },
     {
@@ -123,12 +124,12 @@
       "total_evidence": 239,
       "created_at": 1746382701.0,
       "last_applied": 1782962045.0914333,
-      "times_applied": 18,
+      "times_applied": 19,
       "times_correct": 10,
       "times_overridden": 0,
       "overridden_correct": 0,
       "pnl_saved": 0.0,
-      "pnl_missed": 8.396241862505269,
+      "pnl_missed": 9.205013378657117,
       "active": false
     },
     {
@@ -243,7 +244,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782863033_11",
@@ -266,7 +268,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782863033_12",
@@ -288,7 +291,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782899959_13",
@@ -311,7 +315,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782899959_14",
@@ -335,7 +340,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782899959_15",
@@ -358,7 +364,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782899959_16",
@@ -381,7 +388,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782899959_17",
@@ -404,7 +412,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782899959_18",
@@ -420,11 +429,11 @@
       "total_evidence": 7,
       "created_at": 1782899959.631954,
       "last_applied": 1782913741.4770195,
-      "times_applied": 3,
-      "times_correct": 3,
+      "times_applied": 13,
+      "times_correct": 13,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "pnl_saved": 8.0,
+      "pnl_saved": 48.0,
       "pnl_missed": 0.0,
       "active": false
     },
@@ -449,7 +458,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782914276_20",
@@ -465,12 +475,12 @@
       "total_evidence": 20,
       "created_at": 1782914276.7199943,
       "last_applied": 1782962045.091452,
-      "times_applied": 4,
+      "times_applied": 5,
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
       "pnl_saved": 0.0,
-      "pnl_missed": 8.396241862505269,
+      "pnl_missed": 9.205013378657117,
       "active": false
     },
     {
@@ -493,7 +503,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782930666_22",
@@ -516,7 +527,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782937254_23",
@@ -539,7 +551,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782937254_24",
@@ -563,7 +576,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782937254_25",
@@ -586,7 +600,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782937254_26",
@@ -608,7 +623,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782939699_27",
@@ -631,7 +647,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782939699_28",
@@ -645,14 +662,15 @@
       "evidence_ratio": 0.0,
       "total_evidence": 7,
       "created_at": 1782939699.0803943,
-      "last_applied": 1782962045.091462,
+      "last_applied": 1782963204.9188714,
       "times_applied": 0,
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782939699_29",
@@ -666,14 +684,15 @@
       "evidence_ratio": 0.0,
       "total_evidence": 7,
       "created_at": 1782939699.1345165,
-      "last_applied": 1782962045.0914664,
+      "last_applied": 1782963204.9188764,
       "times_applied": 0,
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782939699_30",
@@ -697,7 +716,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782939699_31",
@@ -721,7 +741,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943853_1",
@@ -789,7 +810,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943853_4",
@@ -811,7 +833,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_5",
@@ -833,7 +856,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_6",
@@ -856,7 +880,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_7",
@@ -879,7 +904,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_8",
@@ -902,7 +928,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_9",
@@ -923,7 +950,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_10",
@@ -946,7 +974,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_11",
@@ -968,7 +997,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_12",
@@ -990,7 +1020,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_13",
@@ -1013,7 +1044,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_14",
@@ -1036,7 +1068,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_15",
@@ -1060,7 +1093,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_16",
@@ -1083,7 +1117,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_17",
@@ -1105,7 +1140,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_18",
@@ -1127,7 +1163,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_19",
@@ -1149,7 +1186,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_20",
@@ -1172,7 +1210,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943854_21",
@@ -1195,7 +1234,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943855_22",
@@ -1217,7 +1257,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943855_23",
@@ -1240,7 +1281,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943855_24",
@@ -1263,7 +1305,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     },
     {
       "rule_id": "rule_1782943855_25",
@@ -1286,7 +1329,8 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false,
+      "retired_reason": "D1 quarantine 2026-07-02: keyword-parsed graduation (inverted actions, n<13, no provenance/dollar validation) [FALLACY_AUDIT D1, THE_STANDARD 2b]"
     }
   ]
 }

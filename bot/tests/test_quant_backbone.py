@@ -253,13 +253,24 @@ class MockHypothesis:
 
 
 class TestGraduatedRulesEngine:
-    """Tests for GraduatedRulesEngine."""
+    """Tests for GraduatedRulesEngine.
+
+    FALLACY_AUDIT D1 (2026-07-02) contract: graduation now lands rules in
+    SHADOW (active=False) pending dollar-positive re-validation, and requires
+    n>=13 evidence. Tests that exercise evaluation/outcome paths promote the
+    rule explicitly (the dollar-validated promotion step).
+    """
 
     def _make_engine(self):
         from llm.graduated_rules import GraduatedRulesEngine
         engine = GraduatedRulesEngine()
         engine._loaded = True  # Skip file loading
         return engine
+
+    @staticmethod
+    def _promote(engine):
+        """Simulate dollar-validated promotion of the latest shadow rule."""
+        engine._rules[-1].active = True
 
     def test_graduate_boost_hypothesis(self):
         engine = self._make_engine()
@@ -270,6 +281,14 @@ class TestGraduatedRulesEngine:
         assert rule.conditions.get("symbol") == "BTC"
         assert rule.conditions.get("regime") == "trend"
         assert rule.adjustment > 0
+        # D1: graduation is shadow-by-default with provenance stamped
+        assert rule.active is False
+        assert rule.era and rule.ledger_version
+
+    def test_graduate_below_n13_refused(self):
+        engine = self._make_engine()
+        h = MockHypothesis("BTC performs strongly in trend regime", total_evidence=9)
+        assert engine.graduate_hypothesis(h) is None
 
     def test_graduate_penalize_hypothesis(self):
         engine = self._make_engine()
@@ -311,6 +330,7 @@ class TestGraduatedRulesEngine:
         engine = self._make_engine()
         h = MockHypothesis("Never buy SOL in panic regime")
         engine.graduate_hypothesis(h)
+        self._promote(engine)
 
         vetoed, conf, summary, veto_ids = engine.evaluate_signal(
             symbol="SOL", regime="panic", side="BUY", confidence=80.0
@@ -323,6 +343,7 @@ class TestGraduatedRulesEngine:
         engine = self._make_engine()
         h = MockHypothesis("BTC has a strong edge in trend regime", evidence_ratio=0.85)
         engine.graduate_hypothesis(h)
+        self._promote(engine)
 
         vetoed, conf, summary, veto_ids = engine.evaluate_signal(
             symbol="BTC", regime="trend", side="BUY", confidence=70.0
@@ -336,6 +357,7 @@ class TestGraduatedRulesEngine:
         engine = self._make_engine()
         h = MockHypothesis("DOGE shows poor performance in range regime")
         engine.graduate_hypothesis(h)
+        self._promote(engine)
 
         vetoed, conf, summary, veto_ids = engine.evaluate_signal(
             symbol="DOGE", regime="range", side="BUY", confidence=70.0
@@ -372,6 +394,7 @@ class TestGraduatedRulesEngine:
         engine = self._make_engine()
         h = MockHypothesis("BTC has a strong edge in trend regime")
         engine.graduate_hypothesis(h)
+        self._promote(engine)
 
         # Apply the rule
         engine.evaluate_signal(symbol="BTC", regime="trend", side="BUY", confidence=70.0)
@@ -385,6 +408,7 @@ class TestGraduatedRulesEngine:
         engine = self._make_engine()
         h = MockHypothesis("DOGE shows poor performance in range")
         engine.graduate_hypothesis(h)
+        self._promote(engine)
 
         engine.evaluate_signal(symbol="DOGE", regime="range", side="BUY", confidence=70.0)
         engine.record_outcome(symbol="DOGE", regime="range", side="BUY", won=False)
@@ -397,6 +421,7 @@ class TestGraduatedRulesEngine:
         engine = self._make_engine()
         h = MockHypothesis("BTC has a strong edge in trend regime")
         engine.graduate_hypothesis(h)
+        self._promote(engine)
 
         rule = engine._rules[0]
         rule.times_applied = 15
@@ -412,6 +437,7 @@ class TestGraduatedRulesEngine:
         engine = self._make_engine()
         h = MockHypothesis("BTC performs strongly in trend regime")
         engine.graduate_hypothesis(h)
+        self._promote(engine)
 
         summary = engine.get_active_rules_summary()
         assert "GRADUATED RULES" in summary
@@ -426,6 +452,7 @@ class TestGraduatedRulesEngine:
         engine = self._make_engine()
         h = MockHypothesis("BTC performs strongly in trend regime")
         engine.graduate_hypothesis(h)
+        self._promote(engine)
 
         stats = engine.get_stats()
         assert stats["total_rules"] == 1
