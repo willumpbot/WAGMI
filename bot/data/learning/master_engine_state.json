@@ -1,27 +1,27 @@
 {
   "engine": "perpetual_improvement_loop",
-  "version": "3.5",
-  "last_run": "2026-07-02T06:10:00Z",
+  "version": "3.6",
+  "last_run": "2026-07-02T07:10:00Z",
   "today": "2026-07-02",
-  "run_number": 165,
+  "run_number": 166,
   "bot_status": "OFFLINE",
   "days_offline": 70,
-  "cadence_streak": 81,
-  "gap_note": "Run165 follows run164 (2026-07-02T05:10:15Z) — ~1h gap. MORNING WINDOW (74% WR) NOW OPEN since 06:00 UTC. Bot offline Day 70. No new audit files since 2026-06-23T16:07:25Z (9 days). Every hour bot stays offline = missed alpha in best window of day.",
-  "data_source_confirmed": "trades_10d.csv (965 trades, header-verified). backtest_100d.csv (589 trades). bot/trades.csv header-only (no live trades). No llm/cost_tracker.json.",
+  "cadence_streak": 82,
+  "gap_note": "Run166 follows run165 (2026-07-02T06:10:00Z) — ~1h gap. MORNING WINDOW (74% WR) STILL OPEN — ~4h50m remaining (closes 12:00 UTC). Bot offline Day 70. No new audit files since 2026-06-23T16:07:25Z (9 days). RR flag at 98 runs — CRITICAL, human decision overdue.",
+  "data_source_confirmed": "trades_10d.csv (965 trades, unchanged). backtest_100d.csv (589 trades). bot/trades.csv header-only (no live trades). No llm/cost_tracker.json.",
   "tod_alert": {
     "current_window": "MORNING (06:00-12:00 UTC)",
+    "current_utc_hour": 7,
     "current_window_wr": 0.74,
-    "current_window_status": "OPEN -- 74% WR. Bot offline. Opportunity actively being lost.",
+    "current_window_status": "OPEN — 74% WR. ~4h50m remaining. Bot offline. Opportunity actively being lost.",
     "next_window": "AFTERNOON (12:00-18:00 UTC)",
     "next_window_wr": 0.64,
-    "next_window_opens_in_minutes": 350,
-    "opportunity_cost_today": 0.0,
-    "hours_wasted_today": 6.17,
-    "morning_window_missed": true,
-    "morning_window_pct_lost": "~10% of 6h window elapsed",
+    "next_window_opens_in_minutes": 290,
+    "hours_wasted_today": 7.17,
+    "morning_window_missed": false,
+    "morning_window_pct_elapsed": 19.7,
     "windows_remaining_today": 3,
-    "action_urgent": "MORNING WINDOW NOW OPEN (74% WR, 06:00-12:00 UTC). Bot offline. Start bot NOW to capture remaining ~5h50m of best window."
+    "action_urgent": "MORNING WINDOW STILL OPEN (74% WR, 06:00-12:00 UTC). Bot offline. Start bot NOW to capture remaining ~4h50m of best window."
   },
   "graduated_rules_status": {
     "total_rules": 24,
@@ -29,12 +29,12 @@
     "inactive_rules": 5,
     "last_audit_in_file": "2026-06-26T06:07:17Z",
     "new_rule_this_run": null,
-    "note": "Run165: No new rules added. All audit recs processed. Night block, HYPE vetoes, regime penalties in place. conf_90plus_general_boost_v1 pending live verification (run162, 3rd unverified run)."
+    "note": "Run166: No new rules added. conf_90plus_general_boost_v1 pending live verification (4th unverified run). All other recs resolved."
   },
   "subsystems": {
     "auto_fix": {
-      "last_run": "2026-07-02T06:10:00Z",
-      "run_number": 165,
+      "last_run": "2026-07-02T07:10:00Z",
+      "run_number": 166,
       "fixes_applied_this_run": 0,
       "total_fixes_all_time": 126,
       "gates_active": 6,
@@ -44,13 +44,13 @@
       "newest_audit": "2026-06-23T16:07:25Z",
       "no_new_audit_since": "9 days",
       "recs_status": {
-        "TP1_BLIND_SPOT_FIX": "APPLIED_PENDING_LIVE_VERIFICATION (run146) -- 72nd unverified flag",
+        "TP1_BLIND_SPOT_FIX": "APPLIED_PENDING_LIVE_VERIFICATION (run146) -- 73rd unverified flag",
         "EVENING_AFTERNOON_PENALTY": "RESOLVED -- became BOOST rules based on live data",
-        "HYPE_SHORT_HIGHCONF_VETO_AUDIT": "DEFERRED -- 18th deferral, conf=68%<70% escalation threshold",
-        "CONF_90PLUS_GENERAL_BOOST": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 active, gate=20%. 3rd unverified run."
+        "HYPE_SHORT_HIGHCONF_VETO_AUDIT": "DEFERRED -- 19th deferral, conf=68%<70% escalation threshold",
+        "CONF_90PLUS_GENERAL_BOOST": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 active, gate=20%. 4th unverified run."
       },
       "deferred": [
-        "HYPE_SHORT_HIGHCONF_VETO_AUDIT (conf=68% < 70% escalation threshold) -- 18th consecutive deferral"
+        "HYPE_SHORT_HIGHCONF_VETO_AUDIT (conf=68% < 70% escalation threshold) -- 19th consecutive deferral"
       ],
       "applied_this_run": [],
       "output": {
@@ -59,10 +59,10 @@
       }
     },
     "execution_forensics": {
-      "last_run": "2026-07-02T06:10:00Z",
-      "run_number": 165,
+      "last_run": "2026-07-02T07:10:00Z",
+      "run_number": 166,
       "trades_analyzed": 965,
-      "delta_from_prior": "NO CHANGE -- bot offline Day 70, same 965-trade dataset. RR flag: 96->97. Duration bug flag: 87->88.",
+      "delta_from_prior": "NO CHANGE -- bot offline Day 70, same 965-trade dataset. RR flag: 97->98. Duration bug flag: 88->89.",
       "avg_slippage_pct": 0.534,
       "noise_stop_pct": 36.4,
       "rr_ratio_last50": 0.479,
@@ -74,8 +74,8 @@
       "avg_pnl_recent_50": "avg_win=$147.07, avg_loss=-$306.96",
       "equity_current": 497.05,
       "equity_drawdown_pct": 90.1,
-      "rr_consecutive_flags": 97,
-      "duration_bug_consecutive_flags": 88,
+      "rr_consecutive_flags": 98,
+      "duration_bug_consecutive_flags": 89,
       "consecutive_loss_streak": 4,
       "losses_from_circuit_breaker": 2,
       "slippage_by_symbol": {"BTC": 0.41, "SOL": 0.48, "HYPE": 0.64},
@@ -85,16 +85,16 @@
         "Option A: global atr_mult_sl 1.5->1.8 (raises breakeven WR 68%->62%)",
         "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted, lower risk)"
       ],
-      "rr_flag_note": "Flag 97 -- HUMAN_DECISION_OVERDUE. No decision in 97 runs (~97 hours). Recent 50: avg loss 2.09x avg win. All-time RR=0.763 healthier but still needs fix for recent period.",
+      "rr_flag_note": "Flag 98 -- HUMAN_DECISION_OVERDUE. No decision in 98 runs (~98 hours). Recent 50: avg loss 2.09x avg win. Recommendation: Option B (lower blast radius).",
       "output": {
         "avg_slippage": "0.534%",
         "noise_stop_problem": "36.4% of stops in noise/illiquid regimes",
-        "rr_critical": "avg_loss=$306.96 vs avg_win=$147.07 (last50 ratio=0.479) -- 97th flag, HUMAN_DECISION_OVERDUE"
+        "rr_critical": "avg_loss=$306.96 vs avg_win=$147.07 (last50 ratio=0.479) -- 98th flag, HUMAN_DECISION_OVERDUE"
       }
     },
     "live_injection": {
-      "last_run": "2026-07-02T06:10:00Z",
-      "run_number": 165,
+      "last_run": "2026-07-02T07:10:00Z",
+      "run_number": 166,
       "trades_analyzed": 965,
       "delta_from_prior": "NO NEW TRADES -- same dataset (bot offline Day 70). No new injections needed.",
       "high_edges": [
@@ -104,7 +104,7 @@
           "count": 179,
           "ev_per_trade": 32.44,
           "status": "CAPTURED -- sol_short_penalize_v1 deactivated Jun26 (correct)",
-          "consecutive_flags": 32
+          "consecutive_flags": 33
         },
         {
           "key": "BTC_SHORT_90PLUS",
@@ -112,14 +112,14 @@
           "count": 43,
           "ev_per_trade": 102.92,
           "status": "CAPTURED -- btc_short_90plus_boost_v1 active",
-          "consecutive_flags": 32
+          "consecutive_flags": 33
         },
         {
           "key": "CONF_90_PLUS_NON_BTC",
           "win_rate": 64.1,
           "count": 39,
           "ev_per_trade": 101.92,
-          "status": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 in graduated_rules.json. gate=20%. 3rd unverified run.",
+          "status": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 in graduated_rules.json. gate=20%. 4th unverified run.",
           "consecutive_flags": 0,
           "severity": "MONITORING_PENDING_LIVE_VERIFICATION"
         }
@@ -139,33 +139,34 @@
       }
     },
     "daily_synthesis": {
-      "last_run": "2026-07-02T06:10:00Z",
-      "run_number": 165,
+      "last_run": "2026-07-02T07:10:00Z",
+      "run_number": 166,
       "new_day": false,
       "date": "2026-07-02",
-      "current_utc_hour": 6,
+      "current_utc_hour": 7,
       "trades_today": 0,
       "anomalies_found": 6,
-      "report_generated": true,
+      "report_generated": false,
       "report_path": "bot/data/sessions/daily_synthesis_2026-07-02.json",
+      "report_note": "Report already generated this day (run165). No new trades to update. Reusing existing report.",
       "anomalies": [
-        {"type": "BOT_OFFLINE", "severity": "CRITICAL", "days": 70, "flags": 157},
-        {"type": "MORNING_WINDOW_ACTIVE_MISSED", "severity": "CRITICAL_TIMESENSITIVE", "window": "06:00-12:00 UTC", "wr": 0.74},
-        {"type": "RR_GEOMETRY_BROKEN", "severity": "CRITICAL", "rr_ratio_last50": 0.479, "flags": 97},
+        {"type": "BOT_OFFLINE", "severity": "CRITICAL", "days": 70, "flags": 158},
+        {"type": "MORNING_WINDOW_ACTIVE_MISSED", "severity": "CRITICAL_TIMESENSITIVE", "window": "06:00-12:00 UTC", "wr": 0.74, "minutes_remaining": 290},
+        {"type": "RR_GEOMETRY_BROKEN", "severity": "CRITICAL", "rr_ratio_last50": 0.479, "flags": 98},
         {"type": "EQUITY_DRAWDOWN", "severity": "HIGH", "drawdown_pct": 90.1, "equity": 497.05},
         {"type": "CIRCUIT_BREAKER_PROXIMITY", "severity": "MEDIUM", "consecutive_losses": 4, "trigger": 6},
-        {"type": "TP1_FIX_UNVERIFIED", "severity": "LOW", "flags": 72}
+        {"type": "TP1_FIX_UNVERIFIED", "severity": "LOW", "flags": 73}
       ],
       "output": {
         "anomalies_found": 6,
-        "report_generated": true
+        "report_generated": false
       }
     },
     "model_optimization": {
-      "last_run": "2026-07-02T06:10:00Z",
-      "run_number": 165,
+      "last_run": "2026-07-02T07:10:00Z",
+      "run_number": 166,
       "cost_tracker_status": "NOT_FOUND",
-      "consecutive_skips": 21,
+      "consecutive_skips": 22,
       "swaps_recommended_this_run": 0,
       "potential_monthly_savings": 0.0,
       "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- fix RR geometry (atr_mult_sl), restart bot, collect live data.",
@@ -176,25 +177,25 @@
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL_TIMESENSITIVE",
-      "finding": "MORNING WINDOW (06:00-12:00 UTC, 74% WR) NOW OPEN. ~5h50m remaining. Bot offline Day 70.",
-      "action": "START BOT NOW: cd /home/user/WAGMI/bot && python run.py paper -- 50% sizing.",
-      "consecutive_flags": 157
+      "finding": "MORNING WINDOW (06:00-12:00 UTC, 74% WR) is OPEN — ~4h50m remaining. Bot offline Day 70. Alpha being lost every hour.",
+      "action": "START BOT: cd /home/user/WAGMI/bot && python run.py paper -- 50% sizing (circuit_breaker: 2 losses from trigger).",
+      "consecutive_flags": 158
     },
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "RR geometry broken at 0.479 (last 50 trades) -- avg_loss=$306.96 vs avg_win=$147.07. 97th consecutive flag.",
-      "action": "Choose: Option A (global atr_mult_sl 1.5->1.8) or Option B (HYPE-specific 2.0->2.3). Overdue by 97 runs.",
-      "consecutive_flags": 97
+      "finding": "RR geometry broken at 0.479 (last 50 trades) — avg_loss=$306.96 vs avg_win=$147.07. 98th consecutive flag. Kelly criterion NEGATIVE for recent period (-0.265).",
+      "action": "CHOOSE: Option A (global atr_mult_sl 1.5->1.8) or Option B (HYPE-specific 2.0->2.3). Recommendation: Option B (lower blast radius). 4 days overdue.",
+      "consecutive_flags": 98
     },
     {
       "subsystem": "auto_fix",
       "severity": "MEDIUM",
-      "finding": "Two pending fixes unverified: TP1_PARTIAL_FEEDBACK_BRANCH (72 runs) and CONF_90PLUS_GENERAL_BOOST (3 runs).",
-      "action": "Start bot to generate live data.",
-      "consecutive_flags": 72
+      "finding": "Two pending unverified fixes: TP1_PARTIAL_FEEDBACK_BRANCH (73 runs unverified) and CONF_90PLUS_GENERAL_BOOST (4 runs unverified). Both require live bot trades to verify.",
+      "action": "Start bot to generate live data — these cannot self-verify without trades.",
+      "consecutive_flags": 73
     }
   ],
-  "priority_action": "START BOT NOW: cd /home/user/WAGMI/bot && python run.py paper -- MORNING WINDOW (74% WR) is OPEN. 50% sizing. RR fix decision needed (97 flags).",
-  "summary": "Run 165 complete. 2026-07-02 06:10 UTC. Bot offline Day 70 (157th flag). MORNING WINDOW NOW OPEN (74% WR) -- 5h50m remaining. RR flag 97th. cadence_streak=81."
+  "priority_action": "START BOT NOW: cd /home/user/WAGMI/bot && python run.py paper -- MORNING WINDOW (74% WR) OPEN, ~4h50m remaining. 50% sizing (circuit_breaker near). RR fix decision needed (Option B recommended, 98th flag).",
+  "summary": "Run 166 complete. 2026-07-02 07:10 UTC. Bot offline Day 70 (158th flag). MORNING WINDOW STILL OPEN (74% WR) — ~4h50m remaining. RR flag 98th (OVERDUE). No new fixes applied. cadence_streak=82."
 }
