@@ -1,10 +1,11 @@
 {
-  "status": "UPDATED_RUN163",
-  "last_updated": "2026-07-01T18:10:00Z",
-  "run_number": 163,
+  "status": "UPDATED_RUN165",
+  "last_updated": "2026-07-02T06:10:00Z",
+  "run_number": 165,
   "trades_analyzed": 965,
-  "bot_offline_days": 69,
+  "bot_offline_days": 70,
   "trades_csv_exists": false,
+  "delta_from_prior": "NO CHANGE -- bot offline Day 70, same 965-trade dataset. RR flag: 96->97. Duration bug flag: 87->88.",
   "slippage_analysis": {
     "avg_slippage_from_sl_level_pct": 0.534,
     "slippage_by_symbol": {"BTC": 0.41, "SOL": 0.48, "HYPE": 0.64},
@@ -26,11 +27,11 @@
     "avg_win_100d_backtest": 82.72,
     "avg_loss_100d_backtest": -91.27,
     "win_loss_ratio_100d_backtest": 0.906,
-    "verdict": "RECENT_PERIOD_DEGRADED — last50 avg loss 2.09x avg win vs all-time 1.31x and 100d backtest 1.10x. Live execution quality has degraded.",
+    "verdict": "RECENT_PERIOD_DEGRADED — last50 avg loss 2.09x avg win vs all-time 1.31x and 100d backtest 1.10x.",
     "kelly_full_dataset": 0.0061,
     "kelly_recent_100": -0.265,
-    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_95",
-    "consecutive_flags": 95,
+    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_97",
+    "consecutive_flags": 97,
     "fix_options": [
       "Option A: global atr_mult_sl 1.5->1.8 (breakeven WR 68%->62%)",
       "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted)"
@@ -45,7 +46,7 @@
   "duration_bug": {
     "pct_affected": 100.0,
     "status": "UNFIXED in cached data -- code patch run126 unverified",
-    "consecutive_flags": 86
+    "consecutive_flags": 88
   },
   "performance_alltime": {"win_rate": 57.0, "avg_win": 153.99, "avg_loss": -201.90},
   "performance_last50": {"win_rate": 56.0, "avg_win": 147.07, "avg_loss": -306.96},
@@ -58,6 +59,7 @@
   "output": {
     "avg_slippage": "0.534%",
     "noise_stop_problem": "36.4% of stops in high-conf setups",
+    "rr_critical": "avg_loss=$306.96 vs avg_win=$147.07 (last50 ratio=0.479) -- 97th flag, HUMAN_DECISION_OVERDUE",
     "rr_insight": "live recent RR=0.479 vs backtest RR=0.906 — live execution degradation detected"
   }
 }

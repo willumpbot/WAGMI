@@ -1,8 +1,9 @@
 {
-  "status": "UPDATED_RUN163",
-  "last_updated": "2026-07-01T18:10:00Z",
-  "run_number": 163,
+  "status": "UPDATED_RUN165",
+  "last_updated": "2026-07-02T06:10:00Z",
+  "run_number": 165,
   "trades_analyzed": 965,
+  "delta_from_prior": "NO NEW TRADES -- same dataset (bot offline Day 70). Consecutive flag counters incremented.",
   "high_edges": [
     {
       "key": "SOL_SHORT",
@@ -10,7 +11,7 @@
       "count": 179,
       "ev_per_trade": 32.44,
       "status": "ACTIVE -- sol_short_penalize_v1 DEACTIVATED Jun26 (correct, was inverting evidence)",
-      "consecutive_flags": 30
+      "consecutive_flags": 32
     },
     {
       "key": "BTC_SHORT_90PLUS",
@@ -18,14 +19,14 @@
       "count": 43,
       "ev_per_trade": 102.92,
       "status": "ACTIVE boost +10 via btc_short_90plus_boost_v1",
-      "consecutive_flags": 30
+      "consecutive_flags": 32
     },
     {
       "key": "CONF_90_PLUS_NON_BTC",
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 in graduated_rules.json (+5pts boost, gate=20%). Pending live verification.",
+      "status": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 in graduated_rules.json (+5pts boost, gate=20%). 3rd run pending live verification.",
       "consecutive_flags": 0,
       "applied_at": "2026-07-01T17:09:55Z",
       "severity": "MONITORING_PENDING_LIVE_VERIFICATION"
@@ -42,8 +43,8 @@
   ],
   "weak_setups_found": 6,
   "new_injections_this_run": 0,
-  "run163_observation": {
-    "finding": "100d backtest (589 trades) vs full 965-trade set diverge on confidence tiers. 100d 80-90% conf = 40% WR vs 965-trade set shows better distribution. 20d recent shows 82% WR at 80-90% conf. Three-way divergence makes confidence-bin rules uncertain. Prioritize live data collection.",
+  "run165_observation": {
+    "finding": "Morning window (06:00-12:00 UTC, 74% WR) is now OPEN. Bot still offline. SOL SHORT remains primary alpha source (63.7% WR, 179 trades). HYPE negative EV despite positive WR -- veto is mathematically justified.",
     "symbol_ev_all_time": {
       "SOL": {"wr": 59.5, "ev_per_trade": 18.23, "n": 301},
       "BTC": {"wr": 56.6, "ev_per_trade": 1.62, "n": 267},
@@ -51,5 +52,5 @@
     },
     "key_insight": "HYPE has POSITIVE WR (55.4%) but NEGATIVE EV (-$12.63/trade) due to RR asymmetry. Vetoing HYPE is correct even at above-50% WR. SOL is the primary alpha source."
   },
-  "output": {"high_edges_found": 3, "weak_setups_found": 6}
+  "output": {"high_edges_found": 3, "weak_setups_found": 6, "new_injections_this_run": 0}
 }
