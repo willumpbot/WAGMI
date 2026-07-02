@@ -150,8 +150,26 @@ class WindowResult:
         self.note = note
 
 
+def try_seed(win_id: str, end: str, args) -> Path | None:
+    """Pre-fetch the window's candles from Coinbase spot (free) into the
+    fetcher disk-cache format. Rescues windows beyond exchange history depth
+    (HL 1h depth ~208d; Bybit geo-blocked; Kraken last-720-only)."""
+    seed_dir = REPLAY_ROOT / f"seed_{win_id}"
+    cmd = [sys.executable, str(BOT_DIR / "tools" / "replay_seed_candles.py"),
+           "--end", end, "--days", "11", "--symbols", args.symbols,
+           "--out", str(seed_dir)]
+    seed_log = REPLAY_ROOT / f"seed_{win_id}.log"
+    with open(seed_log, "a", encoding="utf-8", errors="replace") as logf:
+        rc = subprocess.call(cmd, cwd=str(BOT_DIR),
+                             stdout=logf, stderr=subprocess.STDOUT)
+    if rc == 0:
+        return seed_dir
+    clog(f"{win_id} SEED_FAILED rc={rc} (see {seed_log.name})")
+    return None
+
+
 def run_window(win_id: str, start: str, end: str, regime: str,
-               args) -> WindowResult:
+               args, seed_dir: Path = None) -> WindowResult:
     """Run one window via the harness; mirror pipelines to campaign.log."""
     run_dir = REPLAY_ROOT / win_id
     journal = run_dir / "sandbox" / "data" / "replay_llm_journal.jsonl"
@@ -168,8 +186,11 @@ def run_window(win_id: str, start: str, end: str, regime: str,
         "--run-id", win_id,
         "--timeout-min", str(args.timeout_min),
     ]
+    if seed_dir is not None:
+        cmd += ["--seed-cache-dir", str(seed_dir)]
     clog(f"{win_id} WINDOW_START {start}->{end} regime=[{regime}] "
-         f"cap={args.cap} sleep={args.sleep}s")
+         f"cap={args.cap} sleep={args.sleep}s"
+         f"{' seeded=coinbase_spot' if seed_dir else ''}")
 
     seen = 0                 # journal entries already mirrored
     recent_entry_decisions = []
@@ -351,6 +372,7 @@ def synthesize(state: dict, args):
         win_rows.append({
             "id": win_id, "window": f"{start} -> {end}", "regime": regime,
             "status": status, "note": wstate.get("note", ""),
+            "seeded": wstate.get("seeded", False),
             "stats": st,
             "calls": summary.get("llm_calls", 0),
             "entry_events": summary.get("replay_entry_events", "n/a"),
@@ -411,7 +433,9 @@ def synthesize(state: dict, args):
     ]
     for r in win_rows:
         if r["status"] == "done":
-            lines.append(f"- {r['id']}: 5m depth: {r['coverage']}")
+            seeded_note = (" | CANDLES: Coinbase SPOT proxy (perp history "
+                           "unreachable for this era)" if r["seeded"] else "")
+            lines.append(f"- {r['id']}: 5m depth: {r['coverage']}{seeded_note}")
     lines += [
         "- Empty-memory brain; candle-only prompts (no funding/OI "
         "reconstruction); LLM non-determinism — one policy sample per window.",
@@ -480,12 +504,25 @@ def main() -> int:
     consecutive_limit_pauses = 0
     for win_id, start, end, regime in WINDOWS:
         wstate = state.setdefault("windows", {}).setdefault(win_id, {})
-        if args.resume and wstate.get("status") in ("done", "skipped_data"):
-            clog(f"{win_id} RESUME_SKIP already {wstate['status']}")
+        # Resume skips only DONE windows: skipped_data windows get another
+        # chance via the Coinbase seed path.
+        if args.resume and wstate.get("status") == "done":
+            clog(f"{win_id} RESUME_SKIP already done")
             continue
 
+        seed_dir = None
+        attempted_seed = False
         while True:
-            result = run_window(win_id, start, end, regime, args)
+            result = run_window(win_id, start, end, regime, args,
+                                seed_dir=seed_dir)
+
+            if result.status == "skipped_data" and not attempted_seed:
+                attempted_seed = True
+                clog(f"{win_id} DATA_FALLBACK exchange history insufficient — "
+                     f"seeding Coinbase spot candles")
+                seed_dir = try_seed(win_id, end, args)
+                if seed_dir is not None:
+                    continue  # retry the window with seeded cache
 
             if result.status == "limit":
                 consecutive_limit_pauses += 1
@@ -503,7 +540,8 @@ def main() -> int:
 
             consecutive_limit_pauses = 0
             wstate.update(status=result.status, note=result.note,
-                          window=f"{start}->{end}", regime=regime)
+                          window=f"{start}->{end}", regime=regime,
+                          seeded=seed_dir is not None)
             save_state(state)
             if result.status == "skipped_data":
                 clog(f"{win_id} WINDOW_SKIPPED_DATA {result.note}")

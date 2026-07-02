@@ -364,6 +364,10 @@ def write_run_report(run_id: str, run_dir: Path, sandbox: Path,
     lines += [
         "",
         "## Fidelity caveats (honest, per THE_STANDARD)",
+        *(["- DATA SOURCE: candles pre-seeded from Coinbase SPOT (exchange "
+           "perp history does not reach this era) — spot prices proxy "
+           "Hyperliquid perp prices; basis/funding divergence not modeled."]
+          if getattr(args, "seed_cache_dir", None) else []),
         "- EMPTY MEMORY: the replay brain starts with empty memory/rules/"
         "stats stores (prevents future-knowledge leaks, but the live bot "
         "carries accumulated memory the replay lacks).",
@@ -407,6 +411,11 @@ def main() -> int:
                     help="seconds between LLM pipelines (quota protection)")
     ap.add_argument("--run-id", default=None)
     ap.add_argument("--timeout-min", type=int, default=240)
+    ap.add_argument("--seed-cache-dir", default=None,
+                    help="directory of pre-fetched candle CSVs (disk-cache "
+                         "format, e.g. from tools/replay_seed_candles.py) "
+                         "copied into the sandbox data/cache before the run — "
+                         "rescues windows beyond exchange history depth")
     ap.add_argument("--post-only", action="store_true",
                     help="skip the run; post-process an existing run dir "
                          "(salvage after a harness/session crash)")
@@ -438,6 +447,17 @@ def main() -> int:
     print(f"[HARNESS] run_id={run_id}")
     print("[HARNESS] building sandbox (code copy, empty data tree)...")
     sandbox = build_sandbox(run_dir)
+
+    if args.seed_cache_dir:
+        seed_dir = Path(args.seed_cache_dir)
+        dest = sandbox / "data" / "cache"
+        dest.mkdir(parents=True, exist_ok=True)
+        seeded = 0
+        for f in sorted(seed_dir.glob("*.csv")):
+            shutil.copy2(f, dest / f.name)
+            seeded += 1
+        print(f"[HARNESS] seeded {seeded} candle cache files from {seed_dir} "
+              "(Coinbase spot proxy — fidelity caveat in report)")
 
     print("[HARNESS] snapshotting production data for isolation proof...")
     before = snapshot_production_data()
