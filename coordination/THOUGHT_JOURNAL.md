@@ -969,3 +969,8 @@ Found via /schedule + RemoteTrigger: THREE cloud routines (created Apr 24-25) fi
 
 === 2026-07-02 ~11:05 UTC — EQUITY RESET TO $5,000 (owner call) — NEW ERA MARKER ===
 Fresh baseline for the repaired-system era. Old state archived (risk_equity_state.pre_reset_2026-07-02.json, was $1,927.54/peak $1,962.38). Reset done with bot STOPPED (first attempt failed — old process survived wmic kill and kept in-memory equity; killed properly via PowerShell CommandLine match, lesson noted). Verified: fresh pid 29480 scan 1, heartbeat AND persisted both $5,000.00, invariants ALL CLEAR, 3 positions carried over (incl. the two ratchet-locked winners SOL/XRP). ALL analyses must treat 2026-07-02T11:05Z as an ERA BOUNDARY: pre-reset PnL = legacy era; the $5k era measures ONLY the repaired system.
+
+=== 2026-07-02 ~11:50 UTC — engine pass: ALL CLEAR + the learning loop's first honest kill ===
+Invariants 7/7. New era: first close = HYPE SHORT -$1.48 via SL, labeled EXPLORATION/SL (the "error trade" died properly; its CLASS is now blocked — exploration cannot convert pipeline failures, commit pushed, armed at restart pid 43824). Equity $5,000.57.
+LEARNING LOOP MILESTONE: hype_long_veto (restored w/ zeroed counters) was AUTO-RETIRED by the corrected dollar-aware criterion — 13 counterfactual obs, 0 correct, $208 missed (HYPE rallied; blocking longs cost money in THIS window). Restore→measure→retire on dollars = the self-correcting machinery working. META-AUDIT candidate: retirement evidence came from ONE rally window — consider requiring era-diversity for retire decisions (same one-window fallacy class we ban for promotions).
+Campaign C1: healthy, 17/180 calls, 0 failures, all considered-flats so far (early window). LL 200.
