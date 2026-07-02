@@ -23,8 +23,28 @@ Safety:
 """
 
 import logging
+import os
 from typing import Dict, Optional, Any
 from dataclasses import dataclass
+
+
+def _env_float(name: str, default: float) -> float:
+    """Read a float from environment, fall back to default."""
+    val = os.environ.get(name)
+    if val is not None:
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            pass
+    return default
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    """Read a bool from environment, fall back to default."""
+    val = os.environ.get(name)
+    if val is None:
+        return default
+    return val.strip().lower() in ("1", "true", "yes", "on")
 
 # Hyperliquid tiered maintenance margins by position notional (USD).
 # At higher notional, maintenance margin increases — liquidation is CLOSER.
@@ -161,16 +181,40 @@ class LeverageManager:
         base_lev = FULL_KELLY_LEV  # 7.8x
 
         # Confidence only scales SIZE (risk_multiplier), not leverage
-        if confidence < 60:
-            rm = 0.6
-        elif confidence < 70:
-            rm = 0.8
-        elif confidence < 80:
-            rm = 1.0
-        elif confidence < 90:
-            rm = 1.3
+        #
+        # SHIP S3 (2026-07-02): V2 cut-only confidence sizing ladder.
+        # BT_SIZING_LADDER (n=90 replay): conf 60-69 = 17.4% WR (-$374, n=46);
+        # 70-79 = 0-for-14 (-$722). Cutting 60-79 to 0.15x turns the
+        # known-confidence book from -$1,008 to -$67 and cuts max DD ~85%.
+        # NO upweight above 80: GOLDMINE confirmed confidence is
+        # anti-predictive above 70 (era-split AUC 0.43-0.51), and the 80+
+        # band is n=8 / one regime — below the n>=13 evidence bar. The old
+        # 1.3x/1.5x boosts are therefore held at 1.0x (cut-only ladder).
+        # Flag-revertible: CONF_LADDER_ENABLED=false restores the previous
+        # 0.6/0.8/1.0/1.3/1.5 ladder; per-band env overrides below.
+        if _env_bool("CONF_LADDER_ENABLED", True):
+            if confidence < 60:
+                rm = _env_float("CONF_LADDER_MULT_LT60", 0.15)
+            elif confidence < 70:
+                rm = _env_float("CONF_LADDER_MULT_60_69", 0.15)
+            elif confidence < 80:
+                rm = _env_float("CONF_LADDER_MULT_70_79", 0.15)
+            elif confidence < 90:
+                rm = _env_float("CONF_LADDER_MULT_80_89", 1.0)
+            else:
+                rm = _env_float("CONF_LADDER_MULT_90P", 1.0)
         else:
-            rm = 1.5  # Max conviction
+            # Pre-S3 ladder (kept as the CONF_LADDER_ENABLED=false revert path)
+            if confidence < 60:
+                rm = 0.6
+            elif confidence < 70:
+                rm = 0.8
+            elif confidence < 80:
+                rm = 1.0
+            elif confidence < 90:
+                rm = 1.3
+            else:
+                rm = 1.5  # Max conviction
 
         # Agreement scales leverage (more strategies agree = more leverage)
         lev = min(base_lev * _agree_mult, cap)

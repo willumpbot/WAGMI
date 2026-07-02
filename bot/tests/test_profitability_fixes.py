@@ -610,13 +610,44 @@ class TestKellySizing:
         assert d3.leverage >= d2.leverage, "3-agree should get >= leverage than 2-agree"
 
     def test_3agree_tier5_scales_kelly(self):
-        """At 89%, 3-agree should get scalp-Kelly leverage with high rm."""
+        """At 89%, 3-agree should get scalp-Kelly leverage.
+
+        SHIP S3 (2026-07-02): rm no longer upweights above 80 — the cut-only
+        confidence ladder holds 80-89 at 1.0x (BT_SIZING_LADDER: 80+ band n=8,
+        single regime, below n>=13 bar; GOLDMINE: conf anti-predictive >70)."""
         from execution.leverage import LeverageManager
         mgr = LeverageManager()
         d = mgr.decide(89, 3, 4)
         assert d.leverage >= 5.0, f"3-agree at 89% should get >=5x, got {d.leverage}"
         assert d.leverage <= 15.0, f"should be <=15x cap, got {d.leverage}"
-        assert d.risk_multiplier >= 1.2, f"risk_mult should be >=1.2, got {d.risk_multiplier}"
+        assert d.risk_multiplier == 1.0, f"risk_mult should be 1.0 (no upweight), got {d.risk_multiplier}"
+
+    def test_conf_ladder_cuts_toxic_bands(self):
+        """SHIP S3: 60-79 confidence band sized at 0.15x (cut-only ladder)."""
+        from execution.leverage import LeverageManager
+        mgr = LeverageManager()
+        for conf in [60, 65, 70, 75, 79]:
+            d = mgr.decide(conf, 3, 4)
+            assert d.risk_multiplier == 0.15, \
+                f"rm at {conf}% should be 0.15, got {d.risk_multiplier}"
+        for conf in [80, 89, 90, 95]:
+            d = mgr.decide(conf, 3, 4)
+            assert d.risk_multiplier == 1.0, \
+                f"rm at {conf}% should be 1.0 (no upweight), got {d.risk_multiplier}"
+
+    def test_conf_ladder_disabled_restores_old_ladder(self):
+        """CONF_LADDER_ENABLED=false reverts to the pre-S3 rm ladder."""
+        import os
+        from execution.leverage import LeverageManager
+        mgr = LeverageManager()
+        os.environ["CONF_LADDER_ENABLED"] = "false"
+        try:
+            assert mgr.decide(65, 3, 4).risk_multiplier == 0.8
+            assert mgr.decide(75, 3, 4).risk_multiplier == 1.0
+            assert mgr.decide(85, 3, 4).risk_multiplier == 1.3
+            assert mgr.decide(95, 3, 4).risk_multiplier == 1.5
+        finally:
+            del os.environ["CONF_LADDER_ENABLED"]
 
     def test_3agree_scalp_kelly(self):
         """Scalp-Kelly: base leverage, capped per tier.
