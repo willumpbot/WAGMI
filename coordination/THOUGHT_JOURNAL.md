@@ -974,3 +974,8 @@ Fresh baseline for the repaired-system era. Old state archived (risk_equity_stat
 Invariants 7/7. New era: first close = HYPE SHORT -$1.48 via SL, labeled EXPLORATION/SL (the "error trade" died properly; its CLASS is now blocked — exploration cannot convert pipeline failures, commit pushed, armed at restart pid 43824). Equity $5,000.57.
 LEARNING LOOP MILESTONE: hype_long_veto (restored w/ zeroed counters) was AUTO-RETIRED by the corrected dollar-aware criterion — 13 counterfactual obs, 0 correct, $208 missed (HYPE rallied; blocking longs cost money in THIS window). Restore→measure→retire on dollars = the self-correcting machinery working. META-AUDIT candidate: retirement evidence came from ONE rally window — consider requiring era-diversity for retire decisions (same one-window fallacy class we ban for promotions).
 Campaign C1: healthy, 17/180 calls, 0 failures, all considered-flats so far (early window). LL 200.
+
+=== 2026-07-02 ~14:50 UTC — engine pass: C1 WON + era green ===
+⭐ C1 COMPLETE: 3 closes, 66.7% WR, +$16.18 net fees (+3.2%) in the Jul-2025 trend-up window — LLM-approved entries through the FULL pipeline with restored exits, incl. a +$8.21 trailing runner. FIRST-EVER entry-edge evidence (n=3, one window; standard verdict: suggestive, 5 windows to go). C2 running (78/180 calls, low-liquidity stretch, correctly flat so far). Scaling math: ~1 close/60 calls at C1 signal density.
+LIVE ERA: green +$2.65 (2W/1L) — ratchet harvested XRP +$0.85 + SOL +$0.98; HYPE loss -$1.48 was the now-blocked class. Invariants 7/7, equity one-truth, LL 200.
+Thesis-grading watch RESOLVED: 0 graded because all era closes were EXPLORATION (no thesis linked) — grader arms on first LLM_FIRST close.

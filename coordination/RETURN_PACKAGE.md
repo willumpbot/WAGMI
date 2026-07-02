@@ -26,6 +26,8 @@ From MORNING_BRIEF (evidence cited there per item):
 9. Limit/maker exits: backtest first (halves the 10.4bps round-trip fee floor)
 
 ## 4. Landing this morning (auto-updates here)
+- ⭐ **C1 RESULT: the repaired brain WON its first history window** — trend-up week Jul 2025: 3 closes, 66.7% WR, +$16.18 net fees (+3.2%/window on replay equity), incl. a trailing runner +$8.21. First-ever evidence of entry edge (n=3, one window — 5 more regimes running). REPLAY_RUN_C1.md
+- Live era echo: fresh $5k era is GREEN +$2.65 (2W/1L), ratchet harvested both locked winners (XRP +$0.85, SOL +$0.98).
 - Replay campaign plan: multi-regime windows, entry-event triggering, closes-per-call math → REPLAY_CAMPAIGN_PLAN.md (in flight)
 - Regime-oracle upgrade (mechanical overlay, validated .600→.652) shipping to the live bot (in flight)
 
