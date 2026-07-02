@@ -18,6 +18,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -38,9 +40,9 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "active": true,
       "pnl_saved": 0.0,
-      "pnl_missed": 0.0
+      "pnl_missed": 0.0,
+      "active": true
     },
     {
       "rule_id": "sol_long_veto_v1",
@@ -55,11 +57,13 @@
       "evidence_ratio": 0.24,
       "total_evidence": 34,
       "created_at": 1746382701.0,
-      "last_applied": 1782939344.4786127,
-      "times_applied": 29,
-      "times_correct": 24,
+      "last_applied": 1782962034.405422,
+      "times_applied": 37,
+      "times_correct": 25,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 3.3333333333333335,
+      "pnl_missed": 16.858283897721286,
       "active": true
     },
     {
@@ -75,12 +79,14 @@
       "evidence_ratio": 0.19,
       "total_evidence": 27,
       "created_at": 1746382701.0,
-      "last_applied": 1782885201.4658854,
+      "last_applied": 1782961669.5289986,
       "times_applied": 52,
       "times_correct": 42,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "active": true
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
+      "active": false
     },
     {
       "rule_id": "illiquid_regime_penalize_v1",
@@ -99,6 +105,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -114,12 +122,14 @@
       "evidence_ratio": 0.35,
       "total_evidence": 239,
       "created_at": 1746382701.0,
-      "last_applied": 1782938741.7614844,
-      "times_applied": 14,
+      "last_applied": 1782962045.0914333,
+      "times_applied": 18,
       "times_correct": 10,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "active": true
+      "pnl_saved": 0.0,
+      "pnl_missed": 8.396241862505269,
+      "active": false
     },
     {
       "rule_id": "btc_short_conf70_80_penalize_v1",
@@ -141,6 +151,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -162,6 +174,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -182,7 +196,9 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "active": true
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
+      "active": false
     },
     {
       "rule_id": "conf_floor_70_v1",
@@ -197,12 +213,14 @@
       "evidence_ratio": 0.463,
       "total_evidence": 123,
       "created_at": 1746547200.0,
-      "last_applied": 1782939355.9721618,
-      "times_applied": 9,
-      "times_correct": 8,
+      "last_applied": 1782962056.0578094,
+      "times_applied": 10,
+      "times_correct": 9,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "active": true
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
+      "active": false
     },
     {
       "rule_id": "rule_1782863033_10",
@@ -223,6 +241,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -244,6 +264,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -264,6 +286,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -285,6 +309,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -307,6 +333,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -328,6 +356,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -349,6 +379,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -370,6 +402,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -386,11 +420,13 @@
       "total_evidence": 7,
       "created_at": 1782899959.631954,
       "last_applied": 1782913741.4770195,
-      "times_applied": 1,
-      "times_correct": 1,
+      "times_applied": 3,
+      "times_correct": 3,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "active": true
+      "pnl_saved": 8.0,
+      "pnl_missed": 0.0,
+      "active": false
     },
     {
       "rule_id": "rule_1782913352_19",
@@ -411,6 +447,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -426,12 +464,14 @@
       "evidence_ratio": 0.3,
       "total_evidence": 20,
       "created_at": 1782914276.7199943,
-      "last_applied": 1782938741.7615044,
-      "times_applied": 0,
+      "last_applied": 1782962045.091452,
+      "times_applied": 4,
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
-      "active": true
+      "pnl_saved": 0.0,
+      "pnl_missed": 8.396241862505269,
+      "active": false
     },
     {
       "rule_id": "rule_1782914276_21",
@@ -451,6 +491,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -472,6 +514,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -493,6 +537,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -515,6 +561,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -536,6 +584,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -556,6 +606,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -577,6 +629,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -591,11 +645,13 @@
       "evidence_ratio": 0.0,
       "total_evidence": 7,
       "created_at": 1782939699.0803943,
-      "last_applied": 0.0,
+      "last_applied": 1782962045.091462,
       "times_applied": 0,
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -610,11 +666,13 @@
       "evidence_ratio": 0.0,
       "total_evidence": 7,
       "created_at": 1782939699.1345165,
-      "last_applied": 0.0,
+      "last_applied": 1782962045.0914664,
       "times_applied": 0,
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -637,6 +695,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -659,6 +719,8 @@
       "times_correct": 0,
       "times_overridden": 0,
       "overridden_correct": 0,
+      "pnl_saved": 0.0,
+      "pnl_missed": 0.0,
       "active": true
     },
     {
@@ -682,7 +744,7 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false
     },
     {
       "rule_id": "rule_1782943853_2",
@@ -705,7 +767,7 @@
       "overridden_correct": 0,
       "pnl_saved": 0.0,
       "pnl_missed": 0.0,
-      "active": true
+      "active": false
     },
     {
       "rule_id": "rule_1782943853_3",
