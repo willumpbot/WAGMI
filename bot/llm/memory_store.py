@@ -182,10 +182,16 @@ def get_memory_summary() -> Optional[str]:
     for n in reversed(recent):
         text = n.get("text", "") if isinstance(n, dict) else str(n)
         symbol = n.get("symbol", "") if isinstance(n, dict) else ""
-        if symbol:
-            parts.append(f"[{symbol}] {text}")
-        else:
-            parts.append(text)
+        # Render provenance (FALLACY_AUDIT D15): these are n=1 self-opinions;
+        # the date tells the reader which era the note is from.
+        _date = ""
+        if isinstance(n, dict) and n.get("ts"):
+            try:
+                _date = time.strftime("%m-%d", time.gmtime(float(n["ts"])))
+            except (ValueError, TypeError, OSError):
+                _date = ""
+        tag_bits = [b for b in (symbol, _date, "n=1 opinion") if b]
+        parts.append(f"[{' '.join(tag_bits)}] {text}")
 
     return " | ".join(parts)
 
@@ -262,10 +268,30 @@ def _is_quality_note(text: str) -> bool:
     return has_structure or has_symbol
 
 
+# Provenance tag for notes written going forward (THE_STANDARD 2b/3b —
+# FALLACY_AUDIT D15: notes reached Trade + Critic prompts with no ledger
+# version, no n, no source trade).
+_LEDGER_VERSION = "v2_post_fee_fix_2026-06"
+
+
+def _sanitize_symbol(symbol: str, text: str) -> str:
+    """Validate a caller-supplied symbol; fall back to extracting from text.
+
+    FALLACY_AUDIT D15 bug: decision_engine passed trigger_context.split()[0]
+    as the symbol, writing garbage like '[PRE-CLOSE' / '[POSITION' into the
+    symbol field (which then failed every symbol-keyed recall).
+    """
+    s = (symbol or "").strip().upper()
+    if s and s.isalnum():
+        return s
+    return _extract_symbol(text)
+
+
 def apply_memory_update(
     update: Optional[str],
     symbol: str = "",
     regime: str = "",
+    source_trade_id: str = "",
 ):
     """Append a memory note from the LLM's decision.
 
@@ -276,6 +302,7 @@ def apply_memory_update(
         update: The memory note text (from LLM output)
         symbol: Symbol context (optional)
         regime: Regime context (optional)
+        source_trade_id: Trade this note was learned from, if any (provenance)
     """
     if not update or not update.strip():
         return
@@ -298,15 +325,19 @@ def apply_memory_update(
             if last_text == text:
                 return
 
-        # Extract symbol from note text if not provided
-        if not symbol:
-            symbol = _extract_symbol(text)
+        # Validate/extract symbol (rejects '[PRE-CLOSE'-style garbage)
+        symbol = _sanitize_symbol(symbol, text)
 
         note_entry = {
             "text": text,
             "ts": time.time(),
-            "symbol": symbol.upper() if symbol else "",
+            "symbol": symbol,
             "regime": regime,
+            # Write-time provenance (FALLACY_AUDIT D15 / THE_STANDARD 3b):
+            # every note is a single LLM self-opinion (n=1) until validated.
+            "n": 1,
+            "ledger_version": _LEDGER_VERSION,
+            "source_trade_id": source_trade_id,
         }
 
         notes.append(note_entry)
