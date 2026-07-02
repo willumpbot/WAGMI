@@ -400,11 +400,44 @@ class KnowledgeBase:
         """Get sniper trade profiles."""
         return self.search(knowledge_type=KnowledgeType.SNIPER_PROFILE)
 
+    # Entries created before this instant predate the provenance standard
+    # (THE_STANDARD 3b, 2026-07-02) and were mostly n=1 LLM self-labels on a
+    # dirty ledger — quarantined from prompts until dollar re-scored.
+    _PROVENANCE_EPOCH = 1782864000.0  # 2026-07-01T00:00:00Z
+
+    @staticmethod
+    def _prov_tag(e: Dict) -> str:
+        """Serve-time provenance: [n, validated, era] (THE_STANDARD 3b —
+        a stat/opinion without denominator+era is banned from prompts)."""
+        vc = int(e.get("validation_count", 0) or 0)
+        ic = int(e.get("invalidation_count", 0) or 0)
+        try:
+            era = time.strftime("%Y-%m", time.gmtime(float(e.get("created_at", 0) or 0)))
+        except Exception:
+            era = "?"
+        return f" [n={vc + ic}, val={vc}, era={era}]"
+
+    @staticmethod
+    def _is_relevant(e: Dict, symbol: str, regime: str) -> bool:
+        """Relevance filter. Fixed 2026-07-02 (FALLACY_AUDIT D6): the old
+        expression contained `... or not regime or ...` — with regime unset
+        every entry short-circuited to relevant, so all 237 principles
+        qualified for every prompt. Empty filters no longer auto-qualify."""
+        if not symbol and not regime:
+            return True  # caller applied no filters
+        content = e.get("content", "").lower()
+        if symbol and symbol.lower() in content:
+            return True
+        if regime and regime.lower() in content:
+            return True
+        return e.get("category") in ("general", "")
+
     def get_for_llm_prompt(self, symbol: str = "", regime: str = "", max_items: int = 30) -> str:
         """Build a compact knowledge summary for LLM prompt injection.
 
         Prioritizes: axioms > principles > validated hypotheses > anti-patterns
-        Filtered by relevance to current symbol/regime.
+        Filtered by relevance to current symbol/regime. Every served item
+        carries [n, val, era] provenance (FALLACY_AUDIT D6/D12, 2026-07-02).
         """
         self._ensure_loaded()
         parts = []
@@ -412,20 +445,20 @@ class KnowledgeBase:
         # Always include axioms
         axioms = self.get_axioms()
         if axioms:
-            axiom_strs = [a["content"] for a in axioms[:5]]
+            axiom_strs = [a["content"] + self._prov_tag(a) for a in axioms[:5]]
             parts.append("AXIOMS: " + " | ".join(axiom_strs))
 
-        # Include relevant principles
+        # Include relevant principles. Pre-2026-07 principles are quarantined:
+        # 208/237 were created 2026-06 with val=0/inv=0 (naked n=1 opinions on
+        # a dirty ledger) — they re-enter only via dollar re-score (D6).
         principles = self.get_principles(min_confidence=0.6)
         relevant_principles = []
         for p in principles:
-            is_relevant = (
-                not symbol or symbol.lower() in p.get("content", "").lower()
-                or not regime or regime.lower() in p.get("content", "").lower()
-                or p.get("category") in ("general", "")
-            )
-            if is_relevant:
-                relevant_principles.append(p["content"])
+            if float(p.get("created_at", 0) or 0) < self._PROVENANCE_EPOCH and \
+                    int(p.get("validation_count", 0) or 0) < 3:
+                continue  # quarantined: pre-standard era, never validated
+            if self._is_relevant(p, symbol, regime):
+                relevant_principles.append(p["content"] + self._prov_tag(p))
         if relevant_principles:
             parts.append("PRINCIPLES: " + " | ".join(relevant_principles[:8]))
 
@@ -433,22 +466,38 @@ class KnowledgeBase:
         anti = self.get_anti_patterns()
         relevant_anti = []
         for a in anti:
-            if (not symbol or symbol.lower() in a.get("content", "").lower()
-                    or not regime or regime.lower() in a.get("content", "").lower()):
-                relevant_anti.append(a["content"])
+            if self._is_relevant(a, symbol, regime):
+                relevant_anti.append(a["content"] + self._prov_tag(a))
         if relevant_anti:
             parts.append("AVOID: " + " | ".join(relevant_anti[:5]))
 
-        # Include active hypotheses being tested
+        # Include active hypotheses being tested (D12 fix: newest-first with a
+        # 30-day max age — April volume-era hypotheses were served as current —
+        # and near-dupe collapse on normalized content prefix).
         hypotheses = self.get_active_hypotheses()
-        if hypotheses:
-            hyp_strs = [h["content"] for h in hypotheses[:5]]
+        _max_age_s = 30 * 86400
+        _now = time.time()
+        hypotheses = [
+            h for h in hypotheses
+            if (_now - float(h.get("created_at", 0) or 0)) <= _max_age_s
+        ]
+        hypotheses.sort(key=lambda h: float(h.get("created_at", 0) or 0), reverse=True)
+        hyp_strs, _seen_keys = [], set()
+        for h in hypotheses:
+            _key = " ".join(h.get("content", "").lower().split())[:60]
+            if _key in _seen_keys:
+                continue
+            _seen_keys.add(_key)
+            hyp_strs.append(h["content"] + self._prov_tag(h))
+            if len(hyp_strs) >= 5:
+                break
+        if hyp_strs:
             parts.append("TESTING: " + " | ".join(hyp_strs))
 
         # Include sniper profiles
         snipers = self.get_sniper_profiles()
         if snipers:
-            sniper_strs = [s["content"] for s in snipers[:3]]
+            sniper_strs = [s["content"] + self._prov_tag(s) for s in snipers[:3]]
             parts.append("SNIPER PROFILES: " + " | ".join(sniper_strs))
 
         return "\n".join(parts)
