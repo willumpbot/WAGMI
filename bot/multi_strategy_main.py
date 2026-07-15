@@ -7230,6 +7230,29 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         except Exception:
             pass
 
+        # ── LIVING EDGE SIZING (2026-07-15): THE sizing-inversion fix ──
+        # Size was purely confidence-driven, so we bet biggest exactly when most
+        # wrong (biggest-half of longs = 16% WR, -$930; losers sized 5.8x winners).
+        # get_symbol_side_risk_mult is live-computed from the ledger (net PnL/trade,
+        # n>=13) but was NEVER wired into position size. Apply it here as the last
+        # multiplier before the min-notional floor: negative-edge slices shrink
+        # toward the $10 floor (keeps epsilon exploration — never a hard block),
+        # convex positive-edge slices size up (bounded by the hard caps below).
+        # Neutral 1.0 when n<13 (no pre-decided bias). Risk-reducing on losers.
+        try:
+            from trading_config import get_symbol_side_risk_mult as _living_side_mult
+            _se_mult = _living_side_mult(symbol, signal_result.side)
+            if _se_mult and abs(_se_mult - 1.0) > 1e-6:
+                _q_pre_edge = qty
+                qty = qty * _se_mult
+                logger.info(
+                    f"[{trace_id}][{symbol}] LIVING-EDGE SIZE: {signal_result.side} "
+                    f"x{_se_mult:.2f} (live ledger edge, n>=13) "
+                    f"qty {_q_pre_edge:.6f} -> {qty:.6f}"
+                )
+        except Exception as _edge_e:
+            logger.debug(f"[{symbol}] living-edge size mult skipped: {_edge_e}")
+
         # ── MIN NOTIONAL FLOOR: ensure position meets exchange minimum ──
         # After ALL multipliers have been applied, check if the final qty * price
         # still meets the $10 Hyperliquid minimum. If not, bump qty UP.

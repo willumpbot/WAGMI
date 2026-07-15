@@ -1,139 +1,7 @@
 {
   "version": 1,
-  "updated_at": 1784146075.1184819,
+  "updated_at": 1784149938.1877503,
   "scenarios": [
-    {
-      "id": "cf_1782930522_ac775779",
-      "timestamp": 1782930522.3567135,
-      "symbol": "XRP",
-      "scenario_type": "exit_timing",
-      "actual_action": "LLM_EXIT_AGENT",
-      "counterfactual_action": "hold_to_tp2",
-      "actual_pnl": -47.12847001807328,
-      "counterfactual_pnl": 6.374764595103565,
-      "delta": 53.50323461317684,
-      "resolved": true,
-      "metadata": {
-        "side": "long",
-        "entry_price": 1.062,
-        "actual_exit_price": 1.06145,
-        "tp1_price": 1.0908,
-        "tp2_price": 1.1297,
-        "actual_pnl_raw": -0.5005043515919383,
-        "pnl_at_tp1_pct": 2.7119,
-        "pnl_at_tp2_pct": 6.3748
-      }
-    },
-    {
-      "id": "cf_1782931071_d21482a2",
-      "timestamp": 1782931071.028436,
-      "symbol": "XRP",
-      "scenario_type": "veto_override",
-      "actual_action": "vetoed_BUY",
-      "counterfactual_action": "entered_BUY",
-      "actual_pnl": 0.0,
-      "counterfactual_pnl": -6.167270376903746,
-      "delta": -6.167270376903746,
-      "resolved": true,
-      "metadata": {
-        "side": "BUY",
-        "entry_price": 1.0609,
-        "sl_price": 1.0451938480576208,
-        "tp1_price": 1.087755367481413,
-        "tp2_price": 1.1263285714285718,
-        "confidence": 65.36574072056466,
-        "reason": "LLM_FIRST: XRP consolidation breakout long thesis exists but 1h/4h regime misaligned (trending_bull vs range) a",
-        "hit": "tp2"
-      }
-    },
-    {
-      "id": "cf_1782931389_a91507e2",
-      "timestamp": 1782931389.131089,
-      "symbol": "SOL",
-      "scenario_type": "veto_override",
-      "actual_action": "vetoed_BUY",
-      "counterfactual_action": "entered_BUY",
-      "actual_pnl": 0.0,
-      "counterfactual_pnl": -9.801299654394178,
-      "delta": -9.801299654394178,
-      "resolved": true,
-      "metadata": {
-        "side": "BUY",
-        "entry_price": 77.669,
-        "sl_price": 75.76585714285714,
-        "tp1_price": 81.4752857142857,
-        "tp2_price": 85.28157142857141,
-        "confidence": 60.0,
-        "reason": "LLM_FIRST: ",
-        "hit": "tp2"
-      }
-    },
-    {
-      "id": "cf_1782931799_231290cb",
-      "timestamp": 1782931799.7930195,
-      "symbol": "XRP",
-      "scenario_type": "veto_override",
-      "actual_action": "vetoed_BUY",
-      "counterfactual_action": "entered_BUY",
-      "actual_pnl": 0.0,
-      "counterfactual_pnl": -6.168433244892226,
-      "delta": -6.168433244892226,
-      "resolved": true,
-      "metadata": {
-        "side": "BUY",
-        "entry_price": 1.0607,
-        "sl_price": 1.0449938480576206,
-        "tp1_price": 1.087555367481413,
-        "tp2_price": 1.1261285714285718,
-        "confidence": 65.36574072056466,
-        "reason": "LLM_FIRST: XRP consolidating near 1.06; 1h trending_bull but 4h regime is range (misaligned) so breakout likely",
-        "hit": "tp2"
-      }
-    },
-    {
-      "id": "cf_1782932412_4e5535c5",
-      "timestamp": 1782932412.447539,
-      "symbol": "SOL",
-      "scenario_type": "veto_override",
-      "actual_action": "vetoed_BUY",
-      "counterfactual_action": "entered_BUY",
-      "actual_pnl": 0.0,
-      "counterfactual_pnl": -9.883152123751666,
-      "delta": -9.883152123751666,
-      "resolved": true,
-      "metadata": {
-        "side": "BUY",
-        "entry_price": 77.39,
-        "sl_price": 75.47785714285715,
-        "tp1_price": 81.21428571428571,
-        "tp2_price": 85.03857142857142,
-        "confidence": 60.0,
-        "reason": "LLM_FIRST: ",
-        "hit": "tp2"
-      }
-    },
-    {
-      "id": "cf_1782932959_c421cd0e",
-      "timestamp": 1782932959.3603141,
-      "symbol": "XRP",
-      "scenario_type": "veto_override",
-      "actual_action": "vetoed_BUY",
-      "counterfactual_action": "entered_BUY",
-      "actual_pnl": 0.0,
-      "counterfactual_pnl": -6.231031611742313,
-      "delta": -6.231031611742313,
-      "resolved": true,
-      "metadata": {
-        "side": "BUY",
-        "entry_price": 1.0638,
-        "sl_price": 1.0472285714285714,
-        "tp1_price": 1.0969428571428574,
-        "tp2_price": 1.1300857142857148,
-        "confidence": 70.0,
-        "reason": "LLM_FIRST: XRP consolidating near 1.06, solo confidence_scorer LONG lacks confluence; regime_1h/4h misaligned (",
-        "hit": "tp2"
-      }
-    },
     {
       "id": "cf_1782933289_b697d63d",
       "timestamp": 1782933289.0505111,
@@ -11220,6 +11088,49 @@
         "tp2_price": 71.81914285714288,
         "confidence": 51.308557692307694,
         "reason": "LLM_FIRST: SOL consolidates near $77-78; bullish L/S 2.41 caps downside, weak 51% SELL lacks edge to break $76."
+      }
+    },
+    {
+      "id": "cf_1784149640_8eaf26ad",
+      "timestamp": 1784149640.7843058,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 77.36,
+        "sl_price": 79.23868571428571,
+        "tp1_price": 74.43760000000002,
+        "tp2_price": 72.2217142857143,
+        "confidence": 48.45855769230769,
+        "reason": "LLM_FIRST: SOL SELL toward $74.4 possible but EV negative (-0.38) with win_prob 28% below breakeven despite 1.5"
+      }
+    },
+    {
+      "id": "cf_1784149646_eb0a2ebc",
+      "timestamp": 1784149646.524099,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": -6.8083083937947055,
+      "delta": -6.8083083937947055,
+      "resolved": true,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1923.7,
+        "sl_price": 1899.142857142857,
+        "tp1_price": 1972.814285714286,
+        "tp2_price": 2054.671428571429,
+        "confidence": 49.0,
+        "reason": "LLM_FIRST: ETH likely fades from $1924 back toward $1900 as BTC OI falls and 4h regime misaligns with bullish 1",
+        "hit": "tp2"
       }
     }
   ]
