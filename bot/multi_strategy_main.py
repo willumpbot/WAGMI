@@ -547,6 +547,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # multiple worker threads (one per symbol) append concurrently.
         self._tick_candidates_lock = threading.Lock()
 
+        # T0-A-race (2026-07-14): shared queue of close TradeEvents (LLM_EXIT_AGENT,
+        # LIQUIDATION_AVOID, HOLD_LIMIT, EXIT_ENGINE) awaiting injection into a
+        # symbol's events loop. Guarded by _pending_exit_lock — under
+        # SCAN_PARALLEL_SYMBOLS parallel _process_symbol threads both append AND
+        # filter+reassign this list; the unsynchronized read-modify-write either
+        # resurrected an already-consumed close (double-log) or dropped a
+        # concurrently appended close (lost forever).
+        self._pending_exit_events: list = []
+        self._pending_exit_lock = threading.Lock()
+
         # Cheap liveness snapshot for the heartbeat daemon. The main loop
         # refreshes this every tick (and the daemon thread reads it every
         # HEARTBEAT_DAEMON_INTERVAL_S) so data/heartbeat.json stays fresh even
@@ -574,7 +584,19 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         )
 
         # Regime-specific feedback (tracks per-regime performance)
-        self.regime_feedback = RegimeFeedbackManager(data_dir="data/feedback")
+        # REGIME_FB_FIX (2026-07-14, flag-gated DEFAULT OFF; enable REGIME_FB_FIX=true).
+        # ON collapses the two RegimeFeedbackManager instances into the brain_wiring
+        # singleton the Trade/Risk agents actually read — this instance was write-only
+        # and its _save() last-writer-wins clobbered regime_feedback_state.json. OFF =
+        # original standalone instance (unchanged).
+        if os.getenv("REGIME_FB_FIX", "false").lower() in ("1", "true", "yes"):
+            try:
+                from llm.brain_wiring import get_regime_feedback as _get_regime_fb
+                self.regime_feedback = _get_regime_fb() or RegimeFeedbackManager(data_dir="data/feedback")
+            except Exception:
+                self.regime_feedback = RegimeFeedbackManager(data_dir="data/feedback")
+        else:
+            self.regime_feedback = RegimeFeedbackManager(data_dir="data/feedback")
 
         # Adaptive confidence floor (dynamic thresholds from realized performance)
         self.confidence_floor = AdaptiveConfidenceFloor(data_dir="data/feedback")
@@ -1457,6 +1479,111 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         t.start()
         logger.info(f"[INIT] Funding/OI collector started (every {interval}s)")
 
+    def _collector_last_age_min(self, path, ts_keys, now_ts):
+        """Age (minutes) of the LAST record in a jsonl file, or None if unreadable.
+        Reads only the file tail. Handles ISO ts with/without trailing 'Z' (naive=UTC)."""
+        try:
+            if not os.path.exists(path):
+                return None
+            with open(path, "rb") as f:
+                f.seek(0, 2)
+                _size = f.tell()
+                f.seek(max(0, _size - 8192))
+                _tail = f.read().decode("utf-8", "ignore")
+            _lines = [ln for ln in _tail.splitlines() if ln.strip()]
+            if not _lines:
+                return None
+            import json as _json
+            _rec = None
+            for ln in reversed(_lines):
+                try:
+                    _rec = _json.loads(ln)
+                    break
+                except Exception:
+                    continue
+            if not isinstance(_rec, dict):
+                return None
+            _ts = None
+            for k in ts_keys:
+                if k in _rec:
+                    _ts = _rec[k]
+                    break
+            if _ts is None:
+                return None
+            import datetime as _dt
+            _d = _dt.datetime.fromisoformat(str(_ts).strip().replace("Z", "+00:00"))
+            if _d.tzinfo is None:
+                _d = _d.replace(tzinfo=_dt.timezone.utc)
+            return (now_ts - _d.timestamp()) / 60.0
+        except Exception:
+            return None
+
+    def _check_collector_freshness(self, now_ts=None):
+        """Alert if the market-depth or funding/OI collectors have gone stale.
+
+        These feed the highest-IC datasets the bot has and are NON-BACKFILLABLE
+        (a gap is lost forever). The market-depth collector is an external Task
+        Scheduler job (WAGMI-MarketCollector) with no alerting of its own; the
+        funding collector once died silently for ~536h (HOLES.md H61). Pure
+        observability probe — never touches a trade. Runs from the heartbeat
+        daemon (signal-independent), throttled, with fresh<->stale hysteresis so
+        it alerts once per episode, not every tick.
+
+        Gated by COLLECTOR_STALE_ALERT (default on). One-line revert:
+        COLLECTOR_STALE_ALERT=false. Thresholds: COLLECTOR_STALE_DEPTH_MIN (45),
+        COLLECTOR_STALE_FUNDING_MIN (45). Cadence: COLLECTOR_STALE_CHECK_S (300).
+        Fully wrapped — a bug here can never break the loop.
+        """
+        try:
+            if os.getenv("COLLECTOR_STALE_ALERT", "true").lower() not in ("1", "true", "yes"):
+                return
+            _now = now_ts if now_ts is not None else time.time()
+            _check_s = int(os.getenv("COLLECTOR_STALE_CHECK_S", "300"))
+            if _now - getattr(self, "_collector_stale_last_check", 0.0) < _check_s:
+                return
+            self._collector_stale_last_check = _now
+            _state = getattr(self, "_collector_stale_state", None)
+            if _state is None:
+                _state = self._collector_stale_state = {}
+            _dd = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+            _checks = [
+                ("market-depth", os.path.join(_dd, "market_depth_history.jsonl"),
+                 ("ts", "timestamp"), float(os.getenv("COLLECTOR_STALE_DEPTH_MIN", "45"))),
+                ("funding/OI", os.path.join(_dd, "funding_oi_history.jsonl"),
+                 ("timestamp", "ts"), float(os.getenv("COLLECTOR_STALE_FUNDING_MIN", "45"))),
+            ]
+            for _name, _path, _ts_keys, _thresh in _checks:
+                _age = self._collector_last_age_min(_path, _ts_keys, _now)
+                if _age is None:
+                    continue  # unreadable/missing → skip, don't false-alarm
+                _was = _state.get(_name, False)
+                _is = _age > _thresh
+                if _is and not _was:
+                    _state[_name] = True
+                    logger.error(
+                        f"[COLLECTOR-STALE] {_name} collector STALE — last record "
+                        f"{_age:.0f} min old (> {_thresh:.0f}m). Non-backfillable data at risk."
+                    )
+                    try:
+                        self.alerts.send_market_update(
+                            f"⚠️ WAGMI collector STALE: {_name} last wrote {_age:.0f} min ago "
+                            f"(threshold {_thresh:.0f}m). This dataset is non-backfillable — "
+                            f"restart its collector. Revert this alert: COLLECTOR_STALE_ALERT=false"
+                        )
+                    except Exception:
+                        pass
+                elif (not _is) and _was:
+                    _state[_name] = False
+                    logger.warning(f"[COLLECTOR-STALE] {_name} collector RECOVERED — fresh ({_age:.0f}m).")
+                    try:
+                        self.alerts.send_market_update(
+                            f"✅ WAGMI collector recovered: {_name} is writing again ({_age:.0f}m old)."
+                        )
+                    except Exception:
+                        pass
+        except Exception as _cf_e:
+            logger.debug(f"[COLLECTOR-STALE] freshness check error (non-fatal): {_cf_e}")
+
     def _run_health_check(self):
         """Startup symbol health check: validate precision, connectivity, leverage caps."""
         logger.info("=" * 60)
@@ -1835,11 +1962,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             _reason = _rf.read().strip()[:200]
                         os.remove(_restart_file)
                         logger.info(f"[RESTART] Graceful restart requested: {_reason}")
-                        if self.alerts:
-                            self.alerts.send_trade_alert(
-                                f"BOT RESTARTING: {_reason}"
-                            )
+                        # RESTART_RELIABILITY_FIX (2026-07-14): set the stop event BEFORE
+                        # attempting any alert. Previously the alert call ran first and
+                        # threw ('AlertRouter' has no send_trade_alert), the except
+                        # swallowed it, and stop_event.set() never ran — so the flag was
+                        # consumed but the bot never actually restarted. The alert is
+                        # best-effort and must never block the shutdown.
                         self.stop_event.set()
+                        if self.alerts:
+                            try:
+                                _alert_fn = (getattr(self.alerts, "send_trade_alert", None)
+                                             or getattr(self.alerts, "send_alert", None)
+                                             or getattr(self.alerts, "notify", None))
+                                if callable(_alert_fn):
+                                    _alert_fn(f"BOT RESTARTING: {_reason}")
+                            except Exception as _ae:
+                                logger.warning(f"[RESTART] restart alert failed (non-fatal): {_ae}")
                     except Exception as _re:
                         logger.error(f"[RESTART] Error processing restart file: {_re}")
 
@@ -2002,6 +2140,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     scan_count=self._tick,
                     exchange_healthy=bool(snap.get("exchange_healthy", True)),
                 )
+                # Collector freshness probe (throttled, signal-independent, alert-only).
+                self._check_collector_freshness()
                 # ── D6b (2026-07-02): one-equity-truth convergence sentinel ──
                 # CB, sizing, heartbeat and persistence all read risk_mgr.equity;
                 # the persisted file can only diverge if an external writer
@@ -3070,6 +3210,14 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 save_position_state(self.pos_mgr)
             except Exception:
                 pass
+        # Flush missed-trade tracker every 5 ticks (measurement-only; append-only
+        # jsonl, drain-on-flush makes it idempotent). Without this the tracker is
+        # RAM-only in live and all skip/rejection data dies on restart.
+        if self._tick % 5 == 0 and getattr(self, "_missed_trade_tracker", None) is not None:
+            try:
+                self._missed_trade_tracker.flush_to_disk()
+            except Exception:
+                pass
 
         # ── Circuit breaker state persistence ──
         # Save CB state every 10 ticks so it survives restarts during drawdowns
@@ -3209,6 +3357,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # After restarts or API hiccups, strategies may fire on stale candles.
         # Check the most granular timeframe (5m or 1h) — if its last candle
         # is older than 5 minutes past its expected close, skip signal generation.
+        _stale_skip_signal = False  # T0-B: stale candles + pending close event -> drain closes, block new entries
         _stale_max_s = 300  # 5 minutes tolerance
         _stale_check_tf = "5m" if "5m" in data else ("1h" if "1h" in data else None)
         if _stale_check_tf and data.get(_stale_check_tf) is not None:
@@ -3231,13 +3380,29 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     if _candle_age_s > _tf_period_s + _stale_max_s:
                         # Still process existing positions (SL/TP), but skip new signal generation
                         if symbol not in self.pos_mgr.get_open_positions():
-                            logger.warning(
-                                f"[{trace_id}][{symbol}] STALE DATA: {_stale_check_tf} candle "
-                                f"is {_candle_age_s:.0f}s old (max {_tf_period_s + _stale_max_s}s), "
-                                f"skipping signal generation"
-                            )
-                            Telemetry.inc("stale_data_skips")
-                            return
+                            # T0-B fix (2026-07-14): a position that JUST closed is no
+                            # longer "open", but its close event may still be queued in
+                            # self._pending_exit_events (background exit checks /
+                            # LIQUIDATION_AVOID). Returning here stranded those closes —
+                            # never booked to equity/trades/ledger/learning (live proof:
+                            # HYPE close 07-14 ~22:25 missing from ledger). If a pending
+                            # close exists for this symbol, continue the tick so the events
+                            # loop below drains it; NEW entries stay blocked via
+                            # _stale_skip_signal before signal generation.
+                            if any(e.symbol == symbol for e in getattr(self, '_pending_exit_events', [])):
+                                _stale_skip_signal = True
+                                logger.warning(
+                                    f"[{trace_id}][{symbol}] STALE DATA but pending close "
+                                    f"event(s) queued — draining closes, blocking new entries"
+                                )
+                            else:
+                                logger.warning(
+                                    f"[{trace_id}][{symbol}] STALE DATA: {_stale_check_tf} candle "
+                                    f"is {_candle_age_s:.0f}s old (max {_tf_period_s + _stale_max_s}s), "
+                                    f"skipping signal generation"
+                                )
+                                Telemetry.inc("stale_data_skips")
+                                return
 
         # Get current price
         current_price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
@@ -3554,13 +3719,20 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Inject LLM_EXIT_AGENT close events from _check_llm_exit_suggestions()
         # These were collected in self._pending_exit_events during background exit checks.
         # Must be injected per symbol to ensure they go through post-trade callbacks.
+        # T0-A-race (2026-07-14): pop-under-lock, consumed-once. The filter+reassign
+        # below is atomic under _pending_exit_lock so a concurrent worker's append or
+        # its own drain cannot resurrect a consumed close or drop a new one. The
+        # events.extend runs OUTSIDE the lock on the local list (no LLM/I-O work under
+        # the lock). WHAT is processed is unchanged — same per-symbol filter and order.
         if hasattr(self, '_pending_exit_events') and self._pending_exit_events:
-            # Filter to events for this symbol
-            symbol_exit_events = [e for e in self._pending_exit_events if e.symbol == symbol]
+            with self._pending_exit_lock:
+                # Filter to events for this symbol
+                symbol_exit_events = [e for e in self._pending_exit_events if e.symbol == symbol]
+                if symbol_exit_events:
+                    # Remove from pending (already injected)
+                    self._pending_exit_events = [e for e in self._pending_exit_events if e.symbol != symbol]
             if symbol_exit_events:
                 events.extend(symbol_exit_events)
-                # Remove from pending (already injected)
-                self._pending_exit_events = [e for e in self._pending_exit_events if e.symbol != symbol]
         for event in events:
             # 2026-06-05: capture position object BEFORE close processing removes
             # it from pos_mgr.positions. Without this snapshot, every downstream
@@ -3593,7 +3765,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     )
                     continue  # Skip P&L update — position is still open on exchange
 
-            self.risk_mgr.update_equity(event.pnl - event.fee)
+            _eq_funding = 0.0
+            if os.getenv("EQUITY_DEDUCT_FUNDING", "false").lower() in ("1", "true", "yes"):
+                # 2026-07-14 funding_asymmetric fix: equity previously NEVER saw
+                # funding even though ledger net_pnl (pos.realized_pnl) deducts it
+                # (position_manager.py:1472) — making running_equity and net_pnl
+                # disagree by the funding amount. Deducting a cost only makes risk
+                # sizing stricter, never weaker. Default OFF; revert via flag.
+                _eq_funding = float(event.metadata.get("funding_costs", 0) or 0)
+            self.risk_mgr.update_equity(event.pnl - event.fee - _eq_funding)
 
             # Log trade event to database
             log_trade(
@@ -3654,13 +3834,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         confidence = pos.confidence if pos.confidence else (pos.entry_reasons.get("llm_confidence") or pos.entry_reasons.get("win_prob_deflated") or 50.0) if pos.entry_reasons else 50.0
                         if pos.opened_at and pos.close_time:
                             hold_hours = (pos.close_time - pos.opened_at).total_seconds() / 3600.0
+                    # REGIME_FB_FIX (2026-07-14): record %-of-equity (matches the
+                    # coordinator path + the module's %-scale thresholds) when enabled;
+                    # original raw-$ behavior (~50x overstated on ~$5k equity) when off.
+                    if os.getenv("REGIME_FB_FIX", "false").lower() in ("1", "true", "yes"):
+                        _rf_pnl = (total_pnl / self.risk_mgr.equity * 100) if self.risk_mgr.equity > 0 else 0.0
+                        _rf_meta = {"symbol": symbol, "action": event.action, "pnl_usd": total_pnl}
+                    else:
+                        _rf_pnl = total_pnl
+                        _rf_meta = {"symbol": symbol, "action": event.action}
                     self.regime_feedback.record_trade(
                         regime=regime,
-                        pnl=total_pnl,
+                        pnl=_rf_pnl,
                         confidence=confidence,
                         strategy=event.strategy,
                         hold_hours=hold_hours,
-                        metadata={"symbol": symbol, "action": event.action}
+                        metadata=_rf_meta
                     )
                     # Record for adaptive confidence floor (binned by confidence level)
                     self.confidence_floor.record_outcome(
@@ -3678,35 +3867,40 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         win=total_pnl > 0,
                         pnl=total_pnl
                     )
-                    # Record signal quality outcome (learns meta-confidence)
-                    if self.signal_quality:
-                        self.signal_quality.record_outcome(
-                            features_key=(event.strategy, symbol, regime),
-                            win=total_pnl > 0,
-                            pnl=total_pnl
-                        )
-                    # Record parameter tuning outcome (learns parameter adjustments)
-                    if self.parameter_tuner:
-                        self.parameter_tuner.record_outcome(
-                            win=total_pnl > 0,
-                            pnl=total_pnl,
-                            pnl_pct=total_pnl / (self.risk_mgr.equity or 1.0),
-                            regime=regime,
-                            symbol=symbol,
-                            num_agree=len(pos.entry_reasons.get("strategies_agree", [])) if pos and pos.entry_reasons else 1
-                        )
-                    # Record continuous backtest outcome (real-time validation)
-                    if self.continuous_backtest:
-                        self.continuous_backtest.record_outcome(
-                            symbol=symbol,
-                            side=pos.side if pos else ("BUY" if "BUY" in event.side else "SELL"),
-                            entry_price=pos.entry if pos else 0,
-                            exit_price=event.price if hasattr(event, 'price') else 0,
-                            entry_confidence=confidence,
-                            predicted_direction=1 if (pos and pos.side == "LONG") else -1 if pos else 0,
-                            actual_return=total_pnl,
-                            holding_time_hours=hold_hours
-                        )
+                    # FEEDBACK_RECORD_FIX (2026-07-13): all three recorders here were broken
+                    # and shared ONE try — the first (signal_quality) raised TypeError on
+                    # EVERY full close (features_key= is not a valid param; the signature is
+                    # `features: QualityFeatures`), aborting the tuner + continuous_backtest
+                    # calls after it. parameter_tuner has no record_outcome (it is
+                    # record_trade_outcome(pnl)); continuous_backtest was called with the
+                    # wrong kwargs. Net: three learning loops silently starved since it
+                    # shipped, invisible at debug level. Fix: drop the redundant+broken SQ
+                    # call (self.feedback path ~:3866 already records quality via its wired
+                    # scorer), correct the other two signatures, and ISOLATE each so one
+                    # can't abort the others; log failures at warning. Revert:
+                    # FEEDBACK_RECORD_FIX=false (skips the tuner+backtest revival; the broken
+                    # SQ call stays removed either way — it was redundant).
+                    if os.getenv("FEEDBACK_RECORD_FIX", "true").lower() in ("1", "true", "yes"):
+                        if self.parameter_tuner:
+                            try:
+                                self.parameter_tuner.record_trade_outcome(total_pnl)
+                            except Exception as _pt_e:
+                                logger.warning(f"parameter_tuner record error: {_pt_e}")
+                        if self.continuous_backtest:
+                            try:
+                                self.continuous_backtest.record_outcome(
+                                    symbol=symbol,
+                                    win=total_pnl > 0,
+                                    pnl=total_pnl,
+                                    confidence_at_entry=confidence,
+                                    strategy=event.strategy,
+                                    regime=regime,
+                                    hold_time_s=event.metadata.get("hold_time_s", 0) if hasattr(event, "metadata") else 0,
+                                    exit_action=event.action,
+                                    leverage=pos.leverage if pos else 1.0,
+                                )
+                            except Exception as _cb_e:
+                                logger.warning(f"continuous_backtest record error: {_cb_e}")
                 except Exception as e:
                     logger.debug(f"Feedback recording error: {e}")
 
@@ -3812,27 +4006,89 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 # Quant system: record to IC tracker, Kelly engine, trade ledger, resolve shadows
                 if pos:
                     _factors = pos.entry_reasons.get("strategies", []) if pos.entry_reasons else []
+                    # KELLY_IC_FACTOR_FIX (2026-07-13): entry_reasons never carries a
+                    # "strategies" key (the real key is "strategies_agree"), so in
+                    # LLM-FIRST mode _factors was always [] -> the Kelly + IC recorders
+                    # below looped zero times and kelly_weights.json / ic_history.json
+                    # froze 2026-06-06, and the ledger's contributing_factors column
+                    # went blank. Fall back through the attribution we DO capture at
+                    # entry so every close feeds the loops. Revert: KELLY_IC_FACTOR_FIX=false
+                    if not _factors and os.getenv("KELLY_IC_FACTOR_FIX", "true").lower() in ("1", "true", "yes"):
+                        _er = pos.entry_reasons if isinstance(pos.entry_reasons, dict) else {}
+                        _factors = [str(s) for s in (_er.get("strategies_agree") or []) if s]
+                        if not _factors:
+                            _pd = _er.get("primary_driver") or _er.get("setup_key")
+                            if _pd:
+                                _factors = [str(_pd)]
                     if not _factors and event.strategy:
                         _factors = [event.strategy]
+                    if not _factors:
+                        _factors = ["llm_first"]
                     _direction = 1 if (pos.side if hasattr(pos, 'side') else event.side) == "LONG" else -1
                     _actual_return = total_pnl / (self.risk_mgr.equity or 1.0)
                     _pnl_pct = _actual_return * 100
+                    # IC_SIGN_FIX (T1-B, 2026-07-14): the IC tracker must correlate the
+                    # predicted direction with the RAW market return, NOT the
+                    # direction-adjusted PnL. total_pnl already has direction baked in
+                    # (a winning SHORT has pnl > 0 while the market went DOWN), so feeding
+                    # it produced corr(-1, +) for every winning short — IC went negative,
+                    # get_ic_weight() returned 0.0, and the ensemble zeroed the bot's BEST
+                    # factors out of consensus. Feed the signed market move over the hold
+                    # window instead (matches the ICTracker docstring contract). Kelly
+                    # deliberately keeps _pnl_pct (win/loss magnitude, direction-adjusted).
+                    _ic_entry_px = float(getattr(pos, "entry", 0.0) or 0.0)
+                    _ic_exit_px = float(getattr(event, "price", 0.0) or 0.0)
+                    _market_return = (
+                        (_ic_exit_px - _ic_entry_px) / _ic_entry_px
+                        if _ic_entry_px > 0 and _ic_exit_px > 0 else None
+                    )
 
-                    if self.ic_tracker:
+                    # CLOSE_DEDUP_GUARD (2026-07-14): a stale/re-fired close event was
+                    # re-recording the SAME closed position 74-420s later, DOUBLE-LOGGING to
+                    # the ledger (12 phantom dup rows found = -$370 phantom loss; real P&L was
+                    # +$337, not -$33). Skip the ledger write if this exact close was already
+                    # recorded in the last hour. Idempotency only — does NOT touch exit logic.
+                    # 2026-07-14 hoist (T0-C): the decision is made ONCE here, BEFORE the IC
+                    # tracker and Kelly recorders below, so a duplicate close no longer
+                    # double-counts into ic_history/kelly_weights either (previously only the
+                    # ledger write was guarded). Key, 3600s window, and env gate unchanged.
+                    # Revert: CLOSE_DEDUP_GUARD=false.
+                    _ck_dup = False
+                    if self.trade_ledger and os.getenv("CLOSE_DEDUP_GUARD", "true").lower() in ("1", "true", "yes"):
+                        _ck = (symbol, round(pos.entry, 6) if pos else 0.0,
+                               round(getattr(event, "price", 0.0), 6), round(total_pnl, 2))
+                        _now_dd = time.time()
+                        if not hasattr(self, "_recent_close_keys"):
+                            self._recent_close_keys = {}
+                        self._recent_close_keys = {k: t for k, t in self._recent_close_keys.items() if _now_dd - t < 3600}
+                        if _ck in self._recent_close_keys:
+                            _ck_dup = True
+                            logger.warning(f"[CLOSE-DEDUP] duplicate close skipped: {symbol} {event.side} "
+                                           f"pnl={total_pnl:.2f} (already recorded {_now_dd - self._recent_close_keys[_ck]:.0f}s ago)")
+                        else:
+                            self._recent_close_keys[_ck] = _now_dd
+
+                    if self.ic_tracker and not _ck_dup:
                         try:
-                            for _factor in _factors:
-                                self.ic_tracker.record(_factor, _direction, _actual_return)
+                            if _market_return is None:
+                                logger.warning(
+                                    f"[IC] {symbol}: skipping IC record — invalid prices "
+                                    f"(entry={_ic_entry_px}, exit={_ic_exit_px})"
+                                )
+                            else:
+                                for _factor in _factors:
+                                    self.ic_tracker.record(_factor, _direction, _market_return)
                         except Exception as e:
                             logger.debug(f"IC tracker record error: {e}")
 
-                    if self.kelly_engine:
+                    if self.kelly_engine and not _ck_dup:
                         try:
                             for _factor in _factors:
                                 self.kelly_engine.record_trade(_factor, total_pnl > 0, _pnl_pct)
                         except Exception as e:
                             logger.debug(f"Kelly engine record error: {e}")
 
-                    if self.trade_ledger:
+                    if self.trade_ledger and not _ck_dup:
                         try:
                             _hold_hours = event.metadata.get("hold_time_s", 0) / 3600
                             _regime = _rg_fb or self._tick_regime_cache.get(symbol, "unknown")
@@ -3844,9 +4100,18 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 _session_dd = round(
                                     (cb.session_peak_equity - self.risk_mgr.equity) / cb.session_peak_equity * 100, 2
                                 )
-                            # Compute realized R:R for EV calibration
-                            _stop_width = abs(pos.entry - pos.sl) if pos.sl else 0
-                            _realized_rr = round(total_pnl / (_stop_width * (pos.qty or 1)), 3) if _stop_width > 0 and pos.qty else 0
+                            # Compute realized R:R for EV calibration.
+                            # RR_ZERO_FIX (2026-07-14): pos.qty is already 0 here —
+                            # _close_position zeroes it (position_manager.py:1473)
+                            # before this handler runs — so realized_rr was always 0.
+                            # Use ORIGINAL qty/SL (immutable at entry) and include
+                            # leverage so 1R == loss at the initial stop:
+                            #   pnl_at_SL = stop_width * qty * leverage.
+                            _rr_qty = getattr(pos, "original_qty", 0) or event.qty or 0
+                            _rr_sl = getattr(pos, "original_sl", 0) or pos.sl
+                            _stop_width = abs(pos.entry - _rr_sl) if _rr_sl else 0
+                            _rr_risk = _stop_width * _rr_qty * (pos.leverage or 1)
+                            _realized_rr = round(total_pnl / _rr_risk, 3) if _rr_risk > 0 else 0
                             _predicted_ev = pos.entry_reasons.get("ev_per_dollar", "") if pos.entry_reasons else ""
                             self.trade_ledger.record_trade({
                                 "symbol": symbol,
@@ -3867,9 +4132,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "entry_price": str(pos.entry),
                                 "snapshot_entry": str(pos.entry_reasons.get("snapshot_entry", "")) if pos.entry_reasons else "",
                                 "exit_price": str(event.price),
-                                "gross_pnl": str(round(total_pnl + (pos.fees_paid or 0), 2)),
+                                "gross_pnl": str(round(total_pnl + (pos.fees_paid or 0) + float(event.metadata.get("funding_costs", 0) or 0), 2)),
                                 "fees": str(round(pos.fees_paid or 0, 2)),
-                                "funding": "0",
+                                # Signed funding P&L: negative = cost paid, so the declared
+                                # ledger identity gross - fees + funding == net still holds
+                                # (see tools/backfill_ledger_fees.py docstring, rq17_fee_drag.py).
+                                "funding": str(round(-float(event.metadata.get("funding_costs", 0) or 0), 4)),
                                 "net_pnl": str(round(total_pnl, 2)),
                                 "running_equity": str(round(self.risk_mgr.equity, 2)),
                                 "session_dd_pct": str(_session_dd),
@@ -3979,7 +4247,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             symbol=symbol,
                             side=event.side,
                             entry_price=pos.entry if pos else 0,
-                            exit_price=event.metadata.get("exit_price", 0),
+                            # T1-A sibling (2026-07-14): metadata has no "exit_price" key
+                            # (see position_manager._close_position) — .price is the exit fill.
+                            exit_price=event.price,
                             pnl=total_pnl,
                             hold_time_s=event.metadata.get("hold_time_s", 0),
                             leverage=pos.leverage if pos else 1,
@@ -3990,9 +4260,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             tp1_price=pos.tp1 if pos else 0,
                             peak_price=pos.highest_price if pos else 0,
                             lowest_price=pos.lowest_price if pos else 0,
-                            win_prob=pos.entry_reasons.get("win_prob", 0) if pos and hasattr(pos, 'entry_reasons') else 0,
-                            ev=pos.entry_reasons.get("ev_per_dollar", 0) if pos and hasattr(pos, 'entry_reasons') else 0,
-                            rr=pos.entry_reasons.get("rr_tp1", 0) if pos and hasattr(pos, 'entry_reasons') else 0,
+                            win_prob=(pos.entry_reasons.get("win_prob", pos.entry_reasons.get("win_prob_deflated", 0)) or 0) if pos and hasattr(pos, 'entry_reasons') else 0,
+                            ev=(pos.entry_reasons.get("ev_per_dollar", 0) or 0) if pos and hasattr(pos, 'entry_reasons') else 0,
+                            rr=(pos.entry_reasons.get("rr_tp1", pos.entry_reasons.get("rr1", 0)) or 0) if pos and hasattr(pos, 'entry_reasons') else 0,
                             entry_reasons=pos.entry_reasons if pos and hasattr(pos, 'entry_reasons') else {},
                             atr=getattr(pos, 'atr', 0) or 0,
                         )
@@ -4046,8 +4316,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         except Exception:
                             _th_er = {}
                     _th_notes = str(_th_er.get("llm_notes", "") or "")
-                    if "thesis_id=" in _th_notes:
-                        _th_id = _th_notes.split("thesis_id=")[1].split(" ")[0].split("|")[0].strip()
+                    _th_id_key = str(_th_er.get("thesis_id", "") or "")  # F-1: prefer the dedicated key
+                    if _th_id_key or "thesis_id=" in _th_notes:
+                        _th_id = _th_id_key or _th_notes.split("thesis_id=")[1].split(" ")[0].split("|")[0].strip()
                         if _th_id:
                             from llm.brain_wiring import close_thesis as _bw_close_thesis
                             _th_pnl_pct = (total_pnl / self.risk_mgr.equity * 100) if self.risk_mgr.equity > 0 else 0.0
@@ -4078,7 +4349,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     try:
                         from llm.agents.coordinator import get_coordinator
                         _llm_notes_close = (pos.entry_reasons or {}).get("llm_notes", "") if pos else ""
-                        _exit_price_close = event.metadata.get("exit_price", 0.0)
+                        # T1-A fix (2026-07-14): full-close TradeEvents never carry an
+                        # "exit_price" metadata key, so metadata.get("exit_price", 0.0) was
+                        # ALWAYS 0.0 — teaching every downstream learner a fake -100% move.
+                        # The executed exit fill is event.price (same field used above for
+                        # the exchange close order and thesis grading).
+                        _exit_price_close = float(event.price or 0.0)
                         _hold_h = event.metadata.get("hold_time_s", 0) / 3600.0
                         _ma_lesson = get_coordinator().get_post_trade_lesson({
                             "symbol": symbol,
@@ -4631,9 +4907,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 # so the next events-loop pass books it; the stale-cleanup guard
                                 # keeps the CLOSED position alive until the event is processed.
                                 event.metadata["_exchange_submitted"] = True
-                                if not hasattr(self, '_pending_exit_events'):
-                                    self._pending_exit_events = []
-                                self._pending_exit_events.append(event)
+                                # T0-A-race: append under lock so a concurrent drain's
+                                # filter+reassign cannot drop this close event.
+                                with self._pending_exit_lock:
+                                    if not hasattr(self, '_pending_exit_events'):
+                                        self._pending_exit_events = []
+                                    self._pending_exit_events.append(event)
                             if self.alerts and event:
                                 self.alerts.send_trade_alert(
                                     f"LIQUIDATION AVOID: {symbol} {event.side} "
@@ -4670,6 +4949,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             del self.pos_mgr.positions[s]
 
         # Try to generate new signal
+        if _stale_skip_signal:
+            # T0-B: stale candle data — pending close event(s) were drained above.
+            # Do NOT open new trades (classic ensemble or LLM-first path) on stale candles.
+            Telemetry.inc("stale_data_skips")
+            return
         if self.telegram_bot.is_paused:
             return  # Paused via Telegram /pause command
         if self.ops_guard.is_killed:
@@ -6452,6 +6736,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "llm_action": _cand_llm_action,
             "llm_confidence": _cand_llm_conf,
             "llm_agreed": _cand_llm_action in ("proceed", "go", "", None),
+            # Quality-scorer multiplier at entry — persisted for GAP-6 auditability
+            # (DEEP_MINE: quality_multiplier flipped ~5k gate outcomes but was never
+            # recorded, so its PnL impact was unmeasurable). Zero behavior change; makes
+            # the scorer evaluable on evidence in ~2-3 weeks before any redesign.
+            "quality_multiplier": signal_result.metadata.get("quality_multiplier", ""),
             # Signal flagger data for post-trade analysis
             "signal_flags": signal_result.metadata.get("signal_flags", ""),
             "flag_max_priority": signal_result.metadata.get("flag_max_priority", 0),
@@ -7335,8 +7624,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     confidence=signal_result.confidence,
                     regime=self._tick_regime_cache.get(symbol, "unknown"),
                     atr=signal_result.atr,
-                    win_prob=entry_reasons.get("win_prob", 0),
-                    ev=entry_reasons.get("ev_per_dollar", 0),
+                    win_prob=entry_reasons.get("win_prob", entry_reasons.get("win_prob_deflated", 0)) or 0,
+                    ev=entry_reasons.get("ev_per_dollar", 0) or 0,
                 )
         except Exception as e:
             logger.debug(f"Reflection entry analysis error: {e}")
@@ -7597,6 +7886,104 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             )
         except Exception:
             pass  # Never crash the bot on tracking errors
+
+    def _note_llm_pipeline_health(self, pipeline_failed: bool, symbol: str, trace_id: str = ""):
+        """RUNTIME durability instrument (2026-07-12, THE_STANDARD v1.4).
+
+        VISIBILITY instrument, not a trade blocker. The startup path trips
+        llm_first_degraded=true + alerts when prereqs are missing
+        (multi_strategy_main.py:1591). But a RUNTIME LLM/CLI auth failure — the
+        exact thing that silently starved the bot Jul 5-11 — made the required
+        regime/trade agent fail on every scan (coordinator.py:986/:1196 ->
+        get_entry_decision returns skip("LLM pipeline failure") at :1927). The
+        brain then SKIPS every entry (no trades) but the flag stayed false and
+        no alert fired: a week-long outage was invisible in heartbeat.json.
+
+        Fix: count CONSECUTIVE genuine pipeline failures (auth/exec class — the
+        "LLM pipeline failure" thesis, never an on-merit skip). Cross a threshold
+        -> set llm_first_degraded=true (surfaces in heartbeat.json:1996) + one
+        loud owner alert. The flag itself does NOT block trades in the normal
+        path — during an outage the brain already skips every entry; this just
+        makes that outage VISIBLE. Auto-recovers (+ recovery alert) after a few
+        good decisions, with hysteresis so a flapping brain can't alert-storm.
+
+        Known residual blind spot: this only fires when a raw signal reaches the
+        pipeline. A total outage during a fully quiet market (zero qualifying
+        signals) still stays invisible — follow-up: hook the per-scan Exit-agent
+        path (runs whenever positions are open) for a signal-independent probe.
+
+        Gated by LLM_RUNTIME_DEGRADE_DETECT (default on). One-line revert:
+        LLM_RUNTIME_DEGRADE_DETECT=false. Tunables: LLM_RUNTIME_DEGRADE_STREAK
+        (trip, default 3), LLM_RUNTIME_RECOVER_STREAK (recover, default 2).
+        Locked for the parallel-scan path; fully wrapped — a bug here can never
+        break the trade loop.
+        """
+        _trip = False
+        _recover = False
+        _fails = 0
+        _goods = 0
+        try:
+            if os.getenv("LLM_RUNTIME_DEGRADE_DETECT", "true").lower() not in ("1", "true", "yes"):
+                return
+            _threshold = int(os.getenv("LLM_RUNTIME_DEGRADE_STREAK", "3"))
+            _recover_need = int(os.getenv("LLM_RUNTIME_RECOVER_STREAK", "2"))
+            # Lock so SCAN_PARALLEL_SYMBOLS worker threads can't corrupt the
+            # streak counters (lost-update / interleaved read-modify-write).
+            _lock = getattr(self, "_llm_health_lock", None)
+            if _lock is None:
+                import threading
+                _lock = self._llm_health_lock = threading.Lock()
+            with _lock:
+                if pipeline_failed:
+                    self._llm_good_streak = 0
+                    self._llm_pipeline_fail_streak = getattr(self, "_llm_pipeline_fail_streak", 0) + 1
+                    if (self._llm_pipeline_fail_streak >= _threshold
+                            and not getattr(self, "_llm_runtime_degraded", False)):
+                        self.llm_first_degraded = True
+                        self._llm_runtime_degraded = True
+                        _trip = True
+                        _fails = self._llm_pipeline_fail_streak
+                else:
+                    # Brain rendered a real decision (go or on-merit skip) — healthy.
+                    self._llm_pipeline_fail_streak = 0
+                    self._llm_good_streak = getattr(self, "_llm_good_streak", 0) + 1
+                    if (getattr(self, "_llm_runtime_degraded", False)
+                            and self._llm_good_streak >= _recover_need):
+                        self.llm_first_degraded = False
+                        self._llm_runtime_degraded = False
+                        _recover = True
+                        _goods = self._llm_good_streak
+            # Alerts + logs OUTSIDE the lock (network I/O); only on a transition.
+            if _trip:
+                logger.error(
+                    f"[LLM-FIRST] RUNTIME DEGRADED — {_fails} consecutive pipeline "
+                    f"failures (last: {symbol}). The Claude brain is not rendering "
+                    f"decisions (auth expiry or quota/429 — both starved it Jul 5-11) "
+                    f"and is SKIPPING every entry. heartbeat llm_first_degraded=true."
+                )
+                try:
+                    self.alerts.send_market_update(
+                        f"🚨 WAGMI LLM-FIRST DEGRADED (runtime): {_fails} consecutive pipeline "
+                        f"failures — the Claude brain is DOWN (check CLI/API auth AND daily "
+                        f"quota/429). No entries are being taken. Heartbeat flag set; auto-recovers "
+                        f"when it responds. Revert this detector: LLM_RUNTIME_DEGRADE_DETECT=false"
+                    )
+                except Exception:
+                    pass
+            elif _recover:
+                logger.warning(
+                    f"[LLM-FIRST] RUNTIME RECOVERED — brain responding again "
+                    f"({_goods} good decisions; latest {symbol}). llm_first_degraded cleared."
+                )
+                try:
+                    self.alerts.send_market_update(
+                        "✅ WAGMI LLM-FIRST RECOVERED — the Claude brain is rendering "
+                        "decisions again. Heartbeat flag cleared."
+                    )
+                except Exception:
+                    pass
+        except Exception as _health_e:
+            logger.debug(f"[LLM-FIRST] pipeline-health tracker error (non-fatal): {_health_e}")
 
     def _process_symbol_llm_first(
         self,
@@ -7874,6 +8261,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Truthful labeling (audit #40/#7): distinguish pipeline failures and
         # exploration overrides from genuine LLM judgments in all records.
         _pipeline_failed = "pipeline failure" in (entry_decision.thesis or "").lower()
+        # RUNTIME durability: trip llm_first_degraded + loud alert on a sustained
+        # brain outage (the invisible Jul 5-11 auth starve); auto-recover on the
+        # next real decision. See _note_llm_pipeline_health.
+        self._note_llm_pipeline_health(_pipeline_failed, symbol, trace_id)
         _exploration_entry = False
         if entry_decision.action == "skip" and _pipeline_failed:
             # Owner call 2026-07-02 (live HYPE-SHORT example; audit #7 conversion half):
@@ -8223,6 +8614,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         )
 
         # Build entry reasons for position manager
+        # F-1 (2026-07-13 audit): extract thesis_id from the FULL notes and carry it as
+        # its own key — the notes string is truncated to [:500] below, which cut the id
+        # off (it sits at char ~750+), so the close-path grader found 0/773 theses.
+        _full_notes = entry_decision.notes or ""
+        _thesis_id_entry = ""
+        if "thesis_id=" in _full_notes:
+            try:
+                _thesis_id_entry = _full_notes.split("thesis_id=")[1].split(" ")[0].split("|")[0].strip()
+            except Exception:
+                _thesis_id_entry = ""
         entry_reasons = {
             "llm_first": True,
             "confidence": raw_signal.confidence,
@@ -8242,7 +8643,19 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             # Carries "thesis_id=..." so the close path can grade the thesis
             # (2026-07-01: LLM-first entries never wrote llm_notes — theses
             # were structurally ungradeable on the live path).
-            "llm_notes": (entry_decision.notes or "")[:500],
+            "llm_notes": _full_notes[:500],
+            "thesis_id": _thesis_id_entry,
+            # ENTRY_REASONS_KEYS_FIX (2026-07-14, measurement-only): the LLM-first
+            # path never persisted win_prob/rr/ev, so close-path reflection
+            # (on_close win_prob/ev/rr) and EV calibration (predicted_ev) read
+            # 0/"" for every live trade. Keys named to match the close-path
+            # readers ("win_prob", "rr_tp1", "ev_per_dollar") — deliberately NOT
+            # "win_prob_deflated", which the pos.confidence fallback (~line 3818)
+            # reads and must stay untouched. No live entry/size/exit decision
+            # reads these keys (audited 2026-07-14).
+            "win_prob": signal_ctx.get("win_prob") or 0,
+            "rr_tp1": signal_ctx.get("rr_tp1") or 0,
+            "ev_per_dollar": signal_ctx.get("ev_per_dollar") or 0,
         }
 
         # ── Execute trade ──

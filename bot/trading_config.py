@@ -14,8 +14,11 @@ Sections:
 """
 
 import os
+import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
+
+logger = logging.getLogger(__name__)
 
 
 def _env(key: str, default: str) -> str:
@@ -56,6 +59,16 @@ DEFAULT_SYMBOLS = {
     # (max_leverage=10, risk_per_trade=0.05) + SYMBOL_RISK_MULTIPLIERS["XRP"]=0.60
     # so n<10 uncalibrated trades stay small until the dynamic floor calibrates.
     "XRP": SymbolConfig("XRP", "XRP-USD", "ripple", "medium"),
+    # POPCAT (owner-requested 2026-07-14) FAILED validation — 21d backtest: 37 trades, 32% WR
+    # (below 39.9% break-even), -$315 net, <60%-conf bucket 9% WR/-$210. No edge currently, so
+    # NOT added to the live universe (honoring the backtest-before-add rule). Wiring kept dormant
+    # (fetcher map + overrides below + risk mult) for fast re-validation if POPCAT's regime shifts
+    # or to enable shadow-only data tracking. To activate for live: re-add the SymbolConfig line
+    # below AND confirm a passing backtest first.
+    # "POPCAT": SymbolConfig("POPCAT", "POPCAT-USD", "popcat", "high"),  # dormant (see above)
+    # GOAT (2026-07-14 candidate) — 0-position backtest (insufficient multi-TF history) + only marginal
+    # screen edge; NOT validated, not added. Fetcher map kept dormant. Re-test if it builds more history.
+    # "GOAT": SymbolConfig("GOAT", "GOAT-USD", "goatseus-maximus", "high"),
 }
 
 # Risk multipliers for zone computation (from user's original bots)
@@ -240,6 +253,12 @@ class TradingConfig:
     )  # Lowered from 80→68: chop detector was raising floor to 80-93% and blocking ALL
     # ranging signals. 68% allows clear breakouts while filtering noise.
     # Statistical target: 30+ trades/period requires passing choppy-market signals.
+    # LIVING VALUES note (2026-07-15): ledger shows range/consolidation are net
+    # losers (n=107 combined, -$582) and llm/dynamic_thresholds.get_confidence_floor
+    # already computes a live per-regime floor (range n=23 -> 71) that should
+    # govern in strategies/ensemble.py's moderate-chop blend; this 68.0 is meant
+    # to be consumed ONLY as that live path's low-n fallback argument (see
+    # strategies/ensemble.py — out of scope for this file), not applied directly.
     max_hold_hours: int = field(
         default_factory=lambda: _env_int("MAX_HOLD_HOURS", 48)
     )
@@ -370,16 +389,38 @@ class TradingConfig:
     time_sizing_allow_boost: bool = field(
         default_factory=lambda: _env_bool("TIME_SIZING_ALLOW_BOOST", True)
     )
-    # Max boost cap — prevents runaway sizing from stacked multipliers
+    # Max boost cap — prevents runaway sizing from stacked multipliers.
+    # LIVING VALUES note (2026-07-15): this is a safety ceiling, kept as-is.
+    # The path it governs (execution/time_sizing.py's frozen April-2026
+    # _HOUR_BIAS/_SESSION_MULTIPLIERS tables) is D11 SHADOW by default
+    # (TIME_SIZING_ENFORCE unset -> applied=1.0) and is ledger-inverted if ever
+    # enforced: paper_trades/*.csv shows DEAD hours (would-cut 0.5x) avg
+    # +$11.73/tr n=72 (best bucket) while PRIME hours (would-boost) avg
+    # +$3.52/tr n=77. Fix belongs in execution/time_sizing.py (out of scope
+    # for this file) — the enforce path there must be live-ledger-computed,
+    # never fall back to the static tables.
     time_sizing_max_boost: float = field(
         default_factory=lambda: _env_float("TIME_SIZING_MAX_BOOST", 1.4)
     )
     # Directional bias boost: extra sizing when trade direction matches
-    # proven hour-of-day directional edge (e.g., long at 18:00 UTC)
+    # proven hour-of-day directional edge (e.g., long at 18:00 UTC).
+    # LIVING VALUES note (2026-07-15): the static _HOUR_BIAS table this
+    # multiplies against (execution/time_sizing.py) is INVERTED vs the ledger
+    # — boost-aligned slices avg -$10.12/tr (n=27) vs penalty-opposed +$0.99
+    # (n=42). Harmless today only because TIME_SIZING_ENFORCE is unset (D11
+    # shadow, 1.0x applied). Do not enforce until execution/time_sizing.py's
+    # bias table is live-computed (n>=13 per hour-side slice) — out of scope
+    # for this file.
     time_sizing_directional_boost: float = field(
         default_factory=lambda: _env_float("TIME_SIZING_DIRECTIONAL_BOOST", 1.15)
     )
-    # Directional penalty: reduce sizing when trading against proven bias
+    # Directional penalty: reduce sizing when trading against proven bias.
+    # LIVING VALUES note (2026-07-15): same inversion as the boost above — the
+    # slice this 0.85x would shrink (opposed to static bias) realizes +$7.49/tr
+    # n=29 (incl. the bot's best edge, h14/15 SHORTs +$14.80/tr n=15), while the
+    # slice the paired 1.15x would grow realizes -$2.98/tr n=33. Dormant via D11
+    # shadow; do not re-arm without a live-computed bias table in
+    # execution/time_sizing.py (out of scope for this file).
     time_sizing_directional_penalty: float = field(
         default_factory=lambda: _env_float("TIME_SIZING_DIRECTIONAL_PENALTY", 0.85)
     )
@@ -415,8 +456,17 @@ class TradingConfig:
     )  # Was 1.5: at 0.69% stops, 8bps fees consume 11.6%. At 2.0x → 0.92% stops,
     # fee drag drops to 8.7%. Fewer SL hits from wicks in volatile crypto.
     ensemble_confidence_floor: float = field(
-        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 55.0)
-    )  # Lowered from 60: HTF penalty now reduces confidence by 15-20pts, floor at 60 double-penalizes. EV gate handles quality.
+        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 20.0)
+    )  # LIVING VALUES fix 2026-07-15: code default corrected 55.0 -> 20.0 to match
+    # the runtime floor already in force (.env ENSEMBLE_CONFIDENCE_FLOOR=20 +
+    # LLM_FIRST_MODE pins ensemble floor to min(adaptive_floor, config)=20). The
+    # old 55.0 was a dormant silent-gate: data/trade_ledger.csv (n=99, test rows
+    # excluded) shows conf<55 n=12 WR=67% avg +$0.29/tr while conf 55-80 n=79
+    # loses -$117.69 combined (avg -$0.59 to -$2.11/tr) — a 55 floor blocks the
+    # non-losing low band and admits the losing band. The governing live path is
+    # feedback/adaptive_confidence.py AdaptiveConfidenceFloor (WR/EV per bin,
+    # bounded gradual updates); this field is only the bootstrap/env override
+    # consumed by backtest/engine.py, manual/runner.py, param_optimizer.py.
     max_ensemble_confidence: float = field(
         default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 95.0)
     )  # Raised from 92: reduces clustering at cap, lets unanimous signals get proper bonus
@@ -642,13 +692,19 @@ class TradingConfig:
         default_factory=lambda: _env_float("QUANT_BTC_SHORT_EDGE_BOOST", 1.15)
     )  # 1.15x confidence boost for BTC SELL signals
 
-    # Rule 3: HYPE BUY in High Vol — strongest edge at P50-P75 ATR percentile
-    quant_hype_highvol_enabled: bool = field(
-        default_factory=lambda: _env_bool("QUANT_HYPE_HIGHVOL_ENABLED", True)
-    )
-    quant_hype_highvol_boost: float = field(
-        default_factory=lambda: _env_float("QUANT_HYPE_HIGHVOL_BOOST", 1.2)
-    )  # 1.2x confidence boost for HYPE BUY in high_volatility regime
+    # Rule 3 (HYPE BUY high-vol x1.2) DELETED 2026-07-15 (LIVING VALUES audit):
+    # realized ledger paper_trades/trades_*.csv shows HYPE BUY (LONG) is n=17,
+    # net -$584.10, avg -$34.36/trade, 41% WR — the WORST setup on the entire
+    # ledger (vs ETH SHORT +$20.37/tr best), while this rule claimed it was the
+    # "strongest edge" and boosted it 1.2x. Mirrors the Rule 2 (BTC short boost)
+    # deletion precedent. Per THE_STANDARD §2b the stat may re-enter only as
+    # labeled LLM context, never as a mechanical multiplier; any future
+    # HYPE_BUY edge must earn its way back via live n>=13 dollar-positive
+    # re-validation (see feedback.live_edge / SYMBOL_RISK_MULTIPLIERS["HYPE"]
+    # below, which already penalizes HYPE to 0.40x from realized data).
+    # Companion deletion of the core/signal_pipeline.py Rule 3 block and the
+    # test_quant_rules.py / test_duplicate_prevention.py references is
+    # tracked separately (out of scope for this file-only change).
 
     # Rule 4: Conviction Multiplier — size up on high-confidence multi-agree
     quant_conviction_mult_enabled: bool = field(
@@ -773,6 +829,17 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
         risk_per_trade=0.05,
         volatility_profile="medium",
     ),
+    # POPCAT: NEW memecoin symbol (2026-07-14), n=0 history. Even more conservative than
+    # XRP — memecoins whip hard, so lowest leverage cap (5x), risk_per_trade=0.03 (below XRP's
+    # 0.05, ~1/3 of global), wide ATR stops (like HYPE) to survive mean-reversion vol.
+    # Tightens until n>=10 trades calibrate. No global gate weakened.
+    "POPCAT": SymbolOverrides(
+        max_leverage=5.0,
+        risk_per_trade=0.03,
+        volatility_profile="high",
+        atr_mult_sl=2.2,
+        atr_mult_tp1=3.3,
+    ),
 }
 
 
@@ -800,78 +867,98 @@ PAPER_PROFILE_OVERRIDES = {
 # Trending: wider SL (let trends breathe), wider TP (let momentum carry)
 # Consolidation: tighter SL (mean-revert or stop), tighter TP (take profits before snap-back)
 # High vol: widest SL (avoid wick stops), tightest TP (grab what you can)
+# This table is the n<13 FALLBACK for sl_mult — get_regime_sl_tp() below layers a
+# live, SYMMETRIC (widen AND narrow) SL adjustment from data/trade_ledger.csv
+# SL-hit-rate on top of these values when n>=13. tp1_mult/tp2_mult have no live
+# path yet (would need trade_dna TP1-hit-rate/MFE data — out of scope for this
+# file); they remain static.
+# LIVING VALUES refresh 2026-07-15 — comments now show REALIZED stats from the
+# ledger (paper_trades trades_*.csv, 265 clean closes; SL exits overall: n=91,
+# net -$690.83, avg -$7.59/tr):
 REGIME_SL_TP_SCALARS = {
     "trending_bull":    {"sl_mult": 1.2, "tp1_mult": 1.3, "tp2_mult": 1.5},
     "trending_bear":    {"sl_mult": 1.1, "tp1_mult": 1.2, "tp2_mult": 1.4},
     "trend":            {"sl_mult": 1.15, "tp1_mult": 1.25, "tp2_mult": 1.4},
-    "trending":         {"sl_mult": 1.2, "tp1_mult": 1.3, "tp2_mult": 1.5},   # 52% WR, +$118 — wider SL like trending_bull
+    # trending family (trending+trend+trending_bull+trending_bear) n=20, WR 15%,
+    # -$506 total (avg -$25/tr) — NOT "52% WR +$118" as previously claimed; the
+    # wide TPs granted here are stale, kept only as the n<13 fallback pending a
+    # live TP path (see comment above).
+    "trending":         {"sl_mult": 1.2, "tp1_mult": 1.3, "tp2_mult": 1.5},
+    # consolidation: n=84, avg -$3.8/tr, WR 46%, SL-hit 50% — mild loser, not "0% WR"
     "consolidation":    {"sl_mult": 0.85, "tp1_mult": 0.9, "tp2_mult": 0.85},
-    # range/ranging: 94% SL hit rate, 25% WR → widen SL to clear noise, TP fast
-    "range":            {"sl_mult": 1.4, "tp1_mult": 0.8, "tp2_mult": 0.85},  # was sl=0.9: 94% SL hits, need wider stop
-    "ranging":          {"sl_mult": 1.4, "tp1_mult": 0.8, "tp2_mult": 0.85},  # same — data: 25% WR n=16
+    # range/ranging: n=23, SL-hit 52%, WR 35%, avg -$11.4/tr — 52% is BELOW the
+    # 65% SL-hit target, so the old "94% SL hits, need wider stop" justification
+    # for sl=1.4 is stale; the live symmetric narrowing in get_regime_sl_tp()
+    # will pull this down toward the target once n>=13 (already satisfied here).
+    "range":            {"sl_mult": 1.4, "tp1_mult": 0.8, "tp2_mult": 0.85},
+    "ranging":          {"sl_mult": 1.4, "tp1_mult": 0.8, "tp2_mult": 0.85},  # same as range
     "high_volatility":  {"sl_mult": 1.4, "tp1_mult": 1.2, "tp2_mult": 2.0},
     "panic":            {"sl_mult": 1.5, "tp1_mult": 0.6, "tp2_mult": 0.6},
-    # illiquid: 82% SL hit rate, 28% WR, avg SL=1.43% vs ATR=0.84% → SL/ATR=1.70x. Need 2.5x.
-    "low_liquidity":    {"sl_mult": 1.5, "tp1_mult": 0.75, "tp2_mult": 0.75},  # was sl=1.3: 82% SL hits
-    "illiquid":         {"sl_mult": 1.5, "tp1_mult": 0.75, "tp2_mult": 0.75},  # same — data: 28% WR n=57
+    # illiquid: the "n=57, 82% SL hits" basis for sl=1.5 no longer exists in the
+    # live ledger (n=3 now) — kept only as the n<13 fallback; too sparse to
+    # re-validate or correct with current data.
+    "low_liquidity":    {"sl_mult": 1.5, "tp1_mult": 0.75, "tp2_mult": 0.75},
+    "illiquid":         {"sl_mult": 1.5, "tp1_mult": 0.75, "tp2_mult": 0.75},  # same as low_liquidity
     # "unknown" intentionally omitted — pass through base values unchanged
 }
 
 
 # Regime-aware risk sizing: bet bigger where edge is proven, smaller where it isn't.
-# 30-day backtest: consolidation 78% WR (+$3.2k), trending_bull 40% WR (-$4k).
-# Updated 2026-04-12 from 105 live trades. Comments show ACTUAL live performance.
+# This table is the n<13 FALLBACK ONLY — get_regime_risk_mult() below computes
+# an EV-aware live multiplier from data/trade_ledger.csv (regime_1h, n>=13) and
+# blends toward it, replacing the WR-only mapping that used to contradict the
+# ledger (e.g. consolidation 46% WR was up-sized to 0.90 despite realized avg
+# -$4.67/tr). LIVING VALUES refresh 2026-07-15 — comments now show REALIZED
+# avg net PnL/trade (pnl-fee) from data/trade_ledger.csv (216 clean rows):
 REGIME_RISK_MULTIPLIERS = {
-    "trending_bear":    1.0,    # THE GOLDEN REGIME: +$406, 75% WR, PF=18.4 — FULL SIZE
-    "trending_bull":    1.0,    # +$45, 67% WR, PF=4546 — FULL SIZE
-    # Updated 2026-04-23 from 164 live trades in trade_dna:
-    "trending":         1.0,    # 52% WR n=52 +$118 — profitable regime, full size
-    "high_volatility":  0.85,   # small sample but promising
+    "trending_bear":    1.0,    # BEST REGIME: n=15, +$81.70/tr, 33% WR — FULL SIZE
+    "trending_bull":    0.55,   # n=9, 33% WR, -$29.46/tr realized — reduced pending
+                                 # n>=13 live signal; 0.55 = _wr_to_risk_mult(0.33).
+                                 # Stale claim was "+$45, 67% WR, PF=4546" (Apr-2026
+                                 # snapshot); realized ledger contradicts it.
+    "trending":         0.50,   # n=17, 17.6% WR, -$8.28/tr — net loser, not "52% WR +$118"
+    "high_volatility":  0.85,   # n=12, +$23.93/tr — small sample but net-positive
     "illiquid":         0.50,   # 28% WR n=57 -$83 — down from 0.70: live data proves losing regime
     "trend":            0.50,   # TRAP: -$200, 18% WR, PF=0.15 — weak ADX, treat like range
-    "range":            0.45,   # 25% WR n=16 -$46 — consistent loser
-    "ranging":          0.45,   # same as range — 25% WR n=16
-    "consolidation":    0.30,   # DISASTER: -$169, 0% WR, PF=0 — minimum size
+    "range":            0.45,   # n=33, -$10.29/tr — consistent loser
+    "ranging":          0.45,   # same as range
+    "consolidation":    0.30,   # n=89, 46.1% WR, -$4.67/tr — mild loser (NOT "0% WR
+                                 # DISASTER" as previously claimed; still minimum size
+                                 # since EV is negative)
     "panic":            0.50,   # No live data — cautious
     "low_liquidity":    0.40,   # Canonical name for illiquid — minimal
     "news_dislocation": 0.50,   # Unpredictable — cautious
-    "unknown":          0.45,   # 36% WR n=39 -$61 — losing regime, reduced from 0.50
+    "unknown":          0.45,   # n=34, -$1.98/tr — losing regime, reduced from 0.50
 }
 
 
-# Symbol-specific risk scaling from 105 live trades (2026-04-12).
-# ETH: PF=3.98, 50% WR, +$39 — best per-trade avg ($2.77)
-# BTC: PF=1.41, 38% WR, +$31 — clean when leverage controlled
-# SOL: PF=1.05, 37% WR, +$25 — high variance, W15 was +$137
-# HYPE: PF=0.50, 24% WR, -$36 — WORST SYMBOL, losing consistently
+# Symbol-specific risk scaling — LIVING VALUE (2026-07-15): n>=13 symbols are
+# now computed LIVE from the ledger via feedback.live_edge.get_symbol_mult
+# (avg net PnL/trade, both sides). This dict is ONLY the n<13 fallback, used
+# when live evidence is insufficient or DATA_DRIVEN_SYMBOL_MULT is off.
+# Fallback values as of 2026-07-15 ledger (paper_trades/*.csv, net=pnl-fee):
+# ETH n=62 +$10.87/tr (52% WR) — best symbol
+# BTC n=63 +$6.59/tr (44% WR)
+# SOL n=59 +$4.36/tr (58% WR)
+# XRP n=44 -$1.90/tr (68% WR — WR misleading, PnL/trade is negative)
+# HYPE n=37 -$15.20/tr — worst symbol, proven net loser
 SYMBOL_RISK_MULTIPLIERS = {
     "ETH":  1.0,   # Best symbol by PnL/trade. Full size.
     "BTC":  0.90,  # Solid but needs leverage control (<=7x).
     "SOL":  0.80,  # High variance. Great in trending_bear, bad elsewhere.
-    "HYPE": 0.60,  # LOSING SYMBOL: -$36, 24% WR, PF=0.5. Reduce until data improves.
-    "XRP":  0.60,  # NEW SYMBOL (2026-06-25), n=0: no edge data yet. Start at 0.60x
-                   # (same conservative floor as HYPE) to bound uncalibrated trades
-                   # until n>=10. Raise toward 1.0 once live PF/WR validates.
+    "HYPE": 0.40,  # PROVEN NET LOSER: n=37, -$15.20/tr — worst symbol on the ledger.
+    "XRP":  0.50,  # n=44, -$1.90/tr net despite 68% WR (WR is misleading here;
+                   # payoff is negative) — sized below HYPE's old floor accordingly.
+    "POPCAT": 0.50,  # NEW memecoin (2026-07-14), n=0: no edge data yet.
+                     # Keeps uncalibrated POPCAT trades tiny until n>=13 validates edge.
 }
 
-# Symbol+side risk scaling: penalize specific directional trades with weak edge.
-# 30-day backtest analysis (2026-03-30):
-#   SOL LONG: 13 trades, 46% WR, -$1,209 PnL (losers hold 7-36 days before SL)
-#   SOL SHORT: 13 trades, 62% WR, +$2,353 PnL
-# SOL LONG winners hit TP1 instantly (0h); losers bleed for weeks. Structural issue.
-# Reducing SOL LONG to 0.35x preserves the signal for data collection but limits damage.
-SYMBOL_SIDE_RISK_MULTIPLIERS: Dict[tuple, float] = {
-    # AGGRESSIVE DATA COLLECTION — trade everything, collect data, learn.
-    # Every direction open. SL enforcement + notional cap handles risk.
-    ("SOL", "BUY"):  0.70,
-    ("SOL", "SELL"): 1.3,   # Big winners came from here (+$129, +$99)
-    ("BTC", "BUY"):  0.70,
-    ("BTC", "SELL"): 1.3,   # Best live edge (100% WR)
-    ("ETH", "BUY"):  0.70,
-    ("ETH", "SELL"): 0.70,
-    ("HYPE", "BUY"): 0.70,
-    ("HYPE", "SELL"):1.2,
-}
+# NOTE (2026-07-15): SYMBOL_SIDE_RISK_MULTIPLIERS was deleted here — it was a
+# stale 2026-03-30 backtest table that inverted the realized ledger edge
+# (penalized ETH_SELL, the best live edge at +$24.45/tr, to 0.70x; only cut
+# HYPE_BUY, the worst at -$38.94/tr, to 0.70x). The governing live path is
+# feedback.live_edge.get_side_mult (ledger-computed avg net PnL/trade, n>=13),
+# with neutral 1.0 fallback below when live evidence is insufficient.
 
 # Per-symbol lead-lag configuration: empirical lag times and correlations.
 # Used by LeadLagBoostEngine to generate confidence boosts for follower assets.
@@ -879,6 +966,16 @@ SYMBOL_SIDE_RISK_MULTIPLIERS: Dict[tuple, float] = {
 # correlation: empirical correlation coefficient (0-1)
 # beta: follower amplification factor (1.2 = follower moves 1.2x BTC's %)
 # boost_cap: maximum confidence boost for this symbol from lead-lag
+# LIVING VALUES note (2026-07-15): boost_cap here is a STATIC, side-blind cap —
+# per-close net (pnl-fee) from paper_trades/*.csv actually ranks ETH_SHORT
+# +$20.37/tr (n=36, the single best slice) ABOVE SOL_SHORT +$7.65/tr (n=39),
+# the opposite of this table's SOL(12) > ETH(10) ranking, and the old "ETH
+# follows faster, less edge" comment below was factually wrong — it does not.
+# ALL long slices are realized net losers (worst: HYPE_BUY -$34.36/tr, n=17).
+# Making boost_cap live/side-aware (ledger-derived, zeroed for net-loser
+# slices) belongs in execution/cross_asset_alert.py (out of scope for this
+# file); these numbers remain the fallback shell. lead_lag_max_boost=12.0
+# above is the absolute safety ceiling and is intentionally left untouched.
 LEAD_LAG_SYMBOL_CONFIG = {
     "SOL": {
         "lag_minutes": (30, 60),       # SOL lags BTC by 30-60 min
@@ -890,34 +987,30 @@ LEAD_LAG_SYMBOL_CONFIG = {
         "lag_minutes": (15, 30),       # ETH lags BTC by 15-30 min
         "correlation": 0.91,
         "beta": 1.20,
-        "boost_cap": 10.0,            # Lower cap: ETH follows faster, less edge
+        "boost_cap": 10.0,            # NOTE: realized ETH_SHORT (+$20.37/tr, n=36)
+                                        # is the ledger's BEST slice — this cap is
+                                        # NOT justified by "less edge" (see note above).
     },
     "HYPE": {
         "lag_minutes": (15, 45),       # HYPE less predictable
         "correlation": 0.44,
         "beta": 1.50,
-        "boost_cap": 5.0,             # Low cap: weak correlation
+        "boost_cap": 5.0,             # Low cap: weak correlation. Still non-zero
+                                        # despite HYPE_BUY being the ledger's worst
+                                        # slice (-$34.36/tr, n=17) — side-blind cap.
     },
 }
 
 
-# Setup exit STRATEGY (not fixed TPs — those don't work on these assets).
-# BTC moves 0.3%/h, SOL 0.4%/h, HYPE 0.56%/h. Fixed 1-1.5% TPs are coinflips.
-# Our actual winners (BTC SHORT +$53, +$38) all used TRAILING stops.
-# Strategy: TP1 at 1R to de-risk 50%, let rest trail. Time stop if flat.
-SETUP_OPTIMAL_EXITS: Dict[str, Dict[str, float]] = {
-    "SOL_SELL": {"tp1_r": 1.0, "tp1_close_pct": 0.5, "trail_atr": 1.0, "time_stop_h": 12, "edge": "tier1"},
-    "BTC_SELL": {"tp1_r": 1.0, "tp1_close_pct": 0.5, "trail_atr": 1.0, "time_stop_h": 8, "edge": "tier1"},
-    "HYPE_SELL":{"tp1_r": 1.0, "tp1_close_pct": 0.5, "trail_atr": 1.2, "time_stop_h": 12, "edge": "tier1"},
-    "ETH_BUY":  {"tp1_r": 1.0, "tp1_close_pct": 0.5, "trail_atr": 1.0, "time_stop_h": 8, "edge": "tier2"},
-    "HYPE_BUY": {"tp1_r": 1.0, "tp1_close_pct": 0.5, "trail_atr": 1.2, "time_stop_h": 12, "edge": "tier2"},
-}
-
-
-def get_setup_exit(symbol: str, side: str) -> dict:
-    """Return optimal exit profile for a setup. Empty dict if not configured."""
-    key = f"{symbol}_{side}"
-    return SETUP_OPTIMAL_EXITS.get(key, {})
+# NOTE (2026-07-15): SETUP_OPTIMAL_EXITS was deleted here — it was a dormant
+# 2026-?? table never consumed by any live decision path (verified zero readers),
+# and its "edge" labels were inverted vs the realized ledger: it labeled ETH_BUY
+# and HYPE_BUY tier2 "edge" while both are realized-negative (HYPE_BUY worst at
+# -$34.36/tr), and it omitted ETH_SELL, the actual best edge at +$20.37/tr.
+# Exit behavior stays governed by the live paths: position_manager's trade-profile/
+# TP1/trailing state machine plus the LLM Exit Agent. If per-setup exit profiles
+# are wanted, compute them live from paper_trades/*.csv per symbol_side net PnL
+# (n>=13), like feedback.live_edge.get_side_mult — never a frozen table.
 
 
 def get_lead_lag_config(symbol: str) -> dict:
@@ -929,68 +1022,188 @@ def get_lead_lag_config(symbol: str) -> dict:
 def get_symbol_risk_mult(symbol: str) -> float:
     """Return position-size multiplier for the given symbol.
 
-    If trade_dna has >= 15 trades for this symbol, blends static with live WR.
+    LIVING VALUE (2026-07-15): when DATA_DRIVEN_SYMBOL_MULT is on (default), this
+    is computed LIVE from the ledger (avg net PnL/trade, both sides, n>=13) via
+    feedback.live_edge.get_symbol_mult — the same pattern as
+    get_symbol_side_risk_mult. Live mult is clamped to [0.30, 1.0]: it can only
+    ever be as-safe-or-safer than full size, never a boost above the static cap.
+    Falls back to the static SYMBOL_RISK_MULTIPLIERS table when live evidence is
+    insufficient (n<13), the symbol is unrecognized, or the flag is off.
+    Revert: DATA_DRIVEN_SYMBOL_MULT=false -> legacy static SYMBOL_RISK_MULTIPLIERS.
     """
     base = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "")
     static_mult = SYMBOL_RISK_MULTIPLIERS.get(base, 0.70)
-    try:
-        from llm.dynamic_thresholds import get_dynamic_thresholds
-        dt = get_dynamic_thresholds()
-        dt._maybe_refresh()
-        sym_data = dt._symbol_data.get(base)
-        if sym_data and sym_data["n"] >= 15:
-            live_mult = _wr_to_risk_mult(sym_data["wr"])
-            blend = min(1.0, (sym_data["n"] - 15) / 35)
-            return round(static_mult * (1 - blend) + live_mult * blend, 3)
-    except Exception:
-        pass
+    if os.getenv("DATA_DRIVEN_SYMBOL_MULT", "true").strip().lower() in ("1", "true", "yes"):
+        try:
+            from feedback.live_edge import get_symbol_mult as _dd_symbol_mult
+            _live = _dd_symbol_mult(base)
+            if _live is not None:
+                return round(max(0.30, min(1.0, _live)), 3)
+        except Exception as e:
+            logger.warning(f"[SYMBOL-MULT] live_edge lookup failed for {base}: {e}")
     return static_mult
 
 
 def get_symbol_side_risk_mult(symbol: str, side: str) -> float:
     """Return position-size multiplier for a specific symbol+side combo.
 
-    Allows penalizing directional trades with weak historical edge
-    (e.g., SOL LONG has 46% WR and negative PnL while SOL SHORT is profitable).
-    Returns 1.0 (no adjustment) for combos not in SYMBOL_SIDE_RISK_MULTIPLIERS.
+    LIVING VALUE (2026-07-14): when DATA_DRIVEN_SIDE_MULT is on (default), this is
+    computed LIVE from the ledger (PnL/trade, n>=13) via feedback.live_edge —
+    replacing the stale 2026-03-30 hardcoded table (deleted 2026-07-15), which had
+    it BACKWARDS (penalized ETH_SELL, the best live edge, and under-penalized
+    HYPE_BUY, the worst). Neutral 1.0 when live evidence is insufficient (n<13)
+    or the DATA_DRIVEN_SIDE_MULT flag is off — no pre-decided bias.
+    Revert: DATA_DRIVEN_SIDE_MULT=false -> neutral 1.0 (legacy hardcoded table removed).
     """
     base = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "")
     # Normalize side: LONG->BUY, SHORT->SELL for consistent lookup
     normalized_side = "BUY" if side.upper() in ("BUY", "LONG") else "SELL"
-    return SYMBOL_SIDE_RISK_MULTIPLIERS.get((base, normalized_side), 1.0)
-
-
-def _wr_to_risk_mult(wr: float) -> float:
-    """Map live win rate to a risk multiplier."""
-    if wr < 0.25:
-        return 0.45
-    if wr < 0.35:
-        return 0.55
-    if wr < 0.45:
-        return 0.70
-    if wr < 0.55:
-        return 0.90
+    try:
+        from feedback.live_edge import enabled as _dd_enabled, get_side_mult as _dd_mult
+        if _dd_enabled():
+            _live = _dd_mult(base, normalized_side)
+            return _live if _live is not None else 1.0
+    except Exception as e:
+        logger.warning(f"[SYMBOL-SIDE-MULT] live_edge lookup failed for {base}_{normalized_side}: {e}")
     return 1.0
+
+
+_REGIME_LEDGER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "trade_ledger.csv")
+_regime_ledger_cache = {"mtime": None, "stats": {}}
+# Synthetic/test entry prices seeded by test fixtures — exclude from live stats.
+_TEST_ENTRY_PRICES = (100.0, 150.0, 50000.0)
+
+
+def _get_regime_ledger_ev(regime: str) -> Optional[dict]:
+    """LIVING VALUE (2026-07-15): live per-regime expectancy from
+    data/trade_ledger.csv (regime_1h, net_pnl), n>=13 gate. Excludes TEST
+    symbols and synthetic entry prices used by test fixtures. Self-contained
+    (reads the ledger directly) so it does not depend on trade_dna, which
+    undercounts some regimes (e.g. trending_bull n=4 in trade_dna vs n=9 here).
+    Returns {"n": int, "avg_net": float} or None if unavailable/insufficient.
+    """
+    try:
+        mtime = os.path.getmtime(_REGIME_LEDGER_PATH)
+    except OSError:
+        return None
+    if _regime_ledger_cache["mtime"] != mtime:
+        stats = {}
+        try:
+            import csv as _csv
+            with open(_REGIME_LEDGER_PATH, newline="", encoding="utf-8", errors="ignore") as f:
+                for row in _csv.DictReader(f):
+                    sym = str(row.get("symbol", "")).upper()
+                    if "TEST" in sym:
+                        continue
+                    try:
+                        entry_price = float(row.get("entry_price") or 0)
+                    except (TypeError, ValueError):
+                        entry_price = 0.0
+                    if entry_price in _TEST_ENTRY_PRICES:
+                        continue
+                    try:
+                        net = float(row.get("net_pnl"))
+                    except (TypeError, ValueError):
+                        continue
+                    reg = (row.get("regime_1h") or "unknown").strip().lower() or "unknown"
+                    d = stats.setdefault(reg, {"n": 0, "sum": 0.0})
+                    d["n"] += 1
+                    d["sum"] += net
+        except Exception:
+            stats = {}
+        _regime_ledger_cache["mtime"] = mtime
+        _regime_ledger_cache["stats"] = {
+            k: {"n": v["n"], "avg_net": v["sum"] / v["n"]} for k, v in stats.items() if v["n"] > 0
+        }
+    return _regime_ledger_cache["stats"].get((regime or "unknown").lower())
+
+
+def _ev_to_risk_mult(avg_net: float) -> float:
+    """Map realized avg net PnL/trade (EV) to a risk multiplier.
+
+    Replaces the deleted WR-only _wr_to_risk_mult: win rate is anti-correlated
+    with expectancy in this ledger (e.g. consolidation 46% WR but -$4.67/tr,
+    XRP 68% WR but -$1.90/tr), so a WR-keyed curve up-sized net losers. EV-keyed
+    instead. Never sizes above 1.0 (no boosting above the static full-size cap);
+    floors at 0.45.
+    """
+    if avg_net > 5.0:
+        return 1.0
+    if avg_net > 0.0:
+        return 0.85
+    if avg_net > -5.0:
+        return 0.60
+    return 0.45
 
 
 def get_regime_risk_mult(regime: str) -> float:
     """Return position-size multiplier for the given regime.
 
-    If trade_dna has >= 15 trades for this regime, use live win rate.
-    Otherwise fall back to the calibrated static table.
+    LIVING VALUE (2026-07-15): the live path is now EV-based (avg realized net
+    PnL/trade from data/trade_ledger.csv, n>=13 — lowered from n>=15 per the
+    LIVING VALUES mandate), replacing the WR-only mapping that contradicted the
+    ledger (e.g. consolidation 46% WR was up-sized to 0.90 despite realized avg
+    -$4.67/tr, n=89). Blends toward full live trust by n=50. Falls back to the
+    static REGIME_RISK_MULTIPLIERS table when n<13 or the ledger is unavailable.
+    Clamped to [0.30, 1.0] — this only ever reduces size, never boosts above the
+    static full-size ceiling.
     """
+    static_mult = REGIME_RISK_MULTIPLIERS.get(regime, 0.8)
     try:
-        from llm.dynamic_thresholds import get_dynamic_thresholds
-        stats = get_dynamic_thresholds().get_regime_stats(regime)
-        if stats and stats["n"] >= 15:
-            live_mult = _wr_to_risk_mult(stats["wr"])
-            static_mult = REGIME_RISK_MULTIPLIERS.get(regime, 0.8)
+        stats = _get_regime_ledger_ev(regime)
+        if stats and stats["n"] >= 13:
+            live_mult = _ev_to_risk_mult(stats["avg_net"])
             # Blend: weight live data more as n grows (full trust at n=50+)
-            blend = min(1.0, (stats["n"] - 15) / 35)
-            return round(static_mult * (1 - blend) + live_mult * blend, 3)
+            blend = min(1.0, (stats["n"] - 13) / 35)
+            blended = static_mult * (1 - blend) + live_mult * blend
+            return round(max(0.30, min(1.0, blended)), 3)
     except Exception:
         pass
-    return REGIME_RISK_MULTIPLIERS.get(regime, 0.8)
+    return static_mult
+
+
+def _get_regime_sl_hit_rate_ledger(regime: str) -> Optional[dict]:
+    """LIVING VALUE (2026-07-15): live per-regime SL-hit-rate from
+    data/trade_ledger.csv (regime_1h, exit_type), n>=13 gate. Same
+    TEST-symbol/synthetic-entry-price exclusions as _get_regime_ledger_ev.
+    Self-contained ledger read, used only to NARROW sl_scalar (the existing
+    DynamicThresholds path stays as the widen-only source, unchanged).
+    Returns {"n": int, "sl_hit_rate": float} or None.
+    """
+    try:
+        mtime = os.path.getmtime(_REGIME_LEDGER_PATH)
+    except OSError:
+        return None
+    cache = _get_regime_sl_hit_rate_ledger.__dict__.setdefault(
+        "_cache", {"mtime": None, "stats": {}}
+    )
+    if cache["mtime"] != mtime:
+        stats = {}
+        try:
+            import csv as _csv
+            with open(_REGIME_LEDGER_PATH, newline="", encoding="utf-8", errors="ignore") as f:
+                for row in _csv.DictReader(f):
+                    sym = str(row.get("symbol", "")).upper()
+                    if "TEST" in sym:
+                        continue
+                    try:
+                        entry_price = float(row.get("entry_price") or 0)
+                    except (TypeError, ValueError):
+                        entry_price = 0.0
+                    if entry_price in _TEST_ENTRY_PRICES:
+                        continue
+                    reg = (row.get("regime_1h") or "unknown").strip().lower() or "unknown"
+                    d = stats.setdefault(reg, {"n": 0, "sl": 0})
+                    d["n"] += 1
+                    if str(row.get("exit_type", "")).strip().upper() == "SL":
+                        d["sl"] += 1
+        except Exception:
+            stats = {}
+        cache["mtime"] = mtime
+        cache["stats"] = {
+            k: {"n": v["n"], "sl_hit_rate": v["sl"] / v["n"]} for k, v in stats.items() if v["n"] > 0
+        }
+    return cache["stats"].get((regime or "unknown").lower())
 
 
 def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
@@ -1002,6 +1215,16 @@ def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
     system-optimal ~72%, the SL scalar is widened proportionally so stops
     adapt to actual market noise levels rather than staying frozen at config values.
 
+    LIVING VALUES fix 2026-07-15: the widen-only live path above could never
+    self-correct downward (a stale "94% SL hits" justification could persist
+    forever even after the live rate dropped, e.g. range is now 52% n=23,
+    below the 65% target). This is now SYMMETRIC — a second, self-contained
+    ledger read (data/trade_ledger.csv) narrows sl_scalar proportionally when
+    the live SL-hit-rate is well below target (n>=13), clamped to the table's
+    existing safety envelope [0.85, 1.5] so stops never widen/narrow past the
+    historically validated range. TP1/TP2 have no live path yet (would need
+    trade_dna TP1-hit-rate/MFE data — out of scope for this file).
+
     Returns (adjusted_sl_mult, adjusted_tp1_mult, adjusted_tp2_mult).
     """
     scalars = REGIME_SL_TP_SCALARS.get(regime)
@@ -1010,7 +1233,7 @@ def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
 
     sl_scalar = scalars["sl_mult"]
 
-    # Layer dynamic SL boost from live SL-hit-rate data
+    # Layer dynamic SL boost from live SL-hit-rate data (trade_dna, widen-only)
     try:
         from llm.dynamic_thresholds import get_dynamic_thresholds
         dynamic_boost = get_dynamic_thresholds().get_dynamic_sl_boost(regime, sl_scalar)
@@ -1018,6 +1241,19 @@ def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
             sl_scalar = sl_scalar + dynamic_boost
     except Exception:
         pass  # Never block a trade on a boost computation error
+
+    # Symmetric narrowing from the ledger when SL-hit-rate is well below the
+    # 65% target (self-contained; never raises above the widen path's result).
+    try:
+        led = _get_regime_sl_hit_rate_ledger(regime)
+        if led and led["n"] >= 13 and led["sl_hit_rate"] < 0.58:
+            blend = min(1.0, (led["n"] - 13) / 35)
+            sl_scalar -= (0.65 - led["sl_hit_rate"]) * 0.6 * blend
+    except Exception:
+        pass  # Never block a trade on a boost computation error
+
+    # Clamp to the table's existing safety envelope
+    sl_scalar = max(0.85, min(1.5, sl_scalar))
 
     return (
         base_sl_mult * sl_scalar,

@@ -307,6 +307,23 @@ class TestMissedTradeTracker:
         result = tracker.get_gate_effectiveness()
         assert isinstance(result, dict)
 
+    def test_flush_to_disk_drains_and_never_duplicates(self, tmp_path):
+        import os
+        tracker = self._make_tracker(tmp_path)
+        sig = self._make_signal()
+        tracker.record_rejection(signal=sig, reason="fee_drag", gate="risk_filter")
+        tracker.flush_to_disk()
+        tracker.flush_to_disk()  # second flush must be a no-op, not a duplicate
+        out = os.path.join(str(tmp_path), "missed_trades.jsonl")
+        with open(out) as f:
+            lines = [l for l in f if l.strip()]
+        assert len(lines) == 1
+        tracker.record_rejection(signal=sig, reason="ev_floor", gate="risk_filter")
+        tracker.flush_to_disk()
+        with open(out) as f:
+            lines = [l for l in f if l.strip()]
+        assert len(lines) == 2
+
 
 # ── Ensemble Missed Trade Wiring ──────────────────────────────────
 

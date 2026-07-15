@@ -1,24 +1,24 @@
 {
   "recent_outcomes": [
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
     true,
-    false,
-    false,
-    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
     false,
     true,
     true,
     false,
     false,
     false,
+    true,
+    true,
+    false,
+    true,
     false
   ],
   "regime_wr": {
@@ -35,20 +35,20 @@
       "total": 16
     },
     "consolidation": {
-      "wins": 11,
-      "total": 44
+      "wins": 39,
+      "total": 84
     },
     "trend": {
-      "wins": 0,
-      "total": 6
-    },
-    "range": {
-      "wins": 1,
+      "wins": 2,
       "total": 9
     },
+    "range": {
+      "wins": 7,
+      "total": 21
+    },
     "trending_bull": {
-      "wins": 0,
-      "total": 3
+      "wins": 1,
+      "total": 4
     },
     "trending_bear": {
       "wins": 0,
@@ -61,6 +61,10 @@
     "unknown": {
       "wins": 5,
       "total": 26
+    },
+    "low_liquidity": {
+      "wins": 1,
+      "total": 1
     }
   }
 }

@@ -142,6 +142,10 @@ class DataFetcher:
 
         # Disk cache directory for backtest reproducibility
         self._disk_cache_dir = os.path.join(os.path.dirname(__file__), "cache")
+        # D-T4 (2026-07-13 audit): drop the in-progress last candle so indicators
+        # (RSI/ATR/etc.) aren't computed on a partially-formed bar that repaints
+        # intra-bar. Revert: DROP_FORMING_CANDLES=false.
+        self._drop_forming = os.getenv("DROP_FORMING_CANDLES", "true").strip().lower() in ("1", "true", "yes")
         if self.backtest_mode:
             os.makedirs(self._disk_cache_dir, exist_ok=True)
 
@@ -159,6 +163,8 @@ class DataFetcher:
             "ARB": [("hyperliquid", "ARB/USDC:USDC"), ("bybit", "ARB/USDT")],
             "DOGE": [("hyperliquid", "DOGE/USDC:USDC"), ("bybit", "DOGE/USDT")],
             "WIF": [("hyperliquid", "WIF/USDC:USDC"), ("bybit", "WIF/USDT")],
+            "POPCAT": [("hyperliquid", "POPCAT/USDC:USDC")],  # 2026-07-14 one-at-a-time expansion (owner)
+            "GOAT": [("hyperliquid", "GOAT/USDC:USDC")],  # 2026-07-14 validation candidate
             "PEPE": [("hyperliquid", "KPEPE/USDC:USDC"), ("kraken", "PEPE/USDT"), ("bybit", "PEPE/USDT")],
             "TIA": [("hyperliquid", "TIA/USDC:USDC"), ("bybit", "TIA/USDT")],
             "SEI": [("hyperliquid", "SEI/USDC:USDC"), ("bybit", "SEI/USDT")],
@@ -494,6 +500,47 @@ class DataFetcher:
                 limit = CCXT_LIMITS.get(timeframe, 200)
             return timeframe, limit, None
 
+    # Per-call candle cap (Hyperliquid returns ~5000 max per fetch_ohlcv).
+    _PER_CALL_CAP = 5000
+
+    def _ccxt_fetch_once(self, exchange, ex_name, pair, fetch_tf, since_ms, limit):
+        """Single fetch_ohlcv with 429 retry/backoff. Returns candle list or None."""
+        for attempt in range(3):
+            self._ccxt_rate_limit(ex_name)
+            self._ccxt_requests += 1
+            try:
+                return exchange.fetch_ohlcv(pair, fetch_tf, since=since_ms, limit=limit)
+            except Exception as fetch_err:
+                err_str = str(fetch_err)
+                if "429" in err_str or "Too Many" in err_str or "rate" in err_str.lower():
+                    time.sleep((2 ** attempt) + random.uniform(0.5, 1.5))
+                    continue
+                raise
+        return None
+
+    def _ccxt_fetch_paged(self, exchange, ex_name, pair, fetch_tf, since_ms, end_ms, limit, tf_ms):
+        """Page forward from since_ms to collect up to `limit` candles when a single
+        call can't cover the window. BACKTEST-ONLY (guarded by caller) — live never
+        hits this. FETCH_PAGINATE_BACKTEST=false reverts to single-call behavior."""
+        candles, seen, cur = [], set(), since_ms
+        while len(candles) < limit and cur < end_ms:
+            chunk = self._ccxt_fetch_once(
+                exchange, ex_name, pair, fetch_tf, cur,
+                min(self._PER_CALL_CAP, limit - len(candles)))
+            if not chunk:
+                break
+            new = [c for c in chunk if c[0] not in seen]
+            if not new:
+                break
+            for c in new:
+                seen.add(c[0])
+            candles.extend(new)
+            cur = new[-1][0] + tf_ms
+            if len(chunk) < self._PER_CALL_CAP:
+                break  # exhausted available history
+        candles.sort(key=lambda c: c[0])
+        return candles
+
     def _fetch_ccxt_ohlcv(
         self, symbol_name: str, timeframe: str
     ) -> Optional[pd.DataFrame]:
@@ -533,27 +580,20 @@ class DataFetcher:
                     _end_ms = int(time.time() * 1000)
                 since_ms = _end_ms - (limit * tf_ms)
 
-                # Rate limit + retry on 429
-                candles = None
-                for attempt in range(3):
-                    self._ccxt_rate_limit(ex_name)
-                    self._ccxt_requests += 1
-                    try:
-                        candles = exchange.fetch_ohlcv(
-                            pair, fetch_tf, since=since_ms, limit=limit
-                        )
-                        break  # success
-                    except Exception as fetch_err:
-                        err_str = str(fetch_err)
-                        if "429" in err_str or "Too Many" in err_str or "rate" in err_str.lower():
-                            wait = (2 ** attempt) + random.uniform(0.5, 1.5)
-                            logger.info(
-                                f"[{symbol_name}] {ex_name} rate limited on {timeframe}, "
-                                f"retry {attempt + 1}/3 in {wait:.1f}s"
-                            )
-                            time.sleep(wait)
-                            continue
-                        raise  # re-raise non-429 errors
+                # Fetch candles. BACKTEST-ONLY pagination when the requested window
+                # exceeds one call's ~5000-candle cap (enables >208d history). Live
+                # (backtest_mode=False, small limits) always takes the single-call path
+                # -> zero live impact. Revert: FETCH_PAGINATE_BACKTEST=false.
+                _paginate = (
+                    self.backtest_mode and limit > self._PER_CALL_CAP
+                    and os.getenv("FETCH_PAGINATE_BACKTEST", "true").lower() in ("1", "true", "yes")
+                )
+                if _paginate:
+                    candles = self._ccxt_fetch_paged(
+                        exchange, ex_name, pair, fetch_tf, since_ms, _end_ms, limit, tf_ms)
+                else:
+                    candles = self._ccxt_fetch_once(
+                        exchange, ex_name, pair, fetch_tf, since_ms, limit)
 
                 if not candles or len(candles) < 5:
                     continue
@@ -565,6 +605,11 @@ class DataFetcher:
                 df["time"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
                 df = df.drop(columns=["timestamp"]).sort_values("time")
                 df = df.reset_index(drop=True)
+
+                # D-T4: drop the forming (incomplete) last candle before it feeds indicators
+                if self._drop_forming and not df.empty:
+                    if df["time"].iloc[-1].timestamp() * 1000 + tf_ms > time.time() * 1000:
+                        df = df.iloc[:-1].reset_index(drop=True)
 
                 # Aggregate if needed (e.g. 1h -> 6h)
                 if aggregate_to:
@@ -666,6 +711,12 @@ class DataFetcher:
             .dropna()
             .reset_index()
         )
+        # D-T4: drop the partial last aggregation bucket (period not yet closed —
+        # e.g. a "daily" candle built from only 18 of 24 hours).
+        if self._drop_forming and not agg.empty:
+            bucket_ms = TIMEFRAME_MS.get(target_tf) or int(pd.Timedelta(freq).total_seconds() * 1000)
+            if agg["time"].iloc[-1].timestamp() * 1000 + bucket_ms > time.time() * 1000:
+                agg = agg.iloc[:-1].reset_index(drop=True)
         return agg
 
     # ─── CoinGecko fallback ──────────────────────────────────────
@@ -1060,7 +1111,25 @@ class DataFetcher:
             try:
                 self._ccxt_requests += 1
                 oi_data = exchange.fetch_open_interest(pair)
-                oi_value = oi_data.get("openInterestAmount") or oi_data.get("openInterestValue")
+                # FIX 2026-07-13 (toxicity audit D-T1): return USD notional, not
+                # base-coin units. Consumers format this as "$xM/$xB"; the old code
+                # returned openInterestAmount (coin count), so BTC's ~35,000-coin OI
+                # rendered as "$0M" vs the true ~$2.1B. Prefer the exchange's USD
+                # value; else convert coin × price.
+                oi_value = oi_data.get("openInterestValue")  # USD notional (preferred)
+                if oi_value is None:
+                    _amt = oi_data.get("openInterestAmount")
+                    if _amt is not None:
+                        _info = oi_data.get("info", {}) or {}
+                        _px = (_info.get("markPx") or _info.get("markPrice")
+                               or _info.get("oraclePx") or oi_data.get("markPrice"))
+                        if _px is None:
+                            try:
+                                _px = (exchange.fetch_ticker(pair) or {}).get("last")
+                            except Exception:
+                                _px = None
+                        if _px:
+                            oi_value = float(_amt) * float(_px)
                 if oi_value is not None:
                     return float(oi_value)
             except Exception as e:

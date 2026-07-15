@@ -63,7 +63,7 @@ def extract_all_signals(
             "regime": meta.get("regime", "unknown"),
             "chop_score": round(meta.get("chop_score", 0), 3),
             "ev_per_dollar": round(meta.get("ev_per_dollar", 0) or 0, 4),
-            "win_prob": meta.get("win_prob_deflated"),
+            "win_prob": meta.get("win_prob", meta.get("win_prob_deflated")),
             "fee_drag_pct": round(meta.get("fee_drag_pct", 0), 1),
             "sim_time": str(sim_dt)[:19] if sim_dt else "",
             "current_price": round(current_price, 4),

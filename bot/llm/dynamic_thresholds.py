@@ -4,13 +4,18 @@ Dynamic Threshold Engine — Regime-adaptive confidence floors from live trade d
 Replaces hardcoded confidence_floor=69.0 / ranging_confidence_floor=68.0 with
 floors computed from actual per-regime win rates in trade_dna.json.
 
-Floor logic (requires n >= 10 trades per regime):
-  WR < 25%  → floor 76  (illiquid/ranging are here — only accept elite conviction)
-  WR < 35%  → floor 71  (poor — above-average conviction required)
-  WR < 45%  → floor 66  (below average)
-  WR < 55%  → floor 62  (average — trending sits here at 52% WR)
-  WR >= 55% → floor 58  (strong edge — relax filter)
-  n < 10    → floor 64  (insufficient data, conservative default)
+Floor logic is expectancy-aware (requires n >= 13 trades per regime), because
+WR alone anti-correlates with edge on this ledger (e.g. ETH_SHORT: 41% WR but
++$10.3/tr avg net; XRP_SHORT: 78% WR but -$0.3/tr net loser):
+  WR < 25%              → floor 76  (illiquid/ranging — only accept elite conviction)
+  WR < 35%              → floor 71  (poor — above-average conviction required)
+  WR < 45%, pnl > 0     → floor 62  (proven positive-expectancy low-WR edge — relaxed)
+  WR < 45%, pnl <= 0    → floor 66  (below average, unproven)
+  WR < 55%              → floor 62  (average — trending sits here at 52% WR)
+  WR >= 55%             → floor 58  (strong edge — relax filter)
+  avg_net_pnl <= 0      → floor floor(band, 71)  (net losers never get a relaxed floor,
+                           regardless of WR — a high-WR net loser is still a loser)
+  n < 13                → floor 64  (insufficient data, conservative default)
 
 Cache refreshes every 30 minutes. Thread-safe reads.
 """
@@ -26,8 +31,8 @@ logger = logging.getLogger("bot.llm.dynamic_thresholds")
 _TRADE_DNA_PATH = os.path.join("data", "llm", "deep_memory", "trade_dna.json")
 _CACHE_TTL_S = 1800  # 30 minutes
 
-# Minimum trades needed to trust a regime's WR estimate
-_MIN_TRADES = 10
+# Minimum trades needed to trust a regime's WR estimate (LIVING VALUES: n>=13)
+_MIN_TRADES = 13
 
 # Default floor when regime has insufficient data
 _DEFAULT_FLOOR = 64.0
@@ -37,19 +42,33 @@ _FLOOR_MIN = 55.0
 _FLOOR_MAX = 82.0
 
 
-def _wr_to_floor(wr: float, n: int) -> float:
-    """Map a live win rate to a confidence floor."""
+def _wr_to_floor(wr: float, n: int, avg_net_pnl: float = 0.0) -> float:
+    """Map a live win rate + per-trade expectancy to a confidence floor.
+
+    WR alone anti-correlates with edge on this ledger (ETH_SHORT: 41% WR but
+    +$10.3/tr avg net; XRP_SHORT: 78% WR but -$0.3/tr net loser) — a WR-only
+    mapping would punish the bot's best realized edges and relax for a net
+    loser. avg_net_pnl breaks the tie:
+      - net losers (avg_net_pnl <= 0) are floored at >= 71 regardless of WR,
+        so a high-WR net loser can never get the relaxed low floor.
+      - proven positive-expectancy low-WR slices (WR < 45%) get one band of
+        relief (62 instead of 66).
+    """
     if n < _MIN_TRADES:
         return _DEFAULT_FLOOR
     if wr < 0.25:
-        return 76.0
-    if wr < 0.35:
-        return 71.0
-    if wr < 0.45:
-        return 66.0
-    if wr < 0.55:
-        return 62.0
-    return 58.0
+        band = 76.0
+    elif wr < 0.35:
+        band = 71.0
+    elif wr < 0.45:
+        band = 62.0 if avg_net_pnl > 0 else 66.0
+    elif wr < 0.55:
+        band = 62.0
+    else:
+        band = 58.0
+    if avg_net_pnl <= 0:
+        return max(71.0, band)
+    return band
 
 
 class DynamicThresholds:
@@ -180,7 +199,10 @@ class DynamicThresholds:
                     "wr": v["wins"] / v["total"],
                     "n": v["total"],
                     "pnl": round(v["pnl"], 2),
-                    "floor": _wr_to_floor(v["wins"] / v["total"], v["total"]),
+                    "floor": _wr_to_floor(
+                        v["wins"] / v["total"], v["total"],
+                        v["pnl"] / v["total"] if v["total"] else 0.0,
+                    ),
                 }
                 for r, v in regime_agg.items()
             }
@@ -197,7 +219,10 @@ class DynamicThresholds:
                     "wr": v["wins"] / v["total"],
                     "n": v["total"],
                     "pnl": round(v["pnl"], 2),
-                    "floor": _wr_to_floor(v["wins"] / v["total"], v["total"]),
+                    "floor": _wr_to_floor(
+                        v["wins"] / v["total"], v["total"],
+                        v["pnl"] / v["total"] if v["total"] else 0.0,
+                    ),
                 }
                 for k, v in combo_agg.items()
             }

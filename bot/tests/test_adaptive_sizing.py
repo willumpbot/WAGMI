@@ -18,10 +18,12 @@ from execution.adaptive_risk import AdaptiveSizer, get_adaptive_sizer
 
 
 @pytest.fixture
-def sizer():
+def sizer(tmp_path):
     """Fresh AdaptiveSizer with no persisted state."""
-    with patch("execution.adaptive_risk._ADAPTIVE_SIZER_STATE_PATH", "/dev/null"):
-        return AdaptiveSizer(window=20, max_boost=1.5, min_floor=0.5)
+    with patch("execution.adaptive_risk._ADAPTIVE_SIZER_STATE_PATH",
+               str(tmp_path / "sizer_state.json")), \
+         patch.object(AdaptiveSizer, "_backfill_from_trade_dna", lambda self: None):
+        yield AdaptiveSizer(window=20, max_boost=1.5, min_floor=0.5)
 
 
 @pytest.fixture

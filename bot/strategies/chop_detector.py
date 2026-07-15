@@ -12,8 +12,11 @@ Combined: chop_score = weighted average of all factors
 Threshold: CHOP_THRESHOLD env var (default 0.55)
 """
 
+import csv
+import glob
 import logging
 import os
+from pathlib import Path
 from typing import Dict, Tuple
 
 import pandas as pd
@@ -29,20 +32,17 @@ _WEIGHTS = {
     "whipsaw": 0.15,
 }
 
-# Per-volatility-profile chop thresholds.
-# High-vol assets (HYPE, memes) naturally have wider ranges and more
-# whipsaws — using the default threshold falsely flags them as "choppy"
-# and kills signals that are actually valid.
-# BTC raised from 0.50→0.55: the tighter threshold was over-filtering BTC
-# in normal sideways markets, suppressing valid signals (38% WR on 10d backtest).
-# Tightened thresholds (March 2026): 100d backtest showed 335 ranging trades
-# at 24% WR losing $29K. Lower thresholds = more aggressive chop filtering.
-# Combined with per-strategy ADX gates, this creates a multi-layer ranging filter.
-VOLATILITY_THRESHOLDS = {
-    "low": 0.45,     # BTC: tighter — BTC ranges lose money consistently
-    "medium": 0.45,  # SOL: tighter — ranging SOL has poor WR
-    "high": 0.55,    # HYPE/memes: still looser for natural volatility
-}
+# Chop-threshold policy (LIVING VALUES — ledger-governed, not per-symbol static).
+# Baseline is the conservative 0.45 for every symbol. A symbol only earns the
+# looser 0.55 threshold when ITS OWN realized paper-trading ledger
+# (paper_trades/trades_*.csv) shows n>=13 closed trades AND positive average
+# net pnl/trade — i.e. proven edge, not a static per-profile guess. Symbols
+# with insufficient history (n<13, e.g. new listings) fall back to 0.45,
+# since loosening the chop filter is the risk-increasing direction.
+# See ChopDetector._load_ledger_stats /._get_threshold.
+_CHOP_THRESHOLD_BASELINE = 0.45  # default + n<13 fallback (was VOLATILITY_THRESHOLDS["high"]=0.55, contradicted the ledger)
+_CHOP_THRESHOLD_RELAXED = 0.55   # earned only via a symbol's own n>=13, avg net pnl > 0 ledger
+_LEDGER_MIN_TRADES = 13
 
 
 class ChopDetector:
@@ -50,24 +50,82 @@ class ChopDetector:
 
     def __init__(self, threshold: float = None):
         self.threshold = threshold or float(os.getenv("CHOP_THRESHOLD", "0.45"))
-        self._symbol_profiles: Dict[str, str] = {}  # symbol -> volatility profile
+        self._symbol_profiles: Dict[str, str] = {}  # symbol -> volatility profile (kept for API compat; no longer drives the threshold, see _get_threshold)
+        self._ledger_stats: Dict[str, Dict[str, float]] = self._load_ledger_stats()
 
     def set_symbol_profile(self, symbol: str, profile: str):
         """Set volatility profile for a symbol (low/medium/high)."""
         self._symbol_profiles[symbol] = profile
 
+    def _load_ledger_stats(self) -> Dict[str, Dict[str, float]]:
+        """Aggregate per-symbol net-pnl stats from the realized paper-trading
+        ledger (paper_trades/trades_*.csv). Governs chop-threshold relaxation
+        in _get_threshold — a symbol must earn the looser threshold with its
+        own profitable track record, never a static per-symbol guess.
+
+        net = pnl - fee, per row. TEST/sim symbols are excluded. Loaded once
+        at construction; call refresh_ledger_stats() to reload after restart
+        or periodically.
+        """
+        stats: Dict[str, Dict[str, float]] = {}
+        ledger_dir = Path(__file__).resolve().parent.parent / "paper_trades"
+        try:
+            paths = sorted(glob.glob(str(ledger_dir / "trades_*.csv")))
+        except OSError as e:
+            logger.warning(f"[CHOP] Could not list ledger dir {ledger_dir}: {e}")
+            return stats
+
+        for path in paths:
+            try:
+                with open(path, newline="") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        symbol = (row.get("symbol") or "").strip().upper()
+                        if not symbol or "TEST" in symbol or "SIM" in symbol:
+                            continue
+                        try:
+                            pnl = float(row.get("pnl") or 0.0)
+                            fee = float(row.get("fee") or 0.0)
+                        except ValueError:
+                            continue
+                        entry = stats.setdefault(symbol, {"n": 0, "sum_net": 0.0})
+                        entry["n"] += 1
+                        entry["sum_net"] += pnl - fee
+            except (OSError, csv.Error) as e:
+                logger.warning(f"[CHOP] Could not read ledger file {path}: {e}")
+                continue
+
+        for entry in stats.values():
+            entry["avg_net"] = entry["sum_net"] / entry["n"] if entry["n"] else 0.0
+
+        return stats
+
+    def refresh_ledger_stats(self):
+        """Reload per-symbol ledger stats. Call on restart or periodically
+        so the chop threshold stays governed by current realized performance."""
+        self._ledger_stats = self._load_ledger_stats()
+
     def _get_threshold(self, symbol: str) -> float:
-        """Get chop threshold adjusted for symbol's volatility profile."""
-        profile = self._symbol_profiles.get(symbol, "medium")
-        return VOLATILITY_THRESHOLDS.get(profile, self.threshold)
+        """Get the chop threshold for a symbol, governed by its own realized
+        ledger. Baseline 0.45 for every symbol; relaxes to 0.55 only if the
+        symbol's own ledger shows n>=13 closed trades AND avg net pnl > 0.
+        n<13 (or unprofitable) symbols stay at the conservative 0.45 fallback
+        — loosening the chop filter is the risk-increasing direction.
+        """
+        stats = self._ledger_stats.get(symbol.strip().upper())
+        if stats and stats["n"] >= _LEDGER_MIN_TRADES and stats["avg_net"] > 0:
+            return _CHOP_THRESHOLD_RELAXED
+        return _CHOP_THRESHOLD_BASELINE
 
     def is_choppy(
         self, symbol: str, data: Dict[str, pd.DataFrame]
     ) -> Tuple[bool, float, str]:
         """Evaluate whether the market is choppy.
 
-        Uses per-symbol volatility profile to adjust threshold.
-        High-volatility assets get a higher threshold (harder to flag as choppy).
+        Uses a ledger-governed per-symbol threshold (see _get_threshold):
+        symbols with a proven, profitable realized track record (n>=13,
+        avg net pnl > 0) get the looser 0.55 threshold; everything else
+        uses the conservative 0.45 baseline.
 
         Returns:
             (is_choppy, chop_score, detail_string)

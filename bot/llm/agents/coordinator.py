@@ -639,14 +639,17 @@ class AgentCoordinator:
         _fr = snapshot_data.get("funding_rate")
         if _fr is not None:
             try:
-                _fr_pct = float(_fr) * 100  # Stored as decimal e.g. 0.0005 → 0.05%
-                if _fr_pct > 0.02:
+                _fr_pct = float(_fr) * 100  # HL rate is HOURLY, stored as decimal e.g. 0.0000125 → 0.00125%/1h
+                _fr_hourly = os.getenv("WAGMI_FUNDING_1H_FIX", "true").strip().lower() == "true"
+                _fr_thr = 0.0025 if _fr_hourly else 0.02   # 2x HL baseline (0.00125%/1h) when hourly
+                _fr_unit = "%/1h" if _fr_hourly else "%/8h"
+                if _fr_pct > _fr_thr:
                     _fr_interp = "longs pay — crowded long, mean-reversion risk"
-                elif _fr_pct < -0.02:
+                elif _fr_pct < -_fr_thr:
                     _fr_interp = "shorts pay — crowded short, short squeeze risk"
                 else:
                     _fr_interp = "near neutral"
-                enriched_parts.append(f"Funding: {_fr_pct:+.4f}%/8h ({_fr_interp})")
+                enriched_parts.append(f"Funding: {_fr_pct:+.4f}{_fr_unit} ({_fr_interp})")
             except Exception as _e:
                 logger.debug("[MULTI-AGENT] Funding rate format failed: %s", _e)
 
@@ -1404,19 +1407,36 @@ class AgentCoordinator:
         # ── Network Learning: apply calibration adjustment ────
         _net_cal = snapshot_data.get("network_calibration_adj", 0) if snapshot_data else 0
         if _net_cal and isinstance(_net_cal, (int, float)) and abs(_net_cal) >= 0.02:
+            # F-2 (2026-07-13 audit): NET_CAL was a category-error double-tax — it
+            # subtracted the ENSEMBLE's overconfidence gap (pinned at -0.15) from the
+            # TRADE agent's separate confidence, dragging approved trades under the 0.60
+            # gate. Default to SHADOW (measure only, don't touch confidence); the LLM
+            # still SEES the calibration as prompt context. Revert: NET_CAL_ENFORCE=true.
+            _net_cal_enforce = os.getenv("NET_CAL_ENFORCE", "false").lower() in ("1", "true", "yes")
             td = trade_out.data
             old_c = float(td.get("c", td.get("confidence", 0.0)))
             new_c = max(0.0, min(1.0, old_c + _net_cal))
-            trade_out = AgentOutput(
-                role=AgentRole.TRADE,
-                data={**td, "c": new_c,
-                      "n": (td.get("n", "") + f" | NET_CAL: {_net_cal:+.2f}")},
-                raw_text=trade_out.raw_text,
-                model_used=trade_out.model_used,
-                input_tokens=trade_out.input_tokens,
-                output_tokens=trade_out.output_tokens,
-                latency_ms=trade_out.latency_ms,
-            )
+            if _net_cal_enforce:
+                trade_out = AgentOutput(
+                    role=AgentRole.TRADE,
+                    data={**td, "c": new_c,
+                          "n": (td.get("n", "") + f" | NET_CAL: {_net_cal:+.2f}")},
+                    raw_text=trade_out.raw_text,
+                    model_used=trade_out.model_used,
+                    input_tokens=trade_out.input_tokens,
+                    output_tokens=trade_out.output_tokens,
+                    latency_ms=trade_out.latency_ms,
+                )
+            else:
+                trade_out = AgentOutput(
+                    role=AgentRole.TRADE,
+                    data={**td, "n": (td.get("n", "") + f" | NET_CAL_SHADOW: {_net_cal:+.2f} (would {old_c:.2f}->{new_c:.2f})")},
+                    raw_text=trade_out.raw_text,
+                    model_used=trade_out.model_used,
+                    input_tokens=trade_out.input_tokens,
+                    output_tokens=trade_out.output_tokens,
+                    latency_ms=trade_out.latency_ms,
+                )
 
         # ── Agent Brain: Record decisions for learning ────────
         if _EXTENSIONS_AVAILABLE:
@@ -1494,6 +1514,7 @@ class AgentCoordinator:
         # Gap 7: Consistency score scales confidence
         consensus_conf = _compute_confidence_consensus(
             trade_out, regime_out, risk_out, critic_out, consistency_report.score,
+            snapshot_data=snapshot_data,
         )
         if consensus_conf is not None:
             # Write to scratchpad for audit trail
@@ -2097,6 +2118,24 @@ class AgentCoordinator:
         except Exception as _ace:
             logger.debug(f"[LLM-FIRST] agent_confidences capture error: {_ace}")
 
+        # THESIS_ID_PRESERVE (2026-07-13): get_trading_decision appends
+        # "| thesis_id=..." to the END of decision.notes (char ~750+), but this
+        # notes field is truncated to [:500] below — cutting the id off. The
+        # downstream close-path grader (multi_strategy_main.py:8467) then found no
+        # thesis_id in entry_reasons and 0/775 theses ever graded. Re-append the id
+        # after truncation so the linkage survives. Measurement-only (thesis grading
+        # never affects trading). Revert: THESIS_ID_PRESERVE=false.
+        _entry_notes = decision.notes[:500] if decision.notes else ""
+        if (os.getenv("THESIS_ID_PRESERVE", "true").lower() in ("1", "true", "yes")
+                and decision.notes and "thesis_id=" in decision.notes
+                and "thesis_id=" not in _entry_notes):
+            try:
+                _tid = decision.notes.split("thesis_id=")[1].split(" ")[0].split("|")[0].strip()
+                if _tid:
+                    _entry_notes = f"{_entry_notes} | thesis_id={_tid}"
+            except Exception:
+                pass
+
         entry_decision = EntryDecision(
             action=action,
             leverage=leverage,
@@ -2109,7 +2148,7 @@ class AgentCoordinator:
             risk_flags=risk_flags[:5] if risk_flags else [],
             debate_summary=debate_summary[:300] if debate_summary else "",
             size_multiplier=sz_mult,
-            notes=decision.notes[:500] if decision.notes else "",
+            notes=_entry_notes,
             memory_update=decision.memory_update,
             agent_confidences=_agent_confidences,
         )
@@ -2364,13 +2403,18 @@ class AgentCoordinator:
                             actual_hold_h=trade_data.get("hold_hours"),
                         )
                 # Record trade for regime feedback
-                record_regime_trade(
-                    regime=trade_data.get("regime", "unknown"),
-                    pnl=trade_data.get("pnl_pct", 0.0),
-                    confidence=trade_data.get("confidence", 0.0),
-                    strategy=trade_data.get("strategy", ""),
-                    hold_hours=trade_data.get("hold_hours", 0.0),
-                )
+                # REGIME_FB_FIX (2026-07-14): when enabled, regime feedback is recorded
+                # ONCE (unconditionally, %-of-equity) in multi_strategy_main's full-close
+                # handler; recording here too double-counted every multi-agent close and
+                # let backtests contaminate the live regime stats file. Skip when flag on.
+                if os.getenv("REGIME_FB_FIX", "false").lower() not in ("1", "true", "yes"):
+                    record_regime_trade(
+                        regime=trade_data.get("regime", "unknown"),
+                        pnl=trade_data.get("pnl_pct", 0.0),
+                        confidence=trade_data.get("confidence", 0.0),
+                        strategy=trade_data.get("strategy", ""),
+                        hold_hours=trade_data.get("hold_hours", 0.0),
+                    )
             except Exception as e:
                 logger.info(f"[MULTI-AGENT] Brain post-trade wiring error: {e}")
 
@@ -3716,11 +3760,19 @@ class AgentCoordinator:
         if not markets:
             return "consolidation"
 
+        # A-T2 (2026-07-13 audit): snapshots write the 24h change as "d24h"; reading
+        # only pct_24h/chg24h made this fallback fabricate "range" 100% of the time.
+        # Prefer d24h; return "unknown" (honest) when no 24h key is present at all.
+        # Revert: REGIME_FALLBACK_D24H=false.
+        _use_d24h = os.getenv("REGIME_FALLBACK_D24H", "true").lower() in ("true", "1", "yes")
+        _any_pct_key = False
         pct_changes = []
         vol_signals = []
         for mkt in (markets if isinstance(markets, list) else []):
             # Try to extract price change from various snapshot formats
-            pct_24h = mkt.get("pct_24h", mkt.get("chg24h", 0))
+            _any_pct_key = _any_pct_key or any(k in mkt for k in ("d24h", "pct_24h", "chg24h"))
+            pct_24h = (mkt.get("d24h", mkt.get("pct_24h", mkt.get("chg24h", 0)))
+                       if _use_d24h else mkt.get("pct_24h", mkt.get("chg24h", 0)))
             if isinstance(pct_24h, str):
                 try:
                     pct_24h = float(pct_24h.replace("%", ""))
@@ -3735,11 +3787,14 @@ class AgentCoordinator:
 
         if not pct_changes:
             return "consolidation"
+        if _use_d24h and not _any_pct_key:
+            return "unknown"  # no real 24h data — don't fabricate a regime
 
         avg_move = sum(pct_changes) / len(pct_changes)
         max_move = max(pct_changes)
         drops = sum(1 for m in (markets if isinstance(markets, list) else [])
-                     if float(m.get("pct_24h", m.get("chg24h", 0)) or 0) < -5)
+                     if float((m.get("d24h", m.get("pct_24h", m.get("chg24h", 0))) if _use_d24h
+                              else m.get("pct_24h", m.get("chg24h", 0))) or 0) < -5)
 
         # Panic: multiple symbols dropping >5%
         if drops >= 2:
@@ -5151,30 +5206,64 @@ class AgentCoordinator:
                     confidence=confidence * 100 if confidence <= 1.0 else confidence,
                 )
                 if _vetoed:
-                    action = "flat"
-                    notes += f" | GRAD_VETO: {_grad_notes[:80]}"
-                    logger.info(f"[GRAD-RULES] Signal vetoed for {_sym}/{_side}: {_grad_notes[:60]}")
-                    # Self-measuring veto denominator for the merge-veto path.
-                    try:
-                        from llm.brain_wiring import record_veto_counterfactual
-                        # Synthesize tp2 if compacted snapshot omitted it.
-                        if _m_tp2 <= 0 and _m_entry > 0 and _m_tp1 > 0:
-                            _m_tp2 = _m_entry + 2.0 * (_m_tp1 - _m_entry)
-                        _m_denom_only = not (_m_entry > 0 and _m_sl > 0 and _m_tp1 > 0)
-                        record_veto_counterfactual(
-                            symbol=_sym, side=_side,
-                            entry_price=_m_entry, sl=_m_sl,
-                            tp1=_m_tp1, tp2=_m_tp2,
-                            confidence=(confidence * 100 if confidence <= 1.0 else confidence),
-                            veto_rule_ids=_m_veto_ids,
-                            strategy=_strat, regime=str(regime or ""),
-                            denominator_only=_m_denom_only,
-                            # BT_VETO_RESCORE DO-NOW #5 stamp (strategies list
-                            # not carried in the compacted snapshot; num_agree is)
-                            metadata={"num_agree": _n_agree},
-                        )
-                    except Exception:
-                        pass
+                    # ── C-F3 (2026-07-13 audit): §2b provenance gate at the merge site ──
+                    # The pre-LLM filter already SHADOWS non-provenanced vetoes; this
+                    # site still flattened LLM-approved trades unconditionally (e.g.
+                    # sol_long_veto_v1 — a hardcoded SOL+BUY block the owner forbids).
+                    # Only ENFORCE a merge veto whose firing rule has full §2b
+                    # provenance (current ledger, era set, n>=13, net-positive); else
+                    # SHADOW (LLM decision stands). Fails safe: any error -> shadow.
+                    # Kill-switch: MERGE_GRAD_VETO_ENFORCE=true restores old flatten.
+                    _mv_enforce = os.environ.get("MERGE_GRAD_VETO_ENFORCE", "false").lower() == "true"
+                    if not _mv_enforce:
+                        try:
+                            from llm.graduated_rules import LEDGER_VERSION as _LV
+                            _eng_rules = getattr(get_graduated_rules_engine(), "_rules", {}) or {}
+                            for _rid in (_m_veto_ids or []):
+                                _r = _eng_rules.get(_rid) if isinstance(_eng_rules, dict) else None
+                                if _r is None:
+                                    continue
+                                if (getattr(_r, "ledger_version", "") == _LV
+                                        and bool(getattr(_r, "era", ""))
+                                        and max(int(getattr(_r, "times_applied", 0) or 0),
+                                                int(getattr(_r, "total_evidence", 0) or 0)) >= 13
+                                        and (float(getattr(_r, "pnl_saved", 0) or 0)
+                                             - float(getattr(_r, "pnl_missed", 0) or 0)) > 0):
+                                    _mv_enforce = True
+                                    break
+                        except Exception:
+                            _mv_enforce = False
+                    if _mv_enforce:
+                        action = "flat"
+                        notes += f" | GRAD_VETO: {_grad_notes[:80]}"
+                        logger.info(f"[GRAD-RULES] Signal vetoed for {_sym}/{_side}: {_grad_notes[:60]}")
+                        # Self-measuring veto denominator for the merge-veto path.
+                        try:
+                            from llm.brain_wiring import record_veto_counterfactual
+                            # Synthesize tp2 if compacted snapshot omitted it.
+                            if _m_tp2 <= 0 and _m_entry > 0 and _m_tp1 > 0:
+                                _m_tp2 = _m_entry + 2.0 * (_m_tp1 - _m_entry)
+                            _m_denom_only = not (_m_entry > 0 and _m_sl > 0 and _m_tp1 > 0)
+                            record_veto_counterfactual(
+                                symbol=_sym, side=_side,
+                                entry_price=_m_entry, sl=_m_sl,
+                                tp1=_m_tp1, tp2=_m_tp2,
+                                confidence=(confidence * 100 if confidence <= 1.0 else confidence),
+                                veto_rule_ids=_m_veto_ids,
+                                strategy=_strat, regime=str(regime or ""),
+                                denominator_only=_m_denom_only,
+                                # BT_VETO_RESCORE DO-NOW #5 stamp (strategies list
+                                # not carried in the compacted snapshot; num_agree is)
+                                metadata={"num_agree": _n_agree},
+                            )
+                        except Exception:
+                            pass
+                    else:
+                        # Shadow: no §2b provenance → LLM decision stands. The pre-filter
+                        # already recorded the shadow counterfactual for this signal, so
+                        # do NOT double-count the veto denominator here.
+                        notes += f" | GRAD_VETO_SHADOW(no-2b): {_grad_notes[:60]}"
+                        logger.info(f"[GRAD-RULES] merge veto SHADOWED (no §2b provenance) for {_sym}/{_side} — LLM decision stands")
                 elif _grad_notes:
                     # Scale adjusted confidence back to [0,1] if needed
                     _new_conf = _adj_conf / 100.0 if _adj_conf > 1.0 else _adj_conf
@@ -5198,12 +5287,103 @@ class AgentCoordinator:
 
 # ── Module-level helpers ────────────────────────────────────────
 
+_ALIGNMENT_LR_CACHE: Dict[str, Any] = {"ts": 0.0, "table": {}}
+_ALIGNMENT_LR_TTL_SEC = 300.0  # re-read the ledger at most this often
+
+
+def _live_alignment_lr_table() -> Dict[Any, float]:
+    """Compute {(side, aligned): LR} from the closed-trade ledger.
+
+    LIVING VALUES fix (2026-07-15): replaces the static 0.4/0.3 regime-alignment
+    slopes in _compute_confidence_consensus. Those static slopes penalized
+    bearish-regime SHORTS (the realized edge: n=166, avg net +$9.10/tr, WR 57%)
+    and boosted bullish-regime LONGS (the realized drain: n=99, avg net
+    -$8.17/tr, WR 47%) -- inverted vs. realized performance.
+
+    side is normalized to {"BUY","SELL"}. aligned = the trade side agreed with
+    the regime's directional bias, reconstructed from the ledger's
+    'trending_bull' / 'trending_bear' regime label -- the only labels that
+    carry directional bias info. Rows tagged with non-directional regimes
+    (range/high_volatility/consolidation/etc.) don't encode bias and are
+    excluded from the slice rather than guessed at.
+
+    LR = slice win-odds / overall win-odds, clamped to [0.7, 1.3].
+    n<13 in a slice -> neutral 1.0 (never fall back to a static directional
+    number -- LIVING VALUES mandate).
+    """
+    table: Dict[Any, float] = {}
+    try:
+        from llm.agents.dynamic_stats import _load_recent_trades
+        trades = _load_recent_trades(max_trades=2000)
+        # Defensive TEST-row exclusion (no such rows exist in the ledger today;
+        # guards against future test/paper-sim rows leaking into live stats).
+        trades = [t for t in trades if "test" not in str(t.get("strategy", "")).lower()]
+        if not trades:
+            return table
+        total_n = len(trades)
+        total_wins = sum(1 for t in trades if t.get("won"))
+        overall_wr = total_wins / total_n if total_n else 0.5
+        overall_odds = overall_wr / max(1.0 - overall_wr, 0.01)
+
+        def _norm_side(raw: str) -> str:
+            raw = str(raw).upper()
+            if raw in ("LONG", "BUY"):
+                return "BUY"
+            if raw in ("SHORT", "SELL"):
+                return "SELL"
+            return ""
+
+        buckets: Dict[Any, list] = {}
+        for t in trades:
+            regime = str(t.get("regime", "")).lower()
+            if regime not in ("trending_bull", "trending_bear"):
+                continue
+            side = _norm_side(t.get("side", ""))
+            if not side:
+                continue
+            aligned = (regime == "trending_bull" and side == "BUY") or \
+                      (regime == "trending_bear" and side == "SELL")
+            buckets.setdefault((side, aligned), []).append(t)
+
+        for key, group in buckets.items():
+            n = len(group)
+            if n < 13:
+                table[key] = 1.0
+                continue
+            wins = sum(1 for t in group if t.get("won"))
+            wr = wins / n
+            slice_odds = wr / max(1.0 - wr, 0.01)
+            lr = slice_odds / max(overall_odds, 0.01)
+            table[key] = max(0.7, min(1.3, lr))
+    except Exception as e:
+        logger.debug("[CONSENSUS] live alignment LR table build failed: %s", e)
+    return table
+
+
+def _get_live_alignment_lr(side: str, aligned: bool) -> float:
+    """Cached lookup into the live alignment LR table. Neutral 1.0 on any
+    lookup miss (unseen bucket / build failure / n<13 in that slice).
+
+    Cache TTL is time-based rather than close-hooked: _load_recent_trades
+    reads straight from the ledger on disk, so a stale cache only delays
+    picking up a just-closed trade by at most _ALIGNMENT_LR_TTL_SEC -- it
+    never serves a permanently frozen number.
+    """
+    now = time.time()
+    cache = _ALIGNMENT_LR_CACHE
+    if now - cache["ts"] >= _ALIGNMENT_LR_TTL_SEC or not cache["table"]:
+        cache["table"] = _live_alignment_lr_table()
+        cache["ts"] = now
+    return cache["table"].get((side, aligned), 1.0)
+
+
 def _compute_confidence_consensus(
     trade_out: AgentOutput,
     regime_out: AgentOutput,
     risk_out: Optional[AgentOutput],
     critic_out: Optional[AgentOutput],
     consistency_score: float,
+    snapshot_data: Optional[dict] = None,
 ) -> Optional[float]:
     """Bayesian confidence consensus: sequential probability updating.
 
@@ -5235,19 +5415,40 @@ def _compute_confidence_consensus(
 
     # Regime clarity: clear regimes are informative, unknown is not
     if regime == "unknown":
-        lr_regime = 0.85  # slight negative: uncertainty
-    elif regime_conf >= 0.7:
-        # High-confidence regime: does the trade agree with regime bias?
-        # If bias aligns with trade direction, boost; if not, reduce
-        trade_action = trade_out.data.get("a", trade_out.data.get("action", ""))
-        if regime_bias in ("bullish", "risk_on") and trade_action in ("go", "proceed"):
-            lr_regime = 1.0 + (regime_conf - 0.5) * 0.4  # 0.7→1.08, 0.9→1.16
-        elif regime_bias in ("bearish", "risk_off") and trade_action in ("go", "proceed"):
-            lr_regime = 1.0 - (regime_conf - 0.5) * 0.3  # mild headwind
+        lr_regime = 0.85  # n<13-style uncertainty fallback (doesn't contradict ledger)
+    elif regime_conf >= 0.7 and regime_bias in ("bullish", "risk_on", "bearish", "risk_off"):
+        # High-confidence, directional regime: does the TRADE SIDE (not just
+        # the go/skip action) agree with the regime bias?
+        # Bug fix (2026-07-15): this used to check only trade_action in
+        # ("go","proceed") and never the trade side, so it could never tell
+        # a bullish-regime LONG from a bullish-regime SHORT -- it boosted
+        # both. Read the actual side (Trade Agent schema emits no 'side'
+        # field, so fall back to the candidate signal's side -- same pattern
+        # as Audit #49 in get_trading_decision).
+        _side = str(trade_out.data.get("side", trade_out.data.get("s", "")) or "")
+        if not _side and snapshot_data:
+            _sigs = snapshot_data.get("signals", snapshot_data.get("sigs", []))
+            if _sigs and isinstance(_sigs[0], dict):
+                _side = str(_sigs[0].get("side", "") or "")
+        _side = _side.upper()
+        if _side in ("BUY", "LONG"):
+            _norm_side, _side_known = "BUY", True
+        elif _side in ("SELL", "SHORT"):
+            _norm_side, _side_known = "SELL", True
         else:
-            lr_regime = 0.9 + regime_conf * 0.1
+            _norm_side, _side_known = "", False
+
+        if _side_known:
+            aligned = (regime_bias in ("bullish", "risk_on") and _norm_side == "BUY") or \
+                      (regime_bias in ("bearish", "risk_off") and _norm_side == "SELL")
+            # Live-computed LR (replaces the old static 0.4/0.3 slopes, which
+            # were inverted vs. realized ledger performance -- see
+            # _live_alignment_lr_table docstring).
+            lr_regime = _get_live_alignment_lr(_norm_side, aligned)
+        else:
+            lr_regime = 0.9 + regime_conf * 0.1  # side unknown → ~neutral
     else:
-        lr_regime = 0.9 + regime_conf * 0.1  # low conf → ~neutral
+        lr_regime = 0.9 + regime_conf * 0.1  # low conf or non-directional bias → ~neutral
 
     # Risk Agent likelihood ratio:
     # Override=skip is strong negative evidence, reduce is moderate, normal sizing is neutral
@@ -5432,6 +5633,20 @@ def _compute_confluence_from_snapshot(
 ) -> Optional[Dict[str, Any]]:
     """Extract agreeing strategies from the snapshot and compute confluence quality."""
     try:
+        # F-3 (2026-07-13 audit): LLM-first snapshots carry ONE ensemble-merged signal
+        # in m[0].sg, so the side-counting below is pinned to count=1 ("solo") — a false
+        # label that made agents veto genuinely-confluent signals (prime silent-gate
+        # suspect). Trust the ensemble's own agreement stamp when present.
+        # Revert: CONFLUENCE_FROM_NUM_AGREE=false.
+        if os.environ.get("CONFLUENCE_FROM_NUM_AGREE", "true").strip().lower() in ("1", "true", "yes"):
+            _sm = snapshot.get("signal_metadata") or {}
+            _sa = _sm.get("strategies_agree") or []
+            try:
+                _na = int(_sm.get("num_agree", 0) or 0)
+            except (TypeError, ValueError):
+                _na = 0
+            if _na >= 2 and isinstance(_sa, list) and len(_sa) >= 2:
+                return score_confluence([str(_s) for _s in _sa], regime)
         markets = snapshot.get("m", [])
         if not markets:
             return None

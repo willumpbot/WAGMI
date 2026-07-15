@@ -23,10 +23,53 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 
+def _sweep_temp_orphans(max_age_s: int = 3600) -> None:
+    """Remove WAGMI-owned temp orphans left behind by hard/OOM kills.
+
+    Added 2026-07-15: OOM kills bypass finally-blocks, orphaning temp files —
+    4700+ backtest scratch dirs + CLI-prompt .txt files had accumulated in
+    %TEMP%. This self-cleans on every startup. Conservative: only removes
+    entries we clearly own (wagmi_* prefixes, or bare temp dirs containing our
+    decisions.jsonl signature) — never generic temp files other apps created.
+    """
+    import glob
+    import shutil
+    import tempfile
+    import time as _t
+
+    tmp = tempfile.gettempdir()
+    now = _t.time()
+    removed = 0
+    try:
+        for path in glob.glob(os.path.join(tmp, "wagmi_*")):
+            try:
+                if now - os.path.getmtime(path) < max_age_s:
+                    continue
+                shutil.rmtree(path, ignore_errors=True) if os.path.isdir(path) else os.unlink(path)
+                removed += 1
+            except OSError:
+                pass
+        # Bare mkdtemp dirs carrying our backtest decision flush signature
+        for path in glob.glob(os.path.join(tmp, "tmp*")):
+            try:
+                if not os.path.isdir(path) or now - os.path.getmtime(path) < max_age_s:
+                    continue
+                if os.path.exists(os.path.join(path, "decisions.jsonl")):
+                    shutil.rmtree(path, ignore_errors=True)
+                    removed += 1
+            except OSError:
+                pass
+    except Exception:
+        pass
+    if removed:
+        print(f"  Temp janitor: removed {removed} orphaned WAGMI temp entries")
+
+
 def cmd_paper(args):
     """Start paper trading with live signals."""
     os.makedirs("logs", exist_ok=True)
     os.makedirs("ml_data", exist_ok=True)
+    _sweep_temp_orphans()
 
     from data.db import init_db
     init_db()

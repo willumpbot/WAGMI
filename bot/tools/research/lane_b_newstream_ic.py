@@ -4,6 +4,19 @@ PILOT ONLY — n is tiny (~1 day). Naive p-values are inflated by overlapping
 forward windows (15min cadence, 1h/4h horizons). This script is the exact
 test to re-run as data accrues (see TABLE_B_NEWSTREAMS.md protocol).
 
+CONFOUND CONTROL (added 2026-07-13 after adversarial review). `spread_bps` looked
+like a graduating edge (1h pooled IC +0.16, 5/5) but is a PRICE-LEVEL PROXY, not a
+liquidity signal: the dollar spread is pinned at the minimum tick 78-98% of the time,
+so spread_bps = tick/mid ≈ c/price. Its "IC" is just "price near the low of a range →
+it bounced" (short-horizon mean-reversion), NOT a book-liquidity effect. To keep this
+visible on every run, two controls are scanned alongside the raw fields:
+  * inv_mid       = 1/mid          → the pure price-level proxy. If a feature's IC
+                                      tracks inv_mid, the feature carries no info beyond price level.
+  * spread_dollar = raw $ spread   → liquidity variation with price-level removed.
+                                      spread's IC here ≈ 0 = the liquidity content is null.
+Never graduate a depth feature whose IC collapses to inv_mid's or whose price-removed
+form (spread_dollar) has IC ≈ 0. A true liquidity feature must be defined in TICKS, not bps.
+
 Usage: python bot/tools/research/lane_b_newstream_ic.py [path_to_jsonl]
 """
 import json, sys, math
@@ -75,6 +88,10 @@ FEATURES = {
     "basis_bps":        lambda r: g(r, "futures_ctx", "basis_bps"),
     "ls_account_ratio": lambda r: g(r, "futures_ctx", "long_short_account_ratio"),
     "taker_bs_ratio":   lambda r: g(r, "futures_ctx", "taker_buy_sell_ratio"),
+    # ── Confound controls (2026-07-13) — see module docstring ──
+    "inv_mid":          lambda r: (1.0 / g(r, "l2", "mid")) if g(r, "l2", "mid") else None,
+    "spread_dollar":    lambda r: (g(r, "l2", "spread_bps") * g(r, "l2", "mid") / 10000.0)
+                                  if (g(r, "l2", "spread_bps") is not None and g(r, "l2", "mid")) else None,
 }
 DELTA_FEATURES = ["imbalance_0_5pct", "basis_bps", "ls_account_ratio", "taker_bs_ratio"]
 

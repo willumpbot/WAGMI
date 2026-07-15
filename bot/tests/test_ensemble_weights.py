@@ -284,8 +284,11 @@ class TestWeightedEnsemble:
         ]
 
         merged = ensemble._merge_signals("BTC", signals)
-        # Plain average: (80+60)/2 = 70, * 1.04 consensus mult (2 agree, default regime) = 72.8
-        assert merged.confidence == pytest.approx(72.8, abs=0.1)
+        # Plain average: (80+60)/2 = 70. The hardcoded consensus multiplier
+        # (formerly 1.04 for 2-agree) was removed 2026-06-08: consensus is now
+        # surfaced to the LLM as data with no auto-boost (consensus_mult = 1.0
+        # in ensemble.py _merge_signals).
+        assert merged.confidence == pytest.approx(70.0, abs=0.1)
 
 
 # ─── Weighted veto mode tests ────────────────────────────────────

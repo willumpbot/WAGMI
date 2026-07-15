@@ -166,7 +166,8 @@ class TestQtyRiskConsistency(unittest.TestCase):
 
     def test_qty_formula(self):
         """qty = risk_amount / (effective_stop * leverage), where effective_stop includes fees."""
-        rm = RiskManager(starting_equity=10000, risk_per_trade=0.01)
+        rm = RiskManager(starting_equity=10000, risk_per_trade=0.01,
+                         load_persisted_equity=False)
         entry = 100.0
         sl = 95.0  # stop_distance = 5
         leverage = 2.0
@@ -189,7 +190,7 @@ class TestQtyRiskConsistency(unittest.TestCase):
 
     def test_max_loss_equals_risk_amount(self):
         """If SL hits exactly, loss should equal risk_amount."""
-        rm = RiskManager(starting_equity=10000, risk_per_trade=0.01)
+        rm = RiskManager(starting_equity=10000, risk_per_trade=0.01, load_persisted_equity=False)
         pm = PositionManager(taker_fee_bps=0)
 
         entry = 100.0

@@ -27,7 +27,9 @@ class TestPortfolioLeverage:
 
         class Stub:
             def __init__(self):
-                self.risk_mgr = RiskManager(starting_equity=10000.0)
+                self.risk_mgr = RiskManager(
+                    starting_equity=10000.0, load_persisted_equity=False
+                )
                 self._last_prices = {}
                 self._last_funding_rates = {}
 
@@ -299,10 +301,13 @@ class TestEnsembleConsensus:
         ]
         result_4 = ensemble._merge_signals("TEST", signals_4)
 
-        # Unanimous should have higher confidence
-        # 3/4: bonus = (3-1)*3 = 6
-        # 4/4: bonus = (4-1)*3 + 5 = 14
-        assert result_4.confidence > result_3.confidence
+        # 2026-06-08: hardcoded consensus bonus removed from _merge_signals
+        # (consensus_mult = 1.0 — agreement is surfaced to the LLM as data,
+        # no auto-boost; 90d backtest showed 4+ agree = 0% WR from redundant
+        # oscillators). Unanimity must NOT inflate confidence: merged
+        # confidence is the accuracy-weighted average of the inputs.
+        assert result_4.confidence == pytest.approx(result_3.confidence)
+        assert result_3.confidence == pytest.approx(70.0)
 
 
 # ── C6: Confidence-Weighted Flip Limiter ────────────────────────────────

@@ -271,6 +271,22 @@
       "evidence_count": 23,
       "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
       "timestamp": 1782717730.0179079
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 93% vs 'night' at 64% (spread: 30%)",
+      "confidence": 0.8333333333333334,
+      "evidence_count": 26,
+      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1783167230.5892413
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 94% vs 'night' at 67% (spread: 27%)",
+      "confidence": 0.8166666666666667,
+      "evidence_count": 25,
+      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1783201625.4098058
     }
   ]
 }

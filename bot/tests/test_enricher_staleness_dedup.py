@@ -41,12 +41,14 @@ def enricher_env(tmp_path, monkeypatch):
 
 def test_recompute_accuracy_from_trades(enricher_env):
     rows = pe._load_all_trades_for_recompute(str(enricher_env))
-    n, acc = pe._recompute_rule_accuracy({"symbol": "BTC", "regime": "trend"}, "boost", rows)
+    n, acc, avg_net = pe._recompute_rule_accuracy({"symbol": "BTC", "regime": "trend"}, "boost", rows)
     assert n == 6
     assert acc == pytest.approx(1 / 6, abs=1e-6)   # only 1/6 won
-    n2, acc2 = pe._recompute_rule_accuracy({"symbol": "BTC", "regime": "trend"}, "penalize", rows)
+    assert avg_net == pytest.approx((5.0 - 3.0 * 5) / 6, abs=1e-6)  # (+5, 5x -3) / 6
+    n2, acc2, avg_net2 = pe._recompute_rule_accuracy({"symbol": "BTC", "regime": "trend"}, "penalize", rows)
     assert n2 == 6
     assert acc2 == pytest.approx(5 / 6, abs=1e-6)  # penalize correct on the 5 losses
+    assert avg_net2 == pytest.approx((5.0 - 3.0 * 5) / 6, abs=1e-6)
 
 
 def test_stale_flag_and_empirical_staleness_dropped(enricher_env):

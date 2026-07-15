@@ -265,6 +265,22 @@ class AdaptiveConfidenceFloor:
 
             new_floor = raw_floor
 
+            # ADAPTIVE_FLOOR_FIX (2026-07-14, flag-gated, DEFAULT OFF — no live
+            # behavior change until ADAPTIVE_FLOOR_FIX=true). Bug: raw_floor is
+            # anchored to the low edge of the first EV-positive bin (bins start ~50),
+            # while DEFAULT_FLOOR=30. When the bot is winning across the board the
+            # LOWEST bin is already EV-positive, so the floor RISES (e.g. 30->37.5)
+            # instead of dropping — inverting the adaptive intent (floor should fall
+            # when we're winning). When enabled: if profitability extends to the very
+            # lowest bin with data, the true break-even is BELOW the grid, so step the
+            # floor DOWN toward the min; and never let positive-EV data push the floor
+            # ABOVE the default. Change is still bounded by the gradualism step below.
+            if os.getenv("ADAPTIVE_FLOOR_FIX", "false").lower() in ("1", "true", "yes"):
+                first_data_bin = next((b for b in self.bins if b.total >= 3), None)
+                if ev_positive_bin is first_data_bin:
+                    new_floor = ABSOLUTE_MIN_FLOOR
+                new_floor = min(new_floor, DEFAULT_FLOOR)
+
         # Gradualism: max change per update
         change = new_floor - self.current_floor
         max_step = MAX_DAILY_CHANGE / 12  # Spread daily budget across ~12 updates

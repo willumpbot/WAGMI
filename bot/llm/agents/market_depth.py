@@ -196,6 +196,21 @@ def get_latest_depth(symbols: Optional[List[str]] = None,
         fut = latest.get("futures_ctx", {}) or {}
         mid = float(l2.get("mid", 0) or 0)
 
+        # D-T3 (2026-07-13 audit): the OKX basis_bps is a near-constant venue artifact
+        # (negative in ~99.9% of records, mean ~-5bps) — a permanent fake bearish tint.
+        # De-mean it vs this symbol's own history so only real deviations reach the prompt.
+        _basis_mean = None
+        _basis_dev = None
+        try:
+            _bhist = [float(x) for x in
+                      ((r.get("futures_ctx") or {}).get("basis_bps") for r in recs) if x is not None]
+            if len(_bhist) >= 50:
+                _basis_mean = sum(_bhist) / len(_bhist)
+                if fut.get("basis_bps") is not None:
+                    _basis_dev = round(float(fut["basis_bps"]) - _basis_mean, 1)
+        except Exception:
+            pass
+
         entry = {
             "ts": ts,
             "age_min": round(age_min, 1),
@@ -206,17 +221,32 @@ def get_latest_depth(symbols: Optional[List[str]] = None,
             "ask_usd_0_5pct": round(float(l2.get("ask_depth_0_5pct", 0) or 0) * mid, 0),
             "imb_0_5pct": l2.get("imbalance_0_5pct"),
             "imb_1pct": l2.get("imbalance_1pct"),
-            "tape": {
+            # D-T5 (2026-07-13 audit): source the tape from the 15-min taker flow
+            # (already USD) instead of the last ~10 trades (~5s of dust whose buy_ratio
+            # was directionally INVERTED vs actual flow). Fallback to legacy when
+            # taker_15m absent. Revert: EXT_DEPTH_TAPE_15M=false.
+            "tape": ({
+                "window_min": (latest.get("taker_15m") or {}).get("window_min", 15),
+                "buy_usd": round(float((latest.get("taker_15m") or {}).get("buy_vol_usd", 0) or 0), 0),
+                "sell_usd": round(float((latest.get("taker_15m") or {}).get("sell_vol_usd", 0) or 0), 0),
+                "buy_ratio": (latest.get("taker_15m") or {}).get("buy_ratio"),
+                "src": (latest.get("taker_15m") or {}).get("src", "okx_rubik"),
+                "largest_usd": round(float(trades.get("largest_trade", 0) or 0) * mid, 0),
+            } if (os.getenv("EXT_DEPTH_TAPE_15M", "true").strip().lower() in ("1", "true", "yes")
+                  and (latest.get("taker_15m") or {}).get("buy_ratio") is not None)
+                else {
                 "n": trades.get("trade_count", 0),
                 "buy_usd": round(float(trades.get("buy_vol", 0) or 0) * mid, 0),
                 "sell_usd": round(float(trades.get("sell_vol", 0) or 0) * mid, 0),
                 "buy_ratio": trades.get("buy_ratio"),
                 "largest_usd": round(float(trades.get("largest_trade", 0) or 0) * mid, 0),
-            },
+            }),
             "fut": {
                 "src": fut.get("source", "?"),
                 "funding": fut.get("funding_rate"),
                 "basis_bps": fut.get("basis_bps"),
+                "basis_mean_bps": (round(_basis_mean, 2) if _basis_mean is not None else None),
+                "basis_dev_bps": _basis_dev,
                 "ls_acct": fut.get("long_short_account_ratio"),
                 "taker_bs": fut.get("taker_buy_sell_ratio"),
             },
@@ -263,7 +293,14 @@ def format_depth_line(sym: str, e: dict, include_note: bool = True) -> str:
         f"depth0.5%: bid {_usd(e.get('bid_usd_0_5pct', 0))}/ask {_usd(e.get('ask_usd_0_5pct', 0))}"
         + (f" imb {e['imb_0_5pct']:+.3f}" if e.get("imb_0_5pct") is not None else ""))
     tape = e.get("tape", {}) or {}
-    if tape.get("n"):
+    if tape.get("window_min"):
+        t = f"taker {tape['window_min']}m: buy {_usd(tape.get('buy_usd', 0))}/sell {_usd(tape.get('sell_usd', 0))}"
+        if tape.get("buy_ratio") is not None:
+            t += f" ratio {tape['buy_ratio']:.2f}"
+        if tape.get("largest_usd"):
+            t += f", largest {_usd(tape['largest_usd'])}"
+        parts.append(t)
+    elif tape.get("n"):
         t = f"tape(last {tape['n']}): buy {_usd(tape.get('buy_usd', 0))}/sell {_usd(tape.get('sell_usd', 0))}"
         if tape.get("largest_usd"):
             t += f", largest {_usd(tape['largest_usd'])}"
@@ -274,7 +311,11 @@ def format_depth_line(sym: str, e: dict, include_note: bool = True) -> str:
         fut_bits.append(f"taker B/S {fut['taker_bs']:.2f}")
     if fut.get("ls_acct") is not None:
         fut_bits.append(f"L/S accts {fut['ls_acct']:.2f}")
-    if fut.get("basis_bps") is not None:
+    if os.getenv("EXT_DEPTH_BASIS_DEMEAN", "true").strip().lower() in ("1", "true", "yes"):
+        if fut.get("basis_dev_bps") is not None:
+            fut_bits.append(f"basisD {fut['basis_dev_bps']:+.1f}bps (de-meaned)")
+        # else: <50 history samples → drop the biased raw level rather than print it
+    elif fut.get("basis_bps") is not None:
         fut_bits.append(f"basis {fut['basis_bps']:+.1f}bps")
     if fut_bits:
         parts.append(f"{', '.join(fut_bits)} ({fut.get('src', '?')})")

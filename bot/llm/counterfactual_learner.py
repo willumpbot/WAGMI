@@ -352,7 +352,11 @@ class CounterfactualLearner:
             old = self._pending.pop(oldest_key)
             old.resolved = True
             old.resolved_at = datetime.now(timezone.utc).isoformat()
-            old.hypothetical_pnl_pct = 0.0
+            # Capacity eviction is NOT a market outcome: record as UNSCORED
+            # (None, same convention as denominator_only), never 0.0 — fake
+            # zeros were counted as would_lose and inflated skip accuracy.
+            old.hypothetical_pnl_pct = None
+            old.metadata["cf_evicted_unresolved"] = True
             self._resolved_recent.append(old)
             self._save_resolved_record(old)
             self._resolved_count += 1
@@ -453,7 +457,10 @@ class CounterfactualLearner:
             old = self._pending.pop(oldest_key)
             old.resolved = True
             old.resolved_at = datetime.now(timezone.utc).isoformat()
-            old.hypothetical_pnl_pct = 0.0
+            # Capacity eviction is NOT a market outcome: record as UNSCORED
+            # (None, same convention as denominator_only), never 0.0.
+            old.hypothetical_pnl_pct = None
+            old.metadata["cf_evicted_unresolved"] = True
             self._resolved_recent.append(old)
             self._save_resolved_record(old)
             self._resolved_count += 1
@@ -512,8 +519,27 @@ class CounterfactualLearner:
                 if high >= rec.sl:
                     rec.would_hit_sl = True
 
-            # Resolve conditions: SL hit, TP2 hit, or max tracking bars
-            if rec.would_hit_sl or rec.would_hit_tp2 or rec.bars_to_resolve >= self.MAX_TRACKING_BARS:
+            # Resolve conditions: SL hit, TP2 hit, or max tracking window reached.
+            # TIME-BASED timeout fix (2026-07-13, owner-approved). The legacy
+            # `bars_to_resolve` counter increments on any high/low EXTREME change
+            # (is_new_candle above), not once per hour — so the intended 48h window
+            # actually fired at a volatility-dependent ~9h median, confounding every
+            # downstream stat AND the graduated-veto outcome scoring below (record_
+            # veto_outcome). When CF_RESOLVE_TIME_BASED=true, time out on real elapsed
+            # wall-clock from created_at. Window: CF_MAX_TRACKING_HOURS (default 48).
+            # Revert: CF_RESOLVE_TIME_BASED=false (restores legacy bar counting).
+            import os as _os
+            if _os.getenv("CF_RESOLVE_TIME_BASED", "false").lower() in ("1", "true", "yes"):
+                _max_h = float(_os.getenv("CF_MAX_TRACKING_HOURS", str(self.MAX_TRACKING_BARS)))
+                try:
+                    _elapsed_h = (datetime.now(timezone.utc)
+                                  - datetime.fromisoformat(rec.created_at)).total_seconds() / 3600.0
+                except Exception:
+                    _elapsed_h = float(rec.bars_to_resolve)  # fallback to legacy count
+                _timed_out = _elapsed_h >= _max_h
+            else:
+                _timed_out = rec.bars_to_resolve >= self.MAX_TRACKING_BARS
+            if rec.would_hit_sl or rec.would_hit_tp2 or _timed_out:
                 # Calculate hypothetical PnL
                 if rec.would_hit_sl and not rec.would_hit_tp1:
                     # SL hit first (loss)
@@ -660,10 +686,27 @@ class CounterfactualLearner:
         except Exception as _e:
             pass  # KB write failure is non-critical
 
+    def _is_scored(self, r: "CounterfactualRecord") -> bool:
+        """True only if the record carries a REAL market outcome.
+
+        Excludes unscored records (pnl None: denominator-only vetoes and
+        capacity evictions) and LEGACY capacity-eviction fake zeros already
+        on disk (pnl == 0.0 with no TP/SL hit and no full timeout window).
+        """
+        if r.hypothetical_pnl_pct is None:
+            return False
+        if (r.hypothetical_pnl_pct == 0.0
+                and not r.would_hit_tp1 and not r.would_hit_tp2
+                and not r.would_hit_sl
+                and r.bars_to_resolve < self.MAX_TRACKING_BARS):
+            return False
+        return True
+
     def get_missed_opportunity_stats(self, lookback_days: int = 14) -> Dict[str, Any]:
         """Compute statistics on missed trading opportunities."""
         cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).isoformat()
-        recent = [r for r in self._resolved_recent if r.created_at >= cutoff]
+        recent = [r for r in self._resolved_recent
+                  if r.created_at >= cutoff and self._is_scored(r)]
 
         if not recent:
             return {"total_skips": 0, "sufficient_data": False}
@@ -724,7 +767,8 @@ class CounterfactualLearner:
             return {"sufficient_data": False}
 
         cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-        recent = [r for r in self._resolved_recent if r.created_at >= cutoff]
+        recent = [r for r in self._resolved_recent
+                  if r.created_at >= cutoff and self._is_scored(r)]
 
         if len(recent) < 20:
             return {"sufficient_data": False, "reason": f"Only {len(recent)} resolved records"}

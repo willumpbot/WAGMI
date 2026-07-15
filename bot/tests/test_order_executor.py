@@ -78,8 +78,8 @@ class TestPaperMode:
 
     def test_paper_fees(self):
         result = self.executor.open_position("SOL", "BUY", qty=10.0, price=150.0)
-        # Notional ~= 10 * 150 = 1500, fees ~= 1500 * 0.00025 = 0.375
-        assert 0.3 < result.fees < 0.5
+        # Notional ~= 10 * 150 = 1500, fees ~= 1500 * 0.00045 = 0.675
+        assert 0.6 < result.fees < 0.8
 
     def test_set_leverage_paper(self):
         assert self.executor.set_leverage("BTC", 10) is True

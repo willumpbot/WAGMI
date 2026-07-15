@@ -95,10 +95,12 @@ class HoldTimeRuleManager:
         # Per-regime: list of hold-time buckets
         self.regime_buckets: Dict[str, list[HoldTimeBucket]] = {}
         self._init_buckets()
-        self._load()
 
         # Computed minimum hold times per regime (in hours)
-        # Defaults: be conservative, require longer holds
+        # Defaults: be conservative, require longer holds.
+        # MUST be initialized BEFORE _load() — _load() reads/updates
+        # min_hold_hours (init-ordering fix 2026-07-15; swarm added the
+        # min_hold_hours load path but left this assignment after _load()).
         self.min_hold_hours: Dict[str, float] = {
             "trend": 2.0,          # Trend trades need 2+ hours
             "ranging": 4.0,        # Ranging needs longer to avoid chop
@@ -107,6 +109,8 @@ class HoldTimeRuleManager:
             "unknown": 2.0,        # Safe default
         }
         self._last_update: Dict[str, str] = {}  # Track when each regime was last updated
+
+        self._load()
 
     def _init_buckets(self):
         """Initialize hold-time buckets for all regimes."""

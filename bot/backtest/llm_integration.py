@@ -267,7 +267,11 @@ class BacktestLLMIntegration:
             except Exception as e:
                 result.passed = False
                 result.errors.append(f"API ping failed with exception: {e}")
-            return result
+                return result
+            # PREFLIGHT_RETURN_FIX (2026-07-14): this `return result` was indented at
+            # the try/except level, returning UNCONDITIONALLY after a successful ping
+            # and short-circuiting data-validation (steps 3-7) — so preflight "passed"
+            # even with empty data / candle_count=0. Now returns only on ping failure.
 
         # 3. Data validation
         total_candles = 0

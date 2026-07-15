@@ -18,7 +18,10 @@ Data requirements:
 - 6h OHLCV (regime context)
 """
 
+import glob
 import logging
+import os
+import time
 from typing import Optional, Dict, Any, List, Tuple
 
 import pandas as pd
@@ -88,14 +91,217 @@ class ProbabilityEngineStrategy(BaseStrategy):
     # Fee model
     ROUND_TRIP_FEE_BPS = 8    # 4 bps each way
 
+    # 2026-07-15 LIVING VALUES: shared refresh cadence / trust threshold for
+    # every ledger-derived live table below (regime gate, TP2 continuation,
+    # regime+side confidence bonus). n>=13 matches the project-wide floor for
+    # trusting a self-updating slice; below it we fall back to a neutral
+    # constant, never to an inverted or stale one.
+    _LIVE_STATS_TTL_S = 1800   # 30 min
+    _LIVE_STATS_MIN_N = 13
+
     def __init__(self, symbols: Dict[str, Any],
                  num_sims: int = 2000, forward_bars: int = 12):
         super().__init__("probability_engine", symbols)
         self.num_sims = num_sims
         self.forward_bars = forward_bars
+        # Live regime->(min_prob, min_ev) gate table (fix: 2026-06-06 static
+        # table was inverted vs the realized ledger). See _get_regime_gate().
+        self._regime_gate_cache: Dict[str, Tuple[float, float]] = {}
+        self._regime_gate_loaded_at: float = 0.0
+        # Live TP1->TP2 continuation weight, from paper_trades/trades_*.csv.
+        # See _get_tp2_weight().
+        self._tp_cont_cache: Dict[str, Any] = {}
+        self._tp_cont_loaded_at: float = 0.0
+        # Live (canonical regime, side) -> avg net pnl bonus, from the ledger.
+        # See _get_regime_side_bonus().
+        self._regime_side_cache: Dict[Tuple[str, str], Tuple[float, int]] = {}
+        self._regime_side_loaded_at: float = 0.0
 
     def get_required_timeframes(self) -> List[str]:
         return ["1h"]
+
+    # ── Live regime gate table (2026-07-15) ─────────────────────────────────
+    # Replaces the 2026-06-06 static regime->(min_prob,min_ev) table, which
+    # was inverted vs the realized ledger: range/consolidation (worst
+    # realized edge, avg -$6.19/tr n=122) got the LOOSEST gate (0.42/0.12)
+    # while trending (best realized edge, avg +$20.44/tr n=42) got the
+    # TIGHTEST (0.50/0.20). Now computed from data/trade_ledger.csv, keyed on
+    # canonical regime names (llm/regime_canonical.py) so both the ledger's
+    # regime_1h vocabulary and this engine's internal regime labels
+    # (trending/ranging/volatile/normal) resolve to the same bucket.
+    _REGIME_GATE_NEUTRAL = (0.45, 0.15)
+    _REGIME_GATE_TIGHT = (0.50, 0.20)
+    _REGIME_GATE_PROB_CAP = 0.60
+    _REGIME_GATE_EV_CAP = 0.30
+
+    def _get_regime_gate_table(self) -> Dict[str, Tuple[float, float]]:
+        """Build/refresh canonical-regime -> (min_prob, min_ev) from the ledger.
+
+        For each canonical regime with n>=13 resolved trades: realized avg
+        net pnl <= 0 -> TIGHT gate (0.50/0.20, same bar the old table
+        reserved for trending only); realized avg net pnl > 0 -> the NEUTRAL
+        base (0.45/0.15). Regimes with n<13 are simply absent from the table
+        (caller falls back to NEUTRAL, never the old 0.35/0.10 floor).
+        """
+        now = time.time()
+        if (now - self._regime_gate_loaded_at < self._LIVE_STATS_TTL_S
+                and self._regime_gate_cache):
+            return self._regime_gate_cache
+
+        table: Dict[str, Tuple[float, float]] = {}
+        try:
+            from llm.regime_canonical import canonicalize_regime
+            ledger_path = os.path.join(os.path.dirname(__file__), "..", "data", "trade_ledger.csv")
+            if os.path.exists(ledger_path):
+                df = pd.read_csv(ledger_path)
+                if {"regime_1h", "net_pnl", "exit_type"}.issubset(df.columns):
+                    df = df[df["exit_type"].notna() & df["net_pnl"].notna()]
+                    canon = df["regime_1h"].apply(canonicalize_regime)
+                    for c, grp in df.groupby(canon):
+                        n = len(grp)
+                        if n < self._LIVE_STATS_MIN_N:
+                            continue
+                        avg_pnl = float(grp["net_pnl"].mean())
+                        table[c] = self._REGIME_GATE_TIGHT if avg_pnl <= 0 else self._REGIME_GATE_NEUTRAL
+        except Exception as e:
+            logger.debug(f"[PROB_ENGINE] regime gate table refresh failed: {e}")
+
+        self._regime_gate_cache = table
+        self._regime_gate_loaded_at = now
+        return table
+
+    def _get_regime_gate(self, regime_label: str) -> Tuple[float, float]:
+        """Live (min_prob, min_ev) for this regime label.
+
+        Falls back to the NEUTRAL base for regimes absent from the live
+        table (n<13). MIN_PROB_TP1/MIN_EV_PER_DOLLAR remain hard safety
+        clamps applied here — no live-derived value can fall below them.
+        """
+        table = self._get_regime_gate_table()
+        try:
+            from llm.regime_canonical import canonicalize_regime
+            canon = canonicalize_regime(regime_label)
+        except Exception:
+            canon = regime_label
+        min_prob, min_ev = table.get(canon, self._REGIME_GATE_NEUTRAL)
+        return (
+            max(self.MIN_PROB_TP1, min(self._REGIME_GATE_PROB_CAP, min_prob)),
+            max(self.MIN_EV_PER_DOLLAR, min(self._REGIME_GATE_EV_CAP, min_ev)),
+        )
+
+    # ── Live TP1->TP2 continuation weight (2026-07-15) ──────────────────────
+    # Replaces the static 70/30 blend in _compute_ev, which assumed a 30%
+    # TP1->TP2 continuation rate vs the realized 16.7% (5 TP2 / 30 TP1 exits
+    # in paper_trades/trades_*.csv), overstating EV on every signal.
+    _TP_CONT_PRIOR_CAP = 0.30  # legacy static prior — ceiling for the n<13 MC fallback only
+
+    def _get_tp_continuation_stats(self) -> Dict[str, Any]:
+        now = time.time()
+        if (now - self._tp_cont_loaded_at < self._LIVE_STATS_TTL_S
+                and self._tp_cont_cache):
+            return self._tp_cont_cache
+
+        stats: Dict[str, Any] = {"global": None, "by_symbol_side": {}}
+        try:
+            pattern = os.path.join(os.path.dirname(__file__), "..", "paper_trades", "trades_*.csv")
+            frames = []
+            for fp in glob.glob(pattern):
+                try:
+                    d = pd.read_csv(fp)
+                    if len(d):
+                        frames.append(d)
+                except Exception:
+                    continue
+            if frames:
+                df = pd.concat(frames, ignore_index=True)
+                if {"symbol", "action", "price"}.issubset(df.columns):
+                    df = df[~df["symbol"].astype(str).str.upper().str.contains("TEST", na=False)]
+                    df = df[~df["price"].isin([100, 150, 50000])]
+                    tp1_total = int((df["action"] == "TP1").sum())
+                    tp2_total = int((df["action"] == "TP2").sum())
+                    if tp1_total >= self._LIVE_STATS_MIN_N:
+                        stats["global"] = tp2_total / tp1_total
+                    if "side" in df.columns:
+                        for (sym, side), grp in df.groupby(["symbol", "side"]):
+                            n1 = int((grp["action"] == "TP1").sum())
+                            if n1 >= self._LIVE_STATS_MIN_N:
+                                n2 = int((grp["action"] == "TP2").sum())
+                                stats["by_symbol_side"][(str(sym).upper(), str(side).upper())] = n2 / n1
+        except Exception as e:
+            logger.debug(f"[PROB_ENGINE] TP continuation stats refresh failed: {e}")
+
+        self._tp_cont_cache = stats
+        self._tp_cont_loaded_at = now
+        return stats
+
+    def _get_tp2_weight(self, symbol: str, side: str, probs: Dict[str, float]) -> float:
+        """Live TP1->TP2 continuation weight for the EV blend.
+
+        Priority: per-(symbol, side) slice (n>=13 TP1 hits) -> global
+        (n>=13) -> per-signal Monte Carlo conditional capped at the old
+        static prior (0.30) so a cold cache can never exceed the legacy
+        assumption.
+        """
+        stats = self._get_tp_continuation_stats()
+        key = ((symbol or "").upper(), (side or "").upper())
+        w2 = stats["by_symbol_side"].get(key)
+        if w2 is None:
+            w2 = stats["global"]
+        if w2 is None:
+            w2 = min(probs.get("prob_tp2", 0.0) / max(probs.get("prob_tp1", 0.01), 0.01),
+                      self._TP_CONT_PRIOR_CAP)
+        return max(0.0, min(1.0, w2))
+
+    # ── Live (regime, side) confidence bonus (2026-07-15) ───────────────────
+    # Replaces the flat +8.0 "trend-aligned" bonus, which boosted LONG and
+    # SHORT identically despite the ledger showing them as opposite-sign
+    # edges in the trend family (LONG avg -$3.68/tr vs SHORT avg +$8.03/tr).
+    _CONFIDENCE_BONUS_CAP = 8.0
+
+    def _get_regime_side_table(self) -> Dict[Tuple[str, str], Tuple[float, int]]:
+        now = time.time()
+        if (now - self._regime_side_loaded_at < self._LIVE_STATS_TTL_S
+                and self._regime_side_cache):
+            return self._regime_side_cache
+
+        table: Dict[Tuple[str, str], Tuple[float, int]] = {}
+        try:
+            from llm.regime_canonical import canonicalize_regime
+            ledger_path = os.path.join(os.path.dirname(__file__), "..", "data", "trade_ledger.csv")
+            if os.path.exists(ledger_path):
+                df = pd.read_csv(ledger_path)
+                if {"regime_1h", "net_pnl", "side", "exit_type"}.issubset(df.columns):
+                    df = df[df["exit_type"].notna() & df["net_pnl"].notna()]
+                    canon = df["regime_1h"].apply(canonicalize_regime)
+                    side_u = df["side"].astype(str).str.upper()
+                    for (c, s), grp in df.groupby([canon, side_u]):
+                        n = len(grp)
+                        if n < self._LIVE_STATS_MIN_N:
+                            continue
+                        avg_pnl = float(grp["net_pnl"].mean())
+                        bonus = max(-self._CONFIDENCE_BONUS_CAP, min(self._CONFIDENCE_BONUS_CAP, avg_pnl))
+                        table[(c, s)] = (bonus, n)
+        except Exception as e:
+            logger.debug(f"[PROB_ENGINE] regime/side bonus table refresh failed: {e}")
+
+        self._regime_side_cache = table
+        self._regime_side_loaded_at = now
+        return table
+
+    def _get_regime_side_bonus(self, regime_label: str, side: str) -> Tuple[float, int]:
+        """Live (bonus, n) for a (canonical regime, side) slice.
+
+        bonus = clamp(avg_net_pnl_per_trade, -8.0, +8.0) when n>=13, else
+        (0.0, 0) — neutral fallback, never a hardcoded directional block.
+        """
+        table = self._get_regime_side_table()
+        try:
+            from llm.regime_canonical import canonicalize_regime
+            canon = canonicalize_regime(regime_label)
+        except Exception:
+            canon = regime_label
+        norm_side = {"BUY": "LONG", "SELL": "SHORT"}.get((side or "").upper(), (side or "").upper())
+        return table.get((canon, norm_side), (0.0, 0))
 
     def _classify_regime(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Classify current regime for conditional simulation."""
@@ -264,7 +470,8 @@ class ProbabilityEngineStrategy(BaseStrategy):
         }
 
     def _compute_ev(self, probs: Dict[str, float], price: float,
-                     tp1: float, tp2: float, sl: float) -> float:
+                     tp1: float, tp2: float, sl: float,
+                     symbol: str = "", side: str = "") -> float:
         """Compute expected value per dollar risked, net of fees."""
         risk = abs(price - sl)
         if risk <= 0:
@@ -274,10 +481,13 @@ class ProbabilityEngineStrategy(BaseStrategy):
         reward_tp2 = abs(tp2 - price)
         fee_cost = price * self.ROUND_TRIP_FEE_BPS / 10000
 
-        # Blended win probability (weighted toward TP1 since it's more likely)
-        # Assume 70% of wins hit TP1 only, 30% hit TP2
+        # Blended win probability (weighted toward TP1 since it's more likely).
+        # w2 = live TP1->TP2 continuation weight (2026-07-15; was a static 30%
+        # that overstated the realized 16.7% continuation rate by ~1.8x,
+        # inflating EV on every signal). See _get_tp2_weight().
+        w2 = self._get_tp2_weight(symbol, side, probs)
         prob_win = probs["prob_tp1"]
-        avg_reward = 0.7 * reward_tp1 + 0.3 * reward_tp2 * (probs["prob_tp2"] / max(probs["prob_tp1"], 0.01))
+        avg_reward = (1 - w2) * reward_tp1 + w2 * reward_tp2
 
         ev = prob_win * (avg_reward - fee_cost) - (1 - prob_win) * (risk + fee_cost)
         ev_per_dollar = ev / risk if risk > 0 else -1.0
@@ -343,23 +553,18 @@ class ProbabilityEngineStrategy(BaseStrategy):
         # Compute probabilities
         probs = self._compute_probabilities(mc, price, tp1, tp2, sl, side)
 
-        # Regime-conditional probability + EV thresholds.
-        # 2026-06-06: was hardcoded MIN_PROB_TP1=0.45 across all regimes. Range/chop
-        # setups operate on smaller moves where 0.40 prob with positive EV is still
-        # tradeable. Trending regimes warrant higher conviction (0.50+).
+        # Regime-conditional probability + EV thresholds — LIVE (2026-07-15).
+        # 2026-06-06 froze this as a static table (trending 0.50/0.20, range
+        # 0.42/0.12, else 0.35/0.10) that turned out inverted vs the realized
+        # ledger: range/consolidation (worst realized edge) got the LOOSEST
+        # gate while trending (best realized edge) got the TIGHTEST. Now
+        # computed from data/trade_ledger.csv, self-updating. See
+        # _get_regime_gate(). MIN_PROB_TP1/MIN_EV_PER_DOLLAR remain hard
+        # safety floors — clamped inside _get_regime_gate().
         from trading_config import DEFAULT_SYMBOL_OVERRIDES
         _vol_prof = getattr(DEFAULT_SYMBOL_OVERRIDES.get(symbol), "volatility_profile", "medium") if symbol else "medium"
         _regime = regime.get("regime", "unknown")
-        # Base thresholds tighter for trending (high-edge setups), looser for range/chop
-        if _regime in ("trending", "trending_bull", "trending_bear", "trend"):
-            _min_prob = 0.50  # trending = high conviction expected
-            _min_ev = 0.20
-        elif _regime in ("range", "ranging", "consolidation"):
-            _min_prob = 0.42  # range = smaller moves OK if probable
-            _min_ev = 0.12
-        else:  # high_vol, panic, unknown — default
-            _min_prob = self.MIN_PROB_TP1
-            _min_ev = self.MIN_EV_PER_DOLLAR
+        _min_prob, _min_ev = self._get_regime_gate(_regime)
         # Symbol-specific volatility profile adds further tightening for "high" vol
         if _vol_prof == "high":
             _min_prob = max(_min_prob, 0.48)
@@ -368,7 +573,7 @@ class ProbabilityEngineStrategy(BaseStrategy):
             return None
 
         # Compute expected value
-        ev = self._compute_ev(probs, price, tp1, tp2, sl)
+        ev = self._compute_ev(probs, price, tp1, tp2, sl, symbol, side)
 
         if ev < _min_ev:
             return None
@@ -384,19 +589,28 @@ class ProbabilityEngineStrategy(BaseStrategy):
         # EV contribution — slightly higher weight (EV is the true edge metric)
         confidence += min(18.0, ev * 35)
 
-        # Regime bonus
+        # Regime bonus — LIVE per-(regime, side) shift from the realized
+        # ledger (2026-07-15; was a flat +8.0 "trend-aligned" bonus that
+        # boosted LONG and SHORT identically despite the ledger showing them
+        # as opposite-sign edges — trend-family LONG avg -$3.68/tr vs SHORT
+        # avg +$8.03/tr). bonus = clamp(avg_net_pnl_per_trade, -8, +8) at
+        # n>=13, else 0.0 (neutral — never a hardcoded directional block).
+        _regime_side_bonus, _regime_side_n = self._get_regime_side_bonus(regime["regime"], side)
         if regime["regime"] == "trending" and (
             (side == "BUY" and momentum > 0) or (side == "SELL" and momentum < 0)
         ):
-            confidence += 8.0  # Trading with trend in trending regime
+            confidence += _regime_side_bonus  # was flat +8.0
 
-        # Probability ratio bonus (TP1 prob >> SL prob)
+        # Probability ratio bonus (TP1 prob >> SL prob) — only rewarded when
+        # the same live (regime, side) slice has realized positive edge at
+        # n>=13; otherwise this is unproven and shouldn't be boosted.
         if probs["prob_sl"] > 0:
             prob_ratio = probs["prob_tp1"] / probs["prob_sl"]
             if prob_ratio > 2.0:
-                confidence += 5.0
+                if _regime_side_n >= self._LIVE_STATS_MIN_N and _regime_side_bonus > 0:
+                    confidence += 5.0
             elif prob_ratio < 1.0:
-                confidence -= 10.0
+                confidence -= 10.0  # safety penalty — unchanged, never weakened
 
         confidence = max(50.0, min(95.0, confidence))
 
@@ -431,6 +645,12 @@ class ProbabilityEngineStrategy(BaseStrategy):
                 "mc_p95": mc["percentiles"]["p95"],
                 "num_sims": self.num_sims,
                 "forward_bars": self.forward_bars,
+                # 2026-07-15: shaped confidence vs the live inputs that
+                # produced it, so /confidence-calibrate can later fit the
+                # base scaling against realized outcomes too.
+                "confidence_shaped": confidence,
+                "regime_side_bonus": _regime_side_bonus,
+                "regime_side_bonus_n": _regime_side_n,
             },
             signal_context=" | ".join(context_parts),
         )

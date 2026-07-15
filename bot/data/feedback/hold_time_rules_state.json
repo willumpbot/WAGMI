@@ -4,9 +4,9 @@
       {
         "low_hours": 0,
         "high_hours": 0.5,
-        "wins": 0,
-        "losses": 6,
-        "total_pnl": -55.929178376388265
+        "wins": 2,
+        "losses": 7,
+        "total_pnl": -60.3571977618
       },
       {
         "low_hours": 0.5,
@@ -248,9 +248,9 @@
       {
         "low_hours": 0,
         "high_hours": 0.5,
-        "wins": 2,
-        "losses": 5,
-        "total_pnl": -3.572943338952952
+        "wins": 1,
+        "losses": 2,
+        "total_pnl": 0.08202059292466161
       },
       {
         "low_hours": 0.5,

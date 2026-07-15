@@ -578,9 +578,14 @@ class TestEnsembleSignalIntegration:
             for i in range(3)
         ]
         merged = ens._merge_signals("BTC", signals)
-        # With 3 active strategies and all 3 agreeing → unanimous bonus
-        # consensus_bonus = (3-1)*3 + 5 = 11
-        assert merged.confidence > 75  # Should have bonus applied
+        # 2026-06-08 de-hardcode: the hardcoded unanimous/consensus bonus was
+        # removed (consensus_mult = 1.0 in ensemble._merge_signals). Consensus
+        # is now surfaced to the LLM as DATA, not auto-boosted. Merged
+        # confidence should equal the weighted average of the three agreeing
+        # 75-confidence signals — exactly 75, with no hardcoded bonus.
+        assert merged is not None
+        assert merged.side == "BUY"
+        assert merged.confidence == pytest.approx(75.0)
 
     def test_risk_manager_rejects_tiny_stop(self):
         """RiskManager should reject position with near-zero stop width."""

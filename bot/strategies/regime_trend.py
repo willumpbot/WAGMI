@@ -10,7 +10,11 @@ Core logic:
 - Now includes trailing stop loss support
 """
 
+import csv
 import logging
+import os
+import threading
+import time
 from typing import Optional, Dict, Any, List
 
 import pandas as pd
@@ -19,6 +23,109 @@ import numpy as np
 from .base import BaseStrategy, Signal
 
 logger = logging.getLogger("bot.strategy.regime_trend")
+
+# ---------------------------------------------------------------------------
+# Live alignment-tier confidence multiplier (LIVING VALUES fix, 2026-07-15).
+# Ledger audit: full-aligned LONGs (regime_1h in {trend,trending_bull}, n=14)
+# realize avg -$26.6/tr @ ~29% WR (worst n>=13 slice) while full-aligned
+# SHORTs (regime_1h in {trend,trending_bear}, n=25) realize avg +$48.3/tr --
+# yet the old static base_mult ladder (20/22/25) handed BOTH the identical
+# max confidence boost at full alignment. base_mult is now scaled by the
+# realized (side, alignment-tier) edge from data/trade_ledger.csv; the
+# static 20/22/25 constants survive only as the n<13 fallback.
+# ---------------------------------------------------------------------------
+_LEDGER_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "trade_ledger.csv"
+)
+_ALIGN_MIN_N = 13
+_ALIGN_CACHE_TTL_S = 3600  # recompute at most hourly
+_ALIGN_TEST_ENTRY_PRICES = {100.0, 150.0, 50000.0}  # known synthetic/test rows
+_align_lock = threading.Lock()
+_align_cache = {"scales": {}, "meta": {}, "computed_at": 0.0, "mtime": 0.0}
+
+# (side -> regime_1h labels counted as "aligned"); anything else that isn't
+# "range" counts as "partial" per the fix spec.
+_ALIGNED_REGIMES = {
+    "LONG": {"trend", "trending_bull"},
+    "SHORT": {"trend", "trending_bear"},
+}
+
+
+def _recompute_align_scales():
+    """Rebuild {(side, tier): scale} from the ledger. Best-effort, never raises."""
+    scales: Dict[Any, float] = {}
+    meta: Dict[Any, Dict[str, Any]] = {}
+    try:
+        if not os.path.exists(_LEDGER_PATH):
+            return scales, meta
+        buckets: Dict[Any, list] = {}
+        with open(_LEDGER_PATH, newline="", encoding="utf-8", errors="ignore") as f:
+            for r in csv.DictReader(f):
+                side = str(r.get("side", "")).strip().upper()
+                if side not in ("LONG", "SHORT"):
+                    continue
+                symbol = str(r.get("symbol", "")).strip().upper()
+                if "TEST" in symbol:
+                    continue
+                try:
+                    entry_price = float(r.get("entry_price") or 0)
+                except (ValueError, TypeError):
+                    entry_price = 0.0
+                if entry_price in _ALIGN_TEST_ENTRY_PRICES:
+                    continue
+                try:
+                    pnl = float(r.get("net_pnl") or 0)
+                except (ValueError, TypeError):
+                    continue
+                regime = str(r.get("regime_1h", "")).strip().lower()
+                if regime == "range":
+                    continue  # excluded from both tiers ("partial = other non-range regimes")
+                tier = "aligned" if regime in _ALIGNED_REGIMES[side] else "partial"
+                buckets.setdefault((side, tier), []).append(pnl)
+        for key, pnls in buckets.items():
+            n = len(pnls)
+            if n < _ALIGN_MIN_N:
+                continue
+            avg = sum(pnls) / n
+            wr = sum(1 for p in pnls if p > 0) / n
+            raw = 0.6 + 0.8 * wr + 0.02 * avg
+            scale = max(0.5, min(1.3, raw))
+            scales[key] = scale
+            meta[key] = {"n": n, "avg_net_pnl": round(avg, 2), "wr": round(wr, 3)}
+    except Exception:
+        return {}, {}
+    return scales, meta
+
+
+def _ensure_align_fresh():
+    now = time.time()
+    try:
+        led_mtime = os.path.getmtime(_LEDGER_PATH) if os.path.exists(_LEDGER_PATH) else 0.0
+    except OSError:
+        led_mtime = 0.0
+    with _align_lock:
+        stale = (now - _align_cache["computed_at"] > _ALIGN_CACHE_TTL_S) or (
+            led_mtime != _align_cache["mtime"]
+        )
+        if stale:
+            scales, meta = _recompute_align_scales()
+            _align_cache.update(
+                {"scales": scales, "meta": meta, "computed_at": now, "mtime": led_mtime}
+            )
+
+
+def _live_base_mult(side: str, tier: str, static_default: float) -> float:
+    """Live-scaled base_mult for (side, tier) in {'aligned','partial'}.
+
+    Falls back to `static_default` (the legacy 20/22/25 constants) when the
+    ledger slice has n<13 or is unavailable.
+    """
+    _ensure_align_fresh()
+    with _align_lock:
+        scale = _align_cache["scales"].get((side, tier))
+    if scale is None:
+        return static_default
+    return round(static_default * scale, 3)
 
 
 def _ema(s: pd.Series, span: int) -> pd.Series:
@@ -242,7 +349,12 @@ class RegimeTrendStrategy(BaseStrategy):
         full_bear = regime_6h["bearish"] and regime_htf["bearish"]
         if buy:
             full_align = full_bull
-            base_mult = 20.0 if not full_align else (22.0 if is_momentum else 25.0)
+            if not full_align:
+                base_mult = _live_base_mult("LONG", "partial", 20.0)
+            elif is_momentum:
+                base_mult = _live_base_mult("LONG", "aligned", 22.0)
+            else:
+                base_mult = _live_base_mult("LONG", "aligned", 25.0)
             confidence = align_long * base_mult
             side = "BUY"
             sl = c - R
@@ -250,7 +362,12 @@ class RegimeTrendStrategy(BaseStrategy):
             tp2 = c + self._tp2_mult * R
         else:
             full_align = full_bear
-            base_mult = 20.0 if not full_align else (22.0 if is_momentum else 25.0)
+            if not full_align:
+                base_mult = _live_base_mult("SHORT", "partial", 20.0)
+            elif is_momentum:
+                base_mult = _live_base_mult("SHORT", "aligned", 22.0)
+            else:
+                base_mult = _live_base_mult("SHORT", "aligned", 25.0)
             confidence = align_short * base_mult
             side = "SELL"
             sl = c + R
@@ -258,6 +375,11 @@ class RegimeTrendStrategy(BaseStrategy):
             tp2 = c - self._tp2_mult * R
 
         # Cross recency: boost confidence if multiple recent crosses confirm direction
+        # NOTE (2026-07-15 living-values audit): the fix spec asked this +5 bonus be
+        # gated the same way (n>=13 ledger-realized slice, else 0). trade_ledger.csv
+        # does not log "recent_crosses>=2 at entry" (no such column/metadata field),
+        # so there is no way to unambiguously slice realized pnl for this specific
+        # feature -- left static per rule (c) (do not guess on live trading code).
         try:
             recent_window = cross_up.iloc[-5:] if buy else cross_dn.iloc[-5:]
             recent_crosses = int(recent_window.sum())

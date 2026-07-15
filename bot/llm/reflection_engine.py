@@ -420,6 +420,17 @@ class ReflectionEngine:
         """
         ts = timestamp or datetime.now(timezone.utc).isoformat()
 
+        # REFLECTION_SIDE_FIX (2026-07-14, flag-gated, DEFAULT ON; revert
+        # REFLECTION_SIDE_FIX=false). This engine's entire logic is written in
+        # BUY/SELL terms, but the live LLM-first loop passes LONG/SHORT, so every
+        # short was analyzed with long math (MFE/MAE swapped, PDR/TPG codes never
+        # firing) — poisoning trade_reflections.jsonl and the learning record.
+        # Normalize the external vocabulary to BUY/SELL once at the boundary so all
+        # downstream comparisons (and the sub-trackers seeded here) are correct.
+        # Measurement-only: no live trade decision depends on this on the LLM-first path.
+        if os.getenv("REFLECTION_SIDE_FIX", "true").lower() in ("1", "true", "yes"):
+            side = "SELL" if str(side).upper() in ("SELL", "SHORT") else "BUY"
+
         # Update price tracking
         self.exhaustion_detector.update_price(symbol, entry_price)
 
@@ -476,6 +487,12 @@ class ReflectionEngine:
 
         entry_reasons = entry_reasons or {}
         self._trade_count += 1
+
+        # REFLECTION_SIDE_FIX (2026-07-14): normalize LONG/SHORT -> BUY/SELL at the
+        # boundary (see on_entry). Without this, side=="SELL" at line ~490 fed
+        # "SHORT" fell through to the long branch, swapping MFE/MAE for every short.
+        if os.getenv("REFLECTION_SIDE_FIX", "true").lower() in ("1", "true", "yes"):
+            side = "SELL" if str(side).upper() in ("SELL", "SHORT") else "BUY"
 
         # Update price tracking
         self.exhaustion_detector.update_price(symbol, exit_price)

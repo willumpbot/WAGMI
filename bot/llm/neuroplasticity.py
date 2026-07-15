@@ -464,7 +464,15 @@ def run_neuroplasticity_cycle(trade_data: Optional[Dict] = None) -> Dict:
             setup_key = f"{symbol}_{side}_{len(strategies)}-agree"
 
         # 1. Synaptic strengthening
-        pnl_pct = pnl / max(trade_data.get("entry", 1), 1) * 100
+        # PNL_UNIT_FIX (2026-07-14): the old formula divided DOLLARS by PRICE
+        # (unit-less garbage — same fallacy as deep_memory M12; live state shows
+        # POPCAT pnl_sum ~ -67,576"%"). Use return-on-margin %: pnl/(entry*qty)*100,
+        # matching trade_dna's convention (pnl = move*qty*leverage in the paper
+        # engine, so this equals move_pct*leverage*100). 0.0 when qty is missing.
+        # WR/EMA — the only fields read into prompts — are unchanged either way.
+        _entry = trade_data.get("entry", 0) or 0
+        _qty = trade_data.get("qty", 0) or 0
+        pnl_pct = (pnl / (_entry * _qty) * 100.0) if (_entry > 0 and _qty > 0) else 0.0
         strengthen_setup(state, setup_key, won, pnl_pct)
         results["synaptic"] = {"setup": setup_key, "won": won}
 

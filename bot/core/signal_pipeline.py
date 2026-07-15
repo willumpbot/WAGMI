@@ -742,12 +742,19 @@ class RiskFilterChain:
         # safety net, not a risk control. Caps raised to allow Kelly-optimal leverage.
         stop_width_pct = abs(signal.entry - signal.sl) / signal.entry if signal.entry > 0 else 1.0
         is_short = signal.side == "SELL"
+        # LEV_CAP_SYMMETRIC (2026-07-14, default OFF): the short<long cap asymmetry
+        # (shorts 8/12/15 vs longs 10/15/20) is a hardcoded directional bias with NO
+        # liquidation basis — perp liq risk is symmetric in leverage — and it under-levers
+        # shorts, the proven winning side. When ON, both sides use the higher (Kelly-optimal)
+        # caps. DEFAULT OFF: raising a leverage cap is a risk-control change to enable consciously.
+        _sym_cap = os.getenv("LEV_CAP_SYMMETRIC", "false").strip().lower() in ("1", "true", "yes")
+        _lo = _sym_cap or not is_short  # True -> use the higher (long) caps
         if stop_width_pct < 0.005:  # < 0.5% stop
-            stop_lev_cap = 8.0 if is_short else 10.0
+            stop_lev_cap = 10.0 if _lo else 8.0
         elif stop_width_pct < 0.010:  # < 1.0% stop
-            stop_lev_cap = 12.0 if is_short else 15.0
+            stop_lev_cap = 15.0 if _lo else 12.0
         else:
-            stop_lev_cap = 15.0 if is_short else 20.0
+            stop_lev_cap = 20.0 if _lo else 15.0
         if leverage > stop_lev_cap:
             logger.info(f"[{signal.symbol}] Leverage capped {leverage:.1f}x → {stop_lev_cap:.1f}x "
                         f"(stop width {stop_width_pct:.2%} too tight for {leverage:.1f}x, side={signal.side})")
@@ -777,12 +784,14 @@ class RiskFilterChain:
                 risk_mult *= _regime_rm
                 meta["regime_risk_mult"] = _regime_rm
                 if _pt: _pt.record_multiplier(signal.symbol, "regime_risk", _regime_rm, f"regime={_regime}")
-            # Warn when a trade passes in the worst regime
+            # Note when a trade passes in a bearish regime. (2026-07-14: removed the
+            # hardcoded "(0% historical WR)" claim — it was a false string literal, not a
+            # computed number, contradicting the actual ~30% WR in the ledger. Never assert
+            # a WR we didn't measure; the data-learned regime mult already reflects real edge.)
             if _regime == "trending_bear":
-                logger.warning(
-                    f"[REGIME_WARN] {signal.symbol} {signal.side} passing in trending_bear "
-                    f"regime (0% historical WR) — risk mult={_regime_rm:.2f}, "
-                    f"conf={signal.confidence:.0f}%"
+                logger.info(
+                    f"[REGIME] {signal.symbol} {signal.side} in trending_bear "
+                    f"— regime risk mult={_regime_rm:.2f}, conf={signal.confidence:.0f}%"
                 )
         except ImportError:
             pass
@@ -1108,21 +1117,12 @@ class RiskFilterChain:
                 meta["quant_risk_mult_boost_would_be"] = quant["risk_mult_boost"]
         meta.update(quant["meta"])
 
-        # ── Setup exit metadata (for position manager trailing logic) ──
-        # Fixed % TPs don't work — BTC moves 0.3%/h, a 1.5% TP is a coinflip.
-        # Instead, tag the signal with exit STRATEGY (trail ATR, TP1 at 1R, etc.)
-        # and let the position manager handle it. Don't override strategy TPs here.
-        try:
-            from trading_config import get_setup_exit
-            _exit_profile = get_setup_exit(signal.symbol, signal.side)
-            if _exit_profile:
-                meta["setup_exit_strategy"] = _exit_profile
-                meta["setup_edge_tier"] = _exit_profile.get("edge", "unknown")
-                meta["setup_tp1_close_pct"] = _exit_profile.get("tp1_close_pct", 0.5)
-                meta["setup_trail_atr"] = _exit_profile.get("trail_atr", 1.0)
-                meta["setup_time_stop_h"] = _exit_profile.get("time_stop_h", 12)
-        except Exception as e:
-            logger.debug(f"[SETUP-EXIT] Error: {e}")
+        # NOTE (2026-07-15): dead "setup exit metadata" writer block removed —
+        # it populated meta["setup_exit_strategy"/"setup_edge_tier"/...] from the
+        # now-deleted SETUP_OPTIMAL_EXITS table, which had zero readers anywhere
+        # (also excluded from the LLM whitelist in core/filter_annotations.py).
+        # Exit behavior is governed by position_manager's trade-profile/TP1/
+        # trailing state machine plus the LLM Exit Agent.
 
         # ── Hard Gate: Signal validity ──
         if not signal.is_valid:
@@ -1321,12 +1321,19 @@ class RiskFilterChain:
         # Liquidation safety net — Kelly sizing controls risk, this prevents liq.
         stop_width_pct = abs(signal.entry - signal.sl) / signal.entry if signal.entry > 0 else 1.0
         is_short = signal.side == "SELL"
+        # LEV_CAP_SYMMETRIC (2026-07-14, default OFF): the short<long cap asymmetry
+        # (shorts 8/12/15 vs longs 10/15/20) is a hardcoded directional bias with NO
+        # liquidation basis — perp liq risk is symmetric in leverage — and it under-levers
+        # shorts, the proven winning side. When ON, both sides use the higher (Kelly-optimal)
+        # caps. DEFAULT OFF: raising a leverage cap is a risk-control change to enable consciously.
+        _sym_cap = os.getenv("LEV_CAP_SYMMETRIC", "false").strip().lower() in ("1", "true", "yes")
+        _lo = _sym_cap or not is_short  # True -> use the higher (long) caps
         if stop_width_pct < 0.005:  # < 0.5% stop
-            stop_lev_cap = 8.0 if is_short else 10.0
+            stop_lev_cap = 10.0 if _lo else 8.0
         elif stop_width_pct < 0.010:  # < 1.0% stop
-            stop_lev_cap = 12.0 if is_short else 15.0
+            stop_lev_cap = 15.0 if _lo else 12.0
         else:
-            stop_lev_cap = 15.0 if is_short else 20.0
+            stop_lev_cap = 20.0 if _lo else 15.0
         if leverage > stop_lev_cap:
             logger.info(f"[{signal.symbol}] Leverage capped {leverage:.1f}x → {stop_lev_cap:.1f}x "
                         f"(stop width {stop_width_pct:.2%} too tight for {leverage:.1f}x, side={signal.side})")

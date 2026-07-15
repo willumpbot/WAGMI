@@ -2216,14 +2216,16 @@ class TelegramCommandBot:
                 "1. Entry: market or limit + price level\n"
                 "2. Stop Loss: price + reasoning\n"
                 "3. Take Profit 1 & 2: prices + R:R ratios\n"
-                "4. Recommended leverage (data says 1.5-3x = optimal, 6x+ loses money)\n"
+                "4. Recommended leverage (justify from stop width + volatility, not a fixed rule)\n"
                 "5. Thesis: 1-2 sentences\n"
                 "6. Risk assessment: what could go wrong\n"
                 "7. Confidence: 0-100%\n\n"
-                "GROUND TRUTH: ETH=47% WR (best), HYPE=24% (worst). "
-                "Trending regime=56% WR, ranging=19%. "
-                "Low leverage (1.5-3x)=+$6.59 avg, high (6-15x)=-$6.33.\n"
-                "Be direct. Use numbers. Keep under 250 words."
+                # 2026-07-14 de-hardcode: removed a fabricated "GROUND TRUTH" stat block
+                # (ETH=47% WR, trending=56%, "1.5-3x optimal") — undated, never computed,
+                # and contradicted by the live ledger. Reason from the actual setup, not
+                # invented win-rates.
+                "Do NOT cite specific historical win-rates unless given real data; reason "
+                "from the current setup quality. Be direct. Use numbers. Keep under 250 words."
             )
             result, usage = call_llm(
                 system_prompt=system_prompt,

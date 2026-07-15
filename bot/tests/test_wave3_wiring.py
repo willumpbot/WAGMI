@@ -328,7 +328,11 @@ class TestAdaptiveRisk:
     def _isolate_state(self, tmp_path):
         """Ensure each test gets a fresh adaptive risk manager (no persisted state)."""
         fake_path = str(tmp_path / "adaptive_risk_state.json")
-        with unittest.mock.patch("execution.adaptive_risk._STATE_PATH", fake_path):
+        with unittest.mock.patch("execution.adaptive_risk._STATE_PATH", fake_path), \
+             unittest.mock.patch(
+                 "execution.adaptive_risk.AdaptiveRiskManager._backfill_from_trade_dna",
+                 lambda self: None,
+             ):
             yield
 
     def test_import_and_singleton(self):

@@ -621,7 +621,7 @@ class TestMTMEquityCircuitBreaker:
         """RiskManager.equity updates after each trade PnL."""
         from execution.risk import RiskManager
 
-        rm = RiskManager(starting_equity=10000.0)
+        rm = RiskManager(starting_equity=10000.0, load_persisted_equity=False)
         assert rm.equity == 10000.0
 
         rm.update_equity(-200)
@@ -634,7 +634,8 @@ class TestMTMEquityCircuitBreaker:
         """Position sizing must use current equity, not starting equity."""
         from execution.risk import RiskManager
 
-        rm = RiskManager(starting_equity=10000.0, risk_per_trade=0.02)
+        rm = RiskManager(starting_equity=10000.0, risk_per_trade=0.02,
+                         load_persisted_equity=False)
 
         # After losses, equity is lower → position size should decrease
         rm.update_equity(-2000)  # equity now 8000
@@ -850,7 +851,7 @@ class TestMTMCircuitBreakerAwareness:
     def test_risk_manager_mtm_no_trip_small_loss(self):
         """Small unrealized loss doesn't trip CB."""
         from execution.risk import RiskManager
-        rm = RiskManager(starting_equity=10000.0)
+        rm = RiskManager(starting_equity=10000.0, load_persisted_equity=False)
         rm.circuit_breaker.peak_equity = 10000
 
         rm.check_unrealized_risk(unrealized_pnl=-500)  # 5% drawdown

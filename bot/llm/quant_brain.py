@@ -333,7 +333,7 @@ class QuantBrain:
                     n = info.get("n", 0) or info.get("total", 0) or 0
                     wr = info.get("wr", info.get("win_rate", None))
                     if wr is not None and n >= 5:
-                        live[setup] = float(wr)
+                        live[setup] = (float(wr), int(n))  # carry n so the stale prior can DECAY
         except Exception as e:
             logger.debug(f"[QUANT-BRAIN] live trade DNA unavailable: {e}")
 
@@ -346,11 +346,20 @@ class QuantBrain:
             logger.debug(f"[QUANT-BRAIN] dynamic baseline unavailable: {e}")
             self._default_wp = _DEFAULT_WIN_PROB
 
-        # Step 3: blend live with safe hardcoded fallback (60% live / 40% prior)
+        # Step 3: blend live with the hardcoded prior. LIVING VALUE (2026-07-14):
+        # the prior weight now DECAYS as live evidence grows (fades to 0 by n=30)
+        # instead of the old PERMANENT 60/40 that pinned a stale 2026-03 prior forever
+        # (it capped ETH_SELL at 0.55 despite 90.9% live WR). Revert: WIN_PROB_PRIOR_DECAY=false.
+        _decay = os.getenv("WIN_PROB_PRIOR_DECAY", "true").strip().lower() in ("1", "true", "yes")
         merged = dict(_SETUP_WIN_PROBS)  # start from prior
-        for setup, wr in live.items():
+        for setup, val in live.items():
+            wr, n = val if isinstance(val, tuple) else (val, 5)
             prior = _SETUP_WIN_PROBS.get(setup, self._default_wp)
-            merged[setup] = round(0.6 * wr + 0.4 * prior, 3)
+            if _decay:
+                w = min(1.0, n / 30.0)  # prior fades to 0 by n>=30 — no permanent stale anchor
+                merged[setup] = round(w * wr + (1.0 - w) * prior, 3)
+            else:
+                merged[setup] = round(0.6 * wr + 0.4 * prior, 3)  # legacy fixed 60/40
 
         # Step 4: apply overrides (always wins) — skip null/None values gracefully
         try:

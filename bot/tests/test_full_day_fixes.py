@@ -84,7 +84,13 @@ class TestSymbolStrategyProfile:
         assert get_min_votes_for_symbol("NONESUCH", default=5) == 5
 
     def test_hype_active_strategy_set_is_restricted(self):
-        from data.symbol_strategy_profile import get_active_strategies_for_symbol
+        # data/symbol_strategy_profile.py was never committed (c4ad18f added
+        # only this test + the ensemble.py references). The ensemble treats
+        # the module as optional (ensemble.py:872-876 falls back to "all
+        # active"), and WAVE2A L3 (2026-07-02) demoted the profile to opinion
+        # metadata. Skip while the optional module is absent.
+        mod = pytest.importorskip("data.symbol_strategy_profile")
+        get_active_strategies_for_symbol = mod.get_active_strategies_for_symbol
         hype = get_active_strategies_for_symbol("HYPE")
         assert hype is not None
         # Forensic: only confidence_scorer fires reliably on HYPE

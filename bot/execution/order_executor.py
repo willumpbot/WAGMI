@@ -594,9 +594,9 @@ class OrderExecutor:
         fill_price = price + slippage if side == "buy" else price - slippage
         fill_price = round_price(symbol, fill_price)
 
-        # Estimate fees (Hyperliquid taker: 2.5 bps)
+        # Estimate fees (Hyperliquid base-tier taker: 4.5 bps)
         notional = qty * fill_price
-        fees = notional * 0.00025
+        fees = notional * 0.00045
         self._total_fees += fees
 
         result = OrderResult(
@@ -709,8 +709,8 @@ class OrderExecutor:
         fee_info = order.get("fee", {}) or {}
         fees = float(fee_info.get("cost", 0) or 0)
         if fees == 0 and cost > 0:
-            # Estimate fees if not provided (Hyperliquid taker: 2.5 bps)
-            fees = cost * 0.00025
+            # Estimate fees if not provided (Hyperliquid base-tier taker: 4.5 bps)
+            fees = cost * 0.00045
 
         # Determine result status
         if status == "closed" or filled > 0:

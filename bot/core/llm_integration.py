@@ -1157,6 +1157,35 @@ class LLMIntegrationMixin:
                     _hold_s = (datetime.now(timezone.utc) - pos.open_time).total_seconds() \
                         if hasattr(pos, 'open_time') else 0
                     _price = self._last_prices.get(symbol, 0)
+
+                    # ── Quota throttle (2026-07-13, owner-approved) ──────────────
+                    # The Exit Agent is ADVISORY: mechanical SL/TP still governs hard
+                    # exits every tick regardless, so LLM-re-evaluating a CALM position
+                    # every round is the bot's biggest quota drain (~475 calls/day).
+                    # Skip the LLM call if this position was evaluated within
+                    # EXIT_AGENT_COOLDOWN_S — UNLESS it is "hot" (>=50% of the way to its
+                    # stop, i.e. thesis may be breaking), which always re-evaluates.
+                    # Never delays a mechanical stop. Revert: EXIT_AGENT_COOLDOWN_S=0.
+                    import os as _os
+                    _ex_cd = int(_os.getenv("EXIT_AGENT_COOLDOWN_S", "600"))
+                    if _ex_cd > 0:
+                        if not hasattr(self, "_exit_eval_last_ts"):
+                            self._exit_eval_last_ts = {}
+                        _now_ts = datetime.now(timezone.utc).timestamp()
+                        _hot = False
+                        try:
+                            if pos.sl and pos.entry and _price:
+                                _sd = abs(pos.entry - pos.sl)
+                                _adv = (pos.entry - _price) if pos.side == "LONG" else (_price - pos.entry)
+                                if _sd > 0 and _adv >= 0.5 * _sd:
+                                    _hot = True
+                        except Exception:
+                            pass
+                        _last = self._exit_eval_last_ts.get(symbol, 0.0)
+                        if (not _hot) and (_now_ts - _last) < _ex_cd:
+                            continue  # calm position within cooldown → skip LLM eval this round
+                        self._exit_eval_last_ts[symbol] = _now_ts
+
                     _upnl = 0.0
                     if _price and pos.entry and pos.qty:
                         if pos.side == "LONG":

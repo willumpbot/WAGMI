@@ -44,6 +44,11 @@ LOG_DIR = BOT_DIR / "logs"
 HEARTBEAT_STALE_S = int(os.getenv("WATCHDOG_STALE_THRESHOLD_S", "300"))  # 5 min
 CHECK_INTERVAL_S = int(os.getenv("WATCHDOG_CHECK_INTERVAL_S", "60"))
 AUTO_RESTART = os.getenv("WATCHDOG_AUTO_RESTART", "false").lower() == "true"
+# Scan-loop stall detection (2026-07-13): heartbeat.json is written by a daemon
+# thread that survives even if the main scan loop wedges, so a fresh heartbeat can
+# mask a hung loop. Alert if scan_count stops advancing for this many minutes while
+# the heartbeat is still fresh. 0 disables. Alert-only (never restarts).
+SCAN_STALL_MIN = int(os.getenv("WATCHDOG_SCAN_STALL_MIN", "45"))
 MAX_RESTART_ATTEMPTS = int(os.getenv("WATCHDOG_MAX_RESTARTS", "3"))
 RESTART_COOLDOWN_S = int(os.getenv("WATCHDOG_RESTART_COOLDOWN_S", "300"))  # 5 min
 
@@ -216,7 +221,21 @@ def send_telegram_alert(message: str) -> bool:
         from dotenv import load_dotenv
         load_dotenv(BOT_DIR / ".env")
     except ImportError:
-        pass
+        # python-dotenv is NOT installed here; a bare Task Scheduler process has
+        # no env injected by the supervisor. Parse .env directly for TELEGRAM_*
+        # so the watchdog can actually send its alerts. (2026-07-13)
+        try:
+            with open(BOT_DIR / ".env", encoding="utf-8") as _f:
+                for _line in _f:
+                    _line = _line.strip()
+                    if not _line or _line.startswith("#") or "=" not in _line:
+                        continue
+                    _k, _v = _line.split("=", 1)
+                    _k = _k.strip()
+                    if _k.startswith("TELEGRAM_") and not os.getenv(_k):
+                        os.environ[_k] = _v.strip().strip('"').strip("'")
+        except Exception:
+            pass
 
     token = os.getenv("TELEGRAM_TOKEN", "")
     chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
@@ -340,6 +359,9 @@ def cmd_monitor():
     last_restart_ts = 0.0
     last_alert_ts = 0.0
     was_healthy = True
+    last_scan = None
+    last_scan_change_ts = time.time()
+    last_scan_alert_ts = 0.0
 
     while True:
         try:
@@ -354,6 +376,30 @@ def cmd_monitor():
                     send_telegram_alert("Bot *recovered* and is running normally again.")
                 was_healthy = True
                 restart_attempts = 0
+
+                # Scan-stall: heartbeat fresh but the scan loop may be wedged
+                # (daemon thread keeps writing heartbeat.json). Alert-only.
+                if SCAN_STALL_MIN > 0 and hb is not None:
+                    _now = time.time()
+                    _sc = hb.get("scan_count")
+                    if _sc != last_scan:
+                        last_scan = _sc
+                        last_scan_change_ts = _now
+                    elif (_now - last_scan_change_ts > SCAN_STALL_MIN * 60
+                          and _now - last_scan_alert_ts > 600):
+                        last_scan_alert_ts = _now
+                        _stall = (_now - last_scan_change_ts) / 60
+                        logger.critical(
+                            f"SCAN STALL: scan_count frozen at {_sc} for "
+                            f"{_stall:.0f} min (heartbeat fresh — main loop hung?)"
+                        )
+                        send_telegram_alert(
+                            f"*WATCHDOG: main loop hung?*\n"
+                            f"Heartbeat is fresh but scan_count has been frozen at "
+                            f"{_sc} for {_stall:.0f} min while the heartbeat daemon keeps "
+                            f"writing — the scan loop may be wedged. Bot likely needs a "
+                            f"restart.\nRevert this check: WATCHDOG_SCAN_STALL_MIN=0"
+                        )
             else:
                 # Bot is stuck or crashed
                 was_healthy = False

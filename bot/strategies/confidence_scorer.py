@@ -11,6 +11,7 @@ Core logic:
 - Uses 1h data only (backtest-compatible: CoinGecko provides 30d of 1h)
 """
 
+import csv
 import json
 import logging
 from datetime import datetime, timezone
@@ -23,6 +24,69 @@ import numpy as np
 from .base import BaseStrategy, Signal
 
 logger = logging.getLogger("bot.strategy.momentum_scorer")
+
+# ── LIVING VALUES: shared ledger access (2026-07-15) ─────────────────────
+# Read-only, mtime-cached access to the bot's own realized closed-trade
+# ledger (data/trade_ledger.csv). Backs every de-hardcoded confidence
+# adjustment in this file so each stays self-updating as new trades close,
+# per the LIVING VALUES mandate (n>=13, never a frozen snapshot). Never
+# writes to the ledger. Mirrors feedback/live_edge.py's cache pattern.
+_LEDGER_PATH = Path(__file__).resolve().parent.parent / "data" / "trade_ledger.csv"
+_LEDGER_CACHE: Dict[str, Any] = {"mtime": 0.0, "rows": []}
+_SIM_ENTRY_PRICES = {100.0, 150.0, 50000.0}  # known synthetic/test entry prices
+
+
+def _load_ledger_rows() -> List[Dict[str, Any]]:
+    """Load+cache data/trade_ledger.csv, refreshing when the file's mtime changes."""
+    try:
+        mtime = _LEDGER_PATH.stat().st_mtime if _LEDGER_PATH.exists() else 0.0
+    except OSError:
+        mtime = 0.0
+    if mtime and mtime == _LEDGER_CACHE.get("mtime"):
+        return _LEDGER_CACHE["rows"]
+    rows: List[Dict[str, Any]] = []
+    try:
+        if _LEDGER_PATH.exists():
+            with open(_LEDGER_PATH, newline="", encoding="utf-8", errors="ignore") as f:
+                for r in csv.DictReader(f):
+                    try:
+                        net = float(r.get("net_pnl") or "")
+                    except (ValueError, TypeError):
+                        continue  # unresolved/malformed row -- not a closed trade
+                    try:
+                        entry_px = float(r.get("entry_price") or 0)
+                    except (ValueError, TypeError):
+                        entry_px = 0.0
+                    sym = str(r.get("symbol", "")).strip().upper()
+                    if not sym or "TEST" in sym or entry_px in _SIM_ENTRY_PRICES:
+                        continue
+                    r["_net_pnl"] = net
+                    r["_symbol"] = sym
+                    r["_side"] = str(r.get("side", "")).strip().upper()  # LONG/SHORT
+                    try:
+                        r["_conf"] = float(r.get("confidence_score") or 0)
+                    except (ValueError, TypeError):
+                        r["_conf"] = 0.0
+                    try:
+                        r["_ts"] = float(r.get("timestamp") or 0)
+                    except (ValueError, TypeError):
+                        r["_ts"] = 0.0
+                    rows.append(r)
+    except Exception:
+        rows = []
+    _LEDGER_CACHE["mtime"] = mtime
+    _LEDGER_CACHE["rows"] = rows
+    return rows
+
+
+def _closed_trades(symbol: Optional[str] = None, side: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Filtered view of the realized ledger. ``side`` is LONG/SHORT."""
+    out = _load_ledger_rows()
+    if symbol:
+        out = [r for r in out if r["_symbol"] == symbol.upper()]
+    if side:
+        out = [r for r in out if r["_side"] == side.upper()]
+    return out
 
 
 def _ema(series: pd.Series, span: int) -> pd.Series:
@@ -137,23 +201,43 @@ class ConfidenceScorerStrategy(BaseStrategy):
         except Exception as e:
             logger.warning(f"Failed to save signal log: {e}")
 
-    def _log_signal(self, symbol: str, action: str, price: float):
-        """Record a signal for later evaluation."""
+    def _log_signal(self, symbol: str, action: str, price: float, **flags):
+        """Record a signal for later evaluation.
+
+        ``**flags`` (LIVING VALUES 2026-07-15) persists per-signal condition
+        flags (exhaustion_fired, htf_contra_fired, etc.) so they can later be
+        joined against closed trades in data/trade_ledger.csv to compute live,
+        self-updating penalty/adjustment values instead of frozen constants.
+        """
         if symbol not in self.signal_log:
             self.signal_log[symbol] = []
-        self.signal_log[symbol].append({
+        entry = {
             "signal": action,
             "price": price,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "evaluated": False,
-        })
+        }
+        entry.update(flags)
+        self.signal_log[symbol].append(entry)
         self.signal_log[symbol] = self.signal_log[symbol][-200:]
         self._save_signal_log()
 
     def _get_historical_confidence(self, symbol: str, action: str) -> Optional[float]:
         """
-        Calculate win rate for this (symbol, action) pair from historical data.
-        Returns None if insufficient data or in backtest mode.
+        Calculate win rate for this (symbol, action) pair from the bot's own
+        realized ledger (data/trade_ledger.csv). Returns None if insufficient
+        data (n<13) or in backtest mode.
+
+        LIVING VALUES fix (2026-07-15): this used to source WR from the
+        signal-log's synthetic 1h-price-move "success" proxy. Ledger audit
+        proved that proxy inverted vs realized PnL -- e.g. HYPE BUY graded
+        58% WR (n=157) from the proxy while realized net was -$34.36/tr
+        (n=17, worst edge on the book); the proxy also contained zero SELL
+        entries, so the bot's best realized edges (ETH/BTC/SOL SHORT,
+        +$20.37/+$10.70/+$7.65 per trade) were invisible to this adjustment.
+        Now reads real closed-trade outcomes instead, mapping BUY->LONG and
+        SELL->SHORT (STRONG_BUY/STRONG_SELL fold into the same bucket as
+        their base action).
 
         In backtest mode, historical WR is disabled to prevent the cold-start death
         spiral: early losses poison WR → confidence drops → fewer trades → worse WR.
@@ -161,17 +245,23 @@ class ConfidenceScorerStrategy(BaseStrategy):
         """
         if self.backtest_mode:
             return None  # Prevent cold-start death spiral in backtests
-        entries = self.signal_log.get(symbol, [])
-        evaluated = [e for e in entries if e.get("evaluated") and e["signal"] == action and "success" in e]
-        if len(evaluated) < 30:
+        ledger_side = "LONG" if action.upper().replace("STRONG_", "").endswith("BUY") else "SHORT"
+        trades = _closed_trades(symbol=symbol, side=ledger_side)
+        n = len(trades)
+        if n < 13:  # LIVING VALUES sample gate (was n>=30 against the stale proxy)
             return None
-        wins = sum(1 for e in evaluated if e["success"])
-        wr = wins / len(evaluated)
+        wins = sum(1 for t in trades if t["_net_pnl"] > 0)
+        avg_net = sum(t["_net_pnl"] for t in trades) / n
+        wr = wins / n
         # With fewer than 50 samples, WR estimates are noisy — dampen toward 0.5.
         # Progressive dampening: 60% strength at 30 samples, full strength at 50.
-        if len(evaluated) < 50:
-            dampen_factor = len(evaluated) / 50
+        if n < 50:
+            dampen_factor = n / 50
             wr = 0.5 + (wr - 0.5) * dampen_factor
+        # WR alone can mislead (e.g. XRP SHORT: WR 78.6% but avg net -$0.14/tr) --
+        # a net-losing slice can never earn a positive confidence nudge.
+        if avg_net < 0:
+            wr = min(wr, 0.5)
         return wr
 
     def evaluate_past_signals(self, symbol: str, current_price: float):
@@ -180,6 +270,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
         Signals must be at least 1 hour old before evaluation to give the
         market time to move.  Evaluating on the next 1-minute tick was
         poisoning the historical WR with near-zero-move "failures".
+
+        LIVING VALUES note (2026-07-15): this synthetic 1h-price-move grade
+        is DIAGNOSTIC ONLY. It no longer feeds _get_historical_confidence()
+        (that now reads realized ledger outcomes -- see there for why: this
+        proxy was proven inverted vs realized PnL, e.g. HYPE BUY 58% proxy
+        WR vs -$34.36/tr realized). Kept for get_performance_report() /
+        get_status() visibility; nothing here may drive a confidence adjustment.
         """
         entries = self.signal_log.get(symbol, [])
         changed = False
@@ -250,6 +347,169 @@ class ConfidenceScorerStrategy(BaseStrategy):
             price_hh = price.iloc[-1] > price.iloc[:lookback // 2].max()
             rsi_lh = rsi_window.iloc[-1] < rsi_window.iloc[:lookback // 2].max()
             return price_hh and rsi_lh
+
+    # ── LIVING VALUES: live per-side exhaustion penalty (2026-07-15) ────────
+    # Seed constants from the ledger audit's log-join (48 exhaustion firings
+    # joined to closed paper_trades by symbol+side, ±30min of open) -- used
+    # ONLY until this strategy's own signal_log accumulates n>=13 directly
+    # joined samples per side (see _exhaustion_join_stats). Both the aggregate
+    # and SELL slices are net-profitable, so the old flat -15 ("90d backtest
+    # 22% WR") was actively penalizing the bot's best realized edge
+    # (ETH/BTC/SOL SELL, best condition = ADX>35 + RSI extreme).
+    _EXHAUSTION_SEED = {
+        "SELL": {"n": 31, "avg_net": 4.59, "wr": None},
+        "BUY": {"n": 17, "avg_net": -0.97, "wr": None},
+    }
+    _EXHAUSTION_NONFLAGGED_WR = 0.56  # audit: n=217 non-flagged WR 56%
+    _EXHAUSTION_FLAGGED_WR = 0.40     # audit: n=48 flagged (aggregate) WR 40%
+
+    def _exhaustion_join_stats(self, side: str) -> Optional[Dict[str, float]]:
+        """Join this strategy's own signal_log exhaustion_fired flags (persisted
+        at signal time via _log_signal) to closed trades in data/trade_ledger.csv
+        by symbol+side within 30 minutes of trade open. Mirrors the ledger
+        audit's manual join. Returns None if fewer than 13 direct samples."""
+        ledger_side = "SHORT" if side == "SELL" else "LONG"
+        pnls: List[float] = []
+        for symbol, entries in self.signal_log.items():
+            flagged_ts = []
+            for e in entries:
+                sig = e.get("signal", "")
+                if not sig or not e.get("exhaustion_fired"):
+                    continue
+                is_buy_signal = sig.endswith("BUY")
+                if (side == "BUY") != is_buy_signal:
+                    continue
+                try:
+                    ts = datetime.fromisoformat(e["timestamp"])
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=timezone.utc)
+                    flagged_ts.append(ts.timestamp())
+                except (KeyError, ValueError, TypeError):
+                    continue
+            if not flagged_ts:
+                continue
+            for row in _closed_trades(symbol=symbol, side=ledger_side):
+                if any(abs(row["_ts"] - sts) <= 1800 for sts in flagged_ts):
+                    pnls.append(row["_net_pnl"])
+        n = len(pnls)
+        if n < 13:
+            return None
+        wins = sum(1 for p in pnls if p > 0)
+        return {"n": n, "avg_net": sum(pnls) / n, "wr": wins / n}
+
+    def _get_exhaustion_penalty(self, side: str) -> int:
+        """Live per-side momentum-exhaustion penalty. Never exceeds the static
+        15 (safety ceiling unchanged). Prefers a direct join from this
+        strategy's own accumulating signal_log; falls back to the 2026-07-15
+        audit seed while direct samples are still <13; falls back to the
+        original static 15 only if no live/seed data exists for the side."""
+        try:
+            live = self._exhaustion_join_stats(side)
+            if live is not None:
+                if live["avg_net"] >= 0:
+                    return 0
+                wr_flagged = live["wr"]
+                return int(max(0, min(15, round((self._EXHAUSTION_NONFLAGGED_WR - wr_flagged) * 50))))
+            seed = self._EXHAUSTION_SEED.get(side)
+            if seed is not None:
+                if seed["avg_net"] >= 0:
+                    return 0
+                wr_flagged = seed["wr"] if seed["wr"] is not None else self._EXHAUSTION_FLAGGED_WR
+                return int(max(0, min(15, round((self._EXHAUSTION_NONFLAGGED_WR - wr_flagged) * 50))))
+        except Exception as e:
+            logger.warning(f"_get_exhaustion_penalty fallback to static 15: {e}")
+        return 15  # cold-start fallback, never exceeded
+
+    # ── LIVING VALUES: live per-(symbol,side) HTF-contra penalty (2026-07-15) ──
+    def _htf_contra_join_stats(self, symbol: str, side: str) -> Optional[Dict[str, float]]:
+        """Join persisted htf_contra_fired flags in this strategy's signal_log
+        to closed trades in data/trade_ledger.csv for the same symbol+side
+        within 30 minutes of trade open. Returns None if fewer than 13 samples."""
+        ledger_side = "SHORT" if side == "SELL" else "LONG"
+        entries = self.signal_log.get(symbol, [])
+        flagged_ts = []
+        for e in entries:
+            sig = e.get("signal", "")
+            if not sig or not e.get("htf_contra_fired"):
+                continue
+            if (side == "BUY") != sig.endswith("BUY"):
+                continue
+            try:
+                ts = datetime.fromisoformat(e["timestamp"])
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                flagged_ts.append(ts.timestamp())
+            except (KeyError, ValueError, TypeError):
+                continue
+        if not flagged_ts:
+            return None
+        pnls = [row["_net_pnl"] for row in _closed_trades(symbol=symbol, side=ledger_side)
+                if any(abs(row["_ts"] - sts) <= 1800 for sts in flagged_ts)]
+        n = len(pnls)
+        if n < 13:
+            return None
+        wins = sum(1 for p in pnls if p > 0)
+        return {"n": n, "avg_net": sum(pnls) / n, "wr": wins / n}
+
+    def _side_baseline_stats(self, side: str) -> Optional[Dict[str, float]]:
+        """Realized baseline avg net pnl for a side (LONG/SHORT), n>=13."""
+        ledger_side = "SHORT" if side == "SELL" else "LONG"
+        trades = _closed_trades(side=ledger_side)
+        n = len(trades)
+        if n < 13:
+            return None
+        return {"n": n, "avg_net": sum(t["_net_pnl"] for t in trades) / n}
+
+    def _get_htf_contra_penalty(self, symbol: str, side: str, strong: bool) -> int:
+        """Live per-(symbol,side) HTF-contra-trend penalty. Ledger audit: SHORT
+        avg net +$9.10/tr (n=166, WR57%) vs LONG avg net -$8.17/tr (n=99,
+        WR47%) -- this symmetric penalty fired 9,248x and hard-killed 5,834
+        signals (3,283 SELLs), penalizing the winning side identically to the
+        losing side. Scales with the flagged slice's realized shortfall vs the
+        side's own realized baseline; zero if the flagged slice is itself
+        net-profitable. Falls back to the original static -12/-8 (n<13)."""
+        fallback = 12 if strong else 8
+        try:
+            slice_stats = self._htf_contra_join_stats(symbol, side)
+            if slice_stats is not None:
+                if slice_stats["avg_net"] >= 0:
+                    return 0
+                baseline = self._side_baseline_stats(side)
+                if baseline is not None and baseline["avg_net"] > 0:
+                    shortfall = baseline["avg_net"] - slice_stats["avg_net"]
+                    return int(max(0, min(15, round(shortfall * 0.8))))
+                return int(max(0, min(15, fallback)))
+        except Exception as e:
+            logger.warning(f"_get_htf_contra_penalty fallback to static {fallback}: {e}")
+        return fallback
+
+    def _get_strong_confidence_threshold(self) -> float:
+        """Live STRONG-tier confidence boundary (LIVING VALUES 2026-07-15).
+
+        Ledger audit (data/trade_ledger.csv, non-TEST, conf>0, n=99): the
+        static "normal" tier (conf 65-84) realized n=54 WR39% avg net
+        -$1.07/tr, while the static "MARGINAL" tier (conf 30-64) realized
+        n=44 WR57% avg net -$0.35/tr -- the static boundaries INVERTED
+        realized quality (both n>=13). Promotes a bucket to STRONG only once
+        it clears n>=13 with a positive realized edge that beats the bucket
+        below it; falls back to the static 85 while every bucket above 65
+        stays under n=13 (true today: conf>=85 n=1, conf>=80 n=8).
+        """
+        try:
+            trades = _closed_trades()
+            below = [t for t in trades if 30 <= t["_conf"] < 65]
+            base_avg = (sum(t["_net_pnl"] for t in below) / len(below)) if len(below) >= 13 else None
+            for lo, hi in ((85, 200), (80, 85), (65, 80)):
+                bucket = [t for t in trades if lo <= t["_conf"] < hi]
+                if len(bucket) < 13:
+                    continue
+                avg = sum(t["_net_pnl"] for t in bucket) / len(bucket)
+                wr = sum(1 for t in bucket if t["_net_pnl"] > 0) / len(bucket)
+                if avg > 0 and wr > 0.5 and (base_avg is None or avg > base_avg):
+                    return float(lo)
+        except Exception as e:
+            logger.warning(f"_get_strong_confidence_threshold fallback to static 85: {e}")
+        return 85.0  # cold-start fallback -- no bucket above 65 clears n>=13 yet
 
     def evaluate(self, symbol: str, data: Dict[str, pd.DataFrame]) -> Optional[Signal]:
         df = data.get("1h")
@@ -375,9 +635,20 @@ class ConfidenceScorerStrategy(BaseStrategy):
         # Momentum exhaustion penalty: when ADX is very high AND RSI extreme,
         # the move is often extended/overheated. High confidence paradoxically
         # means "everything is maxed = move may be exhausting".
-        # 90d backtest: 80-89% conf = 22% WR vs <60% conf = 67% WR.
+        # LIVING VALUES fix (2026-07-15): the old flat -15 was justified by a
+        # "90d backtest: 22% WR" that the ledger audit proved FALSE. Log-joined
+        # 41,507 exhaustion firings to closed paper_trades (same symbol+side,
+        # ±30min of open): flagged n=48 avg net +$2.62/tr WR40% vs non-flagged
+        # n=217 +$2.65/tr WR56% -- both net-profitable. SELL slice n=31 is
+        # +$4.59/tr NET POSITIVE, yet this penalty fired on 57% of SELL
+        # signals (the bot's best realized edge). Penalty is now computed live
+        # per side (see _get_exhaustion_penalty) with the static 15 kept only
+        # as a cold-start / no-data fallback -- never exceeded.
+        exhaustion_fired = False
+        exhaustion_penalty = 0
         if adx > 35 and ((di_bullish and rsi_val > 70) or (not di_bullish and rsi_val < 30)):
-            exhaustion_penalty = 15  # Significant penalty for overheated signals
+            exhaustion_fired = True
+            exhaustion_penalty = self._get_exhaustion_penalty(side)
             confidence -= exhaustion_penalty
             logger.info(
                 f"[{symbol}] Momentum exhaustion: ADX={adx:.0f} RSI={rsi_val:.0f} "
@@ -385,6 +656,10 @@ class ConfidenceScorerStrategy(BaseStrategy):
             )
 
         # 6h regime filter: reject signals that contradict higher-timeframe regime
+        htf_contra_fired = False
+        htf_penalty = 0
+        macd_h_6h = None
+        mfi_6h_val = None
         df_6h = data.get("6h")
         if df_6h is None or len(df_6h) < 10:
             logger.warning(f"[{symbol}] confidence_scorer: 6h data unavailable, HTF filter skipped")
@@ -398,22 +673,27 @@ class ConfidenceScorerStrategy(BaseStrategy):
                 mfi_6h_val = float(mfi_6h.iloc[-1])
 
             # HTF contra-trend: penalize (don't hard-kill) when 6h contradicts 1h.
-            # Hard reject was killing ALL buys in sustained downtrends — zero trades.
-            # Now symmetric: both BUY and SELL get sized down, not eliminated.
-            # Strong HTF divergence (both MACD + MFI) = moderate penalty.
-            # Softened from -15/-20: harsh penalties killed signals where 1h had strong edge.
+            # LIVING VALUES fix (2026-07-15): this symmetric penalty fired 9,248x
+            # in logs and silently hard-killed 5,834 signals (3,283 SELLs) via
+            # the `confidence < 50: return None` below -- removed. Ledger:
+            # SHORT avg net +$9.10/tr (n=166, WR57%) vs LONG avg net -$8.17/tr
+            # (n=99, WR47%); ETH/BTC/SOL SELL are the only proven edges, yet
+            # this penalized SELL identically to LONG and hard-killed 180 SELL
+            # signals Jul 11-12 alone -- the exact silent-gate pattern behind
+            # the zero-trade week. The LLM-first dispatcher + 6-stage risk
+            # gates adjudicate now, not a pre-LLM hardcoded kill. Magnitude is
+            # computed live per (symbol,side) -- see _get_htf_contra_penalty --
+            # with the original static -12/-8 kept only as an n<13 fallback.
             if di_bullish and (macd_h_6h < 0 and mfi_6h_val < 45):
-                htf_penalty = 12 if mfi_6h_val < 30 else 8
+                htf_contra_fired = True
+                htf_penalty = self._get_htf_contra_penalty(symbol, "BUY", strong=mfi_6h_val < 30)
                 confidence -= htf_penalty
                 logger.info(f"[{symbol}] confidence_scorer BUY penalized -{htf_penalty}: 6h bearish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f}), conf now {confidence:.0f}")
-                if confidence < 50:
-                    return None
             if not di_bullish and (macd_h_6h > 0 and mfi_6h_val > 55):
-                htf_penalty = 12 if mfi_6h_val > 70 else 8
+                htf_contra_fired = True
+                htf_penalty = self._get_htf_contra_penalty(symbol, "SELL", strong=mfi_6h_val > 70)
                 confidence -= htf_penalty
                 logger.info(f"[{symbol}] confidence_scorer SELL penalized -{htf_penalty}: 6h bullish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f}), conf now {confidence:.0f}")
-                if confidence < 50:
-                    return None
 
             # 6h confirmation bonus
             htf_aligned = (di_bullish and macd_h_6h > 0) or (not di_bullish and macd_h_6h < 0)
@@ -440,20 +720,35 @@ class ConfidenceScorerStrategy(BaseStrategy):
 
         # 2026-06-08: relaxed hard floor from 65 to 30. Low-confidence signals
         # still emit (with diagnostic) so the LLM can review them with full
-        # context. Old hardcoded 65/85 thresholds were calibrated to specific
-        # backtest era and may be stale. Below 30 still dropped to limit noise.
-        if confidence >= 85:
+        # context. Below 30 still dropped to limit noise (unverified floor,
+        # no realized trade exists below conf 35 -- ledger doesn't contradict it).
+        #
+        # LIVING VALUES fix (2026-07-15): dropped the dead static 65 "normal"
+        # tier boundary. It was functionally dead (65-84 and 30-64 emitted the
+        # identical BUY/SELL action string; the only consumer of the label
+        # split, evaluate_past_signals' STRONG-vs-not grading, is diagnostic
+        # only per the fix above) while falsely asserting 65-84 as higher
+        # quality: ledger showed the OPPOSITE (WR39%/-$1.07 vs WR57%/-$0.35,
+        # both n>=13). Deleting it is a pure label-truthfulness fix with zero
+        # output-behavior change. STRONG boundary is now live-computed.
+        _strong_thresh = self._get_strong_confidence_threshold()
+        if confidence >= _strong_thresh:
             action = "STRONG_BUY" if di_bullish else "STRONG_SELL"
-        elif confidence >= 65:
-            action = "BUY" if di_bullish else "SELL"
         elif confidence >= 30:
             # Below historic floor — emit as MARGINAL for LLM review.
             action = "BUY" if di_bullish else "SELL"
         else:
             return None  # True noise threshold
 
-        # Log signal
-        self._log_signal(symbol, action, entry)
+        # Log signal (persist condition flags for future live joins -- see
+        # _exhaustion_join_stats / _htf_contra_join_stats)
+        self._log_signal(
+            symbol, action, entry,
+            exhaustion_fired=exhaustion_fired,
+            exhaustion_penalty=exhaustion_penalty,
+            htf_contra_fired=htf_contra_fired,
+            htf_penalty=htf_penalty,
+        )
 
         # Stop/TP placement: regime-conditional ATR multipliers
         try:
@@ -500,6 +795,12 @@ class ConfidenceScorerStrategy(BaseStrategy):
                 "macd_rising": macd_rising,
                 "rsi": rsi_val,
                 "squeeze": squeeze,
+                "exhaustion_fired": exhaustion_fired,
+                "exhaustion_penalty": exhaustion_penalty,
+                "htf_contra_fired": htf_contra_fired,
+                "htf_penalty": htf_penalty,
+                "mfi_6h_val": mfi_6h_val,
+                "macd_h_6h": macd_h_6h,
                 "historical_confidence": hist_conf,
                 "factor_scores": {
                     "adx": adx_score,

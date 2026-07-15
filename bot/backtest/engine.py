@@ -306,7 +306,14 @@ class BacktestEngine:
             # backtest close as an "override win" (source of the impossible
             # 28-wins/0-overrides live state). Backtest state is now scratch.
             import tempfile
+            import shutil
+            import weakref
             _bt_scratch = tempfile.mkdtemp(prefix="wagmi_bt_adaptive_")
+            # LEAK FIX (2026-07-15): this scratch dir was never removed — 4700+
+            # wagmi_bt_adaptive_* dirs had accumulated in %TEMP% since Jun 23.
+            # Auto-remove when this engine instance is garbage-collected.
+            self._bt_scratch = _bt_scratch
+            weakref.finalize(self, shutil.rmtree, _bt_scratch, True)
             self._bt_rejection_tracker = RejectionOutcomeTracker(data_dir=_bt_scratch)
             self._bt_ev_calibrator = EVCalibrator(
                 rejection_tracker=self._bt_rejection_tracker,

@@ -533,7 +533,7 @@ class TestFeedbackLoop:
         fl = FeedbackLoop(data_dir=tmp_data_dir)
 
         should_trade, adj_conf, floor, reason = fl.evaluate_signal(
-            confidence=50.0, strategy="ensemble", symbol="BTC",
+            confidence=25.0, strategy="ensemble", symbol="BTC",
             side="BUY",
         )
         assert should_trade is False

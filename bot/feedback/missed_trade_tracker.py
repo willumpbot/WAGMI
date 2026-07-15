@@ -392,6 +392,11 @@ class MissedTradeTracker:
                     line = json.dumps(asdict(missed), default=str)
                     f.write(line + "\n")
             logger.info(f"[MISSED] Flushed {len(to_write)} missed trades to {self._output_file}")
+            # Drain what was written so periodic flushing never duplicates lines.
+            # Safe: generate_report()/get_gate_effectiveness() are only consumed in
+            # backtest (backtest/engine.py:2136), which never calls flush_to_disk().
+            with self._lock:
+                self._session_misses = self._session_misses[len(to_write):]
         except Exception as e:
             logger.warning(f"[MISSED] Failed to flush: {e}")
 

@@ -51,6 +51,248 @@ def _get_tel():
         return None
 
 
+# ══════════════════════════════════════════════════════════════════════════
+# LIVING VALUES: live ledger-computed helpers (2026-07-15 de-hardcode pass).
+# Every value here is computed from the bot's own realized data (paper_trades
+# ledger, trade_ledger.csv, trades.csv, execution_analytics.csv) instead of a
+# frozen snapshot. Each has a conservative n<13 fallback that does NOT
+# contradict realized data. Cached with a short TTL — cheap enough to read
+# on a cadence, never per-signal.
+# ══════════════════════════════════════════════════════════════════════════
+import os as _os
+import time as _time
+
+_LIVING_VALUES_TTL = 300.0  # 5 min
+_living_values_cache: Dict[str, Any] = {}
+
+
+def _bot_root() -> str:
+    """Absolute path to the bot/ directory, independent of cwd."""
+    return _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
+
+def _cached_ledger_value(key: str, builder):
+    """Time-TTL cache wrapper. On builder exception, serves the last good
+    value (if any) rather than raising — never let a live-value refresh
+    crash a trading decision."""
+    now = _time.time()
+    entry = _living_values_cache.get(key)
+    if entry is not None and (now - entry[0]) < _LIVING_VALUES_TTL:
+        return entry[1]
+    try:
+        val = builder()
+    except Exception:
+        val = entry[1] if entry is not None else None
+    _living_values_cache[key] = (now, val)
+    return val
+
+
+def _load_paper_trades_side_stats() -> Dict[str, Dict[str, float]]:
+    """Live per-side (BUY/SELL) realized stats from paper_trades/trades_*.csv
+    (every exit-event row across all sessions — matches the ledger evidence
+    cited across multiple de-hardcode fixes: SHORT n=166 avg +$9.10 WR 57%,
+    LONG n=99 avg -$8.17 WR 47%). Used by fixes 8 and 13."""
+    def _build():
+        import glob
+        root = _bot_root()
+        files = glob.glob(_os.path.join(root, "paper_trades", "trades_*.csv"))
+        frames = []
+        for f in files:
+            try:
+                d = pd.read_csv(f)
+                if len(d):
+                    frames.append(d)
+            except Exception:
+                continue
+        if not frames:
+            return {}
+        df = pd.concat(frames, ignore_index=True)
+        if not {"pnl", "fee", "side"}.issubset(df.columns):
+            return {}
+        df["net"] = df["pnl"] - df["fee"]
+        side_map = {"LONG": "BUY", "SHORT": "SELL", "BUY": "BUY", "SELL": "SELL"}
+        df["side_norm"] = df["side"].map(side_map)
+        out = {}
+        for side_key, g in df.groupby("side_norm"):
+            n = len(g)
+            if n == 0:
+                continue
+            out[side_key] = {
+                "n": n,
+                "wr": float((g["net"] > 0).mean()),
+                "avg_net": float(g["net"].mean()),
+            }
+        return out
+    return _cached_ledger_value("paper_trades_side_stats", _build) or {}
+
+
+def _load_regime_strategy_edge() -> Dict[tuple, tuple]:
+    """Live (strategy, regime_1h) -> (n, avg_net_pnl) from data/trade_ledger.csv,
+    exploding the comma-separated contributing_factors per trade so each
+    strategy that voted on a closed trade is attributed its share. Used by
+    fix 2 (regime strategy allowlist)."""
+    def _build():
+        path = _os.path.join(_bot_root(), "data", "trade_ledger.csv")
+        df = pd.read_csv(path)
+        df = df[df["contributing_factors"].notna()]
+        df = df[~df["contributing_factors"].isin(["ensemble", "RECONSTRUCTED_FROM_LOG"])]
+        stats: Dict[tuple, list] = {}
+        for _, row in df.iterrows():
+            strats = [s.strip() for s in str(row["contributing_factors"]).split(",") if s.strip()]
+            regime = row.get("regime_1h", "unknown")
+            net = row.get("net_pnl", None)
+            if net is None or pd.isna(net):
+                continue
+            for strat in strats:
+                stats.setdefault((strat, regime), []).append(float(net))
+        return {k: (len(v), sum(v) / len(v)) for k, v in stats.items()}
+    return _cached_ledger_value("regime_strategy_edge", _build) or {}
+
+
+def _load_combo_stats() -> Dict[frozenset, tuple]:
+    """Live combo (frozenset of contributing_factors) -> (n, wr, avg_net_pnl)
+    from data/trade_ledger.csv. Used by fix 6 (losing combos)."""
+    def _build():
+        path = _os.path.join(_bot_root(), "data", "trade_ledger.csv")
+        df = pd.read_csv(path)
+        df = df[df["contributing_factors"].notna()]
+        df = df[~df["contributing_factors"].isin(["ensemble", "RECONSTRUCTED_FROM_LOG"])]
+        stats: Dict[frozenset, list] = {}
+        for _, row in df.iterrows():
+            strats = frozenset(s.strip() for s in str(row["contributing_factors"]).split(",") if s.strip())
+            if not strats:
+                continue
+            net = row.get("net_pnl", None)
+            if net is None or pd.isna(net):
+                continue
+            stats.setdefault(strats, []).append(float(net))
+        out = {}
+        for combo, nets in stats.items():
+            n = len(nets)
+            wr = sum(1 for x in nets if x > 0) / n
+            avg_net = sum(nets) / n
+            out[combo] = (n, wr, avg_net)
+        return out
+    return _cached_ledger_value("combo_stats", _build) or {}
+
+
+def _load_live_deflation_ratio() -> float:
+    """Live win-prob deflation ratio = realized_WR / mean_confidence over
+    closed trades (data/trades.csv, confidence>0, non-TEST symbols). Fallback
+    0.71 (n<13) — matches the code's own historical 1/1.4 empirical note and
+    is more conservative than the frozen 0.88-0.95 matrix it replaces. Used
+    by fix 9."""
+    def _build():
+        path = _os.path.join(_bot_root(), "data", "trades.csv")
+        df = pd.read_csv(path)
+        d = df[df["confidence"] > 0]
+        d = d[~d["symbol"].astype(str).str.upper().str.startswith("TEST")]
+        if len(d) < 13:
+            return None
+        wr = float((d["pnl"] > 0).mean())
+        mean_conf = float(d["confidence"].mean())
+        if mean_conf <= 0:
+            return None
+        ratio = wr / (mean_conf / 100.0)
+        return max(0.3, min(0.95, ratio))
+    val = _cached_ledger_value("deflation_ratio", _build)
+    return val if val is not None else 0.71
+
+
+def _load_paper_trades_symbol_side_stats() -> Dict[tuple, Dict[str, float]]:
+    """Live per-(symbol, side) realized stats from paper_trades/trades_*.csv.
+    Used by fix 14 (LLM override eligibility gate) as a scoped-in-file
+    replacement for the dead llm.override_context edge lookup (its
+    deep_memory key '_quant_backtest_2026_03_26' is absent from
+    strategy_fingerprints.json, so ctx.edge_n is always 0 — that dead-key
+    fix lives in llm/override_context.py, out of scope for this file)."""
+    def _build():
+        import glob
+        root = _bot_root()
+        files = glob.glob(_os.path.join(root, "paper_trades", "trades_*.csv"))
+        frames = []
+        for f in files:
+            try:
+                d = pd.read_csv(f)
+                if len(d):
+                    frames.append(d)
+            except Exception:
+                continue
+        if not frames:
+            return {}
+        df = pd.concat(frames, ignore_index=True)
+        if not {"pnl", "fee", "side", "symbol"}.issubset(df.columns):
+            return {}
+        df["net"] = df["pnl"] - df["fee"]
+        side_map = {"LONG": "BUY", "SHORT": "SELL", "BUY": "BUY", "SELL": "SELL"}
+        df["side_norm"] = df["side"].map(side_map)
+        out = {}
+        for (sym, side_key), g in df.groupby(["symbol", "side_norm"]):
+            n = len(g)
+            if n == 0:
+                continue
+            out[(sym, side_key)] = {
+                "n": n,
+                "wr": float((g["net"] > 0).mean()),
+                "avg_net": float(g["net"].mean()),
+            }
+        return out
+    return _cached_ledger_value("paper_trades_symbol_side_stats", _build) or {}
+
+
+def _load_live_regime_slippage() -> Dict[str, float]:
+    """Live per-regime median slippage_bps from data/execution_analytics.csv,
+    only for regimes with n>=13 fills, clamped to [1, 30]. Used by fix 10."""
+    def _build():
+        path = _os.path.join(_bot_root(), "data", "execution_analytics.csv")
+        df = pd.read_csv(path)
+        out = {}
+        for regime, g in df.groupby("regime"):
+            n = len(g)
+            if n >= 13:
+                med = float(g["slippage_bps"].median())
+                out[regime] = max(1.0, min(30.0, med))
+        return out
+    return _cached_ledger_value("regime_slippage", _build) or {}
+
+
+def _load_live_p_tp2_given_tp1() -> float:
+    """Live P(TP2 | TP1) from data/trades.csv tp1_hit/tp2_hit columns.
+    Fallback 0.15 (n<13) — the old static 0.45 was ~3x overstated vs realized
+    data. Used by fix 11."""
+    def _build():
+        path = _os.path.join(_bot_root(), "data", "trades.csv")
+        df = pd.read_csv(path)
+        tp1 = df[df["tp1_hit"] == True]  # noqa: E712
+        n = len(tp1)
+        if n < 13:
+            return None
+        p = float((tp1["tp2_hit"] == True).mean())  # noqa: E712
+        return max(0.0, min(1.0, p))
+    val = _cached_ledger_value("p_tp2_given_tp1", _build)
+    return val if val is not None else 0.15
+
+
+def _load_live_remainder_r() -> float:
+    """Live avg R-multiple credit for the 'TP1 hit, TP2 not reached' remainder
+    (data/trades.csv). Realized remainders after TP1 averaged +$20.82 net,
+    26/26 wins via trailing stops — a small WR-weighted positive credit
+    (capped well below a full R since exact per-trade stop distance isn't
+    stored in trades.csv). Fallback 0.0 (n<13) — never assume positive
+    without evidence. Used by fix 11."""
+    def _build():
+        path = _os.path.join(_bot_root(), "data", "trades.csv")
+        df = pd.read_csv(path)
+        rem = df[(df["tp1_hit"] == True) & (df["tp2_hit"] != True)]  # noqa: E712
+        n = len(rem)
+        if n < 13:
+            return None
+        wr = float((rem["pnl"] > 0).mean())
+        return round(max(0.0, min(0.5, wr * 0.5)), 3)
+    val = _cached_ledger_value("remainder_r", _build)
+    return val if val is not None else 0.0
+
+
 class EnsembleStrategy:
     """
     Combines multiple strategies into a consensus signal.
@@ -196,27 +438,19 @@ class EnsembleStrategy:
         )
         return False
 
-    # Regime-gated min_votes: data-driven from 75-day backtest results.
-    # trending_bear at 2-agree = -$25/trade × 96 trades = largest performance drag.
-    # consolidation 2-agree = 80-89% WR = best regime.
-    # Quant philosophy: trade more often with smaller size. Single high-conviction
-    # strategy trades allowed in trending regimes (risk_mult=0.5 for 1-agree).
-    # In backtest, funding_rate/oi_delta/liquidation_cascade return None (need live data).
-    # Effective pool per regime is 3-5 strategies, not 9. Requiring 3/5 = 60% agreement
-    # kills almost all signals. Lowered to 2 for regimes with 4+ active strategies.
-    # High-risk regimes (panic, low_liquidity, news_dislocation) stay at 3.
-    REGIME_MIN_VOTES = {
-        'trending_bear':   3,  # Worst regime (10-20% WR): require conviction
-        'trending_bull':   2,
-        'trend':           2,
-        'consolidation':   2,
-        'range':           2,
-        'high_volatility': 2,
-        'panic':           3,   # extreme regime: require conviction
-        'low_liquidity':   3,   # thin book: require conviction
-        'news_dislocation': 3,  # event-driven: require conviction
-        'unknown':         2,
-    }
+    # 2026-07-15 (de-hardcode F1): REGIME_MIN_VOTES dict DELETED. It was dead
+    # code — no runtime path reads it (_get_effective_min_votes at line ~246
+    # imports data.symbol_strategy_profile.get_min_votes_for_symbol, which does
+    # not exist anywhere in the repo, so every call silently falls back to
+    # self.min_votes from trading_config; that IS the live governing path).
+    # The dict's own values were inverted vs the realized ledger anyway
+    # (trending_bear=3 maximally gated the regime where the winning SHORT
+    # side fires — SHORT n=166 avg +$9.10/tr WR 57%; trending_bull=2 made it
+    # easiest to take LONGS, which drain — LONG n=99 avg -$8.17/tr WR 47%).
+    # Deleted rather than fixed so a flag flip can't resurrect the inverted
+    # snapshot. If regime-gated min_votes is ever wanted, it must be
+    # live-computed per regime from paper_trades/trade_ledger slices with
+    # n>=13, falling back to self.min_votes — never restored from this table.
 
     # Regime-specific strategy allowlist: only strategies with proven edge
     # in each regime are allowed to vote.
@@ -370,24 +604,138 @@ class EnsembleStrategy:
         if hasattr(config, 'strategy_multi_tier_quality_enabled') and not config.strategy_multi_tier_quality_enabled:
             self._disabled_strategies.add('multi_tier_quality')
 
+    def _get_opposition_credibility(self, side: str) -> float:
+        """Fix 8 (LIVING VALUES): live per-side opposition credibility
+        factor = clamp(realized_WR_of_opposing_side / 0.50, 0.0, 1.0),
+        computed from paper_trades close rows (n>=13 required per side).
+        A side with realized WR<=50% contributes proportionally less
+        opposition penalty against the side it's opposing. Fallback 1.0
+        (current behavior) when that side has n<13."""
+        stats = _load_paper_trades_side_stats().get(side)
+        if not stats or stats["n"] < 13:
+            return 1.0
+        return max(0.0, min(1.0, stats["wr"] / 0.50))
+
+    def _get_live_opposition_cap(self) -> float:
+        """Fix 8 (LIVING VALUES): opposition-penalty cap scaled by live
+        veto_accuracy from llm.veto_tracker (n>=13 resolved vetoes
+        required). cap = 3.0 * clamp(live_veto_accuracy / 0.31, 0.0, 1.0) —
+        never exceeds the static 3.0; fallback 3.0 when insufficient
+        samples."""
+        try:
+            from llm.veto_tracker import get_veto_tracker
+            stats = get_veto_tracker().get_stats()
+            n = stats.get("would_win", 0) + stats.get("would_lose", 0)
+            if n >= 13:
+                acc = stats.get("veto_accuracy", 0.31)
+                ratio = max(0.0, min(1.0, acc / 0.31))
+                return 3.0 * ratio
+        except Exception:
+            pass
+        return 3.0
+
+    def _get_live_chop_cap(self, side: str, effective_floor: float) -> float:
+        """Fix 13 (LIVING VALUES): live per-side extreme-chop escalation
+        ceiling. Ledger: chop-blocked SELLs realize positive would-have EV
+        (n=366, would-TP1 24.3% vs SL 6.8%, avg +0.86%/signal) and the
+        realized SELL side is profitable (+$5.92/tr n=145, WR 52%); the flat
+        77.0 cap was blocking the proven winning side while its value only
+        ever came from blocking BUYs (chop-blocked BUYs: n=553, TP1 4.7% vs
+        SL 19.0%, avg -0.02%; realized LONG -$8.75/tr n=94, WR 45%).
+        Only the SELL-side cap may relax below the static 77.0 ceiling, and
+        only when the live paper_trades SELL slice (n>=13) shows positive
+        avg net pnl. The BUY-side cap is NEVER lowered below 77 — this may
+        only relax the gate where the ledger proves edge, never weaken BUY
+        blocking. Cap is also never allowed below the side's own dynamic
+        base floor or below 65 (absolute safety floor)."""
+        static_cap = 77.0
+        live_cap = static_cap
+        if side == "SELL":
+            stats = _load_paper_trades_side_stats().get("SELL")
+            if stats and stats["n"] >= 13 and stats["avg_net"] > 0:
+                live_cap = 70.0  # ledger-proven SELL edge — narrower escalation
+        return max(effective_floor, 65.0, min(live_cap, static_cap))
+
+    def _chop_escalated_floor(self, symbol: str, side: str, effective_floor: float, chop_score: float) -> float:
+        """Shared chop-escalation logic (fix 13 de-dup: was copy-pasted 3x).
+        Extreme chop (>=0.65) pushes the floor toward the live per-side cap;
+        moderate chop (0.35-0.65) pushes toward ranging_confidence_floor.
+        Breakpoints (0.35/0.65) are unchanged — ledger doesn't contradict the
+        escalation direction/shape, only the flat side-agnostic 77.0 cap."""
+        if chop_score >= 0.65:
+            _max_chop_floor = self._get_live_chop_cap(side, effective_floor)
+            chop_intensity = min(1.0, (chop_score - 0.65) / 0.20)  # 0→1 over 0.65→0.85
+            return effective_floor + chop_intensity * (_max_chop_floor - effective_floor)
+        else:
+            chop_intensity = (chop_score - 0.35) / 0.30  # 0→1 over 0.35→0.65
+            return effective_floor + chop_intensity * (
+                self.ranging_confidence_floor - self.confidence_floor
+            )
+
+    # Seed blacklist (fix 6): used ONLY as the n<13 per-combo fallback for
+    # _get_live_losing_combos — never asserted directly as live truth.
+    _LOSING_COMBOS_SEED = {
+        frozenset({"regime_trend", "vmc_cipher"}),           # PF 0.39, 29% WR (pre-live-data seed)
+        frozenset({"probability_engine", "regime_trend"}),   # PF 0.0, 0% WR (pre-live-data seed)
+    }
+
+    def _get_live_losing_combos(self) -> set:
+        """Fix 6 (LIVING VALUES): live toxic-combo set from
+        data/trade_ledger.csv, grouped by frozenset(contributing_factors).
+        A combo is toxic when n>=13 AND (WR<35% or avg net_pnl<0). For any
+        seed combo with n<13, fall back to blocking it (unchanged current
+        behavior, safety preserved) until real data accumulates."""
+        stats = _load_combo_stats()
+        live_toxic = set()
+        for combo, (n, wr, avg_net) in stats.items():
+            if n >= 13 and (wr < 0.35 or avg_net < 0):
+                live_toxic.add(combo)
+        result = set(live_toxic)
+        for seed in self._LOSING_COMBOS_SEED:
+            n, wr, avg_net = stats.get(seed, (0, 0.0, 0.0))
+            if n >= 13:
+                continue  # graduated to live data — only block if live_toxic said so above
+            result.add(seed)  # n<13: seed fallback, current behavior unchanged
+        return result
+
+    def _get_live_regime_blocklist(self, regime: str) -> set:
+        """Fix 2 (LIVING VALUES): live per-(strategy, regime_1h) toxic-cell
+        blocklist computed from data/trade_ledger.csv. A strategy is blocked
+        in a regime ONLY when that cell has n>=13 AND avg net_pnl < 0 — never
+        on theory, so no cell can be starved. Under current ledger no cell
+        reaches n>=13 (max n=10, consolidation/confidence_scorer), so this
+        returns empty and the regime filter is effectively a no-op today —
+        correctly so, since the static STRATEGY_REGIME_ALLOWLIST it replaces
+        contradicted the realized ledger (trending_bear premised worst regime,
+        realized best +$81.70/tr n=15; consolidation/range premised best,
+        realized -$4.67/tr n=89 and -$10.29/tr n=33)."""
+        edge = _load_regime_strategy_edge()
+        blocked = set()
+        for strat in {s.name for s in self.strategies}:
+            n, avg_net = edge.get((strat, regime), (0, 0.0))
+            if n >= 13 and avg_net < 0:
+                blocked.add(strat)
+        return blocked
+
     def _get_regime_allowed_strategies(self, symbol: str) -> Optional[set]:
         """Get the set of strategies allowed in the current regime for this symbol.
 
-        Returns None if no regime filter should be applied:
-        - No regime has been set for this symbol
-        - Regime is not in the allowlist lookup
-        This ensures the filter only activates when we have explicit regime data.
+        Fix 2 (LIVING VALUES): the static STRATEGY_REGIME_ALLOWLIST table is
+        no longer used to block votes — it contradicted the realized ledger.
+        The live blocklist above only blocks a strategy in a regime when
+        n>=13 AND avg net_pnl < 0. Returns None (no filter) when nothing is
+        blocked for this regime, which is the common case until enough
+        per-cell data accumulates. STRATEGY_REGIME_ALLOWLIST itself is kept
+        as reference data only (still asserted on by tests).
         """
         if symbol not in self._current_regime:
             return None  # No regime set — don't filter
         regime = self._current_regime[symbol]
-        allowed = self.STRATEGY_REGIME_ALLOWLIST.get(regime)
-        # For 'unknown' regime, only filter if we actually have an empty set
-        # (which means "block all"). If the regime isn't in the lookup, don't filter.
-        if allowed is not None and len(allowed) == 0:
-            # Only block all if regime was explicitly set (not just defaulting to unknown)
-            return allowed
-        return allowed
+        blocked = self._get_live_regime_blocklist(regime)
+        if not blocked:
+            return None  # Nothing live-blocked — don't filter
+        all_names = {s.name for s in self.strategies}
+        return all_names - blocked
 
     def evaluate(
         self, symbol: str, data: Dict[str, pd.DataFrame]
@@ -440,8 +788,28 @@ class EnsembleStrategy:
                     pass
                 continue
 
-            # Regime-based strategy filter
+            # Regime-based strategy filter (live-blocked cells only — fix 2).
+            # Blocked strategies still evaluate and record shadow signals, same
+            # as config-disabled strategies above, so counterfactual data can
+            # accrue instead of the cell being starved forever by a bare skip.
             if regime_allowed is not None and strategy.name not in regime_allowed:
+                try:
+                    sig = strategy.evaluate(symbol, data)
+                    if sig is not None:
+                        shadow_signals.append(deepcopy(sig))
+                        if self._shadow_ledger:
+                            try:
+                                self._shadow_ledger.record_shadow_signal(
+                                    factor=sig.strategy,
+                                    symbol=symbol,
+                                    side=sig.side,
+                                    confidence=sig.confidence,
+                                    entry_price=sig.entry,
+                                )
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
                 continue
             active_count += 1
             try:
@@ -675,47 +1043,36 @@ class EnsembleStrategy:
         self._smoothed_chop[symbol] = chop_score
         result.metadata["chop_score_smoothed"] = round(chop_score, 3)
         if chop_score > 0.35:
-            if chop_score >= 0.65:
-                # Extreme chop: floor rises from regime-dynamic base toward max.
-                _vol_profile = getattr(self, '_volatility_profiles', {}).get(symbol, "medium")
-                _max_chop_floor = {"low": 77.0, "medium": 77.0, "high": 77.0}.get(_vol_profile, 77.0)
-                chop_intensity = min(1.0, (chop_score - 0.65) / 0.20)  # 0→1 over 0.65→0.85
-                effective_floor = effective_floor + chop_intensity * (
-                    _max_chop_floor - effective_floor
-                )
-            else:
-                # Moderate chop: push floor upward toward ranging_confidence_floor
-                chop_intensity = (chop_score - 0.35) / 0.30  # 0→1 over 0.35→0.65
-                effective_floor = effective_floor + chop_intensity * (
-                    self.ranging_confidence_floor - self.confidence_floor
-                )
+            effective_floor = self._chop_escalated_floor(symbol, result.side, effective_floor, chop_score)
             result.metadata["effective_confidence_floor"] = round(effective_floor, 1)
 
         if result.confidence < effective_floor:
-            # Magnitude bypass: high-R:R signals on volatile assets get a second chance.
-            # Data: HYPE BUY signals at 55-65% conf routinely produce 15-22% moves.
-            # Allow if: (1) R:R > 2.5, (2) high-vol asset, (3) confidence within 10% of floor.
+            # 2026-07-15 (de-hardcode F12): magnitude-bypass pass-through
+            # REMOVED. It sat ABOVE the HYPE shadow-gate below and silently
+            # re-enabled sub-floor HYPE BUYs at 65% size — an armed backdoor
+            # around the shadow demotion. Ledger: HYPE LONG n=17 net -$584.10
+            # avg -$34.36/tr WR 41.2% (worst slice); ALL LONG slices net
+            # negative. The "15-22% moves at 55-65% conf" claim was already
+            # refuted live (F8 audit: 23% WR, -$77.26, n=35). The R:R>=2.5
+            # sub-floor cohort is now shadow-logged + counterfactual-recorded
+            # only; promote to live only if graded n>=13 shows positive edge
+            # per (symbol, side) from paper_trades.
             try:
                 _rr = float(result.risk_reward_tp1) if hasattr(result, 'risk_reward_tp1') else 0
             except (TypeError, ValueError):
                 _rr = 0
             _vol_prof = getattr(self, '_volatility_profiles', {}).get(symbol, "medium")
             _gap = effective_floor - result.confidence
-            _magnitude_bypass = (
-                _rr >= 2.5
-                and _vol_prof in ("high", "medium")
-                and _gap <= 10.0  # within 10 points of floor
-                and result.confidence >= 55.0  # absolute minimum
-            )
-            if _magnitude_bypass:
-                # Let it through but mark for reduced sizing
-                result.metadata["magnitude_bypass"] = True
-                result.metadata["risk_mult_override"] = 0.65  # 65% size — reduced but meaningful
+            if (_rr >= 2.5 and _vol_prof in ("high", "medium")
+                    and _gap <= 10.0 and result.confidence >= 55.0):
                 logger.info(
-                    f"[{symbol}] Magnitude bypass: conf {result.confidence:.0f}% < floor "
-                    f"{effective_floor:.0f}% but R:R={_rr:.1f} on {_vol_prof}-vol asset — "
-                    f"allowing at 65% size"
+                    f"[{symbol}] [SHADOW-GATE] magnitude_bypass would_pass conf="
+                    f"{result.confidence:.0f}% < floor {effective_floor:.0f}% "
+                    f"R:R={_rr:.1f} on {_vol_prof}-vol asset — shadow only "
+                    f"(no live edge n>=13; would have been HYPE LONG-style"
+                    f" backdoor, ledger worst edge -$34.36/tr)"
                 )
+                self._record_counterfactual(result, "magnitude_bypass_rr2.5")
             # WAVE2A L3 (FULL_PIPE_BUILD_MAP M5, 2026-07-02): HYPE BUY
             # floor-bypass demoted to SHADOW. The "88.6% WR / 40K
             # counterfactuals" claim was contradicted by 35 live trades
@@ -816,7 +1173,11 @@ class EnsembleStrategy:
 
         # Apply signal quality context multipliers (learned meta-confidence)
         try:
-            if hasattr(self, '_signal_quality_scorer') and self._signal_quality_scorer is not None:
+            import os as _sq_os
+            _single_apply = _sq_os.environ.get("QUALITY_SINGLE_APPLY", "false").lower() == "true"
+            if _single_apply and (result.metadata or {}).get("quality_multiplier") is not None:
+                logger.debug(f"[{symbol}] QUALITY_SINGLE_APPLY: second quality multiply skipped (already applied pre-floor)")
+            elif hasattr(self, '_signal_quality_scorer') and self._signal_quality_scorer is not None:
                 from feedback.signal_quality import QualityFeatures
 
                 features = QualityFeatures(
@@ -832,6 +1193,9 @@ class EnsembleStrategy:
                 if quality_mult != 1.0:
                     old_conf = result.confidence
                     result.confidence = min(100.0, result.confidence * quality_mult)
+                    if result.metadata is not None:
+                        result.metadata["quality_multiplier_2nd"] = round(quality_mult, 3)
+                        result.metadata["conf_pre_2nd_quality"] = round(old_conf, 1)
                     logger.info(
                         f"[ENSEMBLE] {symbol} {result.side} Quality multiplier: {quality_mult:.3f} "
                         f"({old_conf:.0f}% → {result.confidence:.0f}%) | {breakdown}"
@@ -1078,12 +1442,7 @@ class EnsembleStrategy:
             regime=_meta_regime, symbol=symbol, side=result.side, fallback=self.confidence_floor
         )
         if chop_score > 0.35:
-            if chop_score >= 0.65:
-                chop_intensity = min(1.0, (chop_score - 0.65) / 0.20)
-                effective_floor = effective_floor + chop_intensity * (77.0 - effective_floor)
-            else:
-                chop_intensity = (chop_score - 0.35) / 0.30
-                effective_floor = effective_floor + chop_intensity * (self.ranging_confidence_floor - self.confidence_floor)
+            effective_floor = self._chop_escalated_floor(symbol, result.side, effective_floor, chop_score)
         result.metadata["mechanical_confidence_floor"] = round(effective_floor, 1)
         result.metadata["would_pass_confidence_floor"] = result.confidence >= effective_floor
 
@@ -1329,18 +1688,7 @@ class EnsembleStrategy:
         result.metadata["chop_score_smoothed"] = round(smoothed_chop, 3)
 
         if smoothed_chop > 0.35:
-            if smoothed_chop >= 0.65:
-                _vol_profile = getattr(self, '_volatility_profiles', {}).get(symbol, "medium")
-                _max_chop_floor = {"low": 77.0, "medium": 77.0, "high": 77.0}.get(_vol_profile, 77.0)
-                chop_intensity = min(1.0, (smoothed_chop - 0.65) / 0.20)
-                effective_floor = effective_floor + chop_intensity * (
-                    _max_chop_floor - effective_floor
-                )
-            else:
-                chop_intensity = (smoothed_chop - 0.35) / 0.30
-                effective_floor = effective_floor + chop_intensity * (
-                    self.ranging_confidence_floor - self.confidence_floor
-                )
+            effective_floor = self._chop_escalated_floor(symbol, result.side, effective_floor, smoothed_chop)
             result.metadata["effective_confidence_floor"] = round(effective_floor, 1)
 
         conf_passed = result.confidence >= effective_floor
@@ -1824,82 +2172,26 @@ class EnsembleStrategy:
         buy_signals = [s for s in signals if s.side == "BUY"]
         sell_signals = [s for s in signals if s.side == "SELL"]
 
-        # Require at least min_votes strategies agreeing on the same direction.
-        # Exceptions for proven edge cases (data-validated):
-        #   1. Proven solo strategies at high confidence (any symbol)
-        #   2. Symbol+regime combos with validated edge (e.g., BTC ranging = 77% WR)
-        # Solo analysis (from per-symbol missed trade data):
-        # vmc_cipher: 82% solo WR, bollinger_squeeze: 78% solo WR (paper trading validated)
-        # confidence_scorer: solo ONLY on HYPE (PF=2.65). Bad on BTC (PF=0.0) and SOL (PF=0.23).
-        # 1,410-signal analysis (raw strategy output with price outcome tracking):
-        #   bollinger_squeeze: 57% WR, +0.15%/trade — ONLY PROFITABLE STRATEGY
-        #   Solo BB: 62% WR, +0.28%/trade — BEST single pattern in entire system
-        #   probability_engine: 53% WR — breakeven
-        #   confidence_scorer: 47% WR — slight loser (60% of all signal volume)
-        #   regime_trend: 43% WR — losing
-        #   mean_reversion: 43% WR — losing
-        # Solo BB outperforms 2-agree+BB (62% vs 52% WR). Consensus DILUTES BB edge.
-        _PROVEN_SOLO_STRATEGIES = {"bollinger_squeeze"}  # ONLY BB: 57% live WR, 64% shadow. probability_engine REMOVED: 0% primary WR
-        _HYPE_SOLO_STRATEGIES = set()  # Disabled: confidence_scorer solo is coinflip (49% WR)
-        # 60-day backtest: solo signals peak at 57-67% confidence. 70% threshold
-        # blocks nearly all solo signals. 60% captures the bulk of the edge.
-        # mean_reversion at 60%+ = 77% WR, probability_engine at 60%+ = 57% WR.
-        _SOLO_CONF_THRESHOLD = 60.0
-        # Symbol+regime combos where solo signals have validated edge
-        # Only allow solo trades in trending regimes with high confidence
-        # Ranging regime solo trades have been consistent losers (-$7 net from trade data)
-        # TIGHTENED from live data: solo trades net -$12.27 EXCEPT SOL SHORT (+$47).
-        # Only allow solos with PROVEN profitable combos.
-        _SYMBOL_REGIME_SOLO = {
-            ("BTC", "trending_bear"):  {"min_conf": 75.0, "risk_mult": 0.5},  # +$55 live
-            # REMOVED: BTC/trend (-$5), BTC/trending_bull (unproven), SOL/trend (unproven), HYPE/trend (-$9)
-        }
+        # 2026-07-15 (de-hardcode F3/F4): Path 1 (proven-strategy solo bypass)
+        # and Path 1b (HYPE-specific solo bypass) DELETED, along with
+        # _PROVEN_SOLO_STRATEGIES, _HYPE_SOLO_STRATEGIES, and
+        # _SOLO_CONF_THRESHOLD. These were a dormant mechanical bypass: solo
+        # bollinger_squeeze realized n=5, WR 20%, avg -$41.51/trade (worst
+        # per-trade solo drain in the ledger); the "57-62% WR" justification
+        # was fee-bug-era fabricated certainty already disowned elsewhere in
+        # this file. The live path that governs sub-consensus solo signals
+        # already exists and is active: multi_strategy_main.py LLM_FIRST_MODE
+        # dispatches every solo signal to the LLM via evaluate_raw, with
+        # SafetyFilterChain + circuit breakers still applying downstream — so
+        # this deletion removes an unearned bypass, it does not weaken
+        # safety. A mechanical solo-BB exception may be re-added only if
+        # live-computed from the ledger (solo bollinger_squeeze trades,
+        # n>=13) ever shows n>=13 AND avg net pnl > 0 AND WR >= 50%; current
+        # realized n=5 does not qualify.
 
         if len(buy_signals) < min_v and len(sell_signals) < min_v:
             lone_signals = buy_signals or sell_signals
             _allowed = False
-
-            # Path 1: Proven strategy solo — BB solo is the BEST pattern (62% WR)
-            if (lone_signals and len(lone_signals) == 1
-                    and lone_signals[0].strategy in _PROVEN_SOLO_STRATEGIES
-                    and lone_signals[0].confidence >= _SOLO_CONF_THRESHOLD):
-                _sig = lone_signals[0]
-                _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
-                _setup_key = f"{_base_sym}_{_sig.side}"
-
-                # 2026-06-05: Hardcoded "GOLDEN setups" and "DEAD SETUP" rules stripped per Nunu directive.
-                # The 0.8 ETH_SELL / 0.7 BTC_BUY etc multipliers and the HYPE_SELL_BB "35% WR" auto-skip
-                # were from a "1,410-signal analysis" under the fee bug — fabricated certainty.
-                # All solo setups now get a neutral 0.5 risk multiplier; let LLM agents reason about
-                # quality from current ENRICHED CONTEXT, not hardcoded per-symbol-side bias.
-                _GOLDEN = {}  # emptied
-                if False:  # was: HYPE SELL BB auto-skip — DISABLED
-                    logger.info(f"[{symbol}] (legacy HYPE_SELL_BB block removed)")
-                else:
-                    _rm = _GOLDEN.get(_setup_key, 0.5)
-                    _sig.metadata["solo_proven"] = True
-                    _sig.metadata["risk_mult_override"] = _rm
-                    _is_golden = _setup_key in _GOLDEN
-                    logger.info(
-                        f"[{symbol}] {'GOLDEN' if _is_golden else 'Proven'} solo: "
-                        f"{_sig.strategy} {_setup_key} conf={_sig.confidence:.0f}% "
-                        f"({_rm}x size)"
-                    )
-                    _allowed = True
-
-            # Path 1b: HYPE-specific solo strategies (confidence_scorer PF=2.65 on HYPE only)
-            if (not _allowed and lone_signals and len(lone_signals) == 1
-                    and lone_signals[0].strategy in _HYPE_SOLO_STRATEGIES
-                    and symbol.startswith("HYPE")
-                    and lone_signals[0].confidence >= _SOLO_CONF_THRESHOLD):
-                lone_signals[0].metadata["solo_proven"] = True
-                lone_signals[0].metadata["hype_solo"] = True
-                lone_signals[0].metadata["risk_mult_override"] = 0.4  # Slightly more cautious than general solo
-                logger.info(
-                    f"[{symbol}] HYPE solo trade: {lone_signals[0].strategy} "
-                    f"conf={lone_signals[0].confidence:.0f}% (0.4x size)"
-                )
-                _allowed = True
 
             # Path 1c: Regime momentum solo — when regime is strongly directional
             # and the solo signal aligns with regime direction, allow at half size.
@@ -1930,7 +2222,21 @@ class EnsembleStrategy:
                     )
                     _allowed = True
 
-            # Path 2: Symbol+regime edge (solo signals in validated combos)
+            # Path 2: Symbol+regime edge (solo signals in validated combos).
+            # 2026-07-15 (de-hardcode F5): _SYMBOL_REGIME_SOLO emptied — the
+            # only entry, ("BTC","trending_bear"), never fired live (absent
+            # from all 44 bot logs 2026-05-30..07-15) and was fully shadowed
+            # for SELLs by the side-aware Path 1c above (SELL in
+            # trending_bear, conf>=65, 0.5x). Its only residual effect was a
+            # side-blind trap permitting a solo BTC BUY in trending_bear at
+            # conf>=75 — a counter-regime long the ledger marks a loser (BTC
+            # LONG -$2.25/tr n=20, WR 35%; the one trending_bear long lost
+            # $7.96). Emptying removes a permissive bypass — safety
+            # strengthened, not weakened. Left as a no-op empty dict (rather
+            # than deleting the whole block) so this stays a one-line lever:
+            # any future per-(symbol,side,regime) solo edge must be
+            # live-computed from paper_trades/trade_ledger with n>=13.
+            _SYMBOL_REGIME_SOLO: dict = {}
             if not _allowed and lone_signals:
                 _regime = self._current_regime.get(symbol, "unknown")
                 _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
@@ -2014,12 +2320,16 @@ class EnsembleStrategy:
         # NOTE: HYPE BUY exemption removed (F8, 2026-05-04): counterfactual 89% WR
         # was contradicted by 35 live trades showing 23% WR, -$77.26. HYPE BUY is
         # now vetoed at Gate 1g (graduated_rules.json: hype_long_veto_v1).
-        _LOSING_COMBOS = {
-            # CS+MTQ REMOVED from global blacklist: +$55 on BTC/ETH (60% WR, best combo).
-            # Original PF 0.08 was from HYPE data only. LLM can judge per-trade.
-            frozenset({"regime_trend", "vmc_cipher"}),                          # PF 0.39, 29% WR — consistently losing
-            frozenset({"probability_engine", "regime_trend"}),                  # PF 0.0, 0% WR in multiple runs
-        }
+        # 2026-07-15 (de-hardcode F6): LIVING VALUES. Combo toxicity is now
+        # computed live from data/trade_ledger.csv contributing_factors
+        # groups (n>=13 AND (WR<35% or avg net_pnl<0) => toxic). Neither seed
+        # combo below has reached n>=13 in the ledger yet (n=0 for both —
+        # {regime_trend,vmc_cipher} is currently unreachable because
+        # vmc_cipher is disabled by default, trading_config.py:164; do not
+        # re-enable vmc_cipher as part of this fix), so these two frozensets
+        # remain the per-combo n<13 fallback (current blocking behavior
+        # unchanged) until real data accumulates.
+        _LOSING_COMBOS = self._get_live_losing_combos()
         _base_sym_lc = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
         for side_signals in [buy_signals, sell_signals]:
             if len(side_signals) >= 2:
@@ -2052,26 +2362,40 @@ class EnsembleStrategy:
         else:
             return None  # tied or empty
 
+        merged = self._merge_signals(symbol, chosen, llm_first_raw=llm_first_raw)
+        if merged is None:
+            return None
+
         # Soft veto: instead of hard-blocking when opposition is strong,
         # reduce position size. Data: hard veto was 29% accurate (vetoed 37 winners
         # vs 15 losers). Convert to size reduction instead of rejection.
+        # 2026-07-15 (de-hardcode F7): two defects fixed. (1) INVERTED MATH —
+        # `chosen` is always the stronger side, so closeness=oppose/chosen was
+        # always in (1/veto_ratio, 1.0); the old formula
+        # (1.0-(closeness-1.0)*0.5) evaluated to (1.0, 1.083] — a size BOOST
+        # for contested signals, never a reduction, and the 0.3 floor was
+        # unreachable dead code. Fixed mapping: closeness at the veto-pass
+        # boundary (1/veto_ratio) -> 1.0x (no reduction); closeness near a
+        # tie (1.0) -> 0.5x. (2) DROPPED — this used to mutate constituent
+        # signals' metadata BEFORE _merge_signals, which builds a fresh
+        # metadata dict that doesn't carry risk_mult_override forward, so it
+        # never reached the merged signal that core/signal_pipeline.py sizes
+        # from. Fixed by applying to `merged` AFTER the merge (same pattern
+        # as the BB+MTQ contra-indicator below).
         if opposition and chosen_strength < oppose_strength * self.veto_ratio:
-            # Mark for size reduction instead of blocking
-            _veto_severity = oppose_strength / max(chosen_strength, 0.01)
-            _size_penalty = max(0.3, 1.0 - (_veto_severity - 1.0) * 0.5)  # 0.3-1.0x
-            for s in chosen:
-                s.metadata["opposition_size_reduction"] = round(_size_penalty, 2)
-                s.metadata.setdefault("risk_mult_override", 1.0)
-                s.metadata["risk_mult_override"] *= _size_penalty
+            _closeness = oppose_strength / max(chosen_strength, 0.01)
+            _boundary = 1.0 / self.veto_ratio
+            _span = max(1.0 - _boundary, 0.01)
+            _size_penalty = max(0.3, 1.0 - (_closeness - _boundary) / _span * 0.5)  # 0.3-1.0x
+            merged.metadata["opposition_size_reduction"] = round(_size_penalty, 2)
+            merged.metadata["risk_mult_override"] = (
+                merged.metadata.get("risk_mult_override", 1.0) * _size_penalty
+            )
             logger.info(
                 f"[{symbol}] Soft veto: {chosen[0].side} strength={chosen_strength:.1f} "
                 f"< {opposition[0].side} {oppose_strength:.1f} × {self.veto_ratio} "
                 f"— size reduced to {_size_penalty:.0%} (not blocked)"
             )
-
-        merged = self._merge_signals(symbol, chosen, llm_first_raw=llm_first_raw)
-        if merged is None:
-            return None
 
         # WAVE2A L3 (FULL_PIPE_BUILD_MAP R22, 2026-07-02): full-information
         # symmetry — expose the complete vote map INCLUDING the losing side so
@@ -2144,10 +2468,23 @@ class EnsembleStrategy:
                 opp_strength_scale = s.confidence / 100.0
                 if opp_strength_scale < 0.55:
                     opp_strength_scale *= 0.3  # Weak opposition: 70% penalty reduction
-                penalty += capped_weight * 5 * (s.confidence / 100) * tf_discount * penalty_intensity * min(1.0, opp_strength_scale / 0.55)
-            # Cap opposition penalty at 3 points. Data: 31% veto accuracy means
-            # opposition is WRONG 69% of the time. Large penalties destroy good trades.
-            penalty = min(penalty, 3.0)
+                # 2026-07-15 (de-hardcode F8): opposition credibility is
+                # directional in the realized ledger — BUY-side opposers
+                # (docking SELL consensus) have negative realized edge
+                # (LONG -$8.17/tr, WR 47.5%, n=99) while SELL-side opposers
+                # have positive edge (SHORT +$9.10/tr, WR 56.6%, n=166) — yet
+                # the static formula penalized both sides equally, docking
+                # the best realized edge on the word of the realized-worst
+                # side. Live per-side factor (n>=13 required, else 1.0).
+                _credibility = self._get_opposition_credibility(s.side)
+                penalty += capped_weight * 5 * (s.confidence / 100) * tf_discount * penalty_intensity * min(1.0, opp_strength_scale / 0.55) * _credibility
+            # Cap opposition penalty. Data: static 31% veto accuracy assumption
+            # meant opposition was WRONG 69% of the time, justifying a 3.0
+            # point cap. 2026-07-15 (de-hardcode F8): the cap is now scaled
+            # DOWN (never up) by the live veto_accuracy from
+            # llm.veto_tracker (n>=13 resolved vetoes required, else the
+            # static 3.0 cap is the fallback) — never exceeds 3.0.
+            penalty = min(penalty, self._get_live_opposition_cap())
             merged.confidence = max(0, merged.confidence - penalty)
             merged.metadata["opposition_penalty"] = round(penalty, 1)
             opp_names = [s.strategy for s in opposition]
@@ -2480,10 +2817,17 @@ class EnsembleStrategy:
         # haircut. The honest WP from quant_brain (already live-calibrated)
         # is more accurate than these stale multipliers. LLM decides downstream.
         _regime_ev = self._current_regime.get(symbol, "unknown")
-        _indep_key = min(n_independent, 4)
-        # Tiny universal deflation acknowledging confidence > WR mismatch in noise.
-        # Stronger consensus (more independent groups) deflates slightly less.
-        _deflation = {4: 0.95, 3: 0.93, 2: 0.90, 1: 0.88}.get(_indep_key, 0.90)
+        _indep_key = min(n_independent, 4)  # retained for metadata/logging only
+        # 2026-07-15 (de-hardcode F9): the frozen per-n_independent deflation
+        # matrix (0.88-0.95) overstated win_prob vs realized WR — 264 closed
+        # positions realize 53.0% WR while traded confidence (~74.5-81.5)
+        # implied a 0.88-deflated win_prob of 66-72%. Replaced with a single
+        # live ratio = realized_WR / mean_confidence over closed trades
+        # (n>=13), applied uniformly until num_agree>=2 setups individually
+        # reach n>=13 (ledger has ~1 such signal today). Fallback 0.71 (n<13)
+        # matches the code's own historical 1/1.4 empirical note and is more
+        # conservative than the matrix it replaces.
+        _deflation = _load_live_deflation_ratio()
 
         # Setup-specific edges from shadow ledger analysis (2026-04-15).
         # Finding 11 rewrite: the old `_PROVEN_SETUP_FLOOR` collapsed the
@@ -2569,26 +2913,48 @@ class EnsembleStrategy:
             _fee_bps = 4
         # Regime-specific slippage: high-vol/panic markets have wider spreads
         # and worse fills. Add slippage as additional cost beyond fees.
+        # 2026-07-15 (de-hardcode F10): the static table boosted losing
+        # regimes and penalized winning ones vs execution_analytics.csv
+        # (trending_bull realized +3.4bps mean n=36 vs hardcoded 1bps;
+        # consolidation +41.1bps n=6 vs hardcoded 1bps) while trade_ledger
+        # PnL shows trending_bear (+$81.70/tr n=15) and high_volatility
+        # (+$23.93/tr n=12) as the ONLY profitable regimes — both charged
+        # the higher static costs. Live per-regime median slippage now used
+        # when that regime has n>=13 fills (clamped [1,30]bps); this static
+        # table remains the n<13 fallback, unchanged.
         _REGIME_SLIPPAGE_BPS = {
             "trending_bull": 1, "trending_bear": 2, "trend": 1,
             "consolidation": 1, "range": 1,
             "high_volatility": 4, "panic": 6,
             "low_liquidity": 5, "news_dislocation": 5,
         }
-        _slippage_bps = _REGIME_SLIPPAGE_BPS.get(_regime_ev, 2)
+        _live_slippage = _load_live_regime_slippage()
+        _slippage_bps = _live_slippage.get(_regime_ev, _REGIME_SLIPPAGE_BPS.get(_regime_ev, 2))
         _total_cost_bps = _fee_bps * 2 + _slippage_bps  # round-trip fees + slippage
         fee_drag = (entry * _total_cost_bps / 10000.0) / stop_width if stop_width > 0 else 0
         # Partial-close-aware EV: model TP1 partial close + TP2 continuation
         # After TP1 hit, SL moves to breakeven → remaining position is risk-free
         # but only ~50% chance of reaching TP2 (conservative estimate)
+        # 2026-07-15 (de-hardcode F11): realized P(TP2|TP1) is far below the
+        # old static 0.45 (ledger evidence: 4/30=13.3%; this repo's own
+        # data/trades.csv tp1_hit/tp2_hit columns corroborate the same
+        # direction). Live-computed with n>=13 required; fallback 0.15
+        # (n<13), down from 0.45. _tp1_close_pct fallback (0.60) is kept —
+        # realized mean 0.556 (n=30) matches within noise, no contradiction.
         _tp1_close_pct = 0.60  # Default: MEDIUM profile closes 60% at TP1
-        _p_tp2_given_tp1 = 0.45  # Conservative: once TP1 hit and SL at BE, 45% reach TP2
+        _p_tp2_given_tp1 = _load_live_p_tp2_given_tp1()
+        # The non-TP2 remainder does NOT reliably exit at -fee_drag*0.5 —
+        # realized remainders after TP1 averaged +$20.82 net, 26/26 wins
+        # (trailing stop past breakeven). Live WR-weighted credit (n>=13
+        # required, capped well below a full R since exact stop-distance
+        # isn't stored per trade); fallback 0.0 (n<13) — never assume
+        # positive without evidence.
+        _remainder_r = _load_live_remainder_r()
         # Blended win payoff: tp1_pct gets rr_tp1, remainder gets expected rr_tp2
         _win_payoff = (
             _tp1_close_pct * (rr_tp1 - fee_drag)
             + (1 - _tp1_close_pct) * _p_tp2_given_tp1 * (rr_tp2 - fee_drag)
-            # remaining position that doesn't reach TP2: exits at ~breakeven (0 gain, pay exit fee)
-            + (1 - _tp1_close_pct) * (1 - _p_tp2_given_tp1) * (-fee_drag * 0.5)
+            + (1 - _tp1_close_pct) * (1 - _p_tp2_given_tp1) * _remainder_r
         )
         ev_per_dollar = round(win_prob * _win_payoff - (1.0 - win_prob) * (1.0 + fee_drag), 4)
 
@@ -2609,14 +2975,21 @@ class EnsembleStrategy:
 
             # 2026-05-30 OVERDRIVE: when LLM_MODE >= 4, EV gate becomes informational only.
             # LLM is the trader; mechanical EV math is a data point, not a hard block.
+            # 2026-07-14 (de-hardcode, remove time-bomb): the disarm no longer depends SOLELY
+            # on LLM_MODE — EV_BLOCK_ENFORCE=false (default) keeps this block SHADOWED even if
+            # LLM_MODE ever drops <4. Current behavior unchanged (disarmed). Revert:
+            # EV_BLOCK_ENFORCE=true restores the LLM_MODE-gated hard EV block (mechanical
+            # path only — llm_first_raw already skips this whole block at :2601).
             try:
                 import os as _os
-                if int(_os.getenv("LLM_MODE", "0")) >= 4:
+                _ev_block_enforce = _os.getenv("EV_BLOCK_ENFORCE", "false").strip().lower() in ("1", "true", "yes")
+                _llm_mode = int(_os.getenv("LLM_MODE", "0"))
+                if (not _ev_block_enforce) or _llm_mode >= 4:
                     _ev_override = True
-                    _ev_override_source = "overdrive_llm_primary"
+                    _ev_override_source = "overdrive_llm_primary" if _llm_mode >= 4 else "ev_block_shadow"
                     logger.info(
                         f"[ENSEMBLE] {symbol} {side} EV={ev_per_dollar:.4f} WP={win_prob:.2f} "
-                        f"R:R={rr_tp1:.2f} — informational only (LLM_MODE>=4, LLM decides)"
+                        f"R:R={rr_tp1:.2f} — informational only (EV block shadowed / LLM decides)"
                     )
             except Exception:
                 pass
@@ -2680,8 +3053,25 @@ class EnsembleStrategy:
                         signal=_SigLike(),
                     )
 
-                    # Only ask LLM if we have edge data — otherwise don't waste a call
-                    if ctx.edge_n >= 20 and ctx.edge_wr >= 55:
+                    # 2026-07-15 (de-hardcode F14): the WR>=55 gate inverted
+                    # the realized ledger — it excludes ETH_SELL (47.2% WR,
+                    # +$20.37/tr, best edge) and BTC_SELL (48.8% WR,
+                    # +$10.70/tr) while admitting net losers like ETH_BUY
+                    # (57.7% WR, -$2.28/tr). Also ctx.edge_n was always 0
+                    # (dead deep_memory key upstream, see
+                    # _load_paper_trades_symbol_side_stats docstring), so
+                    # this gate never fired. Replaced with a live,
+                    # in-file-computed expectancy gate: n>=13 and avg net
+                    # pnl > 0 for this (symbol, side), per LIVING VALUES.
+                    # Pre-conditions above (n_agree>=2, combined_conf>=60)
+                    # and the downstream agent confidence>=0.75 approval bar
+                    # are unchanged — this only fixes ELIGIBILITY to ask the
+                    # LLM, never weakens the veto/approval safety.
+                    _base_sym_ov = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+                    _edge_stats = _load_paper_trades_symbol_side_stats().get((_base_sym_ov, side))
+                    _edge_n = _edge_stats["n"] if _edge_stats else 0
+                    _edge_avg_net = _edge_stats["avg_net"] if _edge_stats else 0.0
+                    if _edge_n >= 13 and _edge_avg_net > 0:
                         decision = self._override_coordinator.evaluate_override(ctx)
                         if decision and decision.get("decision") == "override":
                             _agent_conf = float(decision.get("confidence", 0.0))
@@ -2785,6 +3175,17 @@ class EnsembleStrategy:
         except Exception as _alpha_exc:
             logger.exception(f"[{symbol}] ALPHA-GATE hook failure (non-fatal): {_alpha_exc}")
 
+        # T1-C fix (2026-07-14): stamp the resolved regime onto the merged signal.
+        # Previously dropped here, so signal_pipeline.get_regime_risk_mult saw
+        # "unknown" (flat 0.45x) for EVERY mechanical trade and per-regime graduated
+        # rules never matched. Flag-gated kill switch: REGIME_MERGE_STAMP=false
+        # reproduces the old "unknown" behavior exactly (env revert, no code change).
+        import os as _os
+        _merged_regime = (
+            self._current_regime.get(symbol, "unknown")
+            if _os.environ.get("REGIME_MERGE_STAMP", "true").lower() in ("1", "true", "yes")
+            else "unknown"
+        )
         return Signal(
             strategy="ensemble",
             symbol=symbol,
@@ -2796,6 +3197,7 @@ class EnsembleStrategy:
             tp2=best_tp2,
             atr=atr,
             metadata={
+                "regime": _merged_regime,
                 "strategies_agree": [s.strategy for s in signals],
                 "num_agree": len(signals),
                 "total_strategies": len(self.strategies),

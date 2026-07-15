@@ -56,25 +56,16 @@ class AlertTier(Enum):
 # Structure: (symbol, side, strategy) -> {wr, n, grade}
 # grade: "premium" = 100+ samples with strong edge, can EXECUTE alone
 #        "standard" = 40-100 samples with edge, needs more confirmation
-_SHADOW_EDGES: Dict[Tuple[str, str, str], Dict[str, object]] = {
-    # Rebuilt 2026-04-16 from bot/data/shadow_ledger.csv (3,835 resolved).
-    # All "premium" grade: n>=65, positive avg_ret, WR >= 55%.
-    ("ETH", "BUY", "regime_trend"):        {"wr": 1.00, "n": 135, "grade": "premium"},
-    ("HYPE", "BUY", "bollinger_squeeze"):  {"wr": 0.612, "n": 196, "grade": "premium"},
-    ("BTC", "BUY", "regime_trend"):        {"wr": 0.685, "n": 111, "grade": "premium"},  # upgraded from standard
-    ("SOL", "SELL", "multi_tier_quality"): {"wr": 0.721, "n": 68, "grade": "premium"},
-    ("SOL", "SELL", "bollinger_squeeze"):  {"wr": 0.721, "n": 68, "grade": "premium"},
-    # Standard edges — smaller sample or thinner edge
-    ("HYPE", "BUY", "regime_trend"):       {"wr": 0.80, "n": 40, "grade": "standard"},  # WR great but tiny avg_ret
-}
+# EMPTIED 2026-07-14 (living-values de-hardcode): these tables were rebuilt
+# 2026-04-16 from the PRE-FEE-FIX shadow_ledger — the same poison that was declared
+# invalid and emptied in comprehensive_snapshot.py / ensemble.py on 2026-06-05. This
+# copy survived the purge and still asserted "ETH BUY regime_trend = 100% WR, can
+# EXECUTE alone" and BLOCKED ("ETH","SELL","regime_trend") — i.e. it suppressed
+# ETH_SELL, the actual best live edge (+$14.90/tr). No fictional edges/blocks; let live
+# data + graduated_rules (n>=13) decide. Revert: restore from git if ever needed.
+_SHADOW_EDGES: Dict[Tuple[str, str, str], Dict[str, object]] = {}
 
-# Shadow-ledger-verified money losers. NEVER send alerts for these.
-_SHADOW_BLOCKS: frozenset = frozenset({
-    ("SOL", "SELL", "regime_trend"),        # 0% WR on 149 samples
-    ("SOL", "BUY", "regime_trend"),         # 75% WR trap: negative avg return
-    ("HYPE", "BUY", "multi_tier_quality"),  # 36.8% WR on 95 samples
-    ("ETH", "SELL", "regime_trend"),        # 23.1% WR on 65 samples
-})
+_SHADOW_BLOCKS: frozenset = frozenset()
 
 # Regimes that historically kill each setup. Sourced from
 # project_autonomous_session_2026_04_15 Finding 7 + per-regime analysis.

@@ -216,17 +216,18 @@ class PositionManager:
         self.trailing_atr_mult = trailing_atr_mult
         self._time_stop_hours = time_stop_hours
         self.hold_time_rules = hold_time_rules  # Optional HoldTimeRuleManager
-        # Setup-specific time stops from 2,172-signal analysis
-        # Each setup has an optimal hold window where WR peaks.
-        self._setup_time_stops = {
-            "BTC_BUY_BB": 8,     # 4-8h optimal, 69% WR at 4h
-            "BTC_SELL_BB": 8,    # peaks at 8h (63% WR), 12h drops to 54%
-            "ETH_SELL_BB": 8,    # 4-8h optimal, 70% WR at 4h
-            "ETH_BUY_BB": 8,    # 8h optimal (64% WR)
-            "SOL_BUY_BB": 6,    # peaks at 4h (67%), decays fast
-            "SOL_SELL_BB": 8,    # 8h reasonable
-            "HYPE_BUY_BB": 6,   # shorter hold for volatile asset
-        }
+        # LIVING VALUES (2026-07-15): the frozen "2,172-signal analysis" table
+        # was contradicted by the realized ledger (BTC_BUY claimed 69% WR /
+        # 8h-optimal but realized 35% WR / -$2.25/tr with all >2h buckets
+        # negative; ETH_SELL's biggest realized wins land in 8-12h, not the
+        # 4-8h the table pressured it into; XRP_*/HYPE_SELL were omitted and
+        # fell back to a *longer* 12h default than the tabulated setups).
+        # Replaced with a live per-SYMBOL_SIDE computation from
+        # paper_trades/trades_*.csv (see _compute_live_setup_time_stops).
+        # n<13 setups simply aren't in this dict and fall back to
+        # self._time_stop_hours (12h) at the lookup site.
+        self._setup_time_stops = self._compute_live_setup_time_stops()
+        self._setup_time_stops_refreshed_at = datetime.now(timezone.utc)
         # Post-close cooldown: prevent tilt re-entry after losses only
         self._last_close_time: Dict[str, datetime] = {}  # symbol -> close time
         self._last_close_won: Dict[str, bool] = {}  # symbol -> was it a win?
@@ -235,7 +236,108 @@ class PositionManager:
         self._backup_dir = Path("data") / "position_backups"
         self._backup_dir.mkdir(parents=True, exist_ok=True)
 
-    def _fee(self, price: float, qty: float) -> float:
+    def _compute_live_setup_time_stops(self) -> Dict[str, float]:
+        """Live per-SYMBOL_SIDE time stops derived from realized closes.
+
+        Reads paper_trades/trades_*.csv, dedupes rows (excludes OPEN rows,
+        TEST symbols, and price in {100,150,50000} test-fixture artifacts),
+        groups net pnl (pnl-fee) by SYMBOL_SIDE and hold-hour bucket
+        [0-2,2-4,4-6,6-8,8-12,12+], and for each setup with n>=13 closed
+        trades sets time_stop_hours to the upper edge of the last bucket
+        whose cumulative expectancy is still positive, clamped to [4,12]h.
+        Setups with n<13 are simply omitted (caller falls back to
+        self._time_stop_hours). Never raises — returns {} on any failure so
+        the static self._time_stop_hours default takes over.
+        """
+        buckets = [(0.0, 2.0), (2.0, 4.0), (4.0, 6.0), (6.0, 8.0), (8.0, 12.0), (12.0, 999.0)]
+        _test_prices = (100.0, 150.0, 50000.0)
+        result: Dict[str, float] = {}
+        try:
+            import csv as _csv
+            import glob as _glob
+
+            rows_by_key: Dict[tuple, dict] = {}
+            for path in _glob.glob(os.path.join("paper_trades", "trades_*.csv")):
+                try:
+                    with open(path, newline="") as f:
+                        for row in _csv.DictReader(f):
+                            action = (row.get("action") or "").upper()
+                            if action == "OPEN":
+                                continue
+                            symbol = (row.get("symbol") or "").upper()
+                            if not symbol or "TEST" in symbol:
+                                continue
+                            try:
+                                price = float(row.get("price") or 0)
+                            except (TypeError, ValueError):
+                                continue
+                            if price in _test_prices:
+                                continue
+                            dedup_key = (
+                                symbol, action, row.get("side"), row.get("price"),
+                                row.get("qty"), row.get("timestamp"),
+                            )
+                            rows_by_key[dedup_key] = row
+                except Exception:
+                    continue  # one bad/partial file shouldn't kill the whole computation
+
+            grouped: Dict[str, Dict[int, List[float]]] = {}
+            for row in rows_by_key.values():
+                symbol = (row.get("symbol") or "").upper()
+                base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
+                side_raw = (row.get("side") or "").upper()
+                side_label = "BUY" if side_raw in ("LONG", "BUY") else "SELL"
+                key = f"{base_sym}_{side_label}"
+                try:
+                    hold_h = float(row.get("hold_time_s") or 0) / 3600.0
+                    net = float(row.get("pnl") or 0) - float(row.get("fee") or 0)
+                except (TypeError, ValueError):
+                    continue
+                bucket_idx = len(buckets) - 1
+                for i, (lo, hi) in enumerate(buckets):
+                    if lo <= hold_h < hi:
+                        bucket_idx = i
+                        break
+                grouped.setdefault(key, {}).setdefault(bucket_idx, []).append(net)
+
+            for key, bucket_map in grouped.items():
+                n = sum(len(v) for v in bucket_map.values())
+                if n < 13:
+                    continue
+                cumulative = 0.0
+                last_positive_hi = None
+                for i, (lo, hi) in enumerate(buckets):
+                    cumulative += sum(bucket_map.get(i, []))
+                    if cumulative > 0:
+                        last_positive_hi = hi
+                if last_positive_hi is not None:
+                    result[key] = max(4.0, min(12.0, float(last_positive_hi)))
+        except Exception as e:
+            logger.warning(f"Live setup-time-stop computation failed, using static default: {e}")
+            return {}
+        return result
+
+    def _maybe_refresh_setup_time_stops(self) -> None:
+        """Refresh live per-setup time stops at most once per day (avoids
+        re-reading the whole paper_trades/ ledger on every tick)."""
+        now = datetime.now(timezone.utc)
+        last = getattr(self, "_setup_time_stops_refreshed_at", None)
+        if last is not None and (now - last).total_seconds() < 86400:
+            return
+        try:
+            live = self._compute_live_setup_time_stops()
+            self._setup_time_stops = live  # {} is valid -- means "no n>=13 setups yet"
+        except Exception as e:
+            logger.debug(f"Setup time-stop refresh skipped: {e}")
+        finally:
+            self._setup_time_stops_refreshed_at = now
+
+    def _fee(self, price: float, qty: float, leverage: float = 1.0) -> float:
+        # FEE_ACCOUNTING_FIX (default off): charge fees on true notional
+        # (price*qty*leverage) to match pnl = move*qty*leverage (L1216/1467/1710)
+        # and funding notional = entry*qty*leverage (accrue_funding L334).
+        if os.getenv("FEE_ACCOUNTING_FIX", "false").lower() in ("1", "true", "yes"):
+            return price * qty * max(leverage, 1.0) * (self.taker_fee_bps / 10000.0)
         return price * qty * (self.taker_fee_bps / 10000.0)
 
     def _backup_position(self, pos: 'Position') -> None:
@@ -332,9 +434,17 @@ class PositionManager:
         scan_interval_s = 30.0
         fraction_of_interval = scan_interval_s / (interval_hours * 3600)
         notional = pos.entry * pos.qty * pos.leverage
-        cost = abs(funding_rate) * notional * fraction_of_interval
-        if cost > 0:
-            pos.funding_costs += cost
+        if os.getenv("FUNDING_SIGNED_ACCRUAL", "false").lower() in ("1", "true", "yes"):
+            # Signed carry (2026-07-14 funding_asymmetric fix): LONG pays when
+            # rate > 0, SHORT pays when rate < 0; negative accrual = funding
+            # EARNED (credit). Matches funding_timer.should_close_before_funding
+            # sign logic. Default OFF; revert by unsetting the flag.
+            signed_rate = funding_rate if pos.side == "LONG" else -funding_rate
+            pos.funding_costs += signed_rate * notional * fraction_of_interval
+        else:
+            cost = abs(funding_rate) * notional * fraction_of_interval
+            if cost > 0:
+                pos.funding_costs += cost
 
     def has_open_position(self, symbol: str) -> bool:
         """Check if there is an open (non-CLOSED) position for this symbol."""
@@ -463,7 +573,7 @@ class PositionManager:
 
         self.positions[symbol] = pos
 
-        fee = self._fee(entry, qty)
+        fee = self._fee(entry, qty, leverage)
         pos.fees_paid += fee
 
         event = TradeEvent(
@@ -723,21 +833,17 @@ class PositionManager:
             _now = sim_now or getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
             hold_hours = (_now - pos.open_time).total_seconds() / 3600
 
-            # Setup-specific time stop from 2,172-signal analysis
-            _er = pos.entry_reasons or {}
-            _strats = _er.get("strategies_agree", [])
-            _driver = _er.get("primary_driver", "")
-            _is_bb = "bollinger_squeeze" in _strats or _driver == "bollinger_squeeze"
+            # Live per-SYMBOL_SIDE time stop (LIVING VALUES 2026-07-15 --
+            # see _compute_live_setup_time_stops). No longer gated to BB-driver
+            # setups only: that gate omitted XRP_*/HYPE_SELL and left them on
+            # a longer 12h default than the tabulated BB setups got.
+            self._maybe_refresh_setup_time_stops()
             _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
             _side_label = "BUY" if is_long else "SELL"
-            _setup_key = f"{_base_sym}_{_side_label}_BB" if _is_bb else None
-
-            if _setup_key and hasattr(self, '_setup_time_stops'):
-                time_stop_hours = self._setup_time_stops.get(
-                    _setup_key, getattr(self, '_time_stop_hours', 12)
-                )
-            else:
-                time_stop_hours = getattr(self, '_time_stop_hours', 12)
+            _setup_key = f"{_base_sym}_{_side_label}"
+            time_stop_hours = self._setup_time_stops.get(
+                _setup_key, getattr(self, '_time_stop_hours', 12)
+            )
 
             if hold_hours >= time_stop_hours:
                 # Assess position health before closing
@@ -804,82 +910,60 @@ class PositionManager:
                         )
                         pos._extension_logged = True
 
-        # 1a2. Data-driven 1h assessment (from 2,172-signal analysis):
-        # If position is losing at 1h mark, 67% chance it stays losing.
-        # Exception: BB signals recover 56% of the time — hold BB losers to 4h.
-        #
-        # Finding 20 trail audit (2026-04-16): this tightening creates 59
-        # premature stops over 30 days for ~$87 of leaked alpha. The 67%
-        # stat is SURVIVOR BIAS — it counts "didn't recover" = "hit SL",
-        # but with wider original SL, many would have recovered past 1h.
-        # We now apply this ONLY to SCALP entries (short horizon — 1h is
-        # meaningful) and skip MEDIUM/TREND where 1h is too early to judge.
-        # Also adding confidence_scorer to the exception list (largest
-        # premature-stop contributor per audit Part B).
+        # 1a2. Data-driven 1h assessment: mechanical breakeven-tighten REMOVED
+        # (LIVING VALUES 2026-07-15). This branch never fired live (0 '1H
+        # ASSESSMENT' log lines, 0 SCALP entries ever across May30-Jul15
+        # logs) yet held frozen 67%/56% WR premises. Ledger economics
+        # contradict the acted-on conclusion: trades held >=1.5h with
+        # mae>=0.1% (losing-at-1h proxy) are net +$77.63 (n=131, +$0.59/tr);
+        # held >=3h with drawdown are net +$498.98 (n=92, +$5.42/tr); 84% of
+        # that cohort touched >=+0.05% above entry, so a breakeven tighten
+        # would have forfeited the recoveries that make the cohort
+        # net-positive (the 2026-04-16 audit already conceded this is
+        # survivor bias costing ~$87/30d). The tighten action is replaced
+        # with a review flag so the live Exit Agent (the same
+        # position_wiring._check_llm_exit_suggestions path that already
+        # supersedes mechanical TIME_STOP closes above) adjudicates
+        # losing-at-1h positions with live context instead of a mechanical
+        # SL move. A mechanical tighten may only be reinstated once gated on
+        # a live ledger computation of P(net-positive recovery | mae>=0.1%
+        # at 1h, entry_type) and EV(hold) from paper_trades/*.csv with
+        # n>=13 for that entry_type slice; n<13 must fall back to doing
+        # nothing (no tighten), never to a guessed static number.
         if pos.state == OPEN:
             _now_1h = sim_now or getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
             _hold_h = (_now_1h - pos.open_time).total_seconds() / 3600
             if 0.9 <= _hold_h <= 1.5:  # ~1h mark (window to avoid checking every tick)
                 _pnl_pct = (current_price - pos.entry) / pos.entry if is_long else (pos.entry - current_price) / pos.entry
-                if _pnl_pct < -0.001:  # Losing at 1h (>0.1% adverse)
-                    _trade_prof = getattr(pos, "trade_profile", None)
-                    _entry_type = getattr(_trade_prof, "entry_type", "") if _trade_prof else ""
-                    _driver = (pos.entry_reasons or {}).get("primary_driver", "") if pos.entry_reasons else ""
-                    _is_bb = ("bollinger_squeeze" in (pos.entry_reasons or {}).get("strategies_agree", [])
-                              or _driver == "bollinger_squeeze")
-                    _is_cs = _driver == "confidence_scorer"
-                    # Only tighten for SCALP profile AND not BB/CS drivers.
-                    # MEDIUM and TREND profiles: skip entirely (1h too early).
-                    _should_tighten = (
-                        _entry_type == "SCALP"
-                        and not _is_bb
-                        and not _is_cs
+                if _pnl_pct < -0.001 and not getattr(pos, "_one_hour_loser_review_requested", False):
+                    pos._one_hour_loser_review_requested = True
+                    pos._one_hour_loser_pnl_pct = _pnl_pct
+                    logger.info(
+                        f"[{symbol}] 1H ASSESSMENT: losing ({_pnl_pct:.2%}) -> "
+                        f"flagged for Exit Agent review (mechanical breakeven "
+                        f"tighten removed, ledger-contradicted)"
                     )
-                    if _should_tighten:
-                        _tight_sl = pos.entry  # Tighten to breakeven
-                        if is_long and _tight_sl < pos.sl:
-                            pass  # SL already tighter than breakeven
-                        elif is_long:
-                            pos.sl = _tight_sl
-                            logger.info(
-                                f"[{symbol}] 1H ASSESSMENT (SCALP only): non-BB/CS losing ({_pnl_pct:.2%}), "
-                                f"tightening SL to breakeven (67% chance stays losing)"
-                            )
-                        elif not is_long and _tight_sl > pos.sl:
-                            pass
-                        elif not is_long:
-                            pos.sl = _tight_sl
-                            logger.info(
-                                f"[{symbol}] 1H ASSESSMENT (SCALP only): non-BB/CS losing ({_pnl_pct:.2%}), "
-                                f"tightening SL to breakeven (67% chance stays losing)"
-                            )
-                    else:
-                        # MEDIUM/TREND or BB/CS driver — let the trade breathe
-                        _skip_reason = (
-                            "BB driver (56% recovery)" if _is_bb else
-                            "CS driver (premature-stop leak)" if _is_cs else
-                            f"{_entry_type} profile (1h too early)"
-                        )
-                        logger.debug(
-                            f"[{symbol}] 1H ASSESSMENT: losing ({_pnl_pct:.2%}), "
-                            f"NOT tightening — {_skip_reason}"
-                        )
 
         # 1b. Early exit telemetry: when mechanical conditions detect momentum
         # accelerating toward SL, publish to position for Exit Agent review rather
         # than auto-close. Backtests showed many "early exit" closes were trades
         # that would have gone green if held. Exit Agent reasons regime-aware
         # from this signal + full context instead of mechanical auto-close.
-        # Set MECHANICAL_EARLY_EXIT_ENABLED=true to restore legacy auto-close.
+        #
+        # LIVING VALUES (2026-07-15): the MECHANICAL_EARLY_EXIT_ENABLED
+        # flag-gated auto-close branch was DELETED, not just left off-by-
+        # default. Ledger check: 0 of 216 realized closes are EARLY_EXIT --
+        # the mechanical path never fired, so the static per-regime
+        # _EARLY_EXIT_THRESHOLDS table has zero realized sample backing it.
+        # Deleting (rather than leaving the flag defaulted false) means a
+        # future flag flip can no longer resurrect it. The live LLM Exit
+        # Agent (coordinator.get_exit_intelligence via
+        # core/position_wiring.py) remains the sole close authority for this
+        # signal; _check_early_exit()'s advisory flag below is unchanged.
         if pos.state == OPEN and df_5m is not None:
             early = self._check_early_exit(pos, current_price, df_5m)
             if early:
                 pos._early_exit_review_requested = True
-                _mech_enabled = os.getenv("MECHANICAL_EARLY_EXIT_ENABLED", "false").lower() in ("1", "true", "yes")
-                if _mech_enabled:
-                    event = self._close_position(pos, current_price, "EARLY_EXIT")
-                    events.append(event)
-                    return events
 
         # 2. Check TP1 (dynamic partial close -> TP1_HIT -> TRAILING)
         if pos.state == OPEN:
@@ -1068,6 +1152,24 @@ class PositionManager:
     # Regime-adaptive early exit thresholds:
     # High-vol/range: cut losers earlier (price reverses fast)
     # Trending: let trades breathe longer (trend may resume)
+    #
+    # LIVING VALUES (2026-07-15) status: this table is now signal-only (see
+    # the deleted MECHANICAL_EARLY_EXIT_ENABLED branch above -- it can never
+    # directly close a position again), so it no longer meets the "acted-on
+    # value" bar for a mandatory live conversion. It is flagged here because
+    # it still SHAPES the advisory _early_exit_review_requested flag the
+    # Exit Agent sees: trending_bull gets the loosest static gate (0.70
+    # sl_progress / 3 conditions) despite being the worst realized regime
+    # slice (-$29.46/trade, n=9) vs trending_bear's best (+$81.70/trade,
+    # n=15). A live per-regime sl_progress trigger (e.g. MAE-depth beyond
+    # which <35% of a regime's trades recovered to green, n>=13) was NOT
+    # implemented here: paper_trades/trades_*.csv (which has mae_pct) does
+    # not log regime, and the events that do log regime (trade_events.jsonl
+    # TRADE_CLOSED, exit_closes.jsonl) don't log mae -- there is no single
+    # ledger file position_manager.py can read to join regime+MAE per trade
+    # without guessing a fragile cross-file match. Per the "don't guess on
+    # live trading code" rule, this is left as the static n<13-style
+    # fallback until a ledger file carries both fields together.
     _EARLY_EXIT_THRESHOLDS = {
         "high_volatility": {"sl_progress": 0.40, "conditions": 1},
         "panic":           {"sl_progress": 0.35, "conditions": 1},
@@ -1162,37 +1264,117 @@ class PositionManager:
 
         return False
 
+    def _compute_live_tp1_runner_scaler(self) -> float:
+        """Live runner-performance scaler for TP1 partial-close sizing.
+
+        Pairs each action=TP1 row in paper_trades/trades_*.csv with the next
+        exit row for the same symbol+side (the runner leg -- one active
+        position per symbol is enforced, so a TP1 row is followed by exactly
+        one subsequent close for that symbol+side), excluding TEST symbols
+        and price in {100,150,50000} test-fixture artifacts.
+
+        If n>=13 pairs: realized runner legs net-positive with win rate
+        >=60% -> return 0.85 (scale toward keeping more runner; caller
+        floors at 0.25). Realized runner legs net-negative -> return 1.10
+        (scale toward taking more; caller caps at 0.90). Otherwise (mixed,
+        inconclusive) -> 1.0 (no scaling). n<13 -> 1.0 (neutral; do NOT
+        fall back to a guessed static boost). Never raises.
+        """
+        try:
+            import csv as _csv
+            import glob as _glob
+
+            _test_prices = (100.0, 150.0, 50000.0)
+            rows_by_key: Dict[tuple, dict] = {}
+            for path in _glob.glob(os.path.join("paper_trades", "trades_*.csv")):
+                try:
+                    with open(path, newline="") as f:
+                        for row in _csv.DictReader(f):
+                            action = (row.get("action") or "").upper()
+                            if action == "OPEN":
+                                continue
+                            symbol = (row.get("symbol") or "").upper()
+                            if not symbol or "TEST" in symbol:
+                                continue
+                            try:
+                                price = float(row.get("price") or 0)
+                            except (TypeError, ValueError):
+                                continue
+                            if price in _test_prices:
+                                continue
+                            dedup_key = (
+                                symbol, action, row.get("side"), row.get("price"),
+                                row.get("qty"), row.get("timestamp"),
+                            )
+                            rows_by_key[dedup_key] = row
+                except Exception:
+                    continue
+
+            by_symbol_side: Dict[tuple, list] = {}
+            for row in rows_by_key.values():
+                k = ((row.get("symbol") or "").upper(), (row.get("side") or "").upper())
+                by_symbol_side.setdefault(k, []).append(row)
+
+            runner_pnls: List[float] = []
+            for rows in by_symbol_side.values():
+                rows.sort(key=lambda r: r.get("timestamp") or "")
+                pending_tp1 = False
+                for row in rows:
+                    action = (row.get("action") or "").upper()
+                    if action == "TP1":
+                        pending_tp1 = True
+                        continue
+                    if pending_tp1:
+                        try:
+                            net = float(row.get("pnl") or 0) - float(row.get("fee") or 0)
+                        except (TypeError, ValueError):
+                            pending_tp1 = False
+                            continue
+                        runner_pnls.append(net)
+                        pending_tp1 = False
+
+            n = len(runner_pnls)
+            if n < 13:
+                return 1.0
+            wins = sum(1 for p in runner_pnls if p > 0)
+            win_rate = wins / n
+            net_total = sum(runner_pnls)
+            if net_total >= 0 and win_rate >= 0.60:
+                return 0.85  # ledger says: keep more runner
+            if net_total < 0:
+                return 1.10  # ledger says: take more (caller caps at 0.90)
+            return 1.0
+        except Exception as e:
+            logger.debug(f"Live TP1 runner-scaler computation failed, using neutral 1.0: {e}")
+            return 1.0
+
     def _partial_close_tp1(self, pos: Position, price: float) -> TradeEvent:
         """Close tp1_close_pct at TP1, move SL above breakeven, activate trailing."""
         # State: OPEN -> TP1_HIT -> TRAILING
         pos._transition(TP1_HIT, f"TP1 @ {price}")
 
-        # Dynamic TP scaling: adjust close % based on overshoot and move speed
+        # Dynamic TP scaling: adjust close % using a live runner-performance
+        # scaler (LIVING VALUES 2026-07-15). Previously three frozen
+        # multipliers (overshoot>0.5 -> x1.20 cap 0.90; fast(<30min) -> x0.85;
+        # slow-grind(>4h, non-trend) -> x1.10 cap 0.85) guessed a direction
+        # per condition. The ledger contradicts two of the three: across all
+        # paper_trades/trades_*.csv, TP1->runner leg pairs are 30/30
+        # net-positive (avg +$30.42) -- runners have never lost after TP1
+        # (breakeven-SL protected) -- yet the only branch that actually fired
+        # live (x1.10 slow-grind, 2 hits: SOL 2026-06-25, HYPE 2026-07-03)
+        # shrank two runners that both finished green. Per-branch time
+        # slices are unverifiable from the ledger (TP1 rows historically
+        # logged hold_time_s=0 -- fixed below), so a single ledger-derived
+        # scaler now replaces all three conditional branches.
+        _now_for_speed = getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
+        time_to_tp1_s = (_now_for_speed - pos.open_time).total_seconds()
         dynamic_close_pct = pos.tp1_close_pct
         if os.getenv("DYNAMIC_TP_SCALING", "true").lower() in ("1", "true", "yes"):
-            # Overshoot: price past TP1 toward TP2 -> take more profit
-            tp_range = abs(pos.tp2 - pos.tp1)
-            if tp_range > 0:
-                if pos.side == "LONG":
-                    overshoot = (price - pos.tp1) / tp_range
-                else:
-                    overshoot = (pos.tp1 - price) / tp_range
-                overshoot = max(0.0, overshoot)
-                if overshoot > 0.5:
-                    dynamic_close_pct = min(dynamic_close_pct * 1.20, 0.90)
-
-            # Speed: fast move to TP1 -> let it run; slow grind -> take profits
-            # Only apply speed scaling if position was open > 60s (avoids test artifacts)
-            _now_for_speed = getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
-            time_to_tp1_s = (_now_for_speed - pos.open_time).total_seconds()
+            # Only apply scaling if position was open > 60s (avoids test artifacts)
             if time_to_tp1_s > 60:
-                if time_to_tp1_s < 1800:  # < 30 min -- fast runner
-                    dynamic_close_pct *= 0.85
-                elif time_to_tp1_s > 14400:  # > 4 hours -- slow grind
-                    # Only increase TP1% if not in a clean trend (let trends run)
-                    regime = pos.entry_reasons.get("regime", "unknown")
-                    if regime not in ("trending_bull", "trending_bear", "trend", "trending"):
-                        dynamic_close_pct = min(dynamic_close_pct * 1.10, 0.85)
+                _runner_scaler = self._compute_live_tp1_runner_scaler()
+                if _runner_scaler != 1.0:
+                    dynamic_close_pct = min(max(dynamic_close_pct * _runner_scaler, 0.25), 0.90)
 
             if dynamic_close_pct != pos.tp1_close_pct:
                 logger.info(
@@ -1209,7 +1391,7 @@ class PositionManager:
         if close_qty <= 0 or close_qty >= pos.qty:
             # Degenerate case: close everything as a full TP1 close
             return self._close_position(pos, price, "TP1_FULL")
-        fee = self._fee(price, close_qty)
+        fee = self._fee(price, close_qty, pos.leverage)
         pos.fees_paid += fee
 
         if pos.side == "LONG":
@@ -1292,6 +1474,7 @@ class PositionManager:
                 "remaining_qty": pos.qty,
                 "new_sl": pos.sl,
                 "tp1_close_pct": dynamic_close_pct,
+                "funding_share": funding_share,  # funding allocated to this partial leg
                 "entry_reasons": pos.entry_reasons,
                 "num_agree": (pos.entry_reasons or {}).get("num_agree", 0),
                 "strategies_agree": (pos.entry_reasons or {}).get("strategies_agree", []),
@@ -1300,6 +1483,13 @@ class PositionManager:
                 "tp1": pos.tp1,
                 "tp2": pos.tp2,
                 "confidence": pos.confidence,
+                # Measurement-bug fix (LIVING VALUES 2026-07-15): this used to
+                # be absent, so downstream readers (multi_strategy_main.py's
+                # event.metadata.get("hold_time_s", 0)) always logged 0 for
+                # TP1 rows, making TP1->runner time-to-TP1 slices unverifiable
+                # from the ledger. Now populated with actual elapsed seconds
+                # from pos.open_time to this TP1 fill.
+                "hold_time_s": time_to_tp1_s,
             },
         )
         self.trade_log.append(event)
@@ -1460,8 +1650,14 @@ class PositionManager:
     def _close_position(self, pos: Position, price: float, action: str) -> TradeEvent:
         """Fully close a position with state transition."""
         qty = pos.qty
-        fee = self._fee(price, qty)
+        fee = self._fee(price, qty, pos.leverage)
         pos.fees_paid += fee
+        # FEE_ACCOUNTING_FIX: the entry-leg fee (booked to fees_paid at open) was
+        # never deducted from realized_pnl nor charged to equity (equity only sees
+        # exit-event fees via update_equity(event.pnl - event.fee)). Book it into
+        # the final-close fee so realized_pnl and equity carry the full round trip.
+        if os.getenv("FEE_ACCOUNTING_FIX", "false").lower() in ("1", "true", "yes"):
+            fee += self._fee(pos.entry, pos.original_qty, pos.leverage)
 
         if pos.side == "LONG":
             pnl = (price - pos.entry) * qty * pos.leverage
@@ -1501,6 +1697,9 @@ class PositionManager:
                 "strategies_agree": _er.get("strategies_agree", []),
                 "pnl": pos.realized_pnl,
                 "entry": pos.entry,
+                # PNL_UNIT_FIX (2026-07-14): qty lets neuroplasticity compute a real
+                # return-on-margin % instead of dollars-divided-by-price (M12 pattern).
+                "qty": getattr(pos, "original_qty", 0.0) or getattr(pos, "qty", 0.0),
                 "regime": _er.get("regime", "unknown"),
                 "outcome": pos.outcome,
             })
@@ -1703,7 +1902,7 @@ class PositionManager:
         if close_qty <= 0 or close_qty >= pos.qty:
             return None
 
-        fee = self._fee(price, close_qty)
+        fee = self._fee(price, close_qty, pos.leverage)
         pos.fees_paid += fee
 
         if pos.side == "LONG":

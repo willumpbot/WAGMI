@@ -14,6 +14,7 @@ All data computed from TradeDNA records in deep_memory.
 
 import logging
 import math
+import os
 from collections import defaultdict
 from typing import Dict, Any, Optional, List
 
@@ -34,7 +35,18 @@ class QuantDataProvider:
             except Exception:
                 return []
         self._dna._ensure_loaded()
-        return self._dna._trades
+        # A-T1 (2026-07-13 audit): drop rows with corrupted pnl_pct (dollars/price,
+        # e.g. -904% on a -$9.31 trade) that inflate the Kelly/avg-loss/fat-tail stats
+        # fed to the Quant agent 9-23x. Clean rows max at |49.48%|; 50 is a clean cut.
+        # Read-filter only (trade_dna.json untouched). Revert: QUANT_PNL_SANITY_MAX_PCT=0.
+        try:
+            max_pct = float(os.getenv("QUANT_PNL_SANITY_MAX_PCT", "50"))
+        except (TypeError, ValueError):
+            max_pct = 50.0
+        if max_pct <= 0:
+            return self._dna._trades
+        return [t for t in self._dna._trades
+                if abs(t.get("pnl_pct", 0.0)) <= max_pct]
 
     # ═══════════════════════════════════════════════════════════════
     # 1. Avg Win / Avg Loss per group

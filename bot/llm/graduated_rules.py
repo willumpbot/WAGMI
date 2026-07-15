@@ -444,6 +444,13 @@ class GraduatedRulesEngine:
         self._ensure_loaded()
         vetoed, conf_delta, applied = False, 0.0, []
         applied_veto_rule_ids: List[str] = []
+        # LIVING-VALUES provenance gate (2026-07-14): pre-standard rules (era="" or a
+        # stale ledger_version) enforce today regardless of §2b — e.g. a -20 conf penalty
+        # on BTC SELL (the proven winning side) from an era-less rule. When
+        # GRAD_RULE_PROVENANCE_ENFORCE=true, such rules are SHADOWED (skipped) so only
+        # properly-graduated (current-era) rules act; the engine re-learns the rest with
+        # valid provenance. DEFAULT OFF — behavioral; flip after review.
+        _prov_enforce = os.getenv("GRAD_RULE_PROVENANCE_ENFORCE", "false").strip().lower() in ("1", "true", "yes")
 
         for rule in self._rules:
             if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
@@ -452,6 +459,9 @@ class GraduatedRulesEngine:
                                                     hour_utc=hour_utc,
                                                     strategies_active=strategies_active):
                 continue
+            if _prov_enforce and (not getattr(rule, "era", "")
+                                  or getattr(rule, "ledger_version", "") != LEDGER_VERSION):
+                continue  # shadow pre-standard rule (no valid §2b provenance)
             if veto_only and rule.action != "veto":
                 continue
             rule.last_applied = time.time()

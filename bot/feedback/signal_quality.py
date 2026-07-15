@@ -20,6 +20,7 @@ The quality score is a meta-confidence that modulates the raw ensemble confidenc
 
 import json
 import logging
+import math
 import os
 import time
 from collections import defaultdict
@@ -95,6 +96,12 @@ class SignalQualityScorer:
             lambda: {"wins": 0, "total": 0, "pnl": 0.0, "recent": []}
         )
 
+        # Symbol+side tracking (symbol-pooled PnL hides side-specific edges,
+        # e.g. ETH_SHORT +$20.37/tr vs ETH_LONG -$2.28/tr) — key: "SYMBOL|SIDE"
+        self.by_symbol_side: Dict[str, Dict] = defaultdict(
+            lambda: {"wins": 0, "total": 0, "pnl": 0.0, "recent": []}
+        )
+
         # LLM agreement tracking: does LLM agreement predict wins?
         self.by_llm_agreement: Dict[str, Dict] = defaultdict(
             lambda: {"wins": 0, "total": 0, "pnl": 0.0, "recent": []}
@@ -147,6 +154,8 @@ class SignalQualityScorer:
         _update(self.by_session, session)
 
         _update(self.by_side, features.side)
+        if features.symbol and features.side:
+            _update(self.by_symbol_side, f"{features.symbol}|{features.side}")
 
         # LLM agreement tracking
         if features.llm_action:
@@ -178,8 +187,8 @@ class SignalQualityScorer:
         sym_data = self.by_symbol.get(features.symbol)
         if sym_data and sym_data["total"] >= 5:
             wr = self._recent_win_rate(sym_data)
-            scores["symbol"] = self._wr_to_score(wr)
-            weights["symbol"] = 0.15
+            scores["symbol"] = self._wr_to_score(wr, sym_data)
+            weights["symbol"] = self._dimension_discriminative_power(self.by_symbol, 0.15)
         else:
             scores["symbol"] = 1.0
             weights["symbol"] = 0.05  # Low weight when no data
@@ -188,8 +197,8 @@ class SignalQualityScorer:
         reg_data = self.by_regime.get(features.regime)
         if reg_data and reg_data["total"] >= 5:
             wr = self._recent_win_rate(reg_data)
-            scores["regime"] = self._wr_to_score(wr)
-            weights["regime"] = 0.20
+            scores["regime"] = self._wr_to_score(wr, reg_data)
+            weights["regime"] = self._dimension_discriminative_power(self.by_regime, 0.20)
         else:
             scores["regime"] = 1.0
             weights["regime"] = 0.05
@@ -198,19 +207,24 @@ class SignalQualityScorer:
         con_data = self.by_consensus.get(features.num_strategies_agree)
         if con_data and con_data["total"] >= 5:
             wr = self._recent_win_rate(con_data)
-            scores["consensus"] = self._wr_to_score(wr)
-            weights["consensus"] = 0.20
+            scores["consensus"] = self._wr_to_score(wr, con_data)
+            weights["consensus"] = self._dimension_discriminative_power(self.by_consensus, 0.20)
         else:
-            # Default: more agreement = better
-            scores["consensus"] = 0.9 + features.num_strategies_agree * 0.05
-            weights["consensus"] = 0.10
+            # No live data for this bucket yet: neutral, low-weight fallback
+            # (matches every other dimension's no-data fallback). The live
+            # branch above (n>=5) already governs all observed buckets, and
+            # realized ledger PnL says MORE agreement is NOT better here
+            # (consensus=1 n=124 +$8.92/tr vs consensus=2 n=62 -$8.20/tr) —
+            # do not resurrect a directional prior for unseen buckets.
+            scores["consensus"] = 1.0
+            weights["consensus"] = 0.05
 
         # 4. Entry type quality
         et_data = self.by_entry_type.get(features.entry_type or "unknown")
         if et_data and et_data["total"] >= 5:
             wr = self._recent_win_rate(et_data)
-            scores["entry_type"] = self._wr_to_score(wr)
-            weights["entry_type"] = 0.15
+            scores["entry_type"] = self._wr_to_score(wr, et_data)
+            weights["entry_type"] = self._dimension_discriminative_power(self.by_entry_type, 0.15)
         else:
             scores["entry_type"] = 1.0
             weights["entry_type"] = 0.05
@@ -219,8 +233,8 @@ class SignalQualityScorer:
         hour_data = self.by_hour.get(features.hour_of_day)
         if hour_data and hour_data["total"] >= 5:
             wr = self._recent_win_rate(hour_data)
-            scores["hour"] = self._wr_to_score(wr)
-            weights["hour"] = 0.10
+            scores["hour"] = self._wr_to_score(wr, hour_data)
+            weights["hour"] = self._dimension_discriminative_power(self.by_hour, 0.10)
         else:
             scores["hour"] = 1.0
             weights["hour"] = 0.03
@@ -229,8 +243,8 @@ class SignalQualityScorer:
         side_data = self.by_side.get(features.side)
         if side_data and side_data["total"] >= 5:
             wr = self._recent_win_rate(side_data)
-            scores["side"] = self._wr_to_score(wr)
-            weights["side"] = 0.10
+            scores["side"] = self._wr_to_score(wr, side_data)
+            weights["side"] = self._dimension_discriminative_power(self.by_side, 0.10)
         else:
             scores["side"] = 1.0
             weights["side"] = 0.03
@@ -250,8 +264,8 @@ class SignalQualityScorer:
             llm_data = self.by_llm_agreement.get(agreement_key)
             if llm_data and llm_data["total"] >= 5:
                 wr = self._recent_win_rate(llm_data)
-                scores["llm_agreement"] = self._wr_to_score(wr)
-                weights["llm_agreement"] = 0.15
+                scores["llm_agreement"] = self._wr_to_score(wr, llm_data)
+                weights["llm_agreement"] = self._dimension_discriminative_power(self.by_llm_agreement, 0.15)
             else:
                 scores["llm_agreement"] = 1.0
                 weights["llm_agreement"] = 0.05
@@ -304,21 +318,57 @@ class SignalQualityScorer:
         pseudo = 10 if total < 5 else (5 if total < 20 else 2)
         return (wins + pseudo / 2) / (total + pseudo)
 
-    def _wr_to_score(self, win_rate: float) -> float:
-        """Convert a win rate to a quality score multiplier.
+    def _wr_to_score(self, win_rate: float, tracker: Dict = None) -> float:
+        """Convert a win rate (+ optional pnl tracker) to a quality score multiplier.
 
-        IMPORTANT: This system runs at 35% WR by design (high payoff ratio).
-        A 50%-neutral WR baseline would penalize EVERY signal in the system.
-        Baseline is set to 35% WR = 1.0 (neutral) to match system reality.
+        LIVING VALUES: the neutral baseline is the LIVE system win rate
+        (overall_recent, n>=13), not a frozen 35% constant — the old frozen
+        35% no longer matched realized ledger WR (43.8% overall as of
+        2026-07-15) and was blanket-boosting every signal.
 
-        20% WR = 0.85 (penalty — below system average)
-        35% WR = 1.0 (neutral — system average)
-        50% WR = 1.1 (boost — above average)
-        65% WR = 1.2 (strong boost)
+        When a per-dimension tracker is supplied, blend in realized
+        expectancy (avg net pnl/trade, tanh-normalized to +-0.2) with the WR
+        delta, because raw WR anti-correlates with $ edge in this ledger
+        (e.g. SHORT 39.7% WR / +$5.67/tr vs LONG 50.0% WR / -$5.89/tr) —
+        pure-WR scoring would rate the losing side above the profitable one.
+
+        score = 1.0 + blended_delta, clamped to [0.65, 1.35].
         """
-        # Linear mapping centered on 35% WR instead of 50%
-        # 0% -> 0.65, 35% -> 1.0, 70% -> 1.35
-        return 0.65 + win_rate
+        if len(self.overall_recent) >= 13:
+            baseline_wr = sum(self.overall_recent) / len(self.overall_recent)
+        else:
+            baseline_wr = 0.44  # realized ledger WR fallback (n<13), not 0.35
+        wr_delta = win_rate - baseline_wr
+
+        if tracker and tracker.get("total", 0) > 0:
+            avg_pnl = tracker.get("pnl", 0.0) / tracker["total"]
+            pnl_component = math.tanh(avg_pnl / 10.0) * 0.2
+            delta = (wr_delta + pnl_component) / 2.0
+        else:
+            delta = wr_delta
+
+        return max(0.65, min(1.35, 1.0 + delta))
+
+    def _dimension_discriminative_power(self, tracker: Dict, floor: float, cap: float = 0.30) -> float:
+        """Live per-dimension weight based on realized PnL spread across its buckets.
+
+        LIVING VALUES: replaces the old hardcoded 0.10-0.20 weight tiers, which
+        put the widest realized-edge dimension (side: $17.3/tr spread, up to
+        $54.7/tr symbol-side) at the same or lower weight than dimensions with
+        no positive bucket at all (regime). Dimensions whose buckets show a
+        wider realized avg-pnl-per-trade spread get proportionally more say in
+        the quality multiplier (the final weighted-average division in
+        score_signal already normalizes weights, satisfying "sum to 1.0").
+
+        Falls back to `floor` — the prior static tier value — when fewer than
+        2 buckets in this tracker have total >= 13 (LIVING VALUES n-gate; not
+        yet enough qualifying buckets to measure discriminative power).
+        """
+        avgs = [d["pnl"] / d["total"] for d in tracker.values() if d.get("total", 0) >= 13]
+        if len(avgs) < 2:
+            return floor
+        spread = max(avgs) - min(avgs)
+        return min(cap, max(floor, spread / 100.0))
 
     @staticmethod
     def _hour_to_session(hour: int) -> str:
@@ -379,23 +429,49 @@ class SignalQualityScorer:
 
         return report
 
-    def get_symbol_confidence_floor(self, symbol: str, base_floor: float = 65.0) -> float:
-        """Compute adjusted confidence floor based on symbol profitability.
+    def get_symbol_confidence_floor(
+        self, symbol: str, side: str = "", base_floor: float = 65.0
+    ) -> float:
+        """Compute adjusted confidence floor based on symbol (+ side) profitability.
 
         Uses PnL-per-trade, NOT win rate. Our system is 35% WR by design —
         WR-based difficulty would raise floors on every symbol, blocking
         profitable setups. PnL captures the actual edge (high payoff ratio).
+
+        LIVING VALUES: side-aware. Symbol-pooled PnL can hide a losing side
+        inside an overall-profitable symbol (e.g. ETH_LONG -$2.28/tr n=26
+        pooled into ETH's blended average) and leave it with no floor raise.
+        When the (symbol, side) tracker has enough data (n>=13), its own
+        adjustment is blended in raise-only: side data can ADD a floor raise
+        but can never REMOVE a raise already earned by the pooled-symbol
+        data (e.g. HYPE_SHORT keeps HYPE's pooled raise until the pooled
+        HYPE average itself recovers).
         """
+        def _adjustment(avg_pnl: float) -> float:
+            if avg_pnl > 0:
+                return max(-5, -min(avg_pnl * 2, 5))  # Up to -5 floor reduction
+            return min(10, min(abs(avg_pnl) * 1.5, 10))  # Up to +10 floor raise
+
         sym_data = self.by_symbol.get(symbol)
-        if not sym_data or sym_data["total"] < 5:
+        pooled_adj = None
+        if sym_data and sym_data["total"] >= 5:
+            pooled_adj = _adjustment(sym_data.get("pnl", 0.0) / sym_data["total"])
+
+        side_adj = None
+        if side:
+            side_data = self.by_symbol_side.get(f"{symbol}|{side}")
+            if side_data and side_data["total"] >= 13:
+                side_adj = _adjustment(side_data.get("pnl", 0.0) / side_data["total"])
+
+        candidates = [a for a in (pooled_adj, side_adj) if a is not None]
+        if not candidates:
             return base_floor  # Not enough data
 
-        avg_pnl = sym_data.get("pnl", 0.0) / sym_data["total"]
-        # Positive avg PnL = lower floor (earned trust), negative = raise floor
-        if avg_pnl > 0:
-            adjustment = max(-5, -min(avg_pnl * 2, 5))  # Up to -5 floor reduction
-        else:
-            adjustment = min(10, min(abs(avg_pnl) * 1.5, 10))  # Up to +10 floor raise
+        # Raise-only blend: side data can only push the floor UP relative to
+        # the pooled adjustment, never down (safety — never weaken a floor
+        # the pooled data already earned).
+        adjustment = max(candidates)
+
         adjusted = base_floor + adjustment
         adjusted = max(base_floor - 5, min(base_floor + 15, adjusted))
         return round(adjusted, 1)
@@ -460,6 +536,7 @@ class SignalQualityScorer:
                 "by_entry_type": _serialize(self.by_entry_type),
                 "by_hour": _serialize(self.by_hour),
                 "by_side": _serialize(self.by_side),
+                "by_symbol_side": _serialize(self.by_symbol_side),
                 "by_llm_agreement": _serialize(self.by_llm_agreement),
                 "by_session": _serialize(self.by_session),
                 "overall_recent": self.overall_recent[-100:],
@@ -498,6 +575,7 @@ class SignalQualityScorer:
             _deserialize(state.get("by_entry_type", {}), self.by_entry_type)
             _deserialize(state.get("by_hour", {}), self.by_hour)
             _deserialize(state.get("by_side", {}), self.by_side)
+            _deserialize(state.get("by_symbol_side", {}), self.by_symbol_side)
             _deserialize(state.get("by_llm_agreement", {}), self.by_llm_agreement)
             _deserialize(state.get("by_session", {}), self.by_session)
             self.overall_recent = state.get("overall_recent", [])
@@ -531,7 +609,7 @@ class SignalQualityScorer:
             # Rebuild all trackers from DNA
             for tracker in [self.by_symbol, self.by_regime, self.by_consensus,
                              self.by_entry_type, self.by_hour, self.by_side,
-                             self.by_session, self.by_llm_agreement]:
+                             self.by_symbol_side, self.by_session, self.by_llm_agreement]:
                 tracker.clear()
             self.overall_recent.clear()
             for t in trades:

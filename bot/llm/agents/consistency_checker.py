@@ -209,8 +209,11 @@ def _check_confidence_coherence(
             suggestion="Reduce trade confidence by 15-20%",
         ))
 
-    # Acting with very low confidence — threshold reads from ENSEMBLE_CONFIDENCE_FLOOR (default 20%)
-    _min_go_conf = float(os.getenv("ENSEMBLE_CONFIDENCE_FLOOR", "40")) / 100.0
+    # Acting with very low confidence — threshold reads from ENSEMBLE_CONFIDENCE_FLOOR.
+    # 2026-07-14: fallback aligned to 20 (was 40, contradicting this comment and the .env
+    # canonical value) so the code default = the single documented source; no divergent
+    # fallback if the env is ever unset. Guard kept (blocks nonsensical ultra-low-conf gos).
+    _min_go_conf = float(os.getenv("ENSEMBLE_CONFIDENCE_FLOOR", "20")) / 100.0
     if action_normalized == "go" and trade_conf < _min_go_conf:
         issues.append(ConsistencyIssue(
             check_name="confidence_coherence",

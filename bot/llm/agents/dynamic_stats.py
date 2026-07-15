@@ -75,8 +75,82 @@ def _stats_file_stale(path: Path, name: str) -> bool:
     return False
 
 
+def _load_recent_trades_from_ledger(max_trades: int = 100) -> List[dict]:
+    """Load last N trades from the COMPLETE trade_ledger.csv (accounting-hole fix).
+
+    ACCOUNTING HOLE (verified 2026-07-13): trades.csv and trade_ledger.csv are
+    written from different close-handler branches, so trades.csv silently misses
+    ~30% of closes — disproportionately LOSERS (ledger 71W/142L=-$25 vs trades.csv
+    58W/89L=+$667). Every reader of trades.csv therefore sees an inflated,
+    positively-biased edge. The ledger's net_pnl is the canonical realized PnL.
+    Column/vocab mapping: SHORT->SELL, LONG->BUY; regime_1h->regime;
+    confidence_score->confidence; net_pnl->pnl. Gated by EDGE_STATS_FROM_LEDGER.
+    """
+    trades: List[dict] = []
+    ledger = _DATA_DIR / "trade_ledger.csv"
+    try:
+        if not ledger.exists():
+            return trades
+        with open(ledger, "r", newline="") as f:
+            all_rows = list(csv.DictReader(f))
+        # RECENCY GUARD: the 45-day ledger is dominated by the June blowup + outages.
+        # Filter to a recent window FIRST so the edge map reflects CURRENT edge, not
+        # history. Window via EDGE_STATS_LEDGER_DAYS (default 21, matches CF miner).
+        import os as _os, time as _time, datetime as _dt
+        try:
+            _win_days = float(_os.getenv("EDGE_STATS_LEDGER_DAYS", "21"))
+        except (ValueError, TypeError):
+            _win_days = 21.0
+        _cutoff = _time.time() - _win_days * 86400.0
+        def _row_ts(r):
+            t = str(r.get("timestamp", "")).strip()
+            if not t:
+                return None
+            try:
+                return float(t) if ("T" not in t) else _dt.datetime.fromisoformat(
+                    t.replace("Z", "+00:00")).timestamp()
+            except (ValueError, TypeError):
+                return None
+        # Window-or-legacy: if nothing falls in the window (incl. total timestamp
+        # parse failure), return [] so the caller falls back to legacy trades.csv
+        # rather than silently serving the full 45d ledger (June blowup).
+        all_rows = [r for r in all_rows if (_row_ts(r) or 0) >= _cutoff]
+        _side_map = {"SHORT": "SELL", "LONG": "BUY", "SELL": "SELL", "BUY": "BUY"}
+        for row in all_rows[-max_trades:]:
+            try:
+                pnl = float(row.get("net_pnl", row.get("pnl", "")))
+            except (ValueError, TypeError):
+                continue
+            _cf = (row.get("contributing_factors", "") or "").split(",")
+            trades.append({
+                "symbol": row.get("symbol", ""),
+                "side": _side_map.get((row.get("side", "") or "").upper(), row.get("side", "")),
+                "pnl": pnl,
+                "won": pnl > 0,
+                "strategy": _cf[0].strip() if _cf and _cf[0].strip() else "",
+                "regime": row.get("regime_1h", ""),
+                "confidence": float(row.get("confidence_score", 0) or 0),
+                "leverage": float(row.get("leverage", 0) or 0),
+                "fees": float(row.get("fees", 0) or 0),
+                "outcome": row.get("exit_type", ""),
+                "timestamp": row.get("timestamp", ""),
+            })
+    except Exception as e:
+        logger.debug("dynamic_stats: failed to load ledger trades: %s", e)
+    return trades
+
+
 def _load_recent_trades(max_trades: int = 100) -> List[dict]:
-    """Load last N trades from trades.csv."""
+    """Load last N trades. Sources the COMPLETE ledger when EDGE_STATS_FROM_LEDGER
+    is on (default off = legacy trades.csv, byte-for-byte). See
+    _load_recent_trades_from_ledger for the accounting-hole rationale.
+    Revert: EDGE_STATS_FROM_LEDGER=false."""
+    import os as _os
+    if _os.getenv("EDGE_STATS_FROM_LEDGER", "false").strip().lower() in ("1", "true", "yes"):
+        _led = _load_recent_trades_from_ledger(max_trades)
+        if len(_led) >= 10:
+            return _led
+        # too few ledger rows -> fall through to legacy source rather than starve
     trades = []
     try:
         if not TRADES_CSV.exists():

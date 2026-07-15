@@ -22,8 +22,11 @@ Safety:
   - Position sizing guards against near-zero stop widths
 """
 
+import csv
 import logging
 import os
+import threading
+import time
 from typing import Dict, Optional, Any
 from dataclasses import dataclass
 
@@ -75,6 +78,182 @@ def get_maintenance_margin_rate(notional_usd: float) -> float:
 # Single source of truth: trading_config.py MIN_STOP_WIDTH_PCT env var (default 0.002).
 from trading_config import TradingConfig as _TC
 MIN_STOP_WIDTH_PCT = _TC().min_stop_width_pct
+
+
+# ── LIVE PER-SYMBOL KELLY LEVERAGE (LIVING VALUES, 2026-07-15) ──────────────
+# Replaces the static _SCALP_KELLY_LEV snapshot dict, which contradicted the
+# ledger: HYPE (-$15.20/tr, n=37) still got 5x, and any symbol missing from the
+# dict (e.g. XRP, net -$1.90/tr, n=44) silently inherited the 7.0x fallback --
+# a net loser getting the MAXIMUM leverage. Computed live from closed trades in
+# data/trade_ledger.csv (net_pnl, TEST/SIM rows excluded), same Kelly formula as
+# feedback/kelly_engine.py (f* = WR - (1-WR)/payoff_ratio). Mirrors
+# feedback/live_edge.py's mtime+TTL cache pattern so it self-updates as new
+# trades close. n<13 -> conservative 2.0x floor (new/unproven symbols start
+# small and earn leverage). Bounded [2.0, 7.0] -- can never exceed the prior
+# ceiling.
+_KELLY_LEV_MIN_N = 13
+_KELLY_LEV_TTL_S = 3600  # refresh at most hourly, or immediately on ledger mtime change
+_KELLY_LEV_FLOOR = 2.0
+_KELLY_LEV_CEIL = 7.0
+_LEDGER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "trade_ledger.csv")
+_kelly_lev_cache = {"lev": {}, "meta": {}, "computed_at": 0.0, "ledger_mtime": 0.0}
+_kelly_lev_lock = threading.Lock()
+
+
+def _read_ledger_rows():
+    """Yield closed-trade rows from trade_ledger.csv, excluding TEST/SIM symbols."""
+    path = os.path.normpath(_LEDGER_PATH)
+    if not os.path.exists(path):
+        return
+    with open(path, newline="", encoding="utf-8", errors="ignore") as f:
+        for row in csv.DictReader(f):
+            sym = (row.get("symbol") or "").strip().upper()
+            if not sym or "TEST" in sym or "SIM" in sym:
+                continue
+            yield sym, row
+
+
+def _recompute_symbol_kelly_lev() -> Dict[str, Dict[str, Any]]:
+    """Rebuild {symbol: {lev, meta}} from closed trades in trade_ledger.csv. Never raises."""
+    lev_map: Dict[str, float] = {}
+    meta: Dict[str, Any] = {}
+    try:
+        pnls_by_symbol: Dict[str, list] = {}
+        for sym, row in _read_ledger_rows():
+            try:
+                pnl = float(row.get("net_pnl") or "")
+            except (ValueError, TypeError):
+                continue
+            pnls_by_symbol.setdefault(sym, []).append(pnl)
+        for sym, pnls in pnls_by_symbol.items():
+            n = len(pnls)
+            if n < _KELLY_LEV_MIN_N:
+                continue  # insufficient evidence -> caller uses the n<13 floor fallback
+            wins = [p for p in pnls if p > 0]
+            losses = [p for p in pnls if p <= 0]
+            wr = len(wins) / n
+            avg_win = (sum(wins) / len(wins)) if wins else 0.0
+            avg_loss = (sum(-p for p in losses) / len(losses)) if losses else 0.0
+            if avg_loss <= 1e-9:
+                pr = max(avg_win, 3.0) if avg_win > 0 else 0.0
+            else:
+                pr = avg_win / avg_loss
+            raw_f = max(0.0, (wr - (1.0 - wr) / pr)) if pr > 0 else 0.0
+            lev = _KELLY_LEV_FLOOR + (_KELLY_LEV_CEIL - _KELLY_LEV_FLOOR) * min(raw_f / 0.25, 1.0)
+            lev_map[sym] = round(lev, 2)
+            meta[sym] = {"n": n, "wr": round(wr, 3), "payoff": round(pr, 3), "raw_f": round(raw_f, 3)}
+    except Exception as e:
+        logger.debug("live_symbol_kelly_lev: recompute failed: %s", e)
+        return {"lev": {}, "meta": {}}
+    return {"lev": lev_map, "meta": meta}
+
+
+def _ensure_kelly_lev_fresh() -> None:
+    path = os.path.normpath(_LEDGER_PATH)
+    now = time.time()
+    try:
+        led_mtime = os.path.getmtime(path) if os.path.exists(path) else 0.0
+    except OSError:
+        led_mtime = 0.0
+    with _kelly_lev_lock:
+        stale = (now - _kelly_lev_cache["computed_at"] > _KELLY_LEV_TTL_S) or (led_mtime != _kelly_lev_cache["ledger_mtime"])
+        if stale:
+            result = _recompute_symbol_kelly_lev()
+            _kelly_lev_cache.update({
+                "lev": result["lev"], "meta": result["meta"],
+                "computed_at": now, "ledger_mtime": led_mtime,
+            })
+
+
+def live_symbol_kelly_lev(symbol: str) -> float:
+    """Live per-symbol Kelly leverage from the bot's own closed trades (n>=13),
+    else the conservative 2.0x floor for unproven/new symbols. Bounded [2.0, 7.0]."""
+    sym = (symbol or "").strip().upper()
+    _ensure_kelly_lev_fresh()
+    with _kelly_lev_lock:
+        return _kelly_lev_cache["lev"].get(sym, _KELLY_LEV_FLOOR)
+
+
+def live_symbol_kelly_lev_meta(symbol: str) -> Dict[str, Any]:
+    """Diagnostics for the live Kelly leverage decision (n, wr, payoff, raw_f)."""
+    sym = (symbol or "").strip().upper()
+    _ensure_kelly_lev_fresh()
+    with _kelly_lev_lock:
+        return _kelly_lev_cache["meta"].get(sym, {"n": 0, "wr": 0.0, "payoff": 0.0, "raw_f": 0.0})
+
+
+# ── LIVE AGREEMENT-BUCKET MULTIPLIER (LIVING VALUES, 2026-07-15) ────────────
+# Replaces the static {1: 0.80, 2: 1.0, 3: 1.0} map, which contradicted the
+# ledger: agree=1 (n=148) nets +$5.66/tr yet was penalized 0.80x, while agree=2
+# (n=62) nets -$8.20/tr yet was full-sized at 1.0x -- the inverse of realized
+# data. Computed live from closed trades in data/trade_ledger.csv, grouped by
+# min(agreement_level, 3): mult=1.0 if the bucket's avg net_pnl >= 0 (or n<13,
+# neutral -- a penalty must be earned by realized losses), else 0.80 (the
+# existing caution factor). Capped at 1.0: agreement can never INCREASE
+# leverage (2026-06-23 de-hardcode note). Mirrors the Kelly-leverage cache above.
+_AGREE_MULT_MIN_N = 13
+_AGREE_MULT_TTL_S = 3600
+_agree_mult_cache = {"mult": {}, "meta": {}, "computed_at": 0.0, "ledger_mtime": 0.0}
+_agree_mult_lock = threading.Lock()
+
+
+def _recompute_agreement_mult() -> Dict[str, Dict[str, Any]]:
+    """Rebuild {bucket(1-3): mult} from closed trades in trade_ledger.csv. Never raises."""
+    mult_map: Dict[int, float] = {}
+    meta: Dict[int, Any] = {}
+    try:
+        pnls_by_bucket: Dict[int, list] = {}
+        for _sym, row in _read_ledger_rows():
+            try:
+                pnl = float(row.get("net_pnl") or "")
+            except (ValueError, TypeError):
+                continue
+            try:
+                agree = int(float(row.get("agreement_level") or 0))
+            except (ValueError, TypeError):
+                continue
+            if agree <= 0:
+                continue
+            bucket = min(agree, 3)
+            pnls_by_bucket.setdefault(bucket, []).append(pnl)
+        for bucket, pnls in pnls_by_bucket.items():
+            n = len(pnls)
+            avg = (sum(pnls) / n) if n else 0.0
+            mult_map[bucket] = 1.0 if (n < _AGREE_MULT_MIN_N or avg >= 0) else 0.80
+            meta[bucket] = {"n": n, "avg_pnl": round(avg, 2)}
+    except Exception as e:
+        logger.debug("live_agreement_mult: recompute failed: %s", e)
+        return {"mult": {}, "meta": {}}
+    return {"mult": mult_map, "meta": meta}
+
+
+def _ensure_agree_mult_fresh() -> None:
+    path = os.path.normpath(_LEDGER_PATH)
+    now = time.time()
+    try:
+        led_mtime = os.path.getmtime(path) if os.path.exists(path) else 0.0
+    except OSError:
+        led_mtime = 0.0
+    with _agree_mult_lock:
+        stale = (now - _agree_mult_cache["computed_at"] > _AGREE_MULT_TTL_S) or (led_mtime != _agree_mult_cache["ledger_mtime"])
+        if stale:
+            result = _recompute_agreement_mult()
+            _agree_mult_cache.update({
+                "mult": result["mult"], "meta": result["meta"],
+                "computed_at": now, "ledger_mtime": led_mtime,
+            })
+
+
+def live_agreement_mult(num_strategies_agree: int) -> Dict[str, Any]:
+    """Live per-agreement-bucket leverage multiplier from the bot's own closed
+    trades (n>=13 per bucket), else neutral 1.0. Capped at 1.0 (agreement can
+    never increase leverage). Returns {"mult", "n", "avg_pnl"}."""
+    bucket = min(max(int(num_strategies_agree), 1), 3)
+    _ensure_agree_mult_fresh()
+    with _agree_mult_lock:
+        mult = min(1.0, _agree_mult_cache["mult"].get(bucket, 1.0))
+        meta = _agree_mult_cache["meta"].get(bucket, {"n": 0, "avg_pnl": 0.0})
+        return {"mult": mult, "n": meta.get("n", 0), "avg_pnl": meta.get("avg_pnl", 0.0)}
 
 
 @dataclass
@@ -134,23 +313,23 @@ class LeverageManager:
         # The problem was HOLD TIME not leverage. Fix exits, not leverage.
         #
         # Kelly-optimal per symbol (factoring 5min noise + WR):
-        _SCALP_KELLY_LEV = {
-            "BTC": 7.0,    # Capped: data shows 5-7x optimal, 7-9x loses
-            "ETH": 7.0,    # Capped at 7x
-            "SOL": 7.0,    # Already at 7x
-            "HYPE": 5.0,   # Already at 5x
-        }
+        # LIVING VALUES (2026-07-15): live per-symbol Kelly leverage computed from
+        # the ledger's own closed trades (see live_symbol_kelly_lev above), NOT a
+        # frozen snapshot. n<13 symbols get the 2.0x conservative floor, not 7.0.
         _sym_clean = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
-        FULL_KELLY_LEV = _SCALP_KELLY_LEV.get(_sym_clean, 7.0)
+        FULL_KELLY_LEV = live_symbol_kelly_lev(_sym_clean)
         # DE-HARDCODE (2026-06-23): removed the +20% boost for 3-agree (was 1.20). It rewarded RAW
         # vote count, which correlated oscillators inflate — the code's own comment says "4+ agree =
         # 0% WR, redundant oscillators fire together" — and there is NO evidence raw agreement helps
         # (the "high agreement = worse" finding was an exit-agent confound). Boost capped at 1.0 so
-        # agreement can no longer INCREASE leverage. The low-agreement caution (0.80x) is kept as a
-        # risk control. Re-derive from n_independent + measured edge before letting agreement boost.
-        _agree_mult = {1: 0.80, 2: 1.0, 3: 1.0}.get(
-            min(num_strategies_agree, 3), 1.0
-        )
+        # agreement can no longer INCREASE leverage.
+        # LIVING VALUES (2026-07-15): the low-agreement "caution" factor is now live-computed
+        # per bucket from the ledger (see live_agreement_mult above), not a frozen snapshot --
+        # the static {1: 0.80, 2: 1.0, 3: 1.0} map penalized the profitable agree=1 bucket while
+        # full-sizing the net-loser agree=2 bucket, the inverse of realized data. Still capped
+        # at 1.0 so agreement can never INCREASE leverage.
+        _agree_info = live_agreement_mult(num_strategies_agree)
+        _agree_mult = _agree_info["mult"]
 
         # Leverage caps for scalp-Kelly approach
         tier_cap = {
@@ -227,14 +406,21 @@ class LeverageManager:
         else:
             tier = "low"
 
+        # Auditability: surface the live-computed inputs behind base_lev/_agree_mult
+        _audit = (
+            f"kelly_lev={base_lev:.1f}x(sym={_sym_clean}) "
+            f"agree_mult={_agree_mult:.2f}(bucket={min(num_strategies_agree, 3)},"
+            f"n={_agree_info['n']},avg=${_agree_info['avg_pnl']:.2f})"
+        )
+
         if lev > 6.0 and current_extreme_count >= self.max_extreme_positions:
             lev = 6.0  # Still meaningful, not crushed to 4x
             return _wr(LeverageDecision(lev, "leverage", tier,
-                                        f"{lev:.1f}x: extreme limit capped, {confidence:.0f}%", rm))
+                                        f"{lev:.1f}x: extreme limit capped, {confidence:.0f}% [{_audit}]", rm))
 
         return self._apply_wr_scaling(
             LeverageDecision(lev, "leverage", tier,
-                             f"{lev:.1f}x: full-Kelly, {num_strategies_agree} strats, {confidence:.0f}%, rm={rm:.1f}", rm),
+                             f"{lev:.1f}x: full-Kelly, {num_strategies_agree} strats, {confidence:.0f}%, rm={rm:.1f} [{_audit}]", rm),
             recent_win_rate, baseline_win_rate,
         )
 

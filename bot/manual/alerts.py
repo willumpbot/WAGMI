@@ -136,7 +136,9 @@ def format_sniper_alert(sniper: SniperSignal, equity: float = 100) -> str:
         lines.append(f"   Asymmetric: risk ${sniper.loss_amount:.2f} to make ${sniper.pnl_scalp:.2f}")
 
     if getattr(sniper, 'is_dip_buy', False):
-        lines.append(f"\U0001f4c9 DIP-BUY setup — higher conviction (88.5% WR)")
+        # 2026-07-14 de-hardcode: removed fabricated "88.5% WR" — the bot's own audit
+        # measured this dip-buy family at 23% WR (n=35). Don't assert invented win-rates.
+        lines.append(f"\U0001f4c9 DIP-BUY setup")
 
     if sniper.signal_context:
         lines.append(f"Why: {sniper.signal_context[:120]}")

@@ -46,8 +46,12 @@ _CONFIDENCE_STATE_PATH = os.path.join(_DATA_DIR, "feedback", "confidence_state.j
 _TRADE_DNA_PATH = os.path.join(_DATA_DIR, "llm", "deep_memory", "trade_dna.json")
 
 # ── Staleness / dedup config ────────────────────────────────────
-_RULE_MIN_TRADES_FOR_RECOMPUTE = 5   # need >=5 matching trades to trust live accuracy
+_RULE_MIN_TRADES_FOR_RECOMPUTE = 5   # need >=5 matching trades to trust live accuracy (protective drop path only)
+_RULE_MIN_TRADES_FOR_READMIT = 13    # n>=13 required (LIVING VALUES mandate) before a graduated rule can be
+                                      # readmitted on live evidence -- raised from the old drop-path floor of 5
 _RULE_STALE_ACC_FLOOR = 0.40         # graduated rule with live acc < this is dropped
+_RULE_READMIT_ACC_TIEBREAK = 0.55    # secondary tiebreak: WR floor used only after the primary expectancy
+                                      # (avg net $/trade) check passes -- WR alone is decorrelated from $ edge
 _ALL_TRADES_FOR_RECOMPUTE = 400      # cap rows scanned for rule recompute
 
 
@@ -107,37 +111,48 @@ def _trade_matches_conditions(trade: Dict[str, str], conditions: Dict[str, Any])
 
 
 def _recompute_rule_accuracy(conditions: Dict[str, Any], action: str,
-                             all_trades: List[Dict[str, str]]) -> Tuple[int, float]:
-    """Recompute a graduated rule's live accuracy from trades.csv (recompute-on-read).
+                             all_trades: List[Dict[str, str]]) -> Tuple[int, float, float]:
+    """Recompute a graduated rule's live accuracy AND $ expectancy from trades.csv
+    (recompute-on-read).
 
-    Returns (n_matching_trades, accuracy). accuracy is the fraction of matching
-    trades on which the rule's directional advice was CORRECT:
-      boost  -> correct when the trade won (pnl>0)
-      penalize/veto -> correct when the trade lost (pnl<=0)
-    Returns (0, 0.5) when no trades match (unmeasured).
+    Returns (n_matching_trades, accuracy, avg_net_pnl).
+
+    "Won"/"correct" is judged on NET pnl (pnl - fees), not gross pnl: the ledger
+    shows gross win-rate is decorrelated from realized $ edge (e.g. ETH_BUY/XRP_BUY
+    carry WR 56-58% but are net losers, while ETH_SELL's WR 53% is the best $ edge).
+      boost  -> correct when the trade won (net>0)
+      penalize/veto -> correct when the trade lost (net<=0)
+    avg_net_pnl is the matching slice's average net pnl in $, which is the primary
+    signal used for expectancy-based readmission/drop decisions (see
+    _dedup_and_resolve_graduated) since it tracks realized edge directly.
+    Returns (0, 0.5, 0.0) when no trades match (unmeasured).
     """
     # A rule with no trades.csv-evaluable condition cannot be scored.
     if not any(k in (conditions or {}) for k in ("symbol", "regime", "side", "strategy")):
-        return 0, 0.5
+        return 0, 0.5, 0.0
     n = 0
     correct = 0
+    net_sum = 0.0
     act = (action or "").lower()
     for t in all_trades:
         if not _trade_matches_conditions(t, conditions):
             continue
         try:
             pnl = float(t.get("pnl", 0) or 0)
+            fees = float(t.get("fees") or 0)
         except (ValueError, TypeError):
             continue
-        won = pnl > 0
+        net = pnl - fees
+        won = net > 0
         n += 1
+        net_sum += net
         if act == "boost" and won:
             correct += 1
         elif act in ("penalize", "veto") and not won:
             correct += 1
     if n == 0:
-        return 0, 0.5
-    return n, correct / n
+        return 0, 0.5, 0.0
+    return n, correct / n, net_sum / n
 
 
 def _dedup_and_resolve_graduated(entries: List[Dict[str, Any]],
@@ -146,11 +161,14 @@ def _dedup_and_resolve_graduated(entries: List[Dict[str, Any]],
     contradictory actions on identical conditions.
 
     Steps:
-      1. Recompute live (n, accuracy) per entry against trades.csv. Drop entries
-         that are stale==True, invalidation_count>=3, or empirically stale
-         (n>=_RULE_MIN_TRADES_FOR_RECOMPUTE and acc<_RULE_STALE_ACC_FLOOR).
+      1. Recompute live (n, accuracy, avg_net_pnl) per entry against trades.csv.
+         Drop entries that are stale==True, invalidation_count>=3, empirically
+         stale by WR (n>=_RULE_MIN_TRADES_FOR_RECOMPUTE and acc<_RULE_STALE_ACC_FLOOR),
+         or -- for boost rules only -- empirically stale by $ expectancy
+         (n>=_RULE_MIN_TRADES_FOR_READMIT and avg_net_pnl<=0), since WR alone can
+         mask a net-losing rule (see HYPE_BUY: WR 53% but -$34.36/tr).
       2. Merge exact (action, frozenset(conditions)) duplicates: keep one, take
-         max live n and max live accuracy.
+         max live n, max live accuracy, and max live avg_net_pnl.
       3. Resolve contradictions on the SAME conditions-set but different actions:
          keep the action with the strongest live evidence (acc * sqrt(n)); when
          no action has evidence (all n==0) or there is a tie, keep the protective
@@ -170,22 +188,36 @@ def _dedup_and_resolve_graduated(entries: List[Dict[str, Any]],
         # (1) drop explicitly/empirically stale
         if e.get("stale") is True or e.get("invalidation_count", 0) >= 3:
             continue
-        n, acc = _recompute_rule_accuracy(conds, action, all_trades)
+        n, acc, avg_net = _recompute_rule_accuracy(conds, action, all_trades)
+        act_l = (action or "").lower()
         if n >= _RULE_MIN_TRADES_FOR_RECOMPUTE and acc < _RULE_STALE_ACC_FLOOR:
             logger.info(
                 f"[ENRICHER] Dropping empirically-stale rule {e.get('rule_id','?')} "
                 f"({action} {conds}) live_acc={acc:.0%} n={n}"
             )
             continue
+        # Expectancy-drop: a boost rule whose WR clears the stale floor can still be
+        # a net $ drain (e.g. HYPE_BUY: WR 53%, avg -$34.36/tr) once n is trustworthy
+        # (>=13). Drop it on realized $ edge even though the WR-based check passed.
+        # Penalize/veto rules are intentionally NOT expectancy-dropped here: they are
+        # only ever dropped via the WR-based stale check above (protective bias).
+        if act_l == "boost" and n >= _RULE_MIN_TRADES_FOR_READMIT and avg_net <= 0:
+            logger.info(
+                f"[ENRICHER] Dropping boost rule {e.get('rule_id','?')} ({conds}) "
+                f"on negative expectancy: avg_net=${avg_net:.2f}/tr n={n} (live_acc={acc:.0%})"
+            )
+            continue
         cond_fs = frozenset((str(k), str(v)) for k, v in conds.items())
         merged = dict(e)
         merged["_live_n"] = n
         merged["_live_acc"] = acc
+        merged["_live_avg_net"] = avg_net
         key = (action, cond_fs)
         if key in canon:
             prev = canon[key]
             merged["_live_n"] = max(prev.get("_live_n", 0), n)
             merged["_live_acc"] = max(prev.get("_live_acc", 0.0), acc)
+            merged["_live_avg_net"] = max(prev.get("_live_avg_net", float("-inf")), avg_net)
             merged["evidence_count"] = max(prev.get("evidence_count", 0), e.get("evidence_count", 0))
         canon[key] = merged
 
@@ -285,7 +317,28 @@ def _load_json_safe(path: str, default: Any = None) -> Any:
 
 
 def _load_recent_trades(path: str, max_trades: int = 10) -> List[Dict[str, str]]:
-    """Load the last N trades from trades.csv."""
+    """Load the last N trades. When EDGE_STATS_FROM_LEDGER is on, source the
+    COMPLETE trade_ledger.csv (accounting-hole fix) via the already-reviewed,
+    recency-guarded dynamic_stats loader — so agents' recent-performance text
+    reflects the true win/loss mix, not the loss-dropping trades.csv.
+    Text display only (no hard-veto consumer). Revert: EDGE_STATS_FROM_LEDGER=false."""
+    if os.getenv("EDGE_STATS_FROM_LEDGER", "false").strip().lower() in ("1", "true", "yes"):
+        try:
+            from llm.agents.dynamic_stats import _load_recent_trades_from_ledger
+            _led = _load_recent_trades_from_ledger(max_trades)
+            if len(_led) >= 5:
+                return [{
+                    "symbol": t.get("symbol", ""),
+                    "side": t.get("side", ""),
+                    "pnl": f"{t.get('pnl', 0):.2f}",
+                    "outcome": "WIN" if t.get("won") else "LOSS",
+                    "confidence": str(t.get("confidence", "")),
+                    "regime": t.get("regime", ""),
+                    "strategy": t.get("strategy", ""),
+                } for t in _led]
+            # too few ledger rows -> fall through to legacy trades.csv
+        except Exception as e:
+            logger.debug(f"[ENRICHER] ledger source failed, using trades.csv: {e}")
     if not os.path.exists(path):
         return []
     try:
@@ -575,16 +628,34 @@ def _build_knowledge_base_rules(agent_role: str) -> str:
         )
         and e.get("confidence", 0) >= 0.7
     ]
-    # Graduated entries whose confidence was frozen low but live accuracy is solid
-    # should still qualify: re-admit graduated rules with live evidence.
+    # Graduated entries whose confidence was frozen low but live evidence is solid
+    # should still qualify: re-admit graduated rules by REALIZED $ EXPECTANCY, not
+    # gross win-rate -- the ledger shows WR is decorrelated from $ edge (ETH_SELL is
+    # the best $ edge at WR 53%; ETH_BUY/XRP_BUY are net losers at WR 56-58%).
+    # Requires n>=_RULE_MIN_TRADES_FOR_READMIT (13, per the n>=13 mandate) before the
+    # live number is trusted at all.
     for e in cleaned:
         if e in relevant:
             continue
+        action_l = (e.get("action") or "").lower()
+        live_n = e.get("_live_n", 0)
+        avg_net = e.get("_live_avg_net", 0.0)
+        live_acc = e.get("_live_acc", 0.0)
+        if action_l == "boost":
+            expectancy_edge = avg_net > 0
+        elif action_l in ("penalize", "veto"):
+            expectancy_edge = avg_net <= 0
+        else:
+            expectancy_edge = False
+        # Boundary case only (avg_net exactly breakeven, no $ signal either way):
+        # fall back to WR as a secondary tiebreak instead of stranding the rule.
+        if not expectancy_edge and avg_net == 0 and live_acc >= _RULE_READMIT_ACC_TIEBREAK:
+            expectancy_edge = True
         if (
             e.get("category", "general") in relevant_cats
             and e.get("conditions") and e.get("action")
-            and e.get("_live_n", 0) >= _RULE_MIN_TRADES_FOR_RECOMPUTE
-            and e.get("_live_acc", 0.0) >= 0.55
+            and live_n >= _RULE_MIN_TRADES_FOR_READMIT
+            and expectancy_edge
         ):
             relevant.append(e)
     if not relevant:
@@ -1076,7 +1147,7 @@ def _build_hold_time_mechanism() -> str:
 def _build_dynamic_floors_section() -> str:
     """Show the system's live dynamic confidence floors computed from the enricher's cached trade_dna."""
     try:
-        from llm.dynamic_thresholds import DynamicThresholds
+        from llm.dynamic_thresholds import DynamicThresholds, _wr_to_floor
         trades = _cache.get("trade_dna", [])
         if len(trades) < 15:
             return ""
@@ -1084,18 +1155,9 @@ def _build_dynamic_floors_section() -> str:
         # We compute inline to avoid path conflicts in tests
         from collections import defaultdict
 
-        def _wr_to_floor(wr: float, n: int) -> float:
-            if n < 10:
-                return 64.0
-            if wr < 0.25:
-                return 76.0
-            if wr < 0.35:
-                return 71.0
-            if wr < 0.45:
-                return 66.0
-            if wr < 0.55:
-                return 62.0
-            return 58.0
+        # _wr_to_floor imported from llm.dynamic_thresholds — single source of truth
+        # so this prompt display can never diverge from the floor the mechanical
+        # gate (strategies/ensemble.py -> get_confidence_floor) actually enforces.
 
         regime_agg: dict = defaultdict(lambda: {"wins": 0, "total": 0, "pnl": 0.0, "sl_hits": 0, "sl_widths": []})
         for t in trades:
@@ -1118,7 +1180,8 @@ def _build_dynamic_floors_section() -> str:
         for r, v in sorted(regime_agg.items(), key=lambda x: -x[1]["total"]):
             n = v["total"]
             wr = v["wins"] / n if n else 0
-            floor = _wr_to_floor(wr, n)
+            avg_net_pnl = v["pnl"] / n if n else 0.0
+            floor = _wr_to_floor(wr, n, avg_net_pnl)
             sl_hit = v["sl_hits"] / n if n else 0
             widths = v["sl_widths"]
             avg_sl = sum(widths) / len(widths) * 100 if widths else 0

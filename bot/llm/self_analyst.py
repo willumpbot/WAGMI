@@ -35,6 +35,25 @@ _MIN_INTERVAL_H = 8             # at least 8h between runs
 
 
 def _load_recent_trades(n: int = 50) -> List[Dict[str, str]]:
+    # ACCOUNTING-HOLE FIX: source the COMPLETE ledger (recency-guarded, reviewed)
+    # when EDGE_STATS_FROM_LEDGER is on, so self-analysis reasons on the true
+    # win/loss mix not the loss-dropping trades.csv. Revert: EDGE_STATS_FROM_LEDGER=false.
+    if os.getenv("EDGE_STATS_FROM_LEDGER", "false").strip().lower() in ("1", "true", "yes"):
+        try:
+            from llm.agents.dynamic_stats import _load_recent_trades_from_ledger
+            _led = _load_recent_trades_from_ledger(n)
+            if len(_led) >= 15:
+                return [{
+                    "symbol": t.get("symbol", ""),
+                    "side": t.get("side", ""),
+                    "pnl": f"{t.get('pnl', 0):.2f}",
+                    "regime": t.get("regime", ""),
+                    "primary_driver": t.get("strategy", ""),
+                    "strategy": t.get("strategy", ""),
+                    "leverage": str(t.get("leverage", "")),
+                } for t in _led]
+        except Exception:
+            pass
     if not os.path.exists(_TRADES_CSV):
         return []
     try:

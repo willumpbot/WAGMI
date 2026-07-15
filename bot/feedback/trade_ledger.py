@@ -50,6 +50,12 @@ LEDGER_COLUMNS = [
     "running_equity",
     "session_dd_pct",
     "ab_gate_hash",  # 0-99 stable hash for A/B split (hash of trade_id % 100)
+    # RR_ZERO_FIX (2026-07-14): these were passed by the close handler in
+    # multi_strategy_main.py since inception but silently dropped because
+    # record_trade() only keeps keys present in this schema.
+    "predicted_ev",   # ev_per_dollar from entry_reasons at open
+    "realized_rr",    # net_pnl / (original stop width * original qty * leverage)
+    "win",            # 1 if net_pnl > 0 else 0
 ]
 
 
@@ -85,9 +91,48 @@ class TradeLedger:
         except (OSError, csv.Error) as e:
             logger.warning(f"[LEDGER] Could not load existing ledger: {e}")
 
+    def _migrate_schema_if_needed(self) -> None:
+        """Additive header migration: pad old rows when LEDGER_COLUMNS grows.
+
+        Without this, appending wider rows under the old narrower header makes
+        the CSV ragged and breaks pandas readers. One-time .bak copy + atomic
+        os.replace so the migration is fully reversible (restore the .bak).
+        """
+        try:
+            with open(self._csv_path, "r", newline="") as f:
+                header = next(csv.reader(f), None)
+            if header is None or header == LEDGER_COLUMNS:
+                return
+            if not set(header).issubset(LEDGER_COLUMNS):
+                logger.warning(
+                    f"[LEDGER] Existing header has unknown columns "
+                    f"{set(header) - set(LEDGER_COLUMNS)}; skipping migration"
+                )
+                return
+            bak = self._csv_path + ".pre_migration.bak"
+            if not os.path.exists(bak):
+                with open(self._csv_path, "rb") as src, open(bak, "wb") as dst:
+                    dst.write(src.read())
+            with open(self._csv_path, "r", newline="") as f:
+                rows = list(csv.DictReader(f))
+            tmp = self._csv_path + ".tmp"
+            with open(tmp, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=LEDGER_COLUMNS)
+                writer.writeheader()
+                for r in rows:
+                    writer.writerow({c: (r.get(c) or "") for c in LEDGER_COLUMNS})
+            os.replace(tmp, self._csv_path)
+            logger.info(
+                f"[LEDGER] Schema migrated, added: "
+                f"{[c for c in LEDGER_COLUMNS if c not in header]}"
+            )
+        except (OSError, csv.Error) as e:
+            logger.warning(f"[LEDGER] Schema migration failed: {e}")
+
     def _ensure_header(self) -> None:
         """Write CSV header if the file does not yet exist."""
         if os.path.exists(self._csv_path):
+            self._migrate_schema_if_needed()
             return
         os.makedirs(os.path.dirname(self._csv_path) or ".", exist_ok=True)
         try:

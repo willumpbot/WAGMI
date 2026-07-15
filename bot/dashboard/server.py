@@ -2865,19 +2865,19 @@ function renderDashboard() {
     '<div class="course-card" onclick="navigateCourse(\'strat-trendline\')" style="cursor:pointer;">' +
       '<div class="card-icon">\ud83d\udcc9</div>' +
       '<div class="card-title">Trendline Breakout</div>' +
-      '<div class="card-desc">Win Rate: <strong>65%</strong> | R:R 1:2.5</div>' +
+      '<div class="card-desc">R:R 1:2.5</div>' +
       '<div class="card-tag">Strategy</div>' +
     '</div>' +
     '<div class="course-card" onclick="navigateCourse(\'strat-mfi\')" style="cursor:pointer;">' +
       '<div class="card-icon">\ud83d\udca7</div>' +
       '<div class="card-title">MFI + MACD</div>' +
-      '<div class="card-desc">Win Rate: <strong>62%</strong> | R:R 1:2.0</div>' +
+      '<div class="card-desc">R:R 1:2.0</div>' +
       '<div class="card-tag">Strategy</div>' +
     '</div>' +
     '<div class="course-card" onclick="navigateCourse(\'strat-macro\')" style="cursor:pointer;">' +
       '<div class="card-icon">\ud83d\udd2d</div>' +
       '<div class="card-title">2-Week Macro</div>' +
-      '<div class="card-desc">Win Rate: <strong>68%</strong> | R:R 1:3.0</div>' +
+      '<div class="card-desc">R:R 1:3.0</div>' +
       '<div class="card-tag">Strategy</div>' +
     '</div>' +
   '</div>';

@@ -107,7 +107,31 @@ def _adx(candles: List[Dict], period: int = 14) -> float:
 
     dx = abs(plus_di - minus_di) / di_sum * 100
 
-    # Simple ADX approximation (single smoothing)
+    # ── TRUE ADX (2026-07-13 toxicity-audit fix B-T1) ──────────────────────
+    # The legacy path returned the INSTANTANEOUS single-bar DX, not ADX (which
+    # is DX smoothed over `period`). Raw DX collapses to ~0 on every trend pause
+    # and spikes on any one directional bar → corr(quant, real ADX) ≈ 0.34, ~24%
+    # of hours in the wrong trend/range bucket, gating every decision. Fix:
+    # smooth the DX SERIES. Validated vs mech_regime's Wilder ADX (corr 1.00) and
+    # now the DEFAULT for every process. Revert: QUANT_REGIME_TRUE_ADX=false
+    # (explicit opt-out that restores the legacy single-bar DX below).
+    import os as _os
+    if _os.getenv("QUANT_REGIME_TRUE_ADX", "true").lower() in ("1", "true", "yes"):
+        # Delegate to the ALREADY-VALIDATED Wilder ADX in mech_regime (RQ10 spec)
+        # rather than re-deriving smoothing math here — reuse over reinvention.
+        # Lazy import avoids any circular-import at module load; fall back to the
+        # legacy last-bar DX on any failure so this can never break detect_regime.
+        try:
+            from llm.agents.mech_regime import compute_mech_regime
+            _rows = [[0, c["open"], c["high"], c["low"], c["close"], 0] for c in candles]
+            _mech = compute_mech_regime(_rows, period)
+            if _mech and _mech.get("adx") is not None:
+                return float(_mech["adx"])
+        except Exception:
+            pass
+
+    # Legacy (buggy) single-bar-DX path — only reached via explicit
+    # QUANT_REGIME_TRUE_ADX=false revert or if the Wilder-ADX delegation above fails.
     return dx
 
 

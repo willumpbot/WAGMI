@@ -43,6 +43,7 @@ from feedback.adaptive_confidence import AdaptiveConfidenceFloor
 from feedback.continuous_backtest import ContinuousBacktester
 from feedback.parameter_tuner import ParameterTuner
 from feedback.signal_quality import SignalQualityScorer, QualityFeatures
+from feedback import live_edge
 from learning.auto_fix_pipeline import AutoFixPipeline
 
 logger = logging.getLogger("bot.feedback.loop")
@@ -151,11 +152,23 @@ class FeedbackLoop:
         # Step 4: Also consider tuner's floor (blend both)
         tuner_floor = self.tuner.get_confidence_floor(strategy, symbol, regime)
 
-        # Blend: 60% adaptive (data-driven) + 40% tuner (backtest-driven)
-        effective_floor = adaptive_floor * 0.6 + tuner_floor * 0.4
+        # Blend: weight tracks the tuner's own live trust score instead of a
+        # frozen 60/40 split, so as the tuner earns/loses trust the blend
+        # shifts toward/away from its backtest-driven floor automatically.
+        w_tuner = max(0.2, min(0.8, self.tuner.params.trust_score))
+        effective_floor = adaptive_floor * (1 - w_tuner) + tuner_floor * w_tuner
+
+        # Step 4.4: Live break-even floor — the blend above must never gate
+        # below the confidence level the ledger actually proves profitable
+        # (LIVING VALUES: contradicts_ledger fix, 2026-07-15). Raises only;
+        # never lowers the blended floor. Falls back to the blend unchanged
+        # when the ledger doesn't yet have n>=13 evidence at any threshold.
+        live_be_floor = live_edge.get_breakeven_confidence_floor()
+        if live_be_floor is not None and live_be_floor > effective_floor:
+            effective_floor = live_be_floor
 
         # Step 4.5: Symbol difficulty adjustment — hard-to-trade symbols get higher floor
-        symbol_floor = self.quality.get_symbol_confidence_floor(symbol, base_floor=effective_floor)
+        symbol_floor = self.quality.get_symbol_confidence_floor(symbol, side, base_floor=effective_floor)
         if symbol_floor > effective_floor:
             effective_floor = symbol_floor
 

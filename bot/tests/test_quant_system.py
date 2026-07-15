@@ -147,46 +147,10 @@ class TestCircuitBreakerSessionDD:
 # Track B: Regime & Routing
 # ═══════════════════════════════════════════════════════════════
 
-class TestRegimeMinVotes:
-    """B1: Regime-gated min_votes lookup table.
-
-    In backtest, funding_rate/oi_delta/liquidation_cascade return None (need live data).
-    Effective pool is 3-5 strategies per regime, not 9. Setting min_votes=3 with a 5-strategy
-    pool = 60% agreement rate, which kills signals. Use 2 for normal regimes; 3 only for
-    extreme regimes where the tighter gate is worth the signal loss.
-    """
-
-    def test_bear_regime_requires_3(self):
-        """Bear: require 3-agree conviction — worst regime (10-20% WR)."""
-        from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bear") == 3
-
-    def test_bull_regime_requires_2(self):
-        """Bull: 2-agree; trend direction provides directional conviction."""
-        from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bull") == 2
-
-    def test_consolidation_requires_2(self):
-        from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("consolidation") == 2
-
-    def test_unknown_requires_2(self):
-        from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("unknown") == 2
-
-    def test_high_vol_requires_2(self):
-        """High vol stays at 2: only 5 strategies allowlisted."""
-        from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("high_volatility") == 2
-
-    def test_panic_requires_3(self):
-        """Extreme regimes require conviction — thin liquidity, event-driven moves."""
-        from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("panic") == 3
-
-    def test_low_liquidity_requires_3(self):
-        from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("low_liquidity") == 3
+# TestRegimeMinVotes (B1) REMOVED 2026-07-15 (de-hardcode F1): pinned the
+# now-deleted REGIME_MIN_VOTES dict, which was dead code (no runtime path
+# read it) and inverted vs the realized ledger. See strategies/ensemble.py
+# comment at the former dict's location for the full rationale.
 
 
 class TestRegimeAllowlist:
