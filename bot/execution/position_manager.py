@@ -46,6 +46,14 @@ def _env_float(name: str, default: float) -> float:
             pass
     return default
 
+
+def _env_bool(name: str, default: bool) -> bool:
+    """Read a bool from environment, fall back to default."""
+    val = os.environ.get(name)
+    if val is None:
+        return default
+    return val.strip().lower() in ("1", "true", "yes", "on")
+
 # Mechanical bot instrumentation (TIER 4)
 try:
     from llm.mechanical_bot_instrumentation import get_mechanical_bot_instrumentation
@@ -772,6 +780,50 @@ class PositionManager:
                 pos.mfe_retrace_pct = round(_retrace_pct, 3)
                 pos.atr_pct = round(_atr_pct, 5)
                 pos.fee_pct = round(_fee_pct, 5)
+
+                # ── SHADOW-SL: dead-thesis time stop (SHADOW MODE ONLY, data
+                # collection is unconditional so we start gathering evidence
+                # now) ──
+                # Validated design (needs_more_data recommendation): IF pos is
+                # still OPEN (pre-TP1) AND held >= SL_DISCIPLINE_MIN_HOLD_H AND
+                # peak MFE since entry never reached SL_DISCIPLINE_MFE_FLOOR_PCT
+                # AND current unrealized pnl is negative -> this rule WOULD
+                # close the position. We only LOG that (once per position, via
+                # a guard attr, to avoid tick-spam) — this NEVER mutates pos.sl
+                # or closes the position. SL_DISCIPLINE_ENFORCE is a NEW env
+                # flag (default false) reserved to gate a real enforcement
+                # path in a future change; no such enforcement path exists in
+                # this codebase yet, so flipping the flag today has zero
+                # effect on trading behavior — enforcement remains impossible
+                # until a human both flips it AND ships enforcement code after
+                # reviewing shadow output below.
+                _sl_enforce = _env_bool("SL_DISCIPLINE_ENFORCE", False)
+                if not getattr(pos, "_shadow_sl_logged", False):
+                    _sl_min_hold_h = _env_float("SL_DISCIPLINE_MIN_HOLD_H", 3.0)
+                    _sl_mfe_floor_pct = _env_float("SL_DISCIPLINE_MFE_FLOOR_PCT", 0.35)
+                    _sl_now = sim_now or getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
+                    _sl_hold_hours = (_sl_now - pos.open_time).total_seconds() / 3600
+                    _sl_unrealized_pnl = (
+                        (current_price - pos.entry) * pos.qty if is_long
+                        else (pos.entry - current_price) * pos.qty
+                    )
+                    _sl_would_exit = (
+                        _sl_hold_hours >= _sl_min_hold_h
+                        and (_peak_mfe_pct * 100) < _sl_mfe_floor_pct
+                        and _sl_unrealized_pnl < 0
+                    )
+                    if _sl_would_exit:
+                        pos._shadow_sl_logged = True
+                        logger.info(
+                            f"[SHADOW-SL] {symbol} side={pos.side} "
+                            f"hold_h={_sl_hold_hours:.2f} "
+                            f"mfe_pct_peak={_peak_mfe_pct * 100:.3f} "
+                            f"mae_pct={round(pos.mae / pos.entry * 100, 4) if pos.entry else 0:.3f} "
+                            f"unrealized_pnl={_sl_unrealized_pnl:.4f} "
+                            f"entry={pos.entry:.6g} current_price={current_price:.6g} "
+                            f"would_exit=true reason=dead_thesis_time_stop "
+                            f"enforce_flag={_sl_enforce} (enforcement not implemented; log-only)"
+                        )
                 # Suggested-but-not-applied breakeven SL the LLM can pick up if it wants.
                 pos.suggested_be_sl = round(
                     (pos.entry + pos.entry * _fee_pct) if is_long else (pos.entry - pos.entry * _fee_pct),

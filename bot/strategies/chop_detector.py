@@ -43,6 +43,9 @@ _WEIGHTS = {
 _CHOP_THRESHOLD_BASELINE = 0.45  # default + n<13 fallback (was VOLATILITY_THRESHOLDS["high"]=0.55, contradicted the ledger)
 _CHOP_THRESHOLD_RELAXED = 0.55   # earned only via a symbol's own n>=13, avg net pnl > 0 ledger
 _LEDGER_MIN_TRADES = 13
+# Synthetic/test-fixture prices that must never contaminate live stats.
+# Matches feedback/correlation_boost.py:_TEST_PRICE_MARKERS.
+_TEST_PRICE_MARKERS = {100.0, 150.0, 50000.0}
 
 
 class ChopDetector:
@@ -63,9 +66,9 @@ class ChopDetector:
         in _get_threshold — a symbol must earn the looser threshold with its
         own profitable track record, never a static per-symbol guess.
 
-        net = pnl - fee, per row. TEST/sim symbols are excluded. Loaded once
-        at construction; call refresh_ledger_stats() to reload after restart
-        or periodically.
+        net = pnl - fee, per row. TEST/sim symbols and synthetic fixture
+        prices (100/150/50000) are excluded. Loaded once at construction;
+        call refresh_ledger_stats() to reload after restart or periodically.
         """
         stats: Dict[str, Dict[str, float]] = {}
         ledger_dir = Path(__file__).resolve().parent.parent / "paper_trades"
@@ -84,9 +87,12 @@ class ChopDetector:
                         if not symbol or "TEST" in symbol or "SIM" in symbol:
                             continue
                         try:
+                            px = float(row.get("price") or 0)
                             pnl = float(row.get("pnl") or 0.0)
                             fee = float(row.get("fee") or 0.0)
                         except ValueError:
+                            continue
+                        if px in _TEST_PRICE_MARKERS:
                             continue
                         entry = stats.setdefault(symbol, {"n": 0, "sum_net": 0.0})
                         entry["n"] += 1

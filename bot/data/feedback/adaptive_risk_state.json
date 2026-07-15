@@ -6,9 +6,6 @@
     true,
     true,
     true,
-    true,
-    true,
-    true,
     false,
     true,
     true,
@@ -17,6 +14,9 @@
     false,
     true,
     true,
+    false,
+    true,
+    false,
     false,
     true,
     false
@@ -35,8 +35,8 @@
       "total": 16
     },
     "consolidation": {
-      "wins": 39,
-      "total": 84
+      "wins": 40,
+      "total": 86
     },
     "trend": {
       "wins": 2,
@@ -48,7 +48,7 @@
     },
     "trending_bull": {
       "wins": 1,
-      "total": 4
+      "total": 5
     },
     "trending_bear": {
       "wins": 0,

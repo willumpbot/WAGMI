@@ -4,17 +4,35 @@ Computes metrics individual trade analysis misses: concentration,
 directional exposure, correlation risk, risk budget usage.
 """
 import logging
-from typing import Any, Dict, List
+import math
+import time
+from collections import deque
+from typing import Any, Deque, Dict, List, Optional, Tuple
 
 logger = logging.getLogger("bot.llm.agents.portfolio_intelligence")
 
-# Empirical correlation matrix (from our research)
+# 2026-07-15 LIVING VALUES fix: this was a frozen pre-April research snapshot
+# with no n, no date, no refresh -- used unconditionally for correlation_risk
+# warnings injected into live Trade/Risk/Critic agent context. It is now only
+# an n<_MIN_LIVE_OBS fallback; _corr() prefers a live rolling Pearson
+# correlation computed from the same `prices` dict compute_portfolio_state()
+# already receives every pipeline cycle (see _update_price_history / _corr).
 _CORR = {
     ("BTC","ETH"):0.92, ("BTC","SOL"):0.85, ("BTC","HYPE"):0.63,
     ("BTC","DOGE"):0.72, ("BTC","AVAX"):0.78, ("BTC","LINK"):0.76,
     ("ETH","SOL"):0.80, ("ETH","HYPE"):0.60, ("ETH","AVAX"):0.82,
     ("SOL","HYPE"):0.58, ("SOL","AVAX"):0.70, ("SOL","DOGE"):0.65,
 }
+
+# ── Live rolling correlation (stdlib-only, TTL-cached like live_edge) ──
+_CORR_WINDOW = 30        # log-return periods used per correlation computation
+_MIN_LIVE_OBS = 15       # minimum overlapping return observations before a live corr is trusted
+_CORR_TTL_S = 300.0      # recompute the live correlation cache at most this often
+_PRICE_HIST_LEN = 200    # bounded price history per symbol
+
+_price_history: Dict[str, Deque[Tuple[float, float]]] = {}
+_live_corr_cache: Dict[Tuple[str, str], float] = {}
+_live_corr_cache_ts: float = 0.0
 _SECTOR = {
     "BTC":"major","ETH":"major","SOL":"alt_l1","AVAX":"alt_l1","SUI":"alt_l1",
     "HYPE":"alt","DOGE":"meme","PEPE":"meme","WIF":"meme",
@@ -23,8 +41,83 @@ _SECTOR = {
 MAX_EXPOSURE, MAX_SINGLE, MAX_DIR, MAX_POS = 500, 200, 400, 6
 
 
+def _update_price_history(prices: Dict[str, float]) -> None:
+    """Feed the live prices compute_portfolio_state() already receives each
+    pipeline cycle into a bounded per-symbol rolling history, used to derive
+    a live rolling correlation (no extra fetcher/network call needed)."""
+    if not prices:
+        return
+    now = time.time()
+    for sym, px in prices.items():
+        try:
+            p = float(px)
+        except (TypeError, ValueError):
+            continue
+        if p <= 0:
+            continue
+        s = _sym(str(sym))
+        hist = _price_history.setdefault(s, deque(maxlen=_PRICE_HIST_LEN))
+        if hist and hist[-1][1] == p:
+            continue  # skip unchanged tick so returns stay independent samples
+        hist.append((now, p))
+
+
+def _log_returns(hist: Deque[Tuple[float, float]], max_periods: int) -> List[float]:
+    recent = list(hist)[-max_periods:]
+    out = []
+    for i in range(1, len(recent)):
+        p0, p1 = recent[i-1][1], recent[i][1]
+        if p0 > 0 and p1 > 0:
+            out.append(math.log(p1/p0))
+    return out
+
+
+def _pearson(xs: List[float], ys: List[float]) -> Optional[float]:
+    n = min(len(xs), len(ys))
+    if n < _MIN_LIVE_OBS:
+        return None
+    xs, ys = xs[-n:], ys[-n:]
+    mx, my = sum(xs)/n, sum(ys)/n
+    vx = sum((x-mx)**2 for x in xs)
+    vy = sum((y-my)**2 for y in ys)
+    if vx <= 1e-15 or vy <= 1e-15:
+        return None
+    cov = sum((x-mx)*(y-my) for x,y in zip(xs,ys))
+    r = cov / math.sqrt(vx*vy)
+    return max(-1.0, min(1.0, r))
+
+
+def _refresh_live_corr_cache() -> None:
+    global _live_corr_cache_ts
+    now = time.time()
+    if now - _live_corr_cache_ts < _CORR_TTL_S:
+        return
+    syms = list(_price_history.keys())
+    for i, a in enumerate(syms):
+        for b in syms[i+1:]:
+            ra = _log_returns(_price_history[a], _CORR_WINDOW + 1)
+            rb = _log_returns(_price_history[b], _CORR_WINDOW + 1)
+            r = _pearson(ra, rb)
+            if r is not None:
+                _live_corr_cache[(a,b)] = r
+    _live_corr_cache_ts = now
+
+
+def _corr_with_source(a: str, b: str) -> Tuple[float, bool]:
+    """Returns (correlation, is_live). Prefers the live rolling correlation;
+    falls back to the static research snapshot only when there isn't yet
+    enough live price history (n < _MIN_LIVE_OBS) for this pair."""
+    _refresh_live_corr_cache()
+    if (a,b) in _live_corr_cache:
+        return _live_corr_cache[(a,b)], True
+    if (b,a) in _live_corr_cache:
+        return _live_corr_cache[(b,a)], True
+    return _CORR.get((a,b), _CORR.get((b,a), 0.40)), False
+
+
 def _corr(a: str, b: str) -> float:
-    return _CORR.get((a,b), _CORR.get((b,a), 0.40))
+    val, _ = _corr_with_source(a, b)
+    return val
 
 def _sym(raw: str) -> str:
     return raw.split("/")[0].split(":")[0].split("-")[0].upper()
@@ -63,8 +156,10 @@ def compute_portfolio_state(positions: Dict, prices: Dict, equity: float) -> Dic
                 "risk_budget_used_pct":0,"risk_budget_remaining":100,
                 "sector_concentration":{},"unrealized_pnl":0.0,"positions":[],"warnings":[]}
 
-    # Update notionals with live prices
+    # Update notionals with live prices, and feed the same prices into the
+    # rolling history used for live correlation (see _update_price_history).
     np_ = {_sym(k):v for k,v in (prices or {}).items()}
+    _update_price_history(np_)
     for p in parsed:
         if p["symbol"] in np_ and np_[p["symbol"]] > 0:
             p["notional"] = np_[p["symbol"]] * p["qty"]
@@ -94,8 +189,14 @@ def compute_portfolio_state(positions: Dict, prices: Dict, equity: float) -> Dic
     # Correlation risk: count same-direction high-corr pairs
     syms = [p["symbol"] for p in parsed]
     sides = {p["symbol"]:p["side"] for p in parsed}
-    hc_pairs = [(a,b,_corr(a,b)) for i,a in enumerate(syms) for b in syms[i+1:]
-                if _corr(a,b)>=0.7 and sides[a]==sides[b]]
+    hc_pairs, hc_static = [], False
+    for i, a in enumerate(syms):
+        for b in syms[i+1:]:
+            r, is_live = _corr_with_source(a, b)
+            if r >= 0.7 and sides[a] == sides[b]:
+                hc_pairs.append((a, b, r))
+                if not is_live:
+                    hc_static = True
     corr_risk = "HIGH" if len(hc_pairs)>=2 else ("MEDIUM" if hc_pairs else "LOW")
 
     budget_used = min(round(exp_pct/MAX_EXPOSURE*100,1), 100)
@@ -110,7 +211,8 @@ def compute_portfolio_state(positions: Dict, prices: Dict, equity: float) -> Dic
         elif shorts==0: w.append(f"100% directional LONG ({longs} pos) -- dump vulnerable")
     if hc_pairs:
         ps = ", ".join(f"{a}+{b}" for a,b,_ in hc_pairs[:3])
-        w.append(f"{len(hc_pairs)} correlated pair(s) ({ps} r>0.7)")
+        src_note = " [static fallback -- insufficient live price history]" if hc_static else ""
+        w.append(f"{len(hc_pairs)} correlated pair(s) ({ps} r>0.7){src_note}")
     if max_single > MAX_SINGLE*0.8:
         w.append(f"Largest position {max_single:.0f}% of equity -- concentration risk")
     if budget_used > 80:

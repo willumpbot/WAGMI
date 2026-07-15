@@ -42,6 +42,10 @@ _BE_SCAN_LO = 55.0
 _BE_SCAN_HI = 85.0
 _BE_SCAN_STEP = 2.5
 
+# Synthetic/test entry prices seeded by test fixtures — exclude from live stats.
+# Mirrors trading_config._TEST_ENTRY_PRICES / _get_regime_ledger_ev.
+_TEST_ENTRY_PRICES = (100.0, 150.0, 50000.0)
+
 
 def enabled() -> bool:
     return os.getenv("DATA_DRIVEN_SIDE_MULT", "true").strip().lower() in ("1", "true", "yes")
@@ -95,14 +99,27 @@ def _recompute():
                 if cutoff and _row_ts(r) < cutoff:
                     continue
                 sym = str(r.get("symbol", "")).upper()
-                key = (sym, _norm_side(r.get("side", "")))
-                cells.setdefault(key, []).append(pnl)
-                symbol_cells.setdefault(sym, []).append(pnl)
+                if "TEST" in sym or "SIM" in sym:
+                    continue
+                try:
+                    ep = float(r.get("entry_price") or 0)
+                except (ValueError, TypeError):
+                    ep = 0.0
+                if ep in _TEST_ENTRY_PRICES:
+                    continue
                 try:
                     conf = float(r.get("confidence_score") or 0)
                 except (ValueError, TypeError):
                     conf = 0.0
-                if conf > 0:  # scrub TEST/entry-sim/unscored rows (confidence_score==0)
+                # NOTE: conf==0 rows are REAL legacy/reconstructed trades (117 of
+                # 216 rows, e.g. ETH SHORT @1871 +$1010) — they MUST stay in the
+                # mult/symbol_mult cells. TEST/synthetic rows are excluded above
+                # by symbol and _TEST_ENTRY_PRICES, mirroring
+                # trading_config._get_regime_ledger_ev.
+                key = (sym, _norm_side(r.get("side", "")))
+                cells.setdefault(key, []).append(pnl)
+                symbol_cells.setdefault(sym, []).append(pnl)
+                if conf > 0:  # breakeven scan only: skip unscored rows (conf==0); TEST/entry-sim rows are excluded above
                     conf_pnl_rows.append((conf, pnl))
         for key, pnls in cells.items():
             if len(pnls) < _MIN_N:

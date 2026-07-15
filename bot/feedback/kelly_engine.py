@@ -13,6 +13,7 @@ Formula:
 Persists weights to bot/data/kelly_weights.json. Thread-safe via Lock.
 """
 
+import csv
 import json
 import logging
 import math
@@ -26,27 +27,60 @@ logger = logging.getLogger("bot.feedback.kelly_engine")
 
 # ── Constants ────────────────────────────────────────────────
 
-KELLY_FLOOR = 0.15       # Minimum half-Kelly weight — 0.05 was producing micro-positions
-KELLY_CAP = 1.0          # Maximum half-Kelly weight
-DEFAULT_LOOKBACK = 30    # Default rolling window for Kelly computation
-MIN_TRADES_FOR_KELLY = 3 # Lowered from 5: we have 7 total trades, can't afford to wait
+KELLY_FLOOR = 0.15        # Minimum half-Kelly weight — 0.05 was producing micro-positions
+KELLY_CAP = 1.0           # Maximum half-Kelly weight
+DEFAULT_LOOKBACK = 30     # Default rolling window for Kelly computation
+MIN_TRADES_FOR_KELLY = 13 # House living-values standard: n>=13 before trusting a stat
 
-# ── Initial calibration from LIVE data (105 trades) ──────────
-# Updated 2026-04-12 from actual live performance. System runs at
-# 35% WR with 2.0:1 payoff ratio — old backtest priors (56-71% WR)
-# were wildly optimistic and caused Kelly to over-size.
-BACKTEST_PRIORS: Dict[str, Dict[str, float]] = {
-    "confidence_scorer": {"win_rate": 0.37, "payoff_ratio": 2.0},   # 41 trades, +$28, #1 earner
-    "bollinger_squeeze": {"win_rate": 0.57, "payoff_ratio": 1.73},  # 7 trades, +$20, best WR
-    "regime_trend": {"win_rate": 0.38, "payoff_ratio": 1.5},        # 8 trades, -$14 as primary
-    "ensemble": {"win_rate": 0.35, "payoff_ratio": 2.0},            # 82 trades, +$10, PF=1.05
-    "sniper_premium": {"win_rate": 0.35, "payoff_ratio": 2.1},      # 23 trades, +$48
-    "multi_tier_quality": {"win_rate": 0.13, "payoff_ratio": 1.4},  # 8 trades, -$39 as primary
-}
+# ── Ledger-derived priors (replaces stale hardcoded BACKTEST_PRIORS) ──
+# When a factor has fewer than MIN_TRADES_FOR_KELLY in-session trades,
+# weight is recomputed live from data/trade_ledger.csv (ground truth)
+# instead of falling back to a frozen snapshot. See _ledger_prior() and
+# _load_ledger_factor_trades() below. Below n=13 on the ledger too, the
+# neutral KELLY_FLOOR is used — never a stale value.
+LEDGER_PATH = os.path.join("data", "trade_ledger.csv")
+_TEST_ENTRY_PRICES = {100.0, 150.0, 50000.0}  # sim/test entry prices to exclude
 
 # ── Persistence ──────────────────────────────────────────────
 
 _DEFAULT_DATA_DIR = os.path.join("data", "kelly_weights.json")
+
+
+def _load_ledger_factor_trades(ledger_path: str = LEDGER_PATH) -> Dict[str, List[Dict[str, Any]]]:
+    """Load per-factor trade outcomes from the live trade ledger (ground truth).
+
+    Excludes TEST-symbol rows and sim/test entry prices (100, 150, 50000)
+    per the house pollution filter. Explodes comma-separated
+    contributing_factors so each factor gets its own won/pnl_pct record.
+    """
+    trades_by_factor: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    if not os.path.exists(ledger_path):
+        return trades_by_factor
+    try:
+        with open(ledger_path, newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                try:
+                    symbol = (row.get("symbol") or "").upper()
+                    entry_price = float(row.get("entry_price") or 0)
+                    net_pnl = float(row["net_pnl"])
+                    equity = float(row["running_equity"])
+                    factors_s = (row.get("contributing_factors") or "").strip()
+                except (KeyError, ValueError, TypeError):
+                    continue
+                if "TEST" in symbol or entry_price in _TEST_ENTRY_PRICES:
+                    continue
+                if not factors_s or equity <= 0:
+                    continue
+                won = net_pnl > 0
+                pnl_pct = net_pnl / equity * 100.0
+                for factor in factors_s.split(","):
+                    factor = factor.strip()
+                    if factor:
+                        trades_by_factor[factor].append({"won": won, "pnl_pct": pnl_pct})
+    except (IOError, csv.Error) as e:
+        logger.warning("Failed to read ledger %s for Kelly priors: %s", ledger_path, e)
+    return trades_by_factor
 
 
 class KellyEngine:
@@ -69,7 +103,7 @@ class KellyEngine:
 
         self._load()
 
-        # Seed weights from backtest priors for factors with no trades
+        # Seed weights from a live ledger recompute for factors with no trades
         self._apply_priors()
 
     # ── Public API ───────────────────────────────────────────
@@ -137,10 +171,11 @@ class KellyEngine:
                 n = len(trades)
                 if n == 0:
                     wr, pr = 0.0, 0.0
-                    # Check if we have a backtest prior
-                    if factor in BACKTEST_PRIORS:
-                        wr = BACKTEST_PRIORS[factor]["win_rate"]
-                        pr = BACKTEST_PRIORS[factor]["payoff_ratio"]
+                    # Live recompute from the ledger (n>=13) — never a stale snapshot
+                    prior = self._ledger_prior(factor)
+                    if prior is not None:
+                        wr = prior["win_rate"]
+                        pr = prior["payoff_ratio"]
                 else:
                     wr, pr = self._win_rate_and_payoff(trades)
 
@@ -168,9 +203,10 @@ class KellyEngine:
         trades = self._trades.get(factor, [])[-lookback:]
 
         if len(trades) < MIN_TRADES_FOR_KELLY:
-            # Fall back to backtest priors if available
-            if factor in BACKTEST_PRIORS:
-                prior = BACKTEST_PRIORS[factor]
+            # Fall back to a live recompute from the trade ledger (n>=13),
+            # never a stale hardcoded snapshot. Below that, neutral floor.
+            prior = self._ledger_prior(factor)
+            if prior is not None:
                 raw = self._raw_kelly(prior["win_rate"], prior["payoff_ratio"])
                 return self._clamp_kelly(raw / 2.0)
             return KELLY_FLOOR
@@ -232,19 +268,35 @@ class KellyEngine:
         """Clamp half-Kelly to [KELLY_FLOOR, KELLY_CAP]."""
         return max(KELLY_FLOOR, min(KELLY_CAP, half_kelly))
 
+    def _ledger_prior(self, factor: str) -> Optional[Dict[str, float]]:
+        """Live win_rate/payoff_ratio for a factor, recomputed from the ledger.
+
+        Requires n>=MIN_TRADES_FOR_KELLY ledger trades (house standard).
+        Returns None below that threshold — callers must fall back to
+        KELLY_FLOOR rather than any hardcoded snapshot.
+        """
+        ledger_trades = _load_ledger_factor_trades().get(factor, [])
+        if len(ledger_trades) < MIN_TRADES_FOR_KELLY:
+            return None
+        wr, pr = self._win_rate_and_payoff(ledger_trades)
+        return {"win_rate": wr, "payoff_ratio": pr, "n": len(ledger_trades)}
+
     # ── Priors ───────────────────────────────────────────────
 
     def _apply_priors(self) -> None:
-        """Seed weights from backtest priors for factors without live data."""
-        for factor, prior in BACKTEST_PRIORS.items():
-            if factor not in self._weights:
-                raw = self._raw_kelly(prior["win_rate"], prior["payoff_ratio"])
-                self._weights[factor] = self._clamp_kelly(raw / 2.0)
-                logger.debug(
-                    "Kelly prior applied: %s WR=%.0f%% PR=%.2f -> weight=%.3f",
-                    factor, prior["win_rate"] * 100, prior["payoff_ratio"],
-                    self._weights[factor],
-                )
+        """Seed weights for factors with no in-session trades yet, from a
+        live recompute of the trade ledger (n>=MIN_TRADES_FOR_KELLY) —
+        never a stale hardcoded snapshot."""
+        for factor, ledger_trades in _load_ledger_factor_trades().items():
+            if factor in self._weights or len(ledger_trades) < MIN_TRADES_FOR_KELLY:
+                continue
+            wr, pr = self._win_rate_and_payoff(ledger_trades)
+            raw = self._raw_kelly(wr, pr)
+            self._weights[factor] = self._clamp_kelly(raw / 2.0)
+            logger.debug(
+                "Kelly ledger prior applied: %s n=%d WR=%.0f%% PR=%.2f -> weight=%.3f",
+                factor, len(ledger_trades), wr * 100, pr, self._weights[factor],
+            )
 
     # ── Persistence ──────────────────────────────────────────
 

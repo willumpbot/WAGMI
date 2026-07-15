@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1784129266.295945,
+  "updated_at": 1784146075.1184819,
   "scenarios": [
     {
       "id": "cf_1782930522_ac775779",
@@ -11089,6 +11089,137 @@
         "confidence": 65.0,
         "reason": "LLM_FIRST: HYPE consolidating 66-70; solo confidence_scorer LONG lacks confluence and 4h/1h regime misalignment",
         "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1784131713_61137542",
+      "timestamp": 1784131713.7042077,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": -4.92913602519608,
+      "delta": -4.92913602519608,
+      "resolved": true,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65407.0,
+        "sl_price": 64679.0761904762,
+        "tp1_price": 66693.64761904762,
+        "tp2_price": 68631.0,
+        "confidence": 71.57000000000001,
+        "reason": "LLM_FIRST: BTC breaks consolidation, OI+taker flow bullish, targets $66,700 within 4-8h as trend accelerates.",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1784133674_694afea6",
+      "timestamp": 1784133674.329319,
+      "symbol": "ETH",
+      "scenario_type": "exit_timing",
+      "actual_action": "SL",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": -1.0334748553195645,
+      "counterfactual_pnl": 2.9685675008010612,
+      "delta": 4.002042356120626,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 1934.94,
+        "actual_exit_price": 1908.05,
+        "tp1_price": 1992.38,
+        "tp2_price": 2050.01,
+        "actual_pnl_raw": -19.997118365520382,
+        "pnl_at_tp1_pct": 2.9686,
+        "pnl_at_tp2_pct": 5.947
+      }
+    },
+    {
+      "id": "cf_1784138996_10441cc3",
+      "timestamp": 1784138996.488683,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": -4.188172835864964,
+      "delta": -4.188172835864964,
+      "resolved": true,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 67.81,
+        "sl_price": 66.86333333333333,
+        "tp1_price": 69.23000000000002,
+        "tp2_price": 70.65000000000003,
+        "confidence": 75.4375,
+        "reason": "LLM_FIRST: HYPE squeeze consolidates near $67.8, likely resolving toward $69.2 or $66.9; solo signal too weak v",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1784141172_a628733c",
+      "timestamp": 1784141172.3690116,
+      "symbol": "SOL",
+      "scenario_type": "exit_timing",
+      "actual_action": "SL",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": 1.0202884839663986,
+      "counterfactual_pnl": 2.635439454381678,
+      "delta": 1.6151509704152793,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 77.71,
+        "actual_exit_price": 77.8335,
+        "tp1_price": 79.758,
+        "tp2_price": 82.769,
+        "actual_pnl_raw": 0.7928661808902884,
+        "pnl_at_tp1_pct": 2.6354,
+        "pnl_at_tp2_pct": 6.5101
+      }
+    },
+    {
+      "id": "cf_1784144508_eee0ca6c",
+      "timestamp": 1784144508.729375,
+      "symbol": "XRP",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -439.92678887925996,
+      "counterfactual_pnl": 7.169509594882729,
+      "delta": 447.0962984741427,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 1.1256,
+        "actual_exit_price": 1.11105,
+        "tp1_price": 1.1537,
+        "tp2_price": 1.2063,
+        "actual_pnl_raw": -4.95181593562495,
+        "pnl_at_tp1_pct": 2.4964,
+        "pnl_at_tp2_pct": 7.1695
+      }
+    },
+    {
+      "id": "cf_1784146075_8356cfc1",
+      "timestamp": 1784146075.1176183,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 77.13,
+        "sl_price": 78.62367857142856,
+        "tp1_price": 74.8065,
+        "tp2_price": 71.81914285714288,
+        "confidence": 51.308557692307694,
+        "reason": "LLM_FIRST: SOL consolidates near $77-78; bullish L/S 2.41 caps downside, weak 51% SELL lacks edge to break $76."
       }
     }
   ]

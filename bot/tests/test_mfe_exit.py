@@ -15,6 +15,31 @@ from execution.mfe_exit import (
 )
 
 
+# Deterministic table the behavioral assertions below were written against
+# (the original March-2026 study values). MFE_MAE_DATA is now computed live
+# from paper_trades/trades_*.csv at runtime, so tests pin it here and block
+# the refresh to stay independent of whatever ledger exists on this machine.
+_PINNED_TABLE = {
+    "BTC": {"mfe_p50": 0.38, "mfe_p75": 0.76, "mae_p50": 0.31, "mae_p75": 0.62},
+    "SOL": {"mfe_p50": 0.51, "mfe_p75": 1.02, "mae_p50": 0.47, "mae_p75": 0.94},
+    "ETH": {"mfe_p50": 0.44, "mfe_p75": 0.88, "mae_p50": 0.50, "mae_p75": 1.00},
+    "HYPE": {"mfe_p50": 0.78, "mfe_p75": 1.56, "mae_p50": 0.55, "mae_p75": 1.10},
+}
+
+
+@pytest.fixture(autouse=True)
+def _pin_mfe_mae_table(monkeypatch):
+    import execution.mfe_exit as m
+
+    monkeypatch.setattr(m, "_ensure_mfe_mae_fresh", lambda: None)
+    saved = dict(MFE_MAE_DATA)
+    MFE_MAE_DATA.clear()
+    MFE_MAE_DATA.update(_PINNED_TABLE)
+    yield
+    MFE_MAE_DATA.clear()
+    MFE_MAE_DATA.update(saved)
+
+
 @pytest.fixture
 def advisor():
     return MFEExitAdvisor()
@@ -194,3 +219,53 @@ class TestEdgeCases:
         rec = advisor.evaluate("SOL", "BUY", entry, price, _ts_hours_ago(0.5))
         assert rec.upnl_pct > 1.0
         assert rec.action == "TAKE_PROFIT"  # 1.33% >> 2*0.51%
+
+
+class TestLiveMfeMaeComputation:
+    """The live per-symbol/per-side percentile computation from the ledger."""
+
+    HEADER = "timestamp,symbol,side,action,price,qty,pnl,fee,mfe_pct,mae_pct\n"
+
+    def _write_ledger(self, tmp_path, rows):
+        d = tmp_path / "paper_trades"
+        d.mkdir()
+        (d / "trades_2026.csv").write_text(self.HEADER + "".join(rows))
+
+    def test_hygiene_min_n_and_per_side_keys(self, tmp_path, monkeypatch):
+        import execution.mfe_exit as m
+
+        rows = []
+        # 13 clean AAA SELL closes with mfe 1.0..13.0, mae 0.5
+        for i in range(13):
+            rows.append(f"2026-07-{i+1:02d},AAA,SHORT,CLOSE,2.5,10,1,0.1,{float(i+1)},0.5\n")
+        # Filtered rows: OPEN action, TEST symbol, fixture price, dupe of row 1
+        rows.append("2026-07-01,AAA,SHORT,OPEN,2.5,10,0,0,99.0,99.0\n")
+        rows.append("2026-07-01,TESTCOIN,SHORT,CLOSE,2.5,10,1,0.1,99.0,99.0\n")
+        rows.append("2026-07-01,AAA,SHORT,CLOSE,100,10,1,0.1,99.0,99.0\n")
+        rows.append("2026-07-01,AAA,SHORT,CLOSE,2.5,10,1,0.1,1.0,0.5\n")
+        # Partial-close placeholder leg (mfe==mae==0.0) must be skipped
+        rows.append("2026-07-14,AAA,SHORT,CLOSE,2.6,10,1,0.1,0.0,0.0\n")
+        # Only 3 BBB closes -> below n>=13, must be absent
+        for i in range(3):
+            rows.append(f"2026-07-{i+1:02d},BBB,LONG,CLOSE,5.0,10,1,0.1,1.0,0.5\n")
+        self._write_ledger(tmp_path, rows)
+        monkeypatch.chdir(tmp_path)
+
+        live = m._compute_live_mfe_mae()
+        assert "AAA" in live and "AAA_SELL" in live
+        assert "BBB" not in live and "BBB_BUY" not in live
+        # 13 values 1..13 -> p50 = 7.0; filtered rows (mfe 99.0) excluded
+        assert live["AAA"]["mfe_p50"] == pytest.approx(7.0)
+        assert live["AAA"]["mae_p50"] == pytest.approx(0.5)
+
+    def test_empty_ledger_falls_back_to_default(self, tmp_path, monkeypatch):
+        import execution.mfe_exit as m
+
+        monkeypatch.chdir(tmp_path)  # no paper_trades dir at all
+        assert m._compute_live_mfe_mae() == {}
+        # evaluate() must still work end-to-end on DEFAULT_MFE_MAE
+        MFE_MAE_DATA.clear()
+        rec = m.MFEExitAdvisor().evaluate(
+            "ZZZ", "SELL", 1.0, 0.99, _ts_hours_ago(0.5)
+        )
+        assert rec.action == "TAKE_PROFIT"  # 1% > 2 * DEFAULT mfe_p50 0.40

@@ -233,12 +233,24 @@ class TestICTrackerConvenience:
 
 class TestKellyEngineConvenience:
     def test_get_weights_per_factor(self, tmp_path):
-        from feedback.kelly_engine import KellyEngine
+        from feedback.kelly_engine import (
+            KELLY_CAP,
+            KELLY_FLOOR,
+            MIN_TRADES_FOR_KELLY,
+            KellyEngine,
+        )
         engine = KellyEngine(data_path=str(tmp_path / "kelly.json"))
         result = engine.get_weights_per_factor()
         assert isinstance(result, dict)
-        # Should have backtest priors
-        assert "confidence_scorer" in result
+        # Hardcoded BACKTEST_PRIORS were removed (living-values mandate):
+        # weights now come only from in-session trades or a live ledger
+        # recompute with n>=13 samples. Any seeded weight must be clamped.
+        assert MIN_TRADES_FOR_KELLY == 13
+        for weight in result.values():
+            assert KELLY_FLOOR <= weight <= KELLY_CAP
+        # A never-seen factor with no ledger history gets the neutral floor,
+        # never a stale snapshot value.
+        assert engine.compute_kelly_weight("factor_never_seen_xyz") == KELLY_FLOOR
 
 
 # ── Daily Report Walk-Forward Integration ──────────────────────────

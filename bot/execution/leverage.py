@@ -100,8 +100,36 @@ _kelly_lev_cache = {"lev": {}, "meta": {}, "computed_at": 0.0, "ledger_mtime": 0
 _kelly_lev_lock = threading.Lock()
 
 
+_SIM_ENTRY_PRICES = {100.0, 150.0, 50000.0}
+
+
+def _is_sim_pollution_row(row: dict) -> bool:
+    """True if this ledger row belongs to the June replay-sim batch (not a real
+    live close). Isolates it via: (a) entry_price is one of the sim placeholder
+    values {100, 150, 50000}, or (b) confidence_score parses to 0 AND
+    ab_gate_hash is empty. Do NOT broaden to all conf=0 rows -- 97 real
+    pre-confidence-wiring closes (2026-06-01..30) have confidence_score='0.0'
+    WITH ab_gate_hash set and must be kept (dropping them collapses ETH_SELL
+    to n=5 and inverts the measured edge ordering)."""
+    try:
+        entry = float(row.get("entry_price") or "")
+        if entry in _SIM_ENTRY_PRICES:
+            return True
+    except (ValueError, TypeError):
+        pass
+    try:
+        conf = float(row.get("confidence_score") or "")
+    except (ValueError, TypeError):
+        conf = None
+    ab_hash = (row.get("ab_gate_hash") or "").strip()
+    if conf == 0.0 and not ab_hash:
+        return True
+    return False
+
+
 def _read_ledger_rows():
-    """Yield closed-trade rows from trade_ledger.csv, excluding TEST/SIM symbols."""
+    """Yield closed-trade rows from trade_ledger.csv, excluding TEST/SIM symbols
+    and the June replay-sim pollution batch (see _is_sim_pollution_row)."""
     path = os.path.normpath(_LEDGER_PATH)
     if not os.path.exists(path):
         return
@@ -109,6 +137,8 @@ def _read_ledger_rows():
         for row in csv.DictReader(f):
             sym = (row.get("symbol") or "").strip().upper()
             if not sym or "TEST" in sym or "SIM" in sym:
+                continue
+            if _is_sim_pollution_row(row):
                 continue
             yield sym, row
 

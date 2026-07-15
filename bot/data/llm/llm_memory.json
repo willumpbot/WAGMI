@@ -1,4 +1,77 @@
 {
-  "last_updated": 1784124313,
-  "notes": []
+  "last_updated": 1784144753,
+  "notes": [
+    {
+      "text": "ETH LONG LOSS despite 76% conf in trending_bull, SL\u2014reduce confidence for similar setups",
+      "ts": 1784133672.1267252,
+      "symbol": "ETH",
+      "regime": "trending_bull",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "Consolidation + 2h+ hold = profitable: SOL +$0.79, 46% WR. Moderate leverage trumps regime-shift fears. Hold consolidations",
+      "ts": 1784141109.295099,
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "Exit agent escape hatch exits consolidation too early. Profitable but loses 20-30% upside. Use as risk trigger (tighten SL), not exit.",
+      "ts": 1784141172.2993052,
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "XRP solo multi_tier_quality LONG (22% WR n=85) with 6h EMA opposed to 1h bull signal; quant flags negative Kelly, OI falling -1.6%, overbought exhaustion",
+      "ts": 1784141410.1506007,
+      "symbol": "SOL",
+      "regime": "trend",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "71% confidence + MFI 91 + MACD divergence in consolidation = poor confluence. Add momentum exhaustion filter.",
+      "ts": 1784144438.6299005,
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "XRP LONG lost $5 in consolidation, LLM conf=0.52\u2014be cautious on similar consolidation LONGs",
+      "ts": 1784144438.814386,
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "Confidence_scorer assigned 71% to overbought entry (MFI 91, divergence). Add -25 confidence penalty for MFI >85 + divergence to prevent momentum chasing.",
+      "ts": 1784144508.6152577,
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "BTC solo multi_tier_quality LONG (regime_trend neutral, not confirming) lands in the 1-agreement confluence bucket which is deeply sub-breakeven live; paired with trend-exhaustion signals (OI -1.8%, v",
+      "ts": 1784144753.3257377,
+      "symbol": "BTC",
+      "regime": "trend",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    }
+  ]
 }

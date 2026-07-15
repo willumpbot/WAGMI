@@ -402,7 +402,12 @@ class LeadLagBoostEngine:
             from trading_config import LEAD_LAG_SYMBOL_CONFIG
             self._symbol_configs = LEAD_LAG_SYMBOL_CONFIG
         except ImportError:
-            # Fallback defaults
+            # Fallback defaults (last-resort shell only: effective caps are
+            # normally ledger-derived per (symbol, side) via
+            # _effective_boost_cap -> trading_config.get_lead_lag_boost_cap;
+            # these static boost_cap values only apply if trading_config
+            # itself is unimportable, in which case ledger lookup is
+            # impossible anyway).
             self._symbol_configs = {
                 "SOL": {"lag_minutes": (30, 60), "correlation": 0.87, "beta": 1.16, "boost_cap": 12.0},
                 "ETH": {"lag_minutes": (15, 30), "correlation": 0.91, "beta": 1.20, "boost_cap": 10.0},
@@ -558,8 +563,10 @@ class LeadLagBoostEngine:
 
             effective_boost = sig.boost * time_decay * corr_scale
 
-            # Apply per-symbol cap
-            symbol_cap = cfg.get("boost_cap", self.max_boost)
+            # Apply per-(symbol, side) cap — ledger-derived (LIVING VALUES,
+            # 2026-07-15): 0.0 when boosting a proven net-loser side (n>=13,
+            # avg net PnL/trade <= 0), else min(static, lead_lag_max_boost).
+            symbol_cap = self._effective_boost_cap(base, side, cfg)
             effective_boost = min(effective_boost, symbol_cap)
 
             if effective_boost > best_boost:
@@ -616,6 +623,30 @@ class LeadLagBoostEngine:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _effective_boost_cap(self, symbol: str, side: str, cfg: dict) -> float:
+        """Effective lead-lag boost cap for a (symbol, boost-direction) pair.
+
+        LIVING VALUE (2026-07-15): delegates to
+        trading_config.get_lead_lag_boost_cap, which computes the cap live from
+        the trade ledger (feedback.live_edge, avg net PnL/trade per
+        symbol+side, TEST rows excluded): cap=0.0 when the boost would favor a
+        proven net-loser side (n>=13, avg_net<=0), min(static, lead_lag_max_boost)
+        when the side is a proven winner, and the static per-symbol boost_cap
+        when evidence is insufficient (n<13). This can only ever match or
+        shrink the static cap — never exceed it — so it is strictly
+        risk-reducing. Falls back to the static cfg boost_cap only if
+        trading_config is unavailable or errors (pre-existing behavior).
+        """
+        try:
+            from trading_config import get_lead_lag_boost_cap
+            return get_lead_lag_boost_cap(symbol, side)
+        except Exception as e:  # pragma: no cover - defensive, live path must not crash
+            logger.warning(
+                "[LEAD-LAG-CAP] falling back to static boost_cap for %s_%s: %s",
+                symbol, side, e,
+            )
+            return cfg.get("boost_cap", self.max_boost)
+
     def _check_btc_momentum(self, now: float) -> List[LeadSignal]:
         """Check if BTC has made a decisive move in the last 15 minutes."""
         if len(self._btc_prices) < self._MIN_OBSERVATIONS:
@@ -665,10 +696,13 @@ class LeadLagBoostEngine:
             if volume_ratio > 1.0:
                 raw_boost *= min(volume_ratio, 2.0)  # cap at 2x volume bonus
 
-            symbol_cap = cfg.get("boost_cap", self.max_boost)
-            boost = min(raw_boost, symbol_cap, self.max_boost)
-
             side = "BUY" if btc_move_pct > 0 else "SELL"
+
+            # Ledger-derived per-(symbol, side) cap (LIVING VALUES, 2026-07-15):
+            # 0.0 when this BTC move would boost a proven net-loser side
+            # (n>=13, avg net PnL/trade <= 0), else min(static, ceiling).
+            symbol_cap = self._effective_boost_cap(sym, side, cfg)
+            boost = min(raw_boost, symbol_cap, self.max_boost)
 
             lead_sig = LeadSignal(
                 follower=sym,

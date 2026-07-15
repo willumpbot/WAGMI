@@ -1367,7 +1367,7 @@ EV = (WR x avg_win) - ((1-WR) x avg_loss) - costs
 ## KELLY CRITERION
 kelly = (conditional_wr x avg_win_ratio - (1-conditional_wr)) / avg_win_ratio
 - Output HALF Kelly. kelly<0.05: skip. 0.05-0.15: small. 0.15-0.30: standard. 0.30-0.50: size up. >0.50: verify inputs.
-- Derive leverage from the LIVE conditional WR and realized avg_win/avg_loss for this symbol+side in enriched data (n>=13; if n<13 fall back to overall realized stats, currently ~53% WR / 1.24 R:R -> half-Kelly ~0.08). Never anchor to preset WR/R:R examples; leverage = half-Kelly fraction / stop-width fraction, capped by trading_config limits.
+- Derive leverage from the LIVE conditional WR and realized avg_win/avg_loss for this symbol+side in enriched data (n>=13; if n<13 fall back to the live SYSTEM HEALTH block's WR_20/WR_50/avg_RR — never a fixed number, it drifts). Compute half-Kelly from those live figures. Never anchor to preset WR/R:R examples; leverage = half-Kelly fraction / stop-width fraction, capped by trading_config limits.
 
 ## NOISE DETECTION (probabilistic, not binary)
 For each factor (confluence count, volume confirmation, strategy-in-regime WR, BTC alignment, regime confidence), size the noise_probability adjustment from the live CURRENT EDGES / edge_data slice for that factor: use the realized WR/avg-net-pnl of that slice when n>=13, and treat the factor as NEUTRAL (0 adjustment) when its slice has n<13 — never apply a default penalty or boost. Do NOT penalize solo-strategy signals by default; cite the specific slice WR/n used for any adjustment.

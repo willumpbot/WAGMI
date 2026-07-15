@@ -117,6 +117,18 @@ def _load_recent_trades_from_ledger(max_trades: int = 100) -> List[dict]:
         all_rows = [r for r in all_rows if (_row_ts(r) or 0) >= _cutoff]
         _side_map = {"SHORT": "SELL", "LONG": "BUY", "SELL": "SELL", "BUY": "BUY"}
         for row in all_rows[-max_trades:]:
+            # TEST/SIM FILTER: exclude fixture rows (TEST symbols, canned entry
+            # prices) so they cannot masquerade as real realized edge in the
+            # LLM's prompt context. Do NOT filter confidence_score==0 -- 117/216
+            # ledger rows are real legacy trades logged with conf 0.
+            if "TEST" in str(row.get("symbol", "")).upper():
+                continue
+            try:
+                _entry = float(row.get("entry_price") or 0)
+            except (ValueError, TypeError):
+                _entry = 0
+            if _entry in (100.0, 150.0, 50000.0):
+                continue
             try:
                 pnl = float(row.get("net_pnl", row.get("pnl", "")))
             except (ValueError, TypeError):

@@ -972,10 +972,15 @@ SYMBOL_RISK_MULTIPLIERS = {
 # the opposite of this table's SOL(12) > ETH(10) ranking, and the old "ETH
 # follows faster, less edge" comment below was factually wrong — it does not.
 # ALL long slices are realized net losers (worst: HYPE_BUY -$34.36/tr, n=17).
-# Making boost_cap live/side-aware (ledger-derived, zeroed for net-loser
-# slices) belongs in execution/cross_asset_alert.py (out of scope for this
-# file); these numbers remain the fallback shell. lead_lag_max_boost=12.0
-# above is the absolute safety ceiling and is intentionally left untouched.
+# These numbers remain the fallback shell for n<13 / evidence-insufficient
+# cases. The live, per-(symbol,side), ledger-derived cap (zeroed for proven
+# net-loser sides, else min(static, lead_lag_max_boost)) is now computed by
+# get_lead_lag_boost_cap() below, gated on DATA_DRIVEN_LEAD_LAG_CAP (default
+# true). Wiring execution/cross_asset_alert.py's boost_cap reads (currently
+# `cfg.get("boost_cap", ...)` against this raw dict, plus a duplicate static
+# fallback dict) to call get_lead_lag_boost_cap() instead is a follow-up
+# change to that file (out of scope here). lead_lag_max_boost=12.0 above is
+# the absolute safety ceiling and is intentionally left untouched.
 LEAD_LAG_SYMBOL_CONFIG = {
     "SOL": {
         "lag_minutes": (30, 60),       # SOL lags BTC by 30-60 min
@@ -1017,6 +1022,41 @@ def get_lead_lag_config(symbol: str) -> dict:
     """Return lead-lag configuration for a symbol. Returns empty dict if not configured."""
     base = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "")
     return LEAD_LAG_SYMBOL_CONFIG.get(base, {})
+
+
+def get_lead_lag_boost_cap(symbol: str, side: str) -> float:
+    """Return the effective lead-lag confidence-boost cap for a symbol+side.
+
+    LIVING VALUE (2026-07-15): the static LEAD_LAG_SYMBOL_CONFIG boost_cap above
+    is side-blind — SOL(12.0) > ETH(10.0) even though ETH_SHORT (+$20.37/tr,
+    n=36) is the ledger's single best slice, above SOL_SHORT (+$7.65/tr, n=39);
+    and HYPE(5.0) still boosts HYPE_BUY, the ledger's worst slice (-$34.36/tr,
+    n=17). This computes the cap LIVE from data/trade_ledger.csv (via
+    feedback.live_edge, avg net PnL/trade for this exact symbol+side, n>=13):
+      - n>=13 and avg_net<=0 (boosting a proven net-loser side) -> cap=0.0
+      - n>=13 and avg_net>0                                     -> cap=min(static, lead_lag_max_boost)
+      - n<13 (insufficient evidence)                            -> static fallback cap
+    lead_lag_max_boost (12.0, LEAD_LAG_MAX_BOOST env) remains the absolute
+    safety ceiling in every branch — this function can only ever match or
+    shrink the static cap, never exceed it.
+    Gate: DATA_DRIVEN_LEAD_LAG_CAP (default true). Set false to revert to the
+    static, side-blind LEAD_LAG_SYMBOL_CONFIG boost_cap unconditionally.
+    """
+    base = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "").upper()
+    ceiling = _env_float("LEAD_LAG_MAX_BOOST", 12.0)
+    static_cap = min(LEAD_LAG_SYMBOL_CONFIG.get(base, {}).get("boost_cap", 0.0), ceiling)
+    if os.getenv("DATA_DRIVEN_LEAD_LAG_CAP", "true").strip().lower() in ("1", "true", "yes"):
+        try:
+            from feedback.live_edge import get_report as _dd_report
+            norm_side = "BUY" if str(side).upper() in ("BUY", "LONG") else "SELL"
+            rec = _dd_report().get(f"{base}_{norm_side}")
+            if rec and rec.get("n", 0) >= 13:
+                if rec.get("avg_pnl", 0.0) <= 0:
+                    return 0.0
+                return round(min(static_cap, ceiling), 3)
+        except Exception as e:
+            logger.warning(f"[LEAD-LAG-CAP] live_edge lookup failed for {base}_{side}: {e}")
+    return static_cap
 
 
 def get_symbol_risk_mult(symbol: str) -> float:

@@ -7,8 +7,10 @@ If uPnL already exceeds the median MFE, the position has captured more
 than most trades ever will — take the gift.  Conversely, if drawdown
 exceeds the median MAE after several hours, recovery is unlikely.
 
-MFE/MAE percentile data sourced from 2h holding-window study on
-Hyperliquid SHORT positions (March 2026).
+MFE/MAE percentile data is computed live from the bot's own realized
+closes (paper_trades/trades_*.csv, n>=13 per symbol/side; see MFE_MAE_DATA
+below), falling back to a conservative static default when evidence is
+thin.
 
 Recommendation hierarchy:
   EXIT_NOW       — close immediately (loser past recovery window)
@@ -17,41 +19,188 @@ Recommendation hierarchy:
   HOLD           — no action needed
 """
 
+import csv
+import glob
 import logging
+import math
+import os
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any
 
 logger = logging.getLogger("bot.execution.mfe_exit")
 
-# ─── MFE / MAE percentile constants (2h window, SHORT side) ─────────
-# Format: {symbol: {"mfe_p50": %, "mfe_p75": %, "mae_p50": %, "mae_p75": %}}
-# Values are in *percent* (0.38 means 0.38%).
+# ─── MFE / MAE percentile table (LIVING VALUES, 2026-07-15) ─────────
+# Was a static table "sourced from a 2h holding-window study on Hyperliquid
+# SHORT positions (March 2026)" -- acted on LIVE with close authority
+# (multi_strategy_main.py calls get_exit_recommendation every tick and
+# force-closes on TAKE_PROFIT/EXIT_NOW) yet diverged up to ~2x from the
+# realized ledger: HYPE mfe_p50 1.43 (n=31 live) vs hardcoded 0.78 meant
+# TAKE_PROFIT fired at 2x0.78=1.56% when the realized MEDIAN winner
+# excursion alone is 1.43%. SOL mfe_p50 0.72 vs 0.51. ETH mae_p50 0.38 vs
+# 0.50 (EXIT_NOW waited too long). XRP (n=28, live-traded) was entirely
+# absent and fell to DEFAULT_MFE_MAE (0.40/0.42) vs realized 0.69/0.62,
+# causing premature exits on every XRP trade. Also SHORT-only, so longs
+# were judged by short percentiles.
+#
+# Replaced with a live per-SYMBOL and per-SYMBOL_SIDE computation from
+# paper_trades/trades_*.csv close rows (mfe_pct/mae_pct columns), reusing
+# position_manager._compute_live_setup_time_stops's exact row hygiene
+# (skip action=OPEN, skip TEST symbols, skip test-fixture prices
+# {100,150,50000}, dedupe on symbol/action/side/price/qty/timestamp) plus
+# one extra filter: rows where mfe_pct==mae_pct==0.0 are TP1/
+# LLM_EXIT_PARTIAL partial-close legs with no excursion recorded
+# (placeholder, not a genuine zero-move trade) and are skipped so they
+# don't drag percentiles toward zero. n>=13 required per key (side-
+# specific first, then symbol-pooled, then DEFAULT_MFE_MAE) else the
+# static DEFAULT_MFE_MAE floor governs. Cached with ledger-mtime+hourly-
+# TTL like leverage.py's Kelly-leverage cache.
+#
+# NOTE: mutated in place (clear()+update(), never reassigned) so existing
+# `from execution.mfe_exit import MFE_MAE_DATA` references stay live.
+MFE_MAE_DATA: Dict[str, Dict[str, float]] = {}
 
-MFE_MAE_DATA: Dict[str, Dict[str, float]] = {
-    "BTC": {
-        "mfe_p50": 0.38, "mfe_p75": 0.70,
-        "mae_p50": 0.37, "mae_p75": 0.72,
-    },
-    "SOL": {
-        "mfe_p50": 0.51, "mfe_p75": 0.91,
-        "mae_p50": 0.47, "mae_p75": 0.96,
-    },
-    "ETH": {
-        "mfe_p50": 0.44, "mfe_p75": 0.90,
-        "mae_p50": 0.50, "mae_p75": 0.90,
-    },
-    "HYPE": {
-        "mfe_p50": 0.78, "mfe_p75": 1.37,
-        "mae_p50": 0.77, "mae_p75": 1.34,
-    },
-}
-
-# Fallback for unlisted symbols — conservative average of BTC/ETH
+# Fallback when a symbol/side has no n>=13 live data yet — conservative
+# average of the original BTC/ETH study values.
 DEFAULT_MFE_MAE = {
     "mfe_p50": 0.40, "mfe_p75": 0.80,
     "mae_p50": 0.42, "mae_p75": 0.80,
 }
+
+_MFE_MAE_MIN_N = 13
+_MFE_MAE_TTL_S = 3600  # refresh at most hourly, or immediately on ledger mtime change
+_MFE_MAE_TEST_PRICES = (100.0, 150.0, 50000.0)
+_mfe_mae_cache = {"computed_at": 0.0, "ledger_mtime": 0.0}
+_mfe_mae_lock = threading.Lock()
+
+
+def _normalise_symbol_for_ledger(symbol: str) -> str:
+    """Strip exchange suffixes for grouping ledger rows (mirrors
+    MFEExitAdvisor._normalise_symbol)."""
+    sym = (symbol or "").upper()
+    for suffix in ("/USDT:USDT", "/USDT", "-PERP", "-USD", "USDT", "USD"):
+        if sym.endswith(suffix):
+            sym = sym[: -len(suffix)]
+            break
+    return sym
+
+
+def _percentile(sorted_vals: list, pct: float) -> float:
+    """Linear-interpolation percentile (numpy default method). Assumes
+    sorted_vals is already sorted ascending."""
+    n = len(sorted_vals)
+    if n == 0:
+        return 0.0
+    if n == 1:
+        return sorted_vals[0]
+    k = (n - 1) * pct
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return sorted_vals[int(k)]
+    return sorted_vals[int(f)] * (c - k) + sorted_vals[int(c)] * (k - f)
+
+
+def _compute_live_mfe_mae() -> Dict[str, Dict[str, float]]:
+    """Live per-SYMBOL and per-SYMBOL_SIDE MFE/MAE percentiles from realized
+    closes in paper_trades/trades_*.csv. See module-level comment above for
+    the row hygiene. Never raises -- returns {} on any failure so
+    DEFAULT_MFE_MAE governs everything."""
+    try:
+        rows_by_key: Dict[tuple, dict] = {}
+        for path in glob.glob(os.path.join("paper_trades", "trades_*.csv")):
+            try:
+                with open(path, newline="") as f:
+                    for row in csv.DictReader(f):
+                        action = (row.get("action") or "").upper()
+                        if action == "OPEN":
+                            continue
+                        symbol = (row.get("symbol") or "").upper()
+                        if not symbol or "TEST" in symbol:
+                            continue
+                        try:
+                            price = float(row.get("price") or 0)
+                        except (TypeError, ValueError):
+                            continue
+                        if price in _MFE_MAE_TEST_PRICES:
+                            continue
+                        dedup_key = (
+                            symbol, action, row.get("side"), row.get("price"),
+                            row.get("qty"), row.get("timestamp"),
+                        )
+                        rows_by_key[dedup_key] = row
+            except Exception:
+                continue  # one bad/partial file shouldn't kill the whole computation
+
+        grouped: Dict[str, Dict[str, list]] = {}
+        for row in rows_by_key.values():
+            try:
+                mfe = float(row.get("mfe_pct") or 0.0)
+                mae = float(row.get("mae_pct") or 0.0)
+            except (TypeError, ValueError):
+                continue
+            if mfe == 0.0 and mae == 0.0:
+                continue  # partial-close placeholder, no real excursion recorded
+            base_sym = _normalise_symbol_for_ledger(row.get("symbol") or "")
+            if not base_sym:
+                continue
+            side_raw = (row.get("side") or "").upper()
+            side_label = "BUY" if side_raw in ("LONG", "BUY") else "SELL"
+            for key in (base_sym, f"{base_sym}_{side_label}"):
+                bucket = grouped.setdefault(key, {"mfe": [], "mae": []})
+                bucket["mfe"].append(mfe)
+                bucket["mae"].append(mae)
+
+        result: Dict[str, Dict[str, float]] = {}
+        for key, vals in grouped.items():
+            n = len(vals["mfe"])
+            if n < _MFE_MAE_MIN_N:
+                continue
+            mfes = sorted(vals["mfe"])
+            maes = sorted(vals["mae"])
+            result[key] = {
+                "mfe_p50": round(_percentile(mfes, 0.50), 4),
+                "mfe_p75": round(_percentile(mfes, 0.75), 4),
+                "mae_p50": round(_percentile(maes, 0.50), 4),
+                "mae_p75": round(_percentile(maes, 0.75), 4),
+            }
+        return result
+    except Exception as e:
+        logger.warning(f"Live MFE/MAE computation failed, using DEFAULT_MFE_MAE: {e}")
+        return {}
+
+
+def _mfe_mae_ledger_mtime() -> float:
+    try:
+        mtimes = [
+            os.path.getmtime(p)
+            for p in glob.glob(os.path.join("paper_trades", "trades_*.csv"))
+        ]
+        return max(mtimes) if mtimes else 0.0
+    except OSError:
+        return 0.0
+
+
+def _ensure_mfe_mae_fresh() -> None:
+    """Refresh MFE_MAE_DATA in place at most hourly, or immediately on
+    ledger mtime change. Mutates (clear+update) rather than reassigns so
+    existing `from execution.mfe_exit import MFE_MAE_DATA` references stay
+    live. Never raises -- a failed refresh just keeps the prior cache."""
+    now = time.time()
+    led_mtime = _mfe_mae_ledger_mtime()
+    with _mfe_mae_lock:
+        stale = (
+            now - _mfe_mae_cache["computed_at"] > _MFE_MAE_TTL_S
+            or led_mtime != _mfe_mae_cache["ledger_mtime"]
+        )
+        if not stale:
+            return
+        live = _compute_live_mfe_mae()
+        MFE_MAE_DATA.clear()
+        MFE_MAE_DATA.update(live)
+        _mfe_mae_cache["computed_at"] = now
+        _mfe_mae_cache["ledger_mtime"] = led_mtime
 
 
 @dataclass
@@ -142,7 +291,13 @@ class MFEExitAdvisor:
         """
         # Normalise symbol (strip /USDT, -PERP, etc.)
         sym = self._normalise_symbol(symbol)
-        data = MFE_MAE_DATA.get(sym, DEFAULT_MFE_MAE)
+        side_label = "BUY" if side.upper() == "BUY" else "SELL"
+        _ensure_mfe_mae_fresh()
+        data = (
+            MFE_MAE_DATA.get(f"{sym}_{side_label}")
+            or MFE_MAE_DATA.get(sym)
+            or DEFAULT_MFE_MAE
+        )
 
         # Calculate uPnL percentage
         if side.upper() == "BUY":

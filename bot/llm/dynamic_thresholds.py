@@ -125,6 +125,8 @@ class DynamicThresholds:
             hold_agg: Dict[str, dict] = {}
 
             for t in trades:
+                if "TEST" in (t.get("symbol") or "").upper():
+                    continue
                 regime = (t.get("regime") or "unknown").lower()
                 symbol = (t.get("symbol") or "unknown").upper()
                 side = (t.get("side") or "").upper()
@@ -133,6 +135,8 @@ class DynamicThresholds:
 
                 # SL width analysis
                 entry = float(t.get("entry_price") or 0)
+                if entry in (100.0, 150.0, 50000.0):
+                    continue
                 sl = float(t.get("sl") or 0)
                 exit_reason = (t.get("exit_reason") or "").upper()
                 if regime not in regime_sl_agg:

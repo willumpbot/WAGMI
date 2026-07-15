@@ -14,8 +14,12 @@ computed its ATR-based levels.
 Enable/disable via DYNAMIC_TP_ENABLED env var (default: True).
 """
 
+import csv
+import glob
 import logging
 import os
+import threading
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
@@ -24,9 +28,15 @@ logger = logging.getLogger("bot.execution.dynamic_tp")
 
 
 # ─── Per-symbol MFE-optimal TP1/SL (percentage of entry price) ────────
-# Derived from 2h holding-window MFE/MAE analysis on Hyperliquid.
-# These are the *optimal* TP1 and SL widths as percentages.
-
+# LIVING VALUES (2026-07-15): this static table is now the n<13 FALLBACK
+# ONLY. The governing path is _get_mfe_baseline() below, which computes
+# live per-symbol tp1_pct/sl_pct from realized MFE/MAE in
+# paper_trades/trades_*.csv (p50 MFE -> tp1_pct, p75 MAE -> sl_pct,
+# n>=13) and only drops back to this frozen table when live evidence is
+# thin. Kept here as illustrative values / cold-start fallback; do not
+# treat as authoritative — the ledger already contradicts it (e.g. HYPE
+# realized mfe_p50 ~0.82 vs the 0.78 baseline here, XRP unlisted despite
+# n=44 live trades).
 MFE_OPTIMAL_LEVELS: Dict[str, Dict[str, float]] = {
     "BTC": {"tp1_pct": 0.38, "sl_pct": 0.72},
     "SOL": {"tp1_pct": 0.51, "sl_pct": 0.96},
@@ -36,6 +46,106 @@ MFE_OPTIMAL_LEVELS: Dict[str, Dict[str, float]] = {
 
 # Fallback for unlisted symbols — conservative average
 DEFAULT_MFE_LEVELS = {"tp1_pct": 0.45, "sl_pct": 0.85}
+
+
+# ─── Live MFE/MAE baseline (n>=13, ledger-derived) ─────────────────────
+# Reads realized per-close mfe_pct/mae_pct from paper_trades/trades_*.csv
+# (the same close-time MFE/MAE data mfe_exit.py's percentile table was
+# derived from) and computes p50 MFE -> tp1_pct, p75 MAE -> sl_pct per
+# symbol. Filters TEST/SIM symbols and synthetic fixture entry prices,
+# dedupes rows seen across overlapping session files, and caches by
+# (file count, max mtime) + a TTL so it stays "living" as trades close.
+_BOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_PAPER_TRADES_GLOB = os.path.join(_BOT_DIR, "paper_trades", "trades_*.csv")
+_MFE_MIN_N = 13
+_MFE_TTL_S = 900
+_TEST_ENTRY_PRICES = (100.0, 150.0, 50000.0)
+_mfe_lock = threading.Lock()
+_mfe_cache: Dict[str, Any] = {"levels": {}, "computed_at": 0.0, "files_sig": None}
+
+
+def _percentile(sorted_vals, p: float) -> Optional[float]:
+    if not sorted_vals:
+        return None
+    k = (len(sorted_vals) - 1) * p
+    f = int(k)
+    c = min(f + 1, len(sorted_vals) - 1)
+    if f == c:
+        return sorted_vals[f]
+    return sorted_vals[f] + (sorted_vals[c] - sorted_vals[f]) * (k - f)
+
+
+def _recompute_mfe_levels() -> Dict[str, Dict[str, float]]:
+    """Rebuild {symbol: {tp1_pct, sl_pct, n}} from realized paper-trade
+    MFE/MAE. Never raises — returns {} on any error so callers keep the
+    static fallback."""
+    levels: Dict[str, Dict[str, float]] = {}
+    try:
+        by_symbol: Dict[str, Dict[str, list]] = {}
+        seen = set()
+        for fp in glob.glob(_PAPER_TRADES_GLOB):
+            try:
+                with open(fp, newline="", encoding="utf-8", errors="ignore") as f:
+                    reader = csv.DictReader(f)
+                    if not reader.fieldnames or "mfe_pct" not in reader.fieldnames:
+                        continue
+                    for row in reader:
+                        sym = str(row.get("symbol", "")).upper().strip()
+                        if not sym or "TEST" in sym or "SIM" in sym:
+                            continue
+                        try:
+                            price = float(row.get("price") or 0)
+                            mfe_pct = float(row.get("mfe_pct") or 0)
+                            mae_pct = float(row.get("mae_pct") or 0)
+                        except (ValueError, TypeError):
+                            continue
+                        if price <= 0 or price in _TEST_ENTRY_PRICES:
+                            continue
+                        dedupe_key = (sym, row.get("timestamp", ""), price, mfe_pct, mae_pct)
+                        if dedupe_key in seen:
+                            continue
+                        seen.add(dedupe_key)
+                        bucket = by_symbol.setdefault(sym, {"mfe": [], "mae": []})
+                        bucket["mfe"].append(mfe_pct)
+                        bucket["mae"].append(mae_pct)
+            except (OSError, csv.Error):
+                continue
+        for sym, vals in by_symbol.items():
+            n = len(vals["mfe"])
+            if n < _MFE_MIN_N:
+                continue
+            tp1_pct = _percentile(sorted(vals["mfe"]), 0.5)
+            sl_pct = _percentile(sorted(vals["mae"]), 0.75)
+            if not tp1_pct or not sl_pct or tp1_pct <= 0 or sl_pct <= 0:
+                continue
+            levels[sym] = {"tp1_pct": round(tp1_pct, 4), "sl_pct": round(sl_pct, 4), "n": n}
+    except Exception:
+        return {}
+    return levels
+
+
+def _ensure_mfe_fresh() -> None:
+    now = time.time()
+    try:
+        files = glob.glob(_PAPER_TRADES_GLOB)
+        sig = (len(files), max((os.path.getmtime(fp) for fp in files), default=0.0))
+    except OSError:
+        sig = (0, 0.0)
+    with _mfe_lock:
+        stale = (now - _mfe_cache["computed_at"] > _MFE_TTL_S) or (sig != _mfe_cache.get("files_sig"))
+        if stale:
+            levels = _recompute_mfe_levels()
+            _mfe_cache.update({"levels": levels, "computed_at": now, "files_sig": sig})
+
+
+def get_live_mfe_levels(symbol: str) -> Optional[Dict[str, float]]:
+    """Live-computed {"tp1_pct", "sl_pct"} for `symbol` from realized
+    paper-trade MFE/MAE (n>=13), or None if evidence is insufficient —
+    callers must keep their own static fallback, never lower the bar."""
+    sym = _normalise_symbol(symbol)
+    _ensure_mfe_fresh()
+    with _mfe_lock:
+        return _mfe_cache["levels"].get(sym)
 
 
 # ─── Adjustment multipliers ──────────────────────────────────────────
@@ -88,6 +198,19 @@ def _normalise_symbol(symbol: str) -> str:
             sym = sym[: -len(suffix)]
             break
     return sym
+
+
+def _get_mfe_baseline(sym: str) -> Dict[str, float]:
+    """Live-first MFE/MAE baseline: n>=13 live-computed tp1_pct/sl_pct from
+    realized paper-trade MFE/MAE (get_live_mfe_levels), falling back to the
+    static MFE_OPTIMAL_LEVELS table (itself falling back to
+    DEFAULT_MFE_LEVELS) only when live evidence is insufficient. Gated by
+    DYNAMIC_TP_LIVE_MFE (default true) for a quick revert if ever needed."""
+    if _env_bool("DYNAMIC_TP_LIVE_MFE", True):
+        live = get_live_mfe_levels(sym)
+        if live is not None:
+            return live
+    return MFE_OPTIMAL_LEVELS.get(sym, DEFAULT_MFE_LEVELS)
 
 
 @dataclass
@@ -184,7 +307,7 @@ class DynamicTPOptimizer:
             tp1_pct = abs(current_tp1 - entry) / entry * 100 if entry > 0 else 0
             sl_pct = abs(current_sl - entry) / entry * 100 if entry > 0 else 0
             sym = _normalise_symbol(symbol)
-            mfe = MFE_OPTIMAL_LEVELS.get(sym, DEFAULT_MFE_LEVELS)
+            mfe = _get_mfe_baseline(sym)
             return DynamicTPResult(
                 tp1=current_tp1,
                 sl=current_sl,
@@ -197,7 +320,7 @@ class DynamicTPOptimizer:
             )
 
         sym = _normalise_symbol(symbol)
-        mfe = MFE_OPTIMAL_LEVELS.get(sym, DEFAULT_MFE_LEVELS)
+        mfe = _get_mfe_baseline(sym)
         adjustments = []
 
         # ── Step 1: Get MFE baseline TP1/SL as percentages ──

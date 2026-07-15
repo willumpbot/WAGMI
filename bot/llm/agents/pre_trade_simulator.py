@@ -6,15 +6,13 @@ Pure computation — no LLM calls.
 import logging
 from typing import Any, Dict, List, Tuple
 
+from llm.agents.portfolio_intelligence import _corr as _pi_corr
+
 logger = logging.getLogger("bot.llm.agents.pre_trade_simulator")
 
-# Empirical correlation matrix (from portfolio_intelligence.py)
-_CORR = {
-    ("BTC", "ETH"): 0.92, ("BTC", "SOL"): 0.85, ("BTC", "HYPE"): 0.63,
-    ("BTC", "DOGE"): 0.72, ("BTC", "AVAX"): 0.78, ("BTC", "LINK"): 0.76,
-    ("ETH", "SOL"): 0.80, ("ETH", "HYPE"): 0.60, ("ETH", "AVAX"): 0.82,
-    ("SOL", "HYPE"): 0.58, ("SOL", "AVAX"): 0.70, ("SOL", "DOGE"): 0.65,
-}
+# Correlation is sourced from portfolio_intelligence.py (single source of
+# truth: live rolling correlation, static research snapshot only as an
+# n<minimum-history fallback) so the two never silently diverge.
 _DEFAULT_ATR_PCT = {"BTC": 0.003, "ETH": 0.004, "SOL": 0.005, "HYPE": 0.007}
 _WEEKEND_RATIO = 0.55
 _SQUEEZE_BASE = 0.08
@@ -23,7 +21,7 @@ _SQUEEZE_BASE = 0.08
 def _corr(a: str, b: str) -> float:
     a, b = a.upper(), b.upper()
     if a == b: return 1.0
-    return _CORR.get((a, b), _CORR.get((b, a), 0.40))
+    return _pi_corr(a, b)
 
 
 def _sym(raw: str) -> str:

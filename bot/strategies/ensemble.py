@@ -71,6 +71,29 @@ def _bot_root() -> str:
     return _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 
 
+_SYNTHETIC_PRICES = [100.0, 150.0, 50000.0]
+
+
+def _scrub_paper_df(df: "pd.DataFrame") -> "pd.DataFrame":
+    """Drop TEST-symbol and synthetic-price (100/150/50000) rows from a
+    paper_trades DataFrame (column: 'price'), matching the scrub already
+    applied by probability_engine._get_tp_continuation_stats so ensemble
+    live-stat loaders don't get re-corrupted by a future test/sim writer."""
+    df = df[~df["symbol"].astype(str).str.upper().str.contains("TEST", na=False)]
+    if "price" in df.columns:
+        df = df[~pd.to_numeric(df["price"], errors="coerce").isin(_SYNTHETIC_PRICES)]
+    return df
+
+
+def _scrub_ledger_df(df: "pd.DataFrame") -> "pd.DataFrame":
+    """Drop TEST-symbol and synthetic-price (100/150/50000) rows from a
+    data/trade_ledger.csv DataFrame (column: 'entry_price')."""
+    df = df[~df["symbol"].astype(str).str.upper().str.contains("TEST", na=False)]
+    if "entry_price" in df.columns:
+        df = df[~pd.to_numeric(df["entry_price"], errors="coerce").isin(_SYNTHETIC_PRICES)]
+    return df
+
+
 def _cached_ledger_value(key: str, builder):
     """Time-TTL cache wrapper. On builder exception, serves the last good
     value (if any) rather than raising — never let a live-value refresh
@@ -109,6 +132,9 @@ def _load_paper_trades_side_stats() -> Dict[str, Dict[str, float]]:
         df = pd.concat(frames, ignore_index=True)
         if not {"pnl", "fee", "side"}.issubset(df.columns):
             return {}
+        df = _scrub_paper_df(df)
+        if df.empty:
+            return {}
         df["net"] = df["pnl"] - df["fee"]
         side_map = {"LONG": "BUY", "SHORT": "SELL", "BUY": "BUY", "SELL": "SELL"}
         df["side_norm"] = df["side"].map(side_map)
@@ -134,6 +160,7 @@ def _load_regime_strategy_edge() -> Dict[tuple, tuple]:
     def _build():
         path = _os.path.join(_bot_root(), "data", "trade_ledger.csv")
         df = pd.read_csv(path)
+        df = _scrub_ledger_df(df)
         df = df[df["contributing_factors"].notna()]
         df = df[~df["contributing_factors"].isin(["ensemble", "RECONSTRUCTED_FROM_LOG"])]
         stats: Dict[tuple, list] = {}
@@ -155,6 +182,7 @@ def _load_combo_stats() -> Dict[frozenset, tuple]:
     def _build():
         path = _os.path.join(_bot_root(), "data", "trade_ledger.csv")
         df = pd.read_csv(path)
+        df = _scrub_ledger_df(df)
         df = df[df["contributing_factors"].notna()]
         df = df[~df["contributing_factors"].isin(["ensemble", "RECONSTRUCTED_FROM_LOG"])]
         stats: Dict[frozenset, list] = {}
@@ -223,6 +251,9 @@ def _load_paper_trades_symbol_side_stats() -> Dict[tuple, Dict[str, float]]:
         df = pd.concat(frames, ignore_index=True)
         if not {"pnl", "fee", "side", "symbol"}.issubset(df.columns):
             return {}
+        df = _scrub_paper_df(df)
+        if df.empty:
+            return {}
         df["net"] = df["pnl"] - df["fee"]
         side_map = {"LONG": "BUY", "SHORT": "SELL", "BUY": "BUY", "SELL": "SELL"}
         df["side_norm"] = df["side"].map(side_map)
@@ -263,6 +294,9 @@ def _load_live_p_tp2_given_tp1() -> float:
     def _build():
         path = _os.path.join(_bot_root(), "data", "trades.csv")
         df = pd.read_csv(path)
+        df = df[~df["symbol"].astype(str).str.upper().str.startswith("TEST")]
+        if "entry" in df.columns:
+            df = df[~pd.to_numeric(df["entry"], errors="coerce").isin(_SYNTHETIC_PRICES)]
         tp1 = df[df["tp1_hit"] == True]  # noqa: E712
         n = len(tp1)
         if n < 13:
@@ -283,6 +317,9 @@ def _load_live_remainder_r() -> float:
     def _build():
         path = _os.path.join(_bot_root(), "data", "trades.csv")
         df = pd.read_csv(path)
+        df = df[~df["symbol"].astype(str).str.upper().str.startswith("TEST")]
+        if "entry" in df.columns:
+            df = df[~pd.to_numeric(df["entry"], errors="coerce").isin(_SYNTHETIC_PRICES)]
         rem = df[(df["tp1_hit"] == True) & (df["tp2_hit"] != True)]  # noqa: E712
         n = len(rem)
         if n < 13:

@@ -63,6 +63,22 @@ def _adx(df: pd.DataFrame, period: int = 14) -> float:
     return float(adx_series.iloc[-1]) if len(adx_series) > 0 else 25.0
 
 
+def _scrub_ledger_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Strip TEST-symbol and synthetic-fixture rows from a trade_ledger.csv read.
+
+    Same filter as trading_config.py:_get_regime_ledger_ev — excludes rows
+    whose symbol contains "TEST" and rows whose entry_price is one of the
+    known synthetic fixture values (100.0, 150.0, 50000.0). Guards for a
+    missing entry_price column so callers without it still get the
+    symbol-based filter applied.
+    """
+    if "symbol" in df.columns:
+        df = df[~df["symbol"].astype(str).str.upper().str.contains("TEST", na=False)]
+    if "entry_price" in df.columns:
+        df = df[~pd.to_numeric(df["entry_price"], errors="coerce").isin([100.0, 150.0, 50000.0])]
+    return df
+
+
 class ProbabilityEngineStrategy(BaseStrategy):
     """
     Regime-conditional Monte Carlo probability engine.
@@ -154,6 +170,7 @@ class ProbabilityEngineStrategy(BaseStrategy):
             ledger_path = os.path.join(os.path.dirname(__file__), "..", "data", "trade_ledger.csv")
             if os.path.exists(ledger_path):
                 df = pd.read_csv(ledger_path)
+                df = _scrub_ledger_df(df)
                 if {"regime_1h", "net_pnl", "exit_type"}.issubset(df.columns):
                     df = df[df["exit_type"].notna() & df["net_pnl"].notna()]
                     canon = df["regime_1h"].apply(canonicalize_regime)
@@ -270,6 +287,7 @@ class ProbabilityEngineStrategy(BaseStrategy):
             ledger_path = os.path.join(os.path.dirname(__file__), "..", "data", "trade_ledger.csv")
             if os.path.exists(ledger_path):
                 df = pd.read_csv(ledger_path)
+                df = _scrub_ledger_df(df)
                 if {"regime_1h", "net_pnl", "side", "exit_type"}.issubset(df.columns):
                     df = df[df["exit_type"].notna() & df["net_pnl"].notna()]
                     canon = df["regime_1h"].apply(canonicalize_regime)
