@@ -3376,8 +3376,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         _last_candle_time = _last_candle_time.tz_localize("UTC")
                     _candle_age_s = (pd.Timestamp.now(tz="UTC") - _last_candle_time).total_seconds()
                     _tf_period_s = {"5m": 300, "1h": 3600}.get(_stale_check_tf, 3600)
-                    # Data is stale if the last candle closed more than (period + tolerance) ago
-                    if _candle_age_s > _tf_period_s + _stale_max_s:
+                    # STALE-THRESHOLD FIX (2026-07-16): the LAST CLOSED candle is
+                    # naturally 1-2 full periods old by its OPEN timestamp (the
+                    # fetcher's own expected_freshness says "1h can be 60-120m old").
+                    # The old (period + tolerance)=3900s/65m limit false-flagged a
+                    # perfectly-fresh 1h candle as stale for ~55min of every hour,
+                    # skipping signal generation (e.g. BTC blind during the 07-15
+                    # bullish thesis window). Allow up to 2x the period + tolerance
+                    # (1h -> 125m, 5m -> 15m): still catches a genuinely dead feed
+                    # (>2 intervals with no new candle) without the false skips.
+                    if _candle_age_s > 2 * _tf_period_s + _stale_max_s:
                         # Still process existing positions (SL/TP), but skip new signal generation
                         if symbol not in self.pos_mgr.get_open_positions():
                             # T0-B fix (2026-07-14): a position that JUST closed is no
