@@ -248,9 +248,9 @@
       {
         "low_hours": 0,
         "high_hours": 0.5,
-        "wins": 1,
-        "losses": 2,
-        "total_pnl": -24.156068120255043
+        "wins": 2,
+        "losses": 3,
+        "total_pnl": -24.73713967040239
       },
       {
         "low_hours": 0.5,

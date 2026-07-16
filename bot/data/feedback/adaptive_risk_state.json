@@ -4,8 +4,6 @@
     true,
     true,
     true,
-    true,
-    true,
     false,
     true,
     true,
@@ -19,7 +17,9 @@
     false,
     false,
     true,
-    false
+    false,
+    false,
+    true
   ],
   "regime_wr": {
     "trending": {
@@ -35,8 +35,8 @@
       "total": 16
     },
     "consolidation": {
-      "wins": 40,
-      "total": 86
+      "wins": 41,
+      "total": 88
     },
     "trend": {
       "wins": 2,

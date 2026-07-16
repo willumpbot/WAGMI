@@ -3537,8 +3537,12 @@
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-4.00%",
       "confidence": 0.005,
-      "evidence_count": 12,
+      "evidence_count": 16,
       "supporting": [
+        "5 observations",
+        "5 observations",
+        "5 observations",
+        "5 observations",
         "5 observations",
         "5 observations",
         "5 observations",
@@ -3554,7 +3558,7 @@
       ],
       "contradicting": [],
       "created_at": 1776093232.3230252,
-      "last_validated": 1784083135.3992732,
+      "last_validated": 1784238529.6701794,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -4249,7 +4253,7 @@
     {
       "knowledge_type": "graduated_rule",
       "content": "[EDGE] HYPE BUY during US session (14-22 UTC) has 85-88% WR (n=395). Time-of-day filter worth +30pp over all-hours baseline. Hour 18 UTC (US close + Asian open) is the peak. Strong positive EV at confidence_adj=+15pts.",
-      "confidence": 0.011,
+      "confidence": 0.01,
       "evidence_count": 395,
       "evidence_ratio": 0.87,
       "category": "strategy",
@@ -4295,7 +4299,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC SHORT in trending: 75% WR (3/4 recent) vs 50% baseline. Ensemble voting filters noise effectively\u2014sustains this edge. Increase BTC SHORT allocation on 2+ consensus.",
-      "confidence": 0.039,
+      "confidence": 0.034,
       "evidence_count": 1,
       "supporting": [
         "BTC in trending"
@@ -4317,7 +4321,7 @@
     {
       "knowledge_type": "principle",
       "content": "HYPE SHORT veto (2.3% WR) bypassed when regime=null. Win was outlier+trailing stop. Enforce veto regardless of regime",
-      "confidence": 0.046,
+      "confidence": 0.039,
       "evidence_count": 1,
       "supporting": [
         "HYPE in "
@@ -4338,7 +4342,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: ETH_SELL_0-agree: WIN in unknown, pnl=54.00%",
-      "confidence": 0.045,
+      "confidence": 0.039,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4356,7 +4360,7 @@
     {
       "knowledge_type": "principle",
       "content": "SHORT_ETH in trending_bear: 0% WR, counter-thesis rally proved correct. Block SHORT_ETH when trending or price rallying.",
-      "confidence": 0.047,
+      "confidence": 0.04,
       "evidence_count": 1,
       "supporting": [
         "ETH in trending_bear"
@@ -4378,7 +4382,7 @@
     {
       "knowledge_type": "principle",
       "content": "SHORT_ETH in trending_bear: 0% WR, thesis invalidated by price rally. Exit Agent closed after 2.2h on thesis_valid=false. Confirms prior rule.",
-      "confidence": 0.047,
+      "confidence": 0.04,
       "evidence_count": 1,
       "supporting": [
         "ETH in trending_bear"
@@ -4400,7 +4404,7 @@
     {
       "knowledge_type": "graduated_rule",
       "content": "[CAUTION] Illiquid regimes eliminate false breakouts. BTC SHORT illiquid + high-conf (85%+) should achieve 70%+ WR. Test on n=20 trades.",
-      "confidence": 0.04,
+      "confidence": 0.035,
       "evidence_count": 7,
       "evidence_ratio": 0.857,
       "category": "symbol",
@@ -4424,7 +4428,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_SELL_0-agree: WIN in unknown, pnl=521.59%",
-      "confidence": 0.046,
+      "confidence": 0.04,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4442,7 +4446,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL SHORT in RANGE: thesis died (conf=0.0), math failed (0.94% net after fees). AVOID\u2014range is enemy for directional shorts.",
-      "confidence": 0.048,
+      "confidence": 0.041,
       "evidence_count": 1,
       "supporting": [
         "SOL in range"
@@ -4464,7 +4468,7 @@
     {
       "knowledge_type": "principle",
       "content": "Block directional SHORTs at signal formation in RANGE regime (Trade Agent gate). SOL SHORT: thesis confidence decayed to 0.0.",
-      "confidence": 0.048,
+      "confidence": 0.041,
       "evidence_count": 1,
       "supporting": [
         "SOL in range"
@@ -4486,7 +4490,7 @@
     {
       "knowledge_type": "principle",
       "content": "ETH SHORT thesis failed: relief bounce (up) not downtrend. Fee drag 3.5%>TP 1.5%\u2014EV negative. Exit prevented SL. Avoid SHORT in bounces.",
-      "confidence": 0.054,
+      "confidence": 0.044,
       "evidence_count": 1,
       "supporting": [
         "ETH in "
@@ -4507,7 +4511,7 @@
     {
       "knowledge_type": "principle",
       "content": "ETH SHORT: relief bounce thesis failed. Fee drag (3.5%) > TP (1.5%) = EV-negative. Rule: skip if fee > target; avoid SHORT bounces.",
-      "confidence": 0.054,
+      "confidence": 0.044,
       "evidence_count": 1,
       "supporting": [
         "ETH in "
@@ -4528,7 +4532,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL SHORT: TP1 1.5% < fee drag 3.5%. Block SHORT if TP < 2.5x fees\u2014unprofitable before signal.",
-      "confidence": 0.054,
+      "confidence": 0.044,
       "evidence_count": 1,
       "supporting": [
         "SOL in relief_bounce"
@@ -4550,7 +4554,7 @@
     {
       "knowledge_type": "principle",
       "content": "Confidence=0 and regime='' bypassed entry. Exit Agent caught mechanically bad setup. Rule: enforce confidence>0 AND regime classified.",
-      "confidence": 0.054,
+      "confidence": 0.044,
       "evidence_count": 1,
       "supporting": [
         "SOL in unknown"
@@ -4572,7 +4576,7 @@
     {
       "knowledge_type": "principle",
       "content": "0-confidence LONG drifted 9h at 4x: $19 profit (0.5% ROE). Pattern: BTC similar ($9.43, 7.2h). Close within 1h of thesis break.",
-      "confidence": 0.066,
+      "confidence": 0.056,
       "evidence_count": 1,
       "supporting": [
         "ETH in consolidation"
@@ -4594,7 +4598,7 @@
     {
       "knowledge_type": "principle",
       "content": "Zero-confidence LONG 9h at 4x: +$19 (thesis 2-4h). Repeats BTC (+$9.43/7.2h)\u2014lucky drift pattern. Block: leverage>2x requires confidence>10%.",
-      "confidence": 0.066,
+      "confidence": 0.056,
       "evidence_count": 1,
       "supporting": [
         "ETH in "
@@ -4615,7 +4619,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_confidence_scorer: LOSS in trending_bear, pnl=-0.06%",
-      "confidence": 0.062,
+      "confidence": 0.052,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4633,7 +4637,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC LONG won $4.35 but regime shifted trending\u2192range + confidence\u21920.0. Exit on regime shift immediately, don't wait for TP\u2014prevents larger losses.",
-      "confidence": 0.067,
+      "confidence": 0.057,
       "evidence_count": 1,
       "supporting": [
         "BTC in trending\u2192range"
@@ -4655,7 +4659,7 @@
     {
       "knowledge_type": "principle",
       "content": "Confidence=0.0 (veto) SOL LONG entered & closed at -$0.14 loss. Gating layer must enforce: reject confidence \u22640.1 before position execution.",
-      "confidence": 0.068,
+      "confidence": 0.058,
       "evidence_count": 1,
       "supporting": [
         "SOL in consolidation"
@@ -4677,7 +4681,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL LONG in consolidation: 0% WR historical. Gate must reject confidence\u22640.1 entries. Avoid non-trending regimes for directional trades.",
-      "confidence": 0.068,
+      "confidence": 0.058,
       "evidence_count": 1,
       "supporting": [
         "SOL in consolidation"
@@ -4699,7 +4703,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC SHORT in consolidation: 0% WR. Regime mismatch + low confidence (0.0) = predictable loss. Block at entry gate.",
-      "confidence": 0.069,
+      "confidence": 0.059,
       "evidence_count": 1,
       "supporting": [
         "BTC in consolidation"
@@ -4721,7 +4725,7 @@
     {
       "knowledge_type": "principle",
       "content": "Confidence=0.0 + BTC SHORT consolidation = 0% WR. Gate should block. Exit Agent saved at 19min. Implement hard veto in Risk gate.",
-      "confidence": 0.069,
+      "confidence": 0.059,
       "evidence_count": 1,
       "supporting": [
         "BTC in consolidation"
@@ -4743,7 +4747,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (40% long WR vs 67% short WR)",
-      "confidence": 0.019,
+      "confidence": 0.016,
       "evidence_count": 0,
       "supporting": [
         "Short WR=67%",
@@ -4773,7 +4777,7 @@
     {
       "knowledge_type": "principle",
       "content": "Conf=0.0 SHORT in range\u2014thesis unformed, regime-failed. Exit Agent saved at 38min. Gate failed to block.",
-      "confidence": 0.075,
+      "confidence": 0.065,
       "evidence_count": 1,
       "supporting": [
         "SOL in range"
@@ -4795,7 +4799,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL SHORT in trend failed 0/2\u2014regime mismatch, conf=0. HARD SKIP until n>=10, WR>55%.",
-      "confidence": 0.075,
+      "confidence": 0.065,
       "evidence_count": 1,
       "supporting": [
         "SOL in trend"
@@ -4817,7 +4821,7 @@
     {
       "knowledge_type": "principle",
       "content": "Confidence=0.0 + consolidation executed despite gate failure. Add: skip if confidence<10 OR regime in [consolidation,range] pre-order.",
-      "confidence": 0.075,
+      "confidence": 0.065,
       "evidence_count": 1,
       "supporting": [
         "ETH in consolidation"
@@ -4839,7 +4843,7 @@
     {
       "knowledge_type": "principle",
       "content": "REINFORCED: Conf=0.0+consolidation(0%WR) should hard-block but didn't. Exit Agent correct. Fix: auto-skip if confidence<10 OR regime in [consolidation,range].",
-      "confidence": 0.075,
+      "confidence": 0.065,
       "evidence_count": 1,
       "supporting": [
         "ETH in consolidation"
@@ -4861,7 +4865,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL SHORT in RANGE + confidence_scorer (0% WR n=2): regime mismatch kills edge. Block: RANGE+SOL SHORT or confidence<10.",
-      "confidence": 0.077,
+      "confidence": 0.067,
       "evidence_count": 1,
       "supporting": [
         "SOL in range"
@@ -4883,7 +4887,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL SHORT in RANGE (confidence_scorer): 0% WR n=3, regime hostile to SHORT. Exit Agent right to close 1h/-1.4%. Block permanently.",
-      "confidence": 0.077,
+      "confidence": 0.067,
       "evidence_count": 1,
       "supporting": [
         "SOL in range"
@@ -4940,7 +4944,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_SELL_regime_trend: LOSS in trend, pnl=-0.78%",
-      "confidence": 0.08,
+      "confidence": 0.07,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4958,7 +4962,7 @@
     {
       "knowledge_type": "principle",
       "content": "Zero-confidence hard block: SOL LONG conf=0 + 15x + 0% WR + CB active \u2192 liquidation. Gate rule: conf\u226410% = always skip, no exceptions.",
-      "confidence": 0.086,
+      "confidence": 0.076,
       "evidence_count": 1,
       "supporting": [
         "SOL in trend"
@@ -4980,7 +4984,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL LONG trend 0% WR n=3: known loser repeated w/ 15x in CB-active. Entry gate failed. Block setup until recovery.",
-      "confidence": 0.086,
+      "confidence": 0.076,
       "evidence_count": 1,
       "supporting": [
         "SOL in trend"
@@ -5002,7 +5006,7 @@
     {
       "knowledge_type": "principle",
       "content": "Consolidation+HYPE LONG=structural mismatch. Consolidation is mean-reverting; HYPE needs momentum. Trade deteriorated -1.03% over 100min despite 2.5x leverage. Block low-momentum symbols entirely in c",
-      "confidence": 0.087,
+      "confidence": 0.077,
       "evidence_count": 1,
       "supporting": [
         "HYPE in consolidation"
@@ -5024,7 +5028,7 @@
     {
       "knowledge_type": "principle",
       "content": "Known loser: HYPE LONG in consolidation (0/4 WR). Entered despite CB (6L) + conf=0.0. Gate failure. Add pre-entry hard-block.",
-      "confidence": 0.087,
+      "confidence": 0.077,
       "evidence_count": 1,
       "supporting": [
         "HYPE in consolidation"
@@ -5093,7 +5097,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (29% long WR vs 53% short WR)",
-      "confidence": 0.048,
+      "confidence": 0.043,
       "evidence_count": 0,
       "supporting": [
         "Short WR=53%",
@@ -5123,7 +5127,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_BB: LOSS in trend, pnl=-83.61%",
-      "confidence": 0.088,
+      "confidence": 0.078,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -5141,7 +5145,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC LONG in trending_bull with momentum_weakening invalidates thesis (0% WR n=3). Exit correct. Avoid or require momentum confirmation.",
-      "confidence": 0.093,
+      "confidence": 0.081,
       "evidence_count": 1,
       "supporting": [
         "BTC in trending_bull"
@@ -5163,7 +5167,7 @@
     {
       "knowledge_type": "principle",
       "content": "Gate breach: confidence=0.0 in trending_bull/momentum_weakening (0% WR n=3) executed via LLM_FIRST. Enforce hard block for confidence <= 0.0.",
-      "confidence": 0.093,
+      "confidence": 0.081,
       "evidence_count": 1,
       "supporting": [
         "BTC in trending_bull"
@@ -5185,7 +5189,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (25% long WR vs 53% short WR)",
-      "confidence": 0.059,
+      "confidence": 0.054,
       "evidence_count": 4,
       "supporting": [
         "Short WR=53%",
@@ -5215,7 +5219,7 @@
     {
       "knowledge_type": "principle",
       "content": "ETH SHORT at 0.0 confidence in range\u2014gate should reject confidence<15%. Strategy confidence_scorer weak (18% WR). Exit agent correct.",
-      "confidence": 0.127,
+      "confidence": 0.112,
       "evidence_count": 1,
       "supporting": [
         "ETH in range"
@@ -5237,7 +5241,7 @@
     {
       "knowledge_type": "principle",
       "content": "ETH SHORT in range regime: 0% WR (n=4). Confidence=0.0 gate failure + regime mismatch. Exit Agent correct to close at 36min.",
-      "confidence": 0.127,
+      "confidence": 0.112,
       "evidence_count": 1,
       "supporting": [
         "ETH in range"
@@ -5259,7 +5263,7 @@
     {
       "knowledge_type": "principle",
       "content": "Confidence=0.0 BTC SHORT won via 20h trailing hold. Invalid theses don't need salvaging\u2014prevent entry via gate.",
-      "confidence": 0.136,
+      "confidence": 0.121,
       "evidence_count": 1,
       "supporting": [
         "BTC in "
@@ -5280,7 +5284,7 @@
     {
       "knowledge_type": "principle",
       "content": "confidence_scorer SHORT SOL: 0/5 WR pattern. Gate failed (confidence=0.0). Disable or require 3+ strategy consensus.",
-      "confidence": 0.139,
+      "confidence": 0.124,
       "evidence_count": 1,
       "supporting": [
         "SOL in range"
@@ -5302,7 +5306,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL SHORT in range w/ 0% confidence entered despite gate. confidence_scorer on SOL: 0% WR (n=5). Reject <55%.",
-      "confidence": 0.139,
+      "confidence": 0.124,
       "evidence_count": 1,
       "supporting": [
         "SOL in range"
@@ -5341,7 +5345,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC SHORTs in trending_bear fail 100% (0% WR). 0.0 confidence bypassed gate; 4.3h > noise window. Block SHORTs in trending regimes entirely.",
-      "confidence": 0.147,
+      "confidence": 0.132,
       "evidence_count": 1,
       "supporting": [
         "BTC in trending_bear"
@@ -5363,7 +5367,7 @@
     {
       "knowledge_type": "principle",
       "content": "0.0-confidence BTC SHORT bypassed entry gate, lost $7.61. Enforce floor: confidence<0.30 blocks entry entirely.",
-      "confidence": 0.147,
+      "confidence": 0.132,
       "evidence_count": 1,
       "supporting": [
         "BTC in trending_bear"
@@ -5414,7 +5418,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: ETH_SELL_regime_trend: LOSS in consolidation, pnl=-2.35%",
-      "confidence": 0.158,
+      "confidence": 0.143,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -5432,7 +5436,7 @@
     {
       "knowledge_type": "principle",
       "content": "ETH SHORT in consolidation: 0/4 WR proven loser. confidence_scorer 0% WR on ETH SHORT. Thesis invalid. BLOCK combo.",
-      "confidence": 0.168,
+      "confidence": 0.151,
       "evidence_count": 1,
       "supporting": [
         "ETH in range"
@@ -5454,7 +5458,7 @@
     {
       "knowledge_type": "principle",
       "content": "ETH SHORT in range (0/4 WR, 0.0 conf): entry gate failed, thesis invalid. Block ETH SHORTs in range. Enforce min 50% confidence at entry.",
-      "confidence": 0.168,
+      "confidence": 0.151,
       "evidence_count": 1,
       "supporting": [
         "ETH in range"
@@ -17492,11 +17496,11 @@
       "knowledge_type": "sniper_profile",
       "content": "Sniper: HYPE LONG in consolidation (72% conf, 2 agree, +4.2%, hold 512m)",
       "confidence": 0.7,
-      "evidence_count": 106,
+      "evidence_count": 110,
       "supporting": [],
       "contradicting": [],
       "created_at": 1783136683.3760376,
-      "last_validated": 1784148482.7011948,
+      "last_validated": 1784173566.3240545,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "sniper",
@@ -17668,11 +17672,11 @@
       "knowledge_type": "sniper_profile",
       "content": "Sniper: ETH LONG in trending_bull (52% conf, 2 agree, +2.7%, hold 1758m)",
       "confidence": 0.7,
-      "evidence_count": 102,
+      "evidence_count": 106,
       "supporting": [],
       "contradicting": [],
       "created_at": 1783198042.6217825,
-      "last_validated": 1784148482.747351,
+      "last_validated": 1784173566.358003,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "sniper",
@@ -18554,11 +18558,11 @@
       "knowledge_type": "observation",
       "content": "System performs well in trend regime (67% WR)",
       "confidence": 0.6666666666666666,
-      "evidence_count": 17,
+      "evidence_count": 21,
       "supporting": [],
       "contradicting": [],
       "created_at": 1783933575.0390503,
-      "last_validated": 1784148482.4714031,
+      "last_validated": 1784173566.1653893,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -18589,11 +18593,11 @@
       "knowledge_type": "sniper_profile",
       "content": "Sniper: XRP SHORT in consolidation (66% conf, 2 agree, +2.3%, hold 179m)",
       "confidence": 0.7,
-      "evidence_count": 17,
+      "evidence_count": 21,
       "supporting": [],
       "contradicting": [],
       "created_at": 1783933575.478233,
-      "last_validated": 1784148482.7807534,
+      "last_validated": 1784173566.39149,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "sniper",
@@ -18607,11 +18611,11 @@
       "knowledge_type": "sniper_profile",
       "content": "Sniper: HYPE SHORT in consolidation (72% conf, 2 agree, +3.4%, hold 195m)",
       "confidence": 0.7,
-      "evidence_count": 17,
+      "evidence_count": 21,
       "supporting": [],
       "contradicting": [],
       "created_at": 1783933575.5437646,
-      "last_validated": 1784148482.8148503,
+      "last_validated": 1784173566.4251425,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "sniper",
@@ -21390,8 +21394,12 @@
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: TEST_BUY_0-agree: WIN in unknown, pnl=19.89%",
       "confidence": 0.75,
-      "evidence_count": 7,
+      "evidence_count": 11,
       "supporting": [
+        "5 observations",
+        "5 observations",
+        "5 observations",
+        "5 observations",
         "5 observations",
         "5 observations",
         "5 observations",
@@ -21402,7 +21410,7 @@
       ],
       "contradicting": [],
       "created_at": 1784082383.0974498,
-      "last_validated": 1784152364.2090473,
+      "last_validated": 1784238529.5461683,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -21469,14 +21477,15 @@
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_0-agree: WIN in unknown, pnl=19.61%",
       "confidence": 0.75,
-      "evidence_count": 2,
+      "evidence_count": 3,
       "supporting": [
+        "5 observations",
         "5 observations",
         "5 observations"
       ],
       "contradicting": [],
       "created_at": 1784083369.285098,
-      "last_validated": 1784146104.6845624,
+      "last_validated": 1784238529.7329974,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -21571,8 +21580,12 @@
       "knowledge_type": "observation",
       "content": "HYPE showing strong performance (75% WR, 4 trades, $+13)",
       "confidence": 0.75,
-      "evidence_count": 5,
+      "evidence_count": 9,
       "supporting": [
+        "3/4 wins",
+        "3/4 wins",
+        "3/4 wins",
+        "3/4 wins",
         "3/4 wins",
         "3/4 wins",
         "3/4 wins",
@@ -21581,7 +21594,7 @@
       ],
       "contradicting": [],
       "created_at": 1784117657.1771445,
-      "last_validated": 1784148482.3631556,
+      "last_validated": 1784173566.0877948,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "symbol",
@@ -21595,11 +21608,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in range regime (33% WR)",
       "confidence": 0.6666666666666667,
-      "evidence_count": 4,
+      "evidence_count": 8,
       "supporting": [],
       "contradicting": [],
       "created_at": 1784117657.2580023,
-      "last_validated": 1784148482.4029224,
+      "last_validated": 1784173566.130229,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -21613,11 +21626,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 29% win rate (14 trades)",
       "confidence": 0.78,
-      "evidence_count": 4,
+      "evidence_count": 8,
       "supporting": [],
       "contradicting": [],
       "created_at": 1784117657.3564534,
-      "last_validated": 1784148482.514336,
+      "last_validated": 1784173566.2164414,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -21819,11 +21832,11 @@
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 70% win rate (30 trades)",
       "confidence": 1.1,
-      "evidence_count": 0,
+      "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
       "created_at": 1784148482.603301,
-      "last_validated": 1784148482.6033013,
+      "last_validated": 1784173566.2502842,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -21836,11 +21849,11 @@
       "knowledge_type": "observation",
       "content": "3-strategy agreement: 67% win rate (6 trades)",
       "confidence": 0.62,
-      "evidence_count": 0,
+      "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
       "created_at": 1784148482.640673,
-      "last_validated": 1784148482.640673,
+      "last_validated": 1784173566.2876556,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -21911,6 +21924,86 @@
       "contradicting": [],
       "created_at": 1784152364.4181669,
       "last_validated": 1784152364.418167,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "trade_outcome",
+      "tags": [],
+      "source": "consolidation"
+    },
+    {
+      "knowledge_type": "hypothesis",
+      "content": "confidence_scorer on SOL/consolidation: entered 50.67% confidence on trend premise, regime was range\u2014thesis invalidated. Raise entry bar to 55%+.",
+      "confidence": 0.55,
+      "evidence_count": 1,
+      "supporting": [
+        "n=1 single-trade lesson (SOL in consolidation), era=2026-07 \u2014 needs n>=13 dollar-positive validation"
+      ],
+      "contradicting": [],
+      "created_at": 1784188145.3920352,
+      "last_validated": 1784188145.3920355,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "sol",
+        "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "hypothesis",
+      "content": "SOL consolidation: 50.67% confidence entry violated 55%+ rule. EXPLORATION setup failed in range. Enforce gate or switch to mean-reversion.",
+      "confidence": 0.55,
+      "evidence_count": 1,
+      "supporting": [
+        "n=1 single-trade lesson (SOL in consolidation), era=2026-07 \u2014 needs n>=13 dollar-positive validation"
+      ],
+      "contradicting": [],
+      "created_at": 1784188202.0460224,
+      "last_validated": 1784188202.0460224,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "sol",
+        "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "hypothesis",
+      "content": "Consolidation SHORT with mechanical SL at 6.3h hold captured +0.54% MFE before reversal. Mechanical exits: 52% WR vs agent discretion: <40%.",
+      "confidence": 0.55,
+      "evidence_count": 1,
+      "supporting": [
+        "n=1 single-trade lesson (SOL in consolidation), era=2026-07 \u2014 needs n>=13 dollar-positive validation"
+      ],
+      "contradicting": [],
+      "created_at": 1784230378.7736447,
+      "last_validated": 1784230378.7736459,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "exit_timing",
+      "tags": [
+        "exit_timing",
+        "sol",
+        "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "[trade_outcome] Pattern from 5 observations: SOL_BUY_3-agree: LOSS in consolidation, pnl=-1.50%",
+      "confidence": 0.75,
+      "evidence_count": 1,
+      "supporting": [
+        "5 observations"
+      ],
+      "contradicting": [],
+      "created_at": 1784238455.6625245,
+      "last_validated": 1784238455.6625247,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",

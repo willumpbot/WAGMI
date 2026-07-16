@@ -8737,6 +8737,30 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # NOTE: order_executor expects BUY/SELL (side.upper()=="BUY" else sell);
         # `side` here is already normalized to LONG/SHORT, so map it back.
         _order_side = "BUY" if side == "LONG" else "SELL"
+        # ── LIVING EDGE SIZING (2026-07-16): LLM-FIRST path ──
+        # This LLM-first entry path is SEPARATE from the mechanical sizing method
+        # (which applies the edge mult ~line 7243). Real trades open HERE, so the
+        # 7243 insertion was bypassed (0 [LIVING-EDGE SIZE] logs across all trades).
+        # Apply the live per-(symbol,side) ledger edge mult to qty here too: dead-
+        # edge slices shrink (risk-reducing), convex slices grow. $12 min-notional
+        # floor keeps a shrunk slice a valid tiny exploration trade. Neutral 1.0
+        # at n<13. Verified live: ETH/BTC/SOL_SELL 1.5x, HYPE_BUY 0.25x.
+        try:
+            from trading_config import get_symbol_side_risk_mult as _living_side_mult
+            _se_mult = _living_side_mult(symbol, side)
+            if _se_mult and abs(_se_mult - 1.0) > 1e-6 and qty > 0 and actual_entry > 0:
+                _q_pre_edge = qty
+                qty = qty * _se_mult
+                if qty * actual_entry < 12.0:
+                    qty = 12.0 / actual_entry
+                logger.info(
+                    f"[{trace_id}][{symbol}] LIVING-EDGE SIZE: {side} x{_se_mult:.2f} "
+                    f"(live ledger edge, n>=13) qty {_q_pre_edge:.6f} -> {qty:.6f} "
+                    f"(notional ${qty * actual_entry:.0f})"
+                )
+        except Exception as _edge_e:
+            logger.debug(f"[{symbol}] living-edge size mult skipped: {_edge_e}")
+
         order_result = self.order_executor.open_position(
             symbol=symbol,
             side=_order_side,

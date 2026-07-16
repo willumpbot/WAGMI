@@ -1,5 +1,5 @@
 {
-  "last_updated": 1784144753,
+  "last_updated": 1784230595,
   "notes": [
     {
       "text": "ETH LONG LOSS despite 76% conf in trending_bull, SL\u2014reduce confidence for similar setups",
@@ -69,6 +69,60 @@
       "ts": 1784144753.3257377,
       "symbol": "BTC",
       "regime": "trend",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "confidence_scorer on SOL/consolidation: entered 50.67% confidence on trend premise, regime was range\u2014thesis invalidated. Raise entry bar to 55%+.",
+      "ts": 1784188145.3378916,
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "SOL consolidation: 50.67% confidence entry violated 55%+ rule. EXPLORATION setup failed in range. Enforce gate or switch to mean-reversion.",
+      "ts": 1784188201.9942384,
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "Range regime (ADX 24.6): history shows 25-39% WR LONG entries. Solo signals fail ensemble 2+ gate. Noise probability 80%. System in conservative deadlock. Calibration warning: only proceed range trade",
+      "ts": 1784188477.4151702,
+      "symbol": "SOL",
+      "regime": "range",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "SOL SHORT in consolidation: LLM-only entry exited early by agent\u2014correct risk management. Consolidation directionals need strategy validation",
+      "ts": 1784230323.0716531,
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "Consolidation SHORT with mechanical SL at 6.3h hold captured +0.54% MFE before reversal. Mechanical exits: 52% WR vs agent discretion: <40%.",
+      "ts": 1784230378.7168643,
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "n": 1,
+      "ledger_version": "v2_post_fee_fix_2026-06",
+      "source_trade_id": ""
+    },
+    {
+      "text": "Circuit breaker ACTIVE (3 consecutive losses). Hard safety gate enforced. System protective shutdown. Resume when loss streak clears.",
+      "ts": 1784230595.0463817,
+      "symbol": "",
+      "regime": "range",
       "n": 1,
       "ledger_version": "v2_post_fee_fix_2026-06",
       "source_trade_id": ""
