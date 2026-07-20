@@ -109,8 +109,17 @@ class TradingConfig:
     # Was 3: with 0.5% risk/trade, 8 positions = 4% total risk (same as old 2 @ 2%)
     # 2026-06-02 fee correction: "45 bps" was wrong by 10x. Hyperliquid Tier-0 taker
     # is 0.045% = 4.5 bps. 45 bps = 0.45% -- inflated fees 10x, turning breakeven
-    # trades into logged losses. Using 5 bps as conservative round-up. (desktop e02f265)
-    taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 5))
+    # trades into logged losses. (desktop e02f265)
+    # 2026-07-20: was `int` with a "conservative round-up" to 5, which cannot
+    # represent 4.5 at all and silently diverged from fallback literals of 4
+    # scattered elsewhere (signal_pipeline.py, position_manager.py, ensemble.py).
+    # taker_fee_bps is also the rate _fee() uses to CHARGE simulated fees against
+    # realized_pnl, not just a gating margin -- rounding it up overstates paid
+    # fees and understates realized PnL, corrupting the same learning signals
+    # this fix is meant to protect. Use the true rate (float) as the single
+    # canonical default; safety margin belongs in the separate slippage_bps /
+    # min_stop_width_pct buffers already added on top of this at each call site.
+    taker_fee_bps: float = field(default_factory=lambda: _env_float("TAKER_FEE_BPS", 4.5))
 
     # Circuit breakers
     circuit_breaker_daily_loss_pct: float = field(

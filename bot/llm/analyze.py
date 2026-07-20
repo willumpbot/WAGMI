@@ -53,6 +53,59 @@ def _resolve_paths(args) -> tuple:
     return llm_path, trades_path
 
 
+def _load_trades_default() -> list:
+    """Load closed trades from the canonical ledger for the default (no
+    --trades override) path.
+
+    FALLACY_AUDIT (measurework, item 5, display_only_safe): trades.csv
+    silently misses closes vs trade_ledger.csv (accounting hole), inflating
+    WR in every offline report this CLI produces. join_decisions_trades()
+    matches by timestamp proximity (not state_path), so building TradeRecord
+    objects from the ledger is a safe swap; only state_path/entry_type/
+    primary_driver/volatility_band degrade to "" (not present in the ledger
+    schema) -- entry/exit/pnl/fees/leverage/confidence/strategy/regime are
+    all populated.
+    """
+    from llm.joiner import TradeRecord
+    from data.trade_source import load_closed_trades
+    from datetime import datetime, timezone
+
+    records = []
+    for row in load_closed_trades():
+        ts_str = row.get("timestamp", "")
+        ts_float = 0.0
+        if ts_str:
+            try:
+                dt = datetime.fromisoformat(str(ts_str).replace("Z", "+00:00"))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                ts_float = dt.timestamp()
+            except (ValueError, TypeError):
+                pass
+        records.append(TradeRecord(
+            timestamp=ts_str,
+            ts=ts_float,
+            symbol=row.get("symbol", ""),
+            side=(row.get("side", "") or "").lower(),
+            entry=row.get("entry", 0.0),
+            exit=row.get("exit", 0.0),
+            pnl=row.get("pnl", 0.0),
+            fees=row.get("fees", 0.0),
+            state_path=row.get("state_path", ""),
+            outcome=row.get("outcome", ""),
+            leverage=row.get("leverage", 1.0),
+            confidence=row.get("confidence", 0.0),
+            strategy=row.get("strategy", ""),
+            entry_type=row.get("entry_type", ""),
+            primary_driver="",
+            regime=row.get("regime", ""),
+            volatility_band="",
+            entry_reasons="",
+            raw=dict(row),
+        ))
+    return records
+
+
 def _print_focused_report(result, focus: str):
     """Print a focused subset of the report."""
     from llm.metrics import BucketStats, _safe_pct
@@ -292,9 +345,17 @@ Examples:
     print(f"Loading trades from: {trades_path}")
     print()
 
-    # Load data
+    # Load data.
+    # FALLACY_AUDIT (measurework, item 5): default trades source is the
+    # canonical trade_ledger.csv (via trade_source), not trades.csv, which
+    # silently misses closes. An explicit --trades override still reads that
+    # exact CSV path verbatim (legacy behavior preserved for callers who pass
+    # a specific file, e.g. a backtest export).
     decisions = load_decisions(llm_path)
-    trades = load_trades(trades_path)
+    if args.trades:
+        trades = load_trades(trades_path)
+    else:
+        trades = _load_trades_default()
 
     if not decisions:
         print("No LLM decisions found. Nothing to analyze.")

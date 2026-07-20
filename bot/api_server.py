@@ -69,36 +69,30 @@ def _read_jsonl(path: Path, limit: int = 200) -> list[dict]:
 
 
 def _read_trades(limit: int = 50) -> list[dict]:
-    path = DATA / "trades.csv"
-    if not path.exists():
-        return []
-    rows = []
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            for row in csv.DictReader(f):
-                rows.append(row)
-    except Exception:
-        return []
-    rows = rows[-limit:]
+    # FALLACY_AUDIT (measurework, item 5, display_only_safe): trades.csv
+    # silently misses closes vs trade_ledger.csv (accounting hole) -- read
+    # the canonical ledger via the shared trade_source reader instead.
+    from data.trade_source import load_closed_trades
+    rows = load_closed_trades(max_trades=limit if limit else None)
     result = []
     for r in rows:
-        pnl = float(r.get("pnl", 0) or 0)
+        pnl = r["pnl"]
         result.append({
             "id": r.get("timestamp", ""),
             "timestamp": r.get("timestamp", ""),
             "symbol": r.get("symbol", ""),
             "side": r.get("side", ""),
-            "entry": float(r.get("entry", 0) or 0),
-            "exit": float(r.get("exit", 0) or 0),
+            "entry": r.get("entry", 0.0),
+            "exit": r.get("exit", 0.0),
             "pnl": pnl,
             "outcome": "WIN" if pnl > 0 else "LOSS",
-            "confidence": float(r.get("confidence", 0) or 0),
-            "leverage": float(r.get("leverage", 1) or 1),
-            "strategy": r.get("strategy", "ensemble"),
+            "confidence": r.get("confidence", 0.0),
+            "leverage": r.get("leverage", 1) or 1,
+            "strategy": r.get("strategy") or "ensemble",
             "regime": r.get("regime", ""),
             "state_path": r.get("state_path", ""),
             "entry_type": r.get("entry_type", ""),
-            "fees": float(r.get("fees", 0) or 0),
+            "fees": r.get("fees", 0.0),
         })
     return result
 
@@ -115,7 +109,8 @@ def health():
 @app.get("/v1/trades/history")
 def trade_history(limit: int = Query(50)):
     trades = _read_trades(limit)
-    total = len(list(csv.DictReader(open(DATA / "trades.csv", encoding="utf-8")))) if (DATA / "trades.csv").exists() else 0
+    from data.trade_source import load_closed_trades as _lct
+    total = len(_lct())
     wins = sum(1 for t in trades if t["pnl"] > 0)
     losses = sum(1 for t in trades if t["pnl"] <= 0)
     total_pnl = sum(t["pnl"] for t in trades)
@@ -481,18 +476,23 @@ def forensics_analysis(top_n: int = Query(10)):
     """Loss forensics — worst trades and loss clusters by (symbol, setup, regime).
 
     Sources:
-      - bot/data/trades.csv  (live/paper trade history)
+      - bot/data/trade_ledger.csv (canonical closed-trade record, via trade_source)
+
+    FALLACY_AUDIT (measurework, item 5, display_only_safe): trades.csv silently
+    misses closes vs trade_ledger.csv (accounting hole) — read the canonical
+    ledger via the shared trade_source reader instead.
     """
     if pd is None:
         return {"error": "pandas not installed"}
 
-    path = DATA / "trades.csv"
-    df = _load_trades_df(path)
-    if df is None:
-        return {"error": "trades.csv not found or empty", "worst_trades": [], "loss_clusters": [], "total_losses": 0}
+    from data.trade_source import load_closed_trades
+    _trades = load_closed_trades()
+    if not _trades:
+        return {"error": "no closed trades found", "worst_trades": [], "loss_clusters": [], "total_losses": 0}
+    df = pd.DataFrame(_trades)
 
     if "pnl" not in df.columns:
-        return {"error": "trades.csv missing pnl column", "worst_trades": [], "loss_clusters": [], "total_losses": 0}
+        return {"error": "ledger data missing pnl column", "worst_trades": [], "loss_clusters": [], "total_losses": 0}
 
     df["pnl"] = pd.to_numeric(df["pnl"], errors="coerce").fillna(0.0)
     losses = df[df["pnl"] < 0].copy()
@@ -680,19 +680,24 @@ def performance_metrics():
     """Rolling 7d / 30d / lifetime performance metrics.
 
     Sources:
-      - bot/data/trades.csv
+      - bot/data/trade_ledger.csv (canonical closed-trade record, via trade_source)
       - bot/data/risk_equity_state.json (for current equity anchor)
+
+    FALLACY_AUDIT (measurework, item 5, display_only_safe): trades.csv silently
+    misses closes vs trade_ledger.csv (accounting hole) — read the canonical
+    ledger via the shared trade_source reader instead.
     """
     if pd is None:
         return {"error": "pandas not installed"}
 
-    path = DATA / "trades.csv"
-    df = _load_trades_df(path)
-    if df is None:
-        return {"error": "trades.csv not found or empty"}
+    from data.trade_source import load_closed_trades
+    _trades = load_closed_trades()
+    if not _trades:
+        return {"error": "no closed trades found"}
+    df = pd.DataFrame(_trades)
 
     if "pnl" not in df.columns:
-        return {"error": "trades.csv missing pnl column"}
+        return {"error": "ledger data missing pnl column"}
 
     df["pnl"] = pd.to_numeric(df["pnl"], errors="coerce").fillna(0.0)
     df["timestamp"] = pd.to_datetime(df.get("timestamp"), errors="coerce", utc=True)

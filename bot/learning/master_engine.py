@@ -140,14 +140,17 @@ class MasterLearningEngine:
         """
         Analyze execution quality: slippage, stop mechanics, fill rates.
 
-        Reads trades.csv and entry/exit prices, compares to signal entry,
+        Reads closed trades and entry/exit prices, compares to signal entry,
         analyzes why stops are hit (market move vs noise), measures slippage
         by time-of-day, symbol, position size.
         """
         logger.info("[EXECUTION_FORENSICS] Starting execution analysis")
 
         # TODO: Implementation
-        # 1. Read bot/data/trades.csv
+        # 1. Read closed trades via data.trade_source.load_closed_trades()
+        #    (NOT bot/data/trades.csv directly -- accounting hole, see
+        #    measurework item 5: trades.csv silently misses closes vs the
+        #    canonical trade_ledger.csv)
         # 2. Group by symbol/time-of-day/size tier
         # 3. Calculate slippage (entry - signal entry) / entry
         # 4. Analyze stop hits: % in noise, % at reversals

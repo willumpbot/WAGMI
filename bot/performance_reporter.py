@@ -16,6 +16,8 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 
+from core.close_taxonomy import OPEN_ACTIONS
+
 
 def load_latest_trades(log_dir: str = "paper_trades") -> Optional[pd.DataFrame]:
     """Load the latest trades CSV file."""
@@ -56,7 +58,7 @@ def print_quick_stats(df: Optional[pd.DataFrame], symbol_filter: Optional[str] =
             return
 
     # Only count closed trades
-    closed = df[df["action"].isin(["TP1", "TP2", "SL", "TRAILING_STOP"])]
+    closed = df[~df["action"].isin(OPEN_ACTIONS)]
     if closed.empty:
         print("⚠️  No closed trades yet")
         return

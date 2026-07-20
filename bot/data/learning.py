@@ -40,6 +40,67 @@ def _ensure_outcomes_file():
 # Rolling window of recent outcomes for metric computation
 _recent_outcomes: deque = deque(maxlen=200)
 
+# Guards one-time rehydration of _recent_outcomes from disk so that
+# WR_20 / WR_50 / total_pnl survive a process restart instead of
+# resetting to an empty (or near-empty) window. See _rehydrate_recent_outcomes().
+_rehydrated = False
+
+
+def _rehydrate_recent_outcomes() -> None:
+    """Refill the in-memory rolling window from trade_outcomes.csv on first use.
+
+    _recent_outcomes is a module-level deque that starts empty every process
+    start. Without this, win_rate_20/win_rate_50/total_pnl in performance.json
+    are computed over whatever trades closed since the *last restart* (as few
+    as 0-3 trades) while being presented everywhere as true rolling-20/50
+    stats. This reads the persisted CSV (source of truth for every closed
+    trade) and reconstructs the same in-memory shape record_trade_outcome()
+    appends, so the window is continuous across restarts.
+
+    Runs at most once per process (guarded by _rehydrated); safe to call
+    from any entry point (record_trade_outcome, get_performance) at any time.
+    """
+    global _rehydrated
+    if _rehydrated:
+        return
+    _rehydrated = True  # set first: never retry mid-process on a bad read
+
+    if not os.path.exists(_OUTCOMES_FILE):
+        return
+
+    try:
+        with open(_OUTCOMES_FILE, newline="") as f:
+            rows = list(csv.DictReader(f))
+    except Exception as e:
+        logger.warning(f"Failed to rehydrate rolling outcome window: {e}")
+        return
+
+    # Only need the most recent maxlen rows to reconstruct the window exactly.
+    tail = rows[-_recent_outcomes.maxlen:]
+    restored = 0
+    for r in tail:
+        try:
+            _recent_outcomes.append({
+                "pnl": float(r.get("pnl") or 0.0),
+                "outcome": r.get("outcome") or "",
+                "rr1": float(r.get("rr1") or 0.0),
+                "tp1_hit": str(r.get("tp1_hit", "")).strip().lower() == "true",
+                "sl_after_tp1": str(r.get("sl_after_tp1", "")).strip().lower() == "true",
+                "leverage": float(r.get("leverage") or 0.0),
+                "entry_type": r.get("entry_type") or "",
+                "primary_driver": r.get("primary_driver") or "",
+                "regime": r.get("regime") or "",
+            })
+            restored += 1
+        except (ValueError, TypeError):
+            continue  # skip malformed row, keep rehydrating the rest
+
+    if restored:
+        logger.info(
+            f"Rehydrated rolling outcome window with {restored} trades from {_OUTCOMES_FILE} "
+            f"(WR_20/WR_50 now span restarts instead of resetting to 0)"
+        )
+
 
 def record_trade_outcome(
     symbol: str,
@@ -73,6 +134,7 @@ def record_trade_outcome(
 ):
     """Record a trade outcome to CSV and update rolling metrics."""
     _ensure_outcomes_file()
+    _rehydrate_recent_outcomes()  # no-op after the first call this process
 
     stop_width = abs(entry - sl) if abs(entry - sl) > 0 else 1e-9
     rr1 = abs(tp1 - entry) / stop_width

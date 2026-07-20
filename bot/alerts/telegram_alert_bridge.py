@@ -21,6 +21,19 @@ import requests
 
 logger = logging.getLogger("bot.alerts.telegram_bridge")
 
+# This bridge is registered as a TradeEventLogger callback, so it receives
+# the SAME record dict that gets written to trade_events.jsonl — including
+# any pytest/backtest-in-process fabrication that ever shares the default
+# (production) singleton logger before the write-guard in
+# TradeEventLogger.log() closes that path. See core.structured_logging.
+# is_fake_trade_event; fail open (never suppress a real alert) if the import
+# ever breaks.
+try:
+    from core.structured_logging import is_fake_trade_event
+except Exception:
+    def is_fake_trade_event(evt):
+        return False
+
 
 def _fmt_price(price: float) -> str:
     """Format price with appropriate precision."""
@@ -82,7 +95,15 @@ def format_trade_closed(record: Dict[str, Any]) -> str:
     side = record.get("side", "???")
     exit_price = record.get("exit_price", record.get("exit", 0))
     entry_price = record.get("entry_price", record.get("entry", 0))
-    pnl = record.get("pnl", 0)
+    # PNL_SEMANTICS_FIX (2026-07-20): trade_events.jsonl's `pnl` field now
+    # means "this leg's own net contribution" (see position_manager.py
+    # TP_HIT / SL_HIT / TP2 / TRADE_CLOSED tel.log() calls), not "cumulative
+    # trade total" -- so a TP1-then-final-close trade would show only the
+    # final leg's pnl here, understating the real total. `total_pnl` (added
+    # alongside `pnl` on every close-type event) carries the true
+    # whole-position cumulative net pnl as of this event; prefer it and fall
+    # back to `pnl` for older records / event types that predate this field.
+    pnl = record.get("total_pnl", record.get("pnl", 0))
     hold_time = record.get("hold_time", record.get("duration_s", 0))
     exit_reason = record.get("exit_reason", record.get("reason", ""))
     brain_note = record.get("brain_note", "")
@@ -157,13 +178,19 @@ def format_daily_summary(
     llm_budget: float = 0,
     brain_note: str = "",
 ) -> str:
-    """Format a daily summary for Telegram — compact dashboard format."""
+    """Format a daily summary for Telegram — compact dashboard format.
+
+    DAILY_SUMMARY_GROSS_SINCE_RESTART_FIX (2026-07-20): label/header honesty
+    only, no logic change — the producer now computes a real rolling 24h,
+    net-of-fee/funding figure, so the message itself should say so instead of
+    the previously-ambiguous "DAILY REPORT" / "P&L:" labels.
+    """
     losses = total_trades - wins
     wr = (wins / total_trades * 100) if total_trades > 0 else 0
     pnl_str = f"+${net_pnl:,.2f}" if net_pnl >= 0 else f"-${abs(net_pnl):,.2f}"
 
-    parts = [f"DAILY REPORT"]
-    parts.append(f"P&L: {pnl_str} | Trades: {total_trades} ({wins}W {losses}L) | WR: {wr:.0f}%")
+    parts = [f"DAILY REPORT (24h)"]
+    parts.append(f"Net P&L: {pnl_str} | Trades: {total_trades} ({wins}W {losses}L) | WR: {wr:.0f}%")
 
     details = []
     if best_trade:
@@ -230,6 +257,9 @@ class TelegramAlertBridge:
         """
         event = record.get("event", "")
         if event not in self.ALERT_EVENTS:
+            return None
+        if is_fake_trade_event(record):
+            logger.debug(f"Telegram alert suppressed (fabricated/test event): {event}")
             return None
 
         # Quiet mode: suppress trade alerts (only circuit breakers + daily summary pass through)
@@ -323,8 +353,22 @@ class TelegramAlertBridge:
         best_trade: Optional[Dict[str, Any]] = None,
         worst_trade: Optional[Dict[str, Any]] = None,
         active_positions: int = 0,
+        equity: float = 0,
+        llm_cost: float = 0,
+        llm_budget: float = 0,
+        brain_note: str = "",
     ) -> Optional[str]:
-        """Send daily summary alert. Returns formatted message or None."""
+        """Send daily summary alert. Returns formatted message or None.
+
+        DAILY_SUMMARY_GROSS_SINCE_RESTART_FIX (2026-07-20): added
+        equity/llm_cost/llm_budget/brain_note passthrough. This is
+        load-bearing, not cosmetic — the producer
+        (multi_strategy_main.py._send_daily_summary) already calls this
+        method with these kwargs, so the missing parameters previously
+        raised TypeError on every single invocation, silently swallowed by
+        the caller's outer try/except (logged at DEBUG only). The daily
+        summary never reached Telegram at all until this signature matched.
+        """
         try:
             msg = format_daily_summary(
                 total_trades=total_trades,
@@ -333,6 +377,10 @@ class TelegramAlertBridge:
                 best_trade=best_trade,
                 worst_trade=worst_trade,
                 active_positions=active_positions,
+                equity=equity,
+                llm_cost=llm_cost,
+                llm_budget=llm_budget,
+                brain_note=brain_note,
             )
             self._send(msg)
             return msg

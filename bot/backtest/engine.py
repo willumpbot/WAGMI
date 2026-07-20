@@ -46,6 +46,7 @@ from strategies.oi_delta import OIDeltaStrategy
 from strategies.lead_lag import LeadLagStrategy
 from strategies.liquidation_cascade import LiquidationCascadeStrategy
 from strategies.mean_reversion import MeanReversionStrategy
+from core.close_taxonomy import is_close_action
 
 logger = logging.getLogger("bot.backtest")
 
@@ -220,6 +221,16 @@ class BacktestEngine:
             Dict with backtest results (includes learning_summary if learn=True)
         """
         logger.info(f"Starting backtest: {symbols} | {days} days | strategies={strategies or 'all'}")
+
+        # FALLACY_AUDIT (measurework): gate every write to shared live-state files
+        # (data/analysis/trade_outcomes.csv, data/analysis/performance.json,
+        # data/feedback/confidence_state.json via the adaptive confidence floor)
+        # behind the same --learn opt-in that already gates _run_learning_bridge.
+        # Without this, every backtest run — learn or not — silently pollutes the
+        # live paper bot's rolling performance metrics and retrains its live
+        # trade-entry confidence floor on simulated trades. See
+        # _record_trade_outcome() below, which reads self.learn.
+        self.learn = learn
 
         # Prevent live paper-trading confidence floors from contaminating historical backtests.
         # DynamicThresholds.get_confidence_floor() returns the caller's fallback when this is set.
@@ -1666,30 +1677,42 @@ class BacktestEngine:
             else:
                 outcome = "BREAKEVEN"
 
-            record_trade_outcome(
-                symbol=event.symbol,
-                side=event.side,
-                outcome=outcome,
-                pnl=pnl,
-                entry=pos.entry if pos else 0,
-                sl=pos.original_sl if pos and hasattr(pos, "original_sl") else (pos.sl if pos else 0),
-                tp1=pos.tp1 if pos else 0,
-                tp2=pos.tp2 if pos else 0,
-                tp1_hit=pos.state in ("TP1_HIT", "TRAILING") if pos else False,
-                sl_after_tp1=(event.action == "SL" and pos.state == "TP1_HIT") if pos else False,
-                state_path=pos.state_path_str if pos and hasattr(pos, "state_path_str") else event.action,
-                leverage=event.leverage,
-                confidence=pos.confidence if pos else 0,
-                strategy=event.strategy or "",
-                entry_reasons=meta.get("entry_reasons", {}),
-                entry_type=meta.get("entry_type", ""),
-                primary_driver=event.strategy or "",
-                regime=meta.get("regime", ""),
-            )
+            # FALLACY_AUDIT (measurework): trade_outcomes.csv / performance.json are
+            # the same live files the paper/live bot writes and every dashboard,
+            # heartbeat, and prompt_enricher reader consumes. Only persist when the
+            # caller explicitly opted in with --learn (backtest/runner.py --learn,
+            # run.py); otherwise every backtest silently corrupts live measurement.
+            if self.learn:
+                record_trade_outcome(
+                    symbol=event.symbol,
+                    side=event.side,
+                    outcome=outcome,
+                    pnl=pnl,
+                    entry=pos.entry if pos else 0,
+                    sl=pos.original_sl if pos and hasattr(pos, "original_sl") else (pos.sl if pos else 0),
+                    tp1=pos.tp1 if pos else 0,
+                    tp2=pos.tp2 if pos else 0,
+                    tp1_hit=pos.state in ("TP1_HIT", "TRAILING") if pos else False,
+                    sl_after_tp1=(event.action == "SL" and pos.state == "TP1_HIT") if pos else False,
+                    state_path=pos.state_path_str if pos and hasattr(pos, "state_path_str") else event.action,
+                    leverage=event.leverage,
+                    confidence=pos.confidence if pos else 0,
+                    strategy=event.strategy or "",
+                    entry_reasons=meta.get("entry_reasons", {}),
+                    entry_type=meta.get("entry_type", ""),
+                    primary_driver=event.strategy or "",
+                    regime=meta.get("regime", ""),
+                )
 
             # Adaptive confidence floor: feed outcome to production-grade system.
             # Learns per-strategy/symbol/regime floors from trade results.
-            if self._adaptive_floor:
+            # FALLACY_AUDIT (measurework): data/feedback/confidence_state.json is
+            # the SAME file multi_strategy_main.py loads via
+            # AdaptiveConfidenceFloor(data_dir="data/feedback") and assigns straight
+            # into self.ensemble.confidence_floor (multi_strategy_main.py:2264-2265)
+            # — the live trade-entry gate. Gated behind --learn so backtests cannot
+            # silently retrain the live confidence floor on simulated trades.
+            if self.learn and self._adaptive_floor:
                 try:
                     _strategy = event.strategy or ""
                     _regime = (event.metadata or {}).get("regime", "")
@@ -1725,8 +1748,15 @@ class BacktestEngine:
                 except Exception:
                     pass
 
-            # Feed strategy weight manager with trade outcome
-            if self._weight_mgr and event.strategy:
+            # Feed strategy weight manager with trade outcome.
+            # FALLACY_AUDIT (measurework): self._weight_mgr defaults to
+            # ml_data/strategy_weights.json — the SAME file multi_strategy_main.py
+            # loads (multi_strategy_main.py:581-584) and feeds straight into the
+            # ensemble's weighted-veto voting weights. record_outcome() calls
+            # _save()/_save_per_symbol() unconditionally, so every backtest close
+            # was silently reweighting live strategy voting on simulated trades.
+            # Gated behind --learn like the other live-state sinks above.
+            if self.learn and self._weight_mgr and event.strategy:
                 try:
                     # Record outcome for the primary strategy
                     self._weight_mgr.record_outcome(event.strategy, win=(outcome == "WIN"))
@@ -1743,18 +1773,27 @@ class BacktestEngine:
             if len(self._recent_outcomes) > 10:
                 self._recent_outcomes = self._recent_outcomes[-10:]
 
-            # Also update self-teaching system's trade counter
-            try:
-                from llm.learning_mode import record_trade_observed
-                record_trade_observed(
-                    symbol=event.symbol,
-                    side=event.side,
-                    outcome=outcome,
-                    pnl=pnl,
-                    confidence=pos.confidence if pos else 0,
-                )
-            except Exception:
-                pass  # Self-teaching is optional
+            # Also update self-teaching system's trade counter.
+            # FALLACY_AUDIT (measurework): llm.learning_mode._STATE_PATH is
+            # data/llm/learning_state.json — the SAME file multi_strategy_main.py
+            # reads via is_learning_mode_active()/get_current_phase() (5 call sites)
+            # to decide whether the live LLM's veto power is still suppressed
+            # (ABSORB/APPRENTICE phases). record_trade_observed() increments
+            # trades_observed and runs _check_graduation(), so backtest closes
+            # could silently graduate the live bot out of learning mode on
+            # simulated trades. Gated behind --learn like the other sinks above.
+            if self.learn:
+                try:
+                    from llm.learning_mode import record_trade_observed
+                    record_trade_observed(
+                        symbol=event.symbol,
+                        side=event.side,
+                        outcome=outcome,
+                        pnl=pnl,
+                        confidence=pos.confidence if pos else 0,
+                    )
+                except Exception:
+                    pass  # Self-teaching is optional
 
             # Validate insights against this trade outcome
             try:
@@ -2327,11 +2366,25 @@ class BacktestEngine:
             "min_votes_required": min_votes,
         }
 
-    # Actions that represent trade closes (not OPEN events)
-    _CLOSE_ACTIONS = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
-                      "EMERGENCY", "BACKTEST_END", "HOLD_LIMIT",
-                      "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
-                      "CIRCUIT_BREAKER", "LLM_EXIT")
+    # Actions that represent trade closes (not OPEN events).
+    #
+    # CLOSE_TAXONOMY_FIX: was a hardcoded allowlist tuple, which drifted stale
+    # every time force_close() grew a new free-text reason (it accepts
+    # arbitrary text — TELEGRAM_CLOSE, LLM_EXIT_<urgency>,
+    # LIQUIDATION_PROXIMITY, FUNDING_AVOIDANCE, MFE_TAKE_PROFIT, EXIT_NOW,
+    # LIQUIDATION_AVOID, TIME_STOP, ...). Replaced with a tiny __contains__
+    # object over the blocklist is_close_action() (anything that isn't
+    # "OPEN") so every one of the 30+ `event.action in self._CLOSE_ACTIONS` /
+    # `not in self._CLOSE_ACTIONS` call sites below is correct automatically
+    # via Python's `in` dispatching to __contains__ -- verified none of them
+    # do len()/iteration, only membership tests. Instance-attribute shadowing
+    # (tests/test_backtest_llm.py:1303 monkey-patches this to a plain tuple
+    # on one instance) still works unchanged.
+    class _CloseActionSet:
+        def __contains__(self, action):
+            return is_close_action(action)
+
+    _CLOSE_ACTIONS = _CloseActionSet()
 
     def _report_by_strategy(self) -> Dict:
         result = {}

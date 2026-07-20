@@ -70,6 +70,17 @@ REPLAY_ROOT = BOT_ROOT / "data" / "replay"
 COORD_ROOT = BOT_ROOT.parent / "coordination"
 FETCH_CACHE_DIR = HERE / "candle_cache"
 
+# Sandbox trade_events.jsonl copies inherit the same pytest/backtest
+# fabrication as the live file unless the copy itself was scrubbed — see
+# core.structured_logging.is_fake_trade_event (~93-95% of PnL mass in the
+# live file is fabricated unless filtered; sandbox seeds can carry it too).
+try:
+    sys.path.insert(0, str(BOT_ROOT))
+    from core.structured_logging import is_fake_trade_event
+except Exception:
+    def is_fake_trade_event(evt):  # fail open rather than crash the verdict
+        return False
+
 # Mirrors bot/tools/replay_campaign.py WINDOWS (held constant across arms).
 WINDOWS = [
     ("C1", "2025-07-07", "2025-07-14", "trend-UP clean (+10.8%, ER 0.98)"),
@@ -269,7 +280,8 @@ def load_signal_events(run_dir: Path) -> list[dict]:
     ep = run_dir / "sandbox" / "data" / "trade_events.jsonl"
     if not ep.exists():
         return []
-    evs = [e for e in _read_jsonl(ep) if e.get("event") == "SIGNAL_GENERATED"]
+    evs = [e for e in _read_jsonl(ep)
+           if e.get("event") == "SIGNAL_GENERATED" and not is_fake_trade_event(e)]
     for e in evs:
         try:
             e["_ts"] = _epoch(_parse_iso(e["timestamp"]))

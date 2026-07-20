@@ -349,33 +349,20 @@ class TelegramCommandBot:
             pass
 
         # Last 5 trades
+        # FALLACY_AUDIT (measurework, item 5, display_only_safe): trades.csv
+        # silently misses closes vs trade_ledger.csv (accounting hole) --
+        # read the canonical ledger via the shared trade_source reader.
         try:
-            import csv as _csv
-            from pathlib import Path
-            # Try both possible locations — bot/data and data/ (depends on cwd).
-            candidates = [Path("data/trades.csv"), Path("bot/data/trades.csv")]
-            trades_path = next((p for p in candidates if p.exists()), None)
-            if trades_path:
-                recent = []
-                with open(trades_path, "r", encoding="utf-8", errors="replace") as f:
-                    reader = _csv.reader(f)
-                    rows = list(reader)
-                for row in rows[-6:-1] if len(rows) > 6 else rows[1:]:
-                    if len(row) < 11:
-                        continue
-                    try:
-                        sym = row[1]
-                        side = row[2]
-                        pnl = float(row[10])
-                        outcome = row[17] if len(row) > 17 else ""
-                        recent.append((sym, side, pnl, outcome))
-                    except Exception:
-                        continue
-                if recent:
-                    lines.append("\n*Last 5 trades:*")
-                    for sym, side, pnl, outcome in recent[-5:]:
-                        mark = "\u2705" if pnl > 0 else ("\u274c" if pnl < 0 else "\u27a1")
-                        lines.append(f"  {mark} {sym} {side}  {fmt_usd(pnl)}  {outcome}")
+            from data.trade_source import load_closed_trades
+            recent = [
+                (t["symbol"], t["side"], t["pnl"], t.get("outcome", ""))
+                for t in load_closed_trades(max_trades=5)
+            ]
+            if recent:
+                lines.append("\n*Last 5 trades:*")
+                for sym, side, pnl, outcome in recent[-5:]:
+                    mark = "\u2705" if pnl > 0 else ("\u274c" if pnl < 0 else "\u27a1")
+                    lines.append(f"  {mark} {sym} {side}  {fmt_usd(pnl)}  {outcome}")
         except Exception:
             pass
 
@@ -1256,40 +1243,33 @@ class TelegramCommandBot:
         now = datetime.now(timezone.utc)
         lines = ["☀️ *Morning Briefing*", f"_{now.strftime('%Y-%m-%d %H:%M UTC')}_", ""]
 
-        # Read trades.csv once, compute multiple windows.
+        # Read the canonical ledger once, compute multiple windows.
+        # FALLACY_AUDIT (measurework, item 5, display_only_safe): trades.csv
+        # silently misses closes vs trade_ledger.csv (accounting hole) --
+        # read via the shared trade_source reader instead.
         trades_today = []      # since UTC midnight (matches daily_pnl)
         trades_24h = []        # rolling last 24h
         trades_7d = []         # rolling last 7 days
         cutoff_24h = now - timedelta(hours=24)
         cutoff_7d = now - timedelta(days=7)
         try:
-            # 2026-04-17 fix: cwd can be either "bot/" or repo root.
-            # Old hardcoded "bot/data/trades.csv" failed when launched
-            # from bot/ directly. Try both layouts.
-            from pathlib import Path as _Path
-            _trades_paths = [_Path("data/trades.csv"), _Path("bot/data/trades.csv")]
-            _trades_path = next((p for p in _trades_paths if p.exists()), None)
-            if _trades_path is None:
-                raise FileNotFoundError("trades.csv not found in either location")
-            with open(_trades_path, "r", encoding="utf-8") as f:
-                r = csv.reader(f)
-                next(r)
-                today_str = now.strftime("%Y-%m-%d")
-                for row in r:
-                    try:
-                        ts = row[0]
-                        pnl = float(row[10])
-                        tdt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-                        if tdt.tzinfo is None:
-                            tdt = tdt.replace(tzinfo=timezone.utc)
-                        if ts.startswith(today_str):
-                            trades_today.append(pnl)
-                        if tdt >= cutoff_24h:
-                            trades_24h.append(pnl)
-                        if tdt >= cutoff_7d:
-                            trades_7d.append(pnl)
-                    except Exception:
-                        continue
+            from data.trade_source import load_closed_trades
+            today_str = now.strftime("%Y-%m-%d")
+            for t in load_closed_trades(window_days=7):
+                try:
+                    ts = t.get("timestamp", "")
+                    pnl = t["pnl"]
+                    tdt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                    if tdt.tzinfo is None:
+                        tdt = tdt.replace(tzinfo=timezone.utc)
+                    if str(ts).startswith(today_str):
+                        trades_today.append(pnl)
+                    if tdt >= cutoff_24h:
+                        trades_24h.append(pnl)
+                    if tdt >= cutoff_7d:
+                        trades_7d.append(pnl)
+                except Exception:
+                    continue
         except Exception:
             pass
 
@@ -2272,14 +2252,15 @@ class TelegramCommandBot:
     def _cmd_pnl(self, args: str = "") -> str:
         """Quick PnL summary for today / 7d / 30d.
 
-        Reads trades.csv directly so it works even if bot state is
-        degraded. Windows: today (since UTC midnight), 24h rolling, 7d
-        rolling, 30d rolling.
+        Reads the canonical trade_ledger.csv (via shared trade_source
+        reader) so it works even if bot state is degraded. Windows:
+        today (since UTC midnight), 24h rolling, 7d rolling, 30d rolling.
+
+        FALLACY_AUDIT (measurework, item 5, display_only_safe): trades.csv
+        silently misses closes vs trade_ledger.csv (accounting hole).
         """
         try:
-            import csv as _csv
             from datetime import datetime, timezone, timedelta
-            from pathlib import Path
             try:
                 from alerts.tg_format import fmt_usd
             except Exception:
@@ -2292,41 +2273,36 @@ class TelegramCommandBot:
             cutoff_30d = now - timedelta(days=30)
             today_str = now.strftime("%Y-%m-%d")
 
-            candidates = [Path("data/trades.csv"), Path("bot/data/trades.csv")]
-            trades_path = next((p for p in candidates if p.exists()), None)
-            if not trades_path:
-                return "No trades.csv found. Bot may not have traded yet."
+            from data.trade_source import load_closed_trades
+            all_trades = load_closed_trades(window_days=30)
+            if not all_trades:
+                return "No closed trades found. Bot may not have traded yet."
 
             today_pnls, d24_pnls, d7_pnls, d30_pnls = [], [], [], []
             by_symbol: dict = {}
-            with open(trades_path, "r", encoding="utf-8", errors="replace") as f:
-                reader = _csv.reader(f)
-                next(reader, None)
-                for row in reader:
-                    if len(row) < 11:
-                        continue
-                    try:
-                        ts = row[0]
-                        sym = row[1]
-                        pnl = float(row[10])
-                        tdt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-                        if tdt.tzinfo is None:
-                            tdt = tdt.replace(tzinfo=timezone.utc)
-                        if ts.startswith(today_str):
-                            today_pnls.append(pnl)
-                        if tdt >= cutoff_24h:
-                            d24_pnls.append(pnl)
-                            s = by_symbol.setdefault(sym, {"n": 0, "w": 0, "pnl": 0.0})
-                            s["n"] += 1
-                            if pnl > 0:
-                                s["w"] += 1
-                            s["pnl"] += pnl
-                        if tdt >= cutoff_7d:
-                            d7_pnls.append(pnl)
-                        if tdt >= cutoff_30d:
-                            d30_pnls.append(pnl)
-                    except Exception:
-                        continue
+            for t in all_trades:
+                try:
+                    ts = t.get("timestamp", "")
+                    sym = t["symbol"]
+                    pnl = t["pnl"]
+                    tdt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                    if tdt.tzinfo is None:
+                        tdt = tdt.replace(tzinfo=timezone.utc)
+                    if str(ts).startswith(today_str):
+                        today_pnls.append(pnl)
+                    if tdt >= cutoff_24h:
+                        d24_pnls.append(pnl)
+                        s = by_symbol.setdefault(sym, {"n": 0, "w": 0, "pnl": 0.0})
+                        s["n"] += 1
+                        if pnl > 0:
+                            s["w"] += 1
+                        s["pnl"] += pnl
+                    if tdt >= cutoff_7d:
+                        d7_pnls.append(pnl)
+                    if tdt >= cutoff_30d:
+                        d30_pnls.append(pnl)
+                except Exception:
+                    continue
 
             def _line(label, pnls):
                 if not pnls:

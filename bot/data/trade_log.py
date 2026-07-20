@@ -9,7 +9,7 @@ import csv
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("bot.data.trade_log")
 
@@ -118,3 +118,87 @@ def log_closed_trade(
             csv.writer(f).writerow(row)
     except Exception as e:
         logger.warning(f"Failed to log trade: {e}")
+
+
+# TRADES_CSV_COMPLETENESS_FILTER (2026-07-20): shared reader for every
+# consumer of trades.csv. multi_strategy_main.py's terminal-close gate that
+# feeds log_closed_trade() above was, until this same date, a hand-maintained
+# action-name allowlist (`_FULL_CLOSE`) that repeatedly missed new
+# terminal-close action strings (TIME_STOP/TP1_FULL/HOLD_LIMIT/LLM_EXIT_AGENT/
+# LLM_EXIT_ENGINE were each added only after a real trade's row went missing).
+# Rows written before the state-based gate shipped can silently be missing
+# legitimate closes, so mixing them with post-fix rows re-introduces the same
+# undercount the fix closes. This helper lets every consumer apply the same
+# cutover + the same TEST/synthetic scrub already used elsewhere
+# (strategies/ensemble.py._scrub_ledger_df, llm/agents/dynamic_stats.py)
+# instead of each re-inventing (or omitting) its own.
+_COMPLETENESS_FIX_CUTOVER = "2026-07-20T00:00:00+00:00"
+_TEST_ENTRY_SENTINELS = (100.0, 150.0, 50000.0)
+
+
+def read_trades_csv(
+    min_ts: str = _COMPLETENESS_FIX_CUTOVER,
+    exclude_test: bool = True,
+    path: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Read a trades.csv-format file as a list of dict rows, post-completeness-fix only.
+
+    - `path` defaults to the live data/trades.csv (_TRADES_FILE); callers that
+      need to point at an alternate/test file (e.g. a monkeypatched fixture
+      path) may pass one explicitly. When `path` is given, the file is read
+      as-is without the auto-create/migration side effects of _ensure_file().
+    - Skips rows with a timestamp older than `min_ts` (pass min_ts="" to
+      disable the cutover). Pre-fix rows are exactly the ones that can have
+      undercount gaps, so they are excluded by default rather than silently
+      blended with trustworthy post-fix rows.
+    - Skips rows with an unparsable/missing timestamp (same reasoning — the
+      gap rows are the ones most likely to have gone stale/corrupt too).
+    - When exclude_test=True (default), skips rows whose symbol contains
+      'TEST' or whose entry price is a known synthetic/test sentinel value
+      (100.0, 150.0, 50000.0) — same scrub already used by
+      strategies/ensemble.py._scrub_ledger_df and
+      llm/agents/dynamic_stats.py's TEST filter.
+    """
+    target = path if path is not None else _TRADES_FILE
+    if path is None:
+        _ensure_file()
+    min_dt: Optional[datetime] = None
+    if min_ts:
+        try:
+            min_dt = datetime.fromisoformat(min_ts)
+            if min_dt.tzinfo is None:
+                min_dt = min_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            min_dt = None
+
+    rows: List[Dict[str, Any]] = []
+    if not os.path.exists(target):
+        return rows
+    try:
+        with open(target, "r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                ts_raw = row.get("timestamp", "") or ""
+                try:
+                    ts = datetime.fromisoformat(ts_raw)
+                except Exception:
+                    continue  # unparsable/missing timestamp: pre-fix gap row
+                if min_dt is not None:
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=timezone.utc)
+                    if ts < min_dt:
+                        continue
+                if exclude_test:
+                    symbol = (row.get("symbol", "") or "").upper()
+                    if "TEST" in symbol:
+                        continue
+                    try:
+                        entry_val = float(row.get("entry", "") or 0)
+                    except Exception:
+                        entry_val = None
+                    if entry_val in _TEST_ENTRY_SENTINELS:
+                        continue
+                rows.append(row)
+    except Exception as e:
+        logger.warning(f"read_trades_csv failed: {e}")
+    return rows

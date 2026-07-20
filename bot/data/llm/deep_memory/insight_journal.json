@@ -1,66 +1,6 @@
 {
   "insights": [
     {
-      "ts": 1783902673.7377226,
-      "category": "exit_pattern",
-      "insight": "Exit [HYPE]: HYPE SHORT contradicts bullish-biased range regime. Regime outlook explicitly signals upside breakout risk ($1,843+ TP zone). 24h hold at -$0.90 with ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1783902751.4309952,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Would NOT enter this trade today (overseer disabled range-LONGs during cold streak). System confidence floor 0.05. Range-hostile regime. Lock small wi",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1783902779.7754056,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Regime invalidates thesis. Current regime RANGE + BULLISH bias expects upside breakout per outlook; SHORT contradicts regime structure. Early hold (15",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1783903976.2354293,
-      "category": "meta",
-      "insight": "Self-critique: My Critic Agent: 0% accuracy (n=1), pnl_missed +$8.20. Vacc=0.50 triggers caution band: 'Require 3+ red flags AND clear counter-thesis.' I have 5+ red",
-      "confidence": 0.7,
-      "evidence": "Critic challenged: Confluence mismatch (claims 3-strategy, data shows solo count=1) + MACD bearish conflict + consolida",
-      "source": "critic_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1783904005.5178201,
-      "category": "exit_pattern",
-      "insight": "Exit [HYPE]: Regime-thesis mismatch confirmed. SHORT thesis entered into bullish consolidation (regime outlook: 'upside breakout likely'); system explicitly flags ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1783904028.3549235,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: THESIS INVALIDATED: Regime is bullish consolidation with bullish bias. Regime outlook: 'Upside breakout likely from bullish consolidation; vol compres",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
       "ts": 1783904083.5362628,
       "category": "exit_pattern",
       "insight": "Exit [BTC]: Regime-thesis structural conflict: Regime classifies consolidation+bullish+upside-breakout-likely vs position SHORT (downside bet). Entry confidence 7",
@@ -138,7 +78,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -7
+      "validation_count": -8
     },
     {
       "ts": 1783906285.3722425,
@@ -1078,7 +1018,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1783930877.5574212,
@@ -1418,7 +1358,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": -2
     },
     {
       "ts": 1783939029.2246318,
@@ -1838,7 +1778,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1783948398.6907232,
@@ -2137,8 +2077,8 @@
       "confidence": 0.5,
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
+      "validated": true,
+      "validation_count": 1
     },
     {
       "ts": 1783958517.5056922,
@@ -2338,7 +2278,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": 0
+      "validation_count": -1
     },
     {
       "ts": 1783967610.269343,
@@ -2407,8 +2347,8 @@
       "confidence": 0.5,
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
+      "validated": true,
+      "validation_count": 1
     },
     {
       "ts": 1783969978.974263,
@@ -2667,8 +2607,8 @@
       "confidence": 0.75,
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
+      "validated": true,
+      "validation_count": 1
     },
     {
       "ts": 1783978135.3818355,
@@ -2828,7 +2768,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": 0
+      "validation_count": -1
     },
     {
       "ts": 1783981295.1123922,
@@ -2948,7 +2888,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": -2
     },
     {
       "ts": 1783983885.4443269,
@@ -2998,7 +2938,7 @@
       "evidence": "action=partial_close, thesis_valid=True",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1783984342.2382545,
@@ -3027,8 +2967,8 @@
       "confidence": 0.75,
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
+      "validated": true,
+      "validation_count": 1
     },
     {
       "ts": 1783984901.2823486,
@@ -3177,8 +3117,8 @@
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
+      "validated": false,
+      "validation_count": 0
     },
     {
       "ts": 1784010222.49566,
@@ -3688,7 +3628,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -1
     },
     {
       "ts": 1784031241.7696488,
@@ -3928,7 +3868,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 1
+      "validation_count": 2
     },
     {
       "ts": 1784050489.3112373,
@@ -3978,7 +3918,7 @@
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": 0
+      "validation_count": -1
     },
     {
       "ts": 1784051980.8325973,
@@ -3998,7 +3938,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
-      "validation_count": -1
+      "validation_count": -2
     },
     {
       "ts": 1784052915.5481637,
@@ -4407,8 +4347,8 @@
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
+      "validated": false,
+      "validation_count": 0
     },
     {
       "ts": 1784128632.1695907,
@@ -4997,6 +4937,66 @@
       "confidence": 0.75,
       "evidence": "action=partial_close, thesis_valid=False",
       "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1784565475.0866919,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1784565770.0527399,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1784565929.0972414,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1784566688.3668945,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1784566907.731413,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1784567181.233605,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
       "validated": false,
       "validation_count": 0
     }

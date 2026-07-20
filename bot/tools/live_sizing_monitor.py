@@ -23,6 +23,21 @@ from pathlib import Path
 # Add bot to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# trade_events.jsonl is ~93-95% fabricated PnL mass unless filtered (pytest
+# fixtures, backtest-in-process runs, dormant symbol trials) — see
+# core.structured_logging.is_fake_trade_event for the full explanation.
+try:
+    from core.structured_logging import is_fake_trade_event
+except Exception:
+    def is_fake_trade_event(evt):  # fail open rather than crash the monitor
+        return False
+
+try:
+    from core.close_taxonomy import CLOSE_EVENT_TYPES
+except Exception:
+    # Fail open to the pre-fix (undercounting) behavior rather than crash.
+    CLOSE_EVENT_TYPES = frozenset({"TRADE_CLOSED"})
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -93,6 +108,8 @@ class SizingMonitor:
         for line in lines:
             try:
                 event = json.loads(line)
+                if is_fake_trade_event(event):
+                    continue
                 evt_type = event.get("event", "")
                 symbol = event.get("symbol", "?")
 
@@ -113,7 +130,7 @@ class SizingMonitor:
                 elif evt_type == "TRADE_OPENED":
                     self.trades_opened += 1
 
-                elif evt_type == "TRADE_CLOSED":
+                elif evt_type in CLOSE_EVENT_TYPES:
                     self.trades_closed += 1
                     pnl = event.get("pnl", 0)
                     self.pnl_total += pnl

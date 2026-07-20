@@ -21,6 +21,8 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 
+from core.close_taxonomy import is_close_action
+
 logger = logging.getLogger("bot.execution.trade_logger")
 
 
@@ -164,27 +166,30 @@ class TradeLogger:
             return {"error": "No trades logged yet"}
 
         # Group trades by symbol and action
-        closing_trades = [t for t in self.trades if t.action in ("TP1", "TP2", "SL", "TRAILING_STOP")]
+        closing_trades = [t for t in self.trades if is_close_action(t.action)]
         if not closing_trades:
             return {"error": "No closed trades yet"}
 
         # Calculate statistics
+        # FALLACY_AUDIT (measurework): classify win/loss on NET (pnl - fee), not gross pnl.
         total_trades = len(closing_trades)
-        winning_trades = [t for t in closing_trades if t.pnl > 0]
-        losing_trades = [t for t in closing_trades if t.pnl < 0]
-        break_even = len([t for t in closing_trades if t.pnl == 0])
+        net_vals = [(t, t.pnl - t.fee) for t in closing_trades]
+        winning_trades = [t for t, n in net_vals if n > 0]
+        losing_trades = [t for t, n in net_vals if n < 0]
+        break_even = len([t for t, n in net_vals if n == 0])
 
         win_count = len(winning_trades)
         loss_count = len(losing_trades)
         win_rate = (win_count / total_trades * 100) if total_trades > 0 else 0
 
-        total_pnl = sum(t.pnl for t in closing_trades)
+        total_pnl = sum(t.pnl for t in closing_trades)   # GROSS: sum of raw leg pnl, fee-free
         total_fees = sum(t.fee for t in closing_trades)
-        gross_pnl = total_pnl + total_fees
+        gross_pnl = total_pnl                             # gross = the raw sum, nothing added
+        net_pnl = total_pnl - total_fees                  # net = gross minus fees actually paid
 
-        # Risk/Reward analysis
-        avg_win = sum(t.pnl for t in winning_trades) / len(winning_trades) if winning_trades else 0
-        avg_loss = sum(t.pnl for t in losing_trades) / len(losing_trades) if losing_trades else 0
+        # Risk/Reward analysis (net dollars, consistent with net-based win/loss classification)
+        avg_win = sum(t.pnl - t.fee for t in winning_trades) / len(winning_trades) if winning_trades else 0
+        avg_loss = sum(t.pnl - t.fee for t in losing_trades) / len(losing_trades) if losing_trades else 0
 
         # Find consecutive wins/losses
         max_consecutive_wins = self._max_consecutive(closing_trades, True)
@@ -227,13 +232,13 @@ class TradeLogger:
             },
             "pnl": {
                 "gross_pnl": round(gross_pnl, 2),
-                "net_pnl": round(total_pnl, 2),
+                "net_pnl": round(net_pnl, 2),
                 "total_fees": round(total_fees, 2),
                 "avg_win": round(avg_win, 2),
                 "avg_loss": round(avg_loss, 2),
                 "profit_factor": round(
-                    sum(t.pnl for t in winning_trades) / abs(sum(t.pnl for t in losing_trades))
-                    if losing_trades and sum(t.pnl for t in losing_trades) != 0 else 0,
+                    sum(t.pnl - t.fee for t in winning_trades) / abs(sum(t.pnl - t.fee for t in losing_trades))
+                    if losing_trades and sum(t.pnl - t.fee for t in losing_trades) != 0 else 0,
                     2
                 ),
             },

@@ -1317,40 +1317,44 @@ class QuantBrain:
             return
 
         try:
+            # TRADES_CSV_COMPLETENESS_FILTER (2026-07-20): use the shared
+            # data/trade_log.py reader (post-completeness-fix cutover +
+            # TEST/synthetic scrub) as the row source, then apply this
+            # method's own recency window (self._outcome_window_s) on top —
+            # the two windows serve different purposes and are not redundant.
+            from data.trade_log import read_trades_csv
             now = time.time()
             cutoff = now - self._outcome_window_s
-            with open(trades_path, "r") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    try:
-                        # Try to parse close timestamp
-                        close_ts_str = row.get("close_time", row.get("timestamp", ""))
-                        if not close_ts_str:
-                            continue
-                        # Parse ISO format or unix timestamp
-                        try:
-                            ts = datetime.fromisoformat(
-                                close_ts_str.replace("Z", "+00:00")
-                            ).timestamp()
-                        except (ValueError, TypeError):
-                            try:
-                                ts = float(close_ts_str)
-                            except (ValueError, TypeError):
-                                continue
-
-                        if ts < cutoff:
-                            continue
-
-                        symbol = row.get("symbol", "")
-                        pnl = float(row.get("pnl", row.get("realized_pnl", 0)))
-                        won = pnl > 0
-
-                        if symbol:
-                            if symbol not in self._recent_outcomes:
-                                self._recent_outcomes[symbol] = []
-                            self._recent_outcomes[symbol].append((ts, won))
-                    except (ValueError, KeyError):
+            for row in read_trades_csv():
+                try:
+                    # Try to parse close timestamp
+                    close_ts_str = row.get("close_time", row.get("timestamp", ""))
+                    if not close_ts_str:
                         continue
+                    # Parse ISO format or unix timestamp
+                    try:
+                        ts = datetime.fromisoformat(
+                            close_ts_str.replace("Z", "+00:00")
+                        ).timestamp()
+                    except (ValueError, TypeError):
+                        try:
+                            ts = float(close_ts_str)
+                        except (ValueError, TypeError):
+                            continue
+
+                    if ts < cutoff:
+                        continue
+
+                    symbol = row.get("symbol", "")
+                    pnl = float(row.get("pnl", row.get("realized_pnl", 0)))
+                    won = pnl > 0
+
+                    if symbol:
+                        if symbol not in self._recent_outcomes:
+                            self._recent_outcomes[symbol] = []
+                        self._recent_outcomes[symbol].append((ts, won))
+                except (ValueError, KeyError):
+                    continue
 
             total = sum(len(v) for v in self._recent_outcomes.values())
             if total > 0:

@@ -19,6 +19,14 @@ class ExecutionForensics:
     """Audits execution quality to find friction losses."""
 
     def __init__(self, trades_csv_path: str = "data/trades.csv", data_dir: str = "data/learning"):
+        # NOTE (measurework, item 5, learning_input): trades_csv_path kept for
+        # back-compat/tests, but analyze_recent_trades() below is an
+        # unimplemented stub (TODO) -- no functional trades.csv read exists in
+        # this class today, so there is no accounting-hole bug to fix yet.
+        # When this is implemented, source trades via
+        # data.trade_source.load_closed_trades() (the canonical
+        # trade_ledger.csv reader) instead of parsing self.trades_csv_path
+        # directly -- trades.csv silently misses closes.
         self.trades_csv_path = trades_csv_path
         self.data_dir = data_dir
         os.makedirs(data_dir, exist_ok=True)
@@ -36,7 +44,8 @@ class ExecutionForensics:
         logger.info(f"[EXEC_FORENSICS] Analyzing last {limit} trades")
 
         # TODO: Implementation
-        # 1. Read trades.csv (last N)
+        # 1. Read closed trades via data.trade_source.load_closed_trades()
+        #    (NOT self.trades_csv_path / trades.csv directly -- accounting hole)
         # 2. For each trade:
         #    - entry_slippage = (live_entry - snapshot_entry) / entry
         #    - exit_slippage = (exit_price - tp1/tp2/sl) if hit by stop

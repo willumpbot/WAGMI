@@ -13,6 +13,7 @@ Usage:
 import json
 import logging
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -121,6 +122,86 @@ def setup_logging(
         logging.getLogger(name).setLevel(logging.WARNING)
 
 
+# FAKE-EVENT FILTER (2026-07-20, widened 2026-07-20b): trade_events.jsonl
+# accumulates rows from pytest runs (MagicMock symbols, strategy="test"/
+# "test_strat", symbol="TEST"), from dormant/never-shipped-live symbols
+# (POPCAT/GOAT — failed backtest, never enabled live; see project memory
+# 2026-07-14 expansion note), and from in-process test/backtest harnesses
+# that call PositionManager.open_position() (or similar) directly, bypassing
+# the ensemble pipeline entirely.
+#
+# Ground-truth audit (2026-07-20, re-verified 2026-07-20c against the live
+# file + trade_ledger.csv): the fabricated mass is a repeating synthetic
+# fixture with SENTINEL round entry prices (50000.0 / 100.0 / 3000.0 / 150.0 /
+# 95000.0), sub-second hold_time, confidence=0.0 — appended to the LIVE file
+# by an in-process harness on every run from 2026-06-25 through the present.
+#
+# CRITICAL empirical constraint (2026-07-20c, this is why the earlier
+# strategy-ALLOWLIST draft of this filter was WRONG and had to be reverted):
+# the REAL live bot's own TRADE_OPENED / SL_HIT / TP_HIT / TRADE_CLOSED
+# events ALSO carry strategy="" on the current LLM-first path —
+# position_manager's terminal-close tel.log() doesn't pass `strategy` at
+# all, and open_position() logs whatever pos.strategy is, which is blank
+# for LLM-first entries (verified July 18-20 events with blank strategy
+# match trade_ledger.csv closes row-for-row: HYPE SL -1.77, XRP SL +1.49,
+# BTC SL -0.03, ...). The ledger also shows real multi-tags like
+# "confidence_scorer,bollinger_squeeze". So a blank or unrecognized
+# strategy tag must NEVER by itself mark a row fake — an allowlist here
+# silently zeroes out ALL current real trading from every consumer.
+#
+# What actually separates the fixture (4806/4809 blank-strategy close rows
+# in the live file, 99.9%) is the sentinel entry price. The 3 remaining
+# round-entry rows (e.g. BTC @ 61724.0) are plausibly real and are kept.
+#
+# Any reporting/learning consumer of trade_events.jsonl MUST exclude these or
+# non-live PnL gets mixed into real performance numbers. Centralized here so
+# every consumer (dashboard, tools/*, alerts/telegram_alert_bridge, learning
+# loops, etc.) applies the identical rule — see MEMORY: trade_events.jsonl
+# fabricated-row ticket, all_sites list, 2026-07-20.
+_FAKE_STRATEGY_MARKERS = ("test", "mock", "fake")  # substring match, lowercased
+_FAKE_EXACT_SYMBOLS = frozenset({"TEST", "POPCAT", "GOAT"})
+_FAKE_SYNTHETIC_SYMBOL_RE = re.compile(r"^X(LONG|SHORT)[PN]$")  # e.g. XLONGP/XSHORTN test fixtures
+_FAKE_EXIT_REASONS = frozenset({"BACKTEST_END", "TEST", "TEST_FINAL"})
+# Same sentinel-price family as data/trade_log.py._TEST_ENTRY_SENTINELS and
+# strategies/ensemble.py._scrub_ledger_df — synthetic fixture entries only,
+# never real fills (real fills carry exchange-precision decimals).
+_FAKE_ENTRY_SENTINELS = frozenset({100.0, 150.0, 3000.0, 50000.0, 95000.0})
+
+
+def is_fake_trade_event(evt: dict) -> bool:
+    """True if `evt` is test/mock/non-live contamination that must never be
+    counted in live reporting or learning aggregates.
+
+    A record is fake iff ANY of:
+      - its `symbol` is a known test/dormant-symbol marker (TEST/POPCAT/GOAT,
+        MagicMock reprs, XLONGP-style synthetic fixtures)
+      - its `strategy` tag contains a test/mock marker substring
+        (blank strategy is REAL — the live LLM-first path logs blank; see
+        module comment)
+      - its `exit_reason` is a test/backtest marker
+      - its entry price is one of the known synthetic fixture sentinels
+    """
+    symbol = str(evt.get("symbol", ""))
+    strategy = str(evt.get("strategy", "")).lower()
+    exit_reason = str(evt.get("exit_reason", ""))
+
+    if symbol in _FAKE_EXACT_SYMBOLS or "MagicMock" in symbol:
+        return True
+    if _FAKE_SYNTHETIC_SYMBOL_RE.match(symbol):
+        return True
+    if any(m in strategy for m in _FAKE_STRATEGY_MARKERS):
+        return True
+    if exit_reason in _FAKE_EXIT_REASONS:
+        return True
+    try:
+        entry = float(evt.get("entry_price", evt.get("entry", 0)) or 0)
+    except (TypeError, ValueError):
+        entry = 0.0
+    if entry in _FAKE_ENTRY_SENTINELS:
+        return True
+    return False
+
+
 def log_trade_event(
     logger: logging.Logger,
     event: str,
@@ -163,7 +244,37 @@ class TradeEventLogger:
         "POSITION_UPDATE",
     })
 
+    # DASHBOARD-CLOSE-COVERAGE-FIX (2026-07-20): position_manager.py logs a
+    # position's terminal close as exactly ONE of these three event names
+    # depending on exit reason (SL_HIT for stop/trailing-stop exits, TP_HIT
+    # for take-profit exits, TRADE_CLOSED for everything else — see
+    # execution/position_manager.py _close_position()). Any consumer that
+    # aggregates "closed trades" (win rate, PnL, strategy/symbol breakdowns)
+    # MUST treat all three as closes or it silently drops ~84% of them
+    # (only TRADE_CLOSED was being counted — audited 2026-07-20).
+    CLOSE_EVENT_TYPES = frozenset({"TRADE_CLOSED", "SL_HIT", "TP_HIT"})
+
+    # A TP_HIT carrying "remaining_qty" is the TP1 *partial* leg (position
+    # manager's partial-close path — see _close_position()'s sibling that
+    # logs TP1 fills). The position is still open afterwards, so it must
+    # count toward realized PnL but NOT as a second completed "trade" —
+    # otherwise trade counts/win-rate denominators double-count every
+    # position that took partial profit before its final close.
+    @staticmethod
+    def is_partial_close_leg(evt: dict) -> bool:
+        """True if `evt` is a non-terminal partial-close leg (e.g. TP1 partial)."""
+        return evt.get("event") == "TP_HIT" and "remaining_qty" in evt
+
     def __init__(self, file_path: Optional[str] = None):
+        # TEST_WRITE_GUARD (2026-07-20): remember whether the caller took the
+        # default (production) path vs. an explicit override. Every current
+        # caller of the module-level singleton (get_trade_event_logger(),
+        # used by execution/position_manager.py, strategies/ensemble.py,
+        # core/signal_pipeline.py, multi_strategy_main.py) passes no
+        # file_path and lands here -- so this flag is the single choke point
+        # that distinguishes "real production logger" from "test-supplied
+        # tmp-file logger" for every one of those call sites at once.
+        self._is_default_path = file_path is None
         if file_path is None:
             data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
             os.makedirs(data_dir, exist_ok=True)
@@ -218,13 +329,26 @@ class TradeEventLogger:
             if k not in record:
                 record[k] = v
 
+        # TEST_WRITE_GUARD (2026-07-20): pytest runs that obtain the default
+        # (production-path) logger -- directly or transitively through
+        # position_manager/ensemble/signal_pipeline/multi_strategy_main --
+        # must never write into the real bot/data/trade_events.jsonl. This
+        # mirrors the sibling guards already in execution/position_manager.py
+        # (_backup_position at the default backup dir, and the exit_closes.jsonl
+        # append before EXIT-REGRET stamping). Tests that pass an explicit
+        # file_path (tmp_path / tempfile.mktemp(), as every existing
+        # TradeEventLogger test does) are unaffected and still exercise the
+        # real write + read-back path.
+        _skip_write = bool(os.getenv("PYTEST_CURRENT_TEST")) and self._is_default_path
+
         # Write to JSONL (append-only, thread-safe)
-        try:
-            with self._lock:
-                with open(self._file_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(record, default=str) + "\n")
-        except Exception as exc:
-            self._logger.error("Failed to write trade event: %s", exc)
+        if not _skip_write:
+            try:
+                with self._lock:
+                    with open(self._file_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps(record, default=str) + "\n")
+            except Exception as exc:
+                self._logger.error("Failed to write trade event: %s", exc)
 
         # Also emit via standard logging
         self._logger.info(

@@ -862,6 +862,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             trailing_atr_mult=config.trailing_stop_atr_mult,
             time_stop_hours=config.time_stop_hours,
             hold_time_rules=self.hold_time_rules,
+            is_live=True,  # real live/paper engine: allowed to write momentum_state.json
         )
         # Per-symbol execution lock: prevents duplicate entries when two signals
         # for the same symbol race through the pipeline simultaneously.
@@ -1292,6 +1293,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     trailing_atr_mult=config.trailing_stop_atr_mult,
                     time_stop_hours=config.time_stop_hours,
                     hold_time_rules=self.hold_time_rules,
+                    is_live=True,  # real live/paper engine: allowed to write momentum_state.json
                 )
                 self._wallet_a.risk_mgr = RiskManager(
                     starting_equity=wallet_equity_a,
@@ -1320,6 +1322,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     trailing_atr_mult=config.trailing_stop_atr_mult,
                     time_stop_hours=config.time_stop_hours,
                     hold_time_rules=self.hold_time_rules,
+                    is_live=True,  # real live/paper engine: allowed to write momentum_state.json
                 )
                 self._wallet_b.risk_mgr = RiskManager(
                     starting_equity=wallet_equity_b,
@@ -2818,7 +2821,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             total_trades=report.total_trades,
                             wins=_dr_ds.get("wins", 0),
                             losses=_dr_ds.get("losses", 0),
-                            net_pnl=report.net_pnl,
+                            net_pnl=_dr_ds.get("net_pnl", 0.0),
                             equity=self.risk_mgr.equity,
                             by_strategy=_dr_ds.get("by_strategy"),
                         )
@@ -2829,8 +2832,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         summary = (
                             f"*Daily Evolution Report*\n"
                             f"Trades: {report.total_trades}\n"
-                            f"Win rate: {report.win_rate:.1%}\n"
-                            f"Net PnL: ${report.net_pnl:+.2f}"
+                            f"Win rate: {_dr_ds.get('win_rate', 0.0):.1%}\n"
+                            f"Net PnL: ${_dr_ds.get('net_pnl', 0.0):+.2f}"
                         )
                         self.alerts.send_market_update(summary)
                         self.alerts.send_telegram_important(summary)
@@ -2850,7 +2853,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         self.telegram_bridge.send_daily_summary(
                             total_trades=report.total_trades,
                             wins=_wins,
-                            net_pnl=report.net_pnl,
+                            net_pnl=_dr_ds.get("net_pnl", 0.0),
                             best_trade=_best,
                             worst_trade=_worst,
                             active_positions=len(self.pos_mgr.get_open_positions()),
@@ -2879,13 +2882,31 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 # ── Feed evolution lessons into Parameter Tuner ──
                 # Closes the evolution→tuner feedback loop: lessons about what's
                 # working/failing flow into dynamic parameter adjustments.
-                try:
-                    if hasattr(self, 'feedback') and hasattr(self.feedback, 'tuner'):
-                        _tuner_result = tracker.apply_lessons_to_tuner(report, self.feedback.tuner)
-                        if _tuner_result:
-                            logger.info(f"[EVOLUTION→TUNER] Applied lessons: {_tuner_result}")
-                except Exception as e:
-                    logger.debug(f"Evolution→Tuner feed error: {e}")
+                #
+                # DAILY_SUMMARY_GROSS_TO_NET_FIX (2026-07-20): this call (and its
+                # sibling LLM-memory feed above) previously never ran — `report`
+                # is an EvolutionReport with no net_pnl/win_rate field, so every
+                # `report.net_pnl`/`report.win_rate` reference above this block
+                # AttributeError'd and the whole surrounding try (this tick's
+                # entire evolution-report branch) was swallowed by the outer
+                # except. Fixing those references to read from `_dr_ds` instead
+                # silently re-enables this tuner-feed call too. apply_lessons_to_tuner
+                # writes regime confidence offsets / strategy-weight suggestions /
+                # confidence-floor adjustments into self.feedback.tuner — live
+                # trading-parameter mutation, not reporting — so gate it behind a
+                # new off-by-default flag rather than switching it on silently as
+                # a side effect of a "fix the Telegram display" change. The
+                # LLM-memory lesson feed above is left unguarded: it only writes
+                # advisory notes read by the LLM prompt, not a direct behavior
+                # mutation.
+                if os.getenv("EVOLUTION_TUNER_FEED_ENABLED", "false").strip().lower() in ("1", "true", "yes"):
+                    try:
+                        if hasattr(self, 'feedback') and hasattr(self.feedback, 'tuner'):
+                            _tuner_result = tracker.apply_lessons_to_tuner(report, self.feedback.tuner)
+                            if _tuner_result:
+                                logger.info(f"[EVOLUTION→TUNER] Applied lessons: {_tuner_result}")
+                    except Exception as e:
+                        logger.debug(f"Evolution→Tuner feed error: {e}")
 
                 logger.info(f"[EVOLUTION] Daily report generated: {report.total_trades} trades")
             except Exception as e:
@@ -4623,12 +4644,27 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 ))
 
             # Learning hooks + enhanced trade log on full closes
-            if event.action in _FULL_CLOSE:
+            # TRADES_CSV_COMPLETENESS_FIX (2026-07-20): _FULL_CLOSE is a
+            # hand-maintained action-name allowlist that has repeatedly missed
+            # new terminal-close action strings (TIME_STOP/TP1_FULL/HOLD_LIMIT/
+            # LLM_EXIT_AGENT/LLM_EXIT_ENGINE were each added only after a real
+            # trade's trades.csv row went missing — see comment at _FULL_CLOSE's
+            # definition). Gate on whether the position actually terminated
+            # (qty<=0) instead of the action-name string, falling back to the
+            # allowlist only when the position object itself is gone. This is a
+            # pure completeness addition: every currently-known action already
+            # satisfies the first clause, so no behavior changes for any
+            # existing exit path — it only catches exit paths added later.
+            _pos_for_gate = self.pos_mgr.positions.get(symbol) or _captured_pos
+            _is_terminal_close = event.action in _FULL_CLOSE or (
+                _pos_for_gate is not None and getattr(_pos_for_gate, "qty", 1) <= 0
+            )
+            if _is_terminal_close:
                 self._symbol_cooldown[symbol] = time.time()
                 # 2026-07-01: fall back to _captured_pos (parallel-scan stale-
                 # cleanup race) — a None here silently skipped log_closed_trade,
                 # i.e. the trades.csv row for the whole close.
-                pos = self.pos_mgr.positions.get(symbol) or _captured_pos
+                pos = _pos_for_gate
                 # Per-symbol daily PnL tracking
                 if pos:
                     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -4752,22 +4788,52 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     try:
                         from llm.auto_demotion import get_auto_demotion
                         _ad = get_auto_demotion()
-                        # Gather recent trades for WR calculation
+                        # Gather recent trades for WR calculation.
+                        # FALLACY_AUDIT (measurework, item 5, behavior_gated): trades.csv
+                        # undercounts closes vs trade_ledger.csv, which would move this WR
+                        # (feeds AutoDemotion.PROMOTION_THRESHOLDS -> LLM_MODE autonomy) --
+                        # gated OFF by default so this measurement fix cannot silently
+                        # change live trading autonomy. Set AUTO_DEMOTION_LEDGER_SOURCE=true
+                        # to opt in after review.
                         _ad_trades = []
-                        try:
-                            import csv as _ad_csv
-                            _tc_path = os.path.join("data", "trades.csv")
-                            if os.path.exists(_tc_path):
-                                with open(_tc_path) as _tf:
-                                    _reader = _ad_csv.DictReader(_tf)
-                                    for _row in _reader:
-                                        try:
-                                            _ad_trades.append({"pnl": float(_row.get("pnl", 0))})
-                                        except (ValueError, TypeError):
-                                            pass
-                                _ad_trades = _ad_trades[-30:]  # Last 30 trades
-                        except Exception:
-                            pass
+                        _ad_use_ledger = os.environ.get("AUTO_DEMOTION_LEDGER_SOURCE", "false").strip().lower() in ("1", "true", "yes")
+                        if _ad_use_ledger:
+                            try:
+                                from data.trade_source import load_closed_trades
+                                _ad_trades = [{"pnl": t["pnl"]} for t in load_closed_trades(max_trades=30)]
+                            except Exception:
+                                _ad_trades = []
+                        elif os.environ.get("TRADES_CSV_COMPLETENESS_FILTER", "false").strip().lower() in ("1", "true", "yes"):
+                            # TRADES_CSV_COMPLETENESS_FILTER (2026-07-20, off by
+                            # default alongside AUTO_DEMOTION_LEDGER_SOURCE above):
+                            # sources via the shared, post-completeness-fix reader
+                            # instead of a raw csv.DictReader. Feeds AutoDemotion ->
+                            # LLM_MODE autonomy, so gated behind its own flag rather
+                            # than changing the live default silently.
+                            try:
+                                from data.trade_log import read_trades_csv
+                                for _row in read_trades_csv()[-30:]:
+                                    try:
+                                        _ad_trades.append({"pnl": float(_row.get("pnl", 0))})
+                                    except (ValueError, TypeError):
+                                        pass
+                            except Exception:
+                                pass
+                        else:
+                            try:
+                                import csv as _ad_csv
+                                _tc_path = os.path.join("data", "trades.csv")
+                                if os.path.exists(_tc_path):
+                                    with open(_tc_path) as _tf:
+                                        _reader = _ad_csv.DictReader(_tf)
+                                        for _row in _reader:
+                                            try:
+                                                _ad_trades.append({"pnl": float(_row.get("pnl", 0))})
+                                            except (ValueError, TypeError):
+                                                pass
+                                    _ad_trades = _ad_trades[-30:]  # Last 30 trades
+                            except Exception:
+                                pass
                         # Get cost info
                         _ad_cost = 0.0
                         try:
@@ -8964,7 +9030,6 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         true state without needing to type /briefing. 2026-04-16 addition.
         """
         from datetime import datetime, timezone, timedelta
-        import csv
 
         now = datetime.now(timezone.utc)
         cutoff_24h = now - timedelta(hours=24)
@@ -8975,25 +9040,26 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         trades_24h = []
         trades_7d = []
 
+        # FALLACY_AUDIT (measurework, item 5, display_only_safe): trades.csv
+        # silently misses closes vs trade_ledger.csv (accounting hole) --
+        # read via the shared trade_source reader instead.
         try:
-            with open("data/trades.csv", "r", encoding="utf-8") as f:
-                r = csv.reader(f)
-                next(r, None)
-                for row in r:
-                    try:
-                        ts = row[0]
-                        pnl = float(row[10])
-                        tdt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-                        if tdt.tzinfo is None:
-                            tdt = tdt.replace(tzinfo=timezone.utc)
-                        if ts.startswith(today_str):
-                            trades_today.append(pnl)
-                        if tdt >= cutoff_24h:
-                            trades_24h.append(pnl)
-                        if tdt >= cutoff_7d:
-                            trades_7d.append(pnl)
-                    except Exception:
-                        continue
+            from data.trade_source import load_closed_trades
+            for t in load_closed_trades(window_days=7):
+                try:
+                    ts = t.get("timestamp", "")
+                    pnl = t["pnl"]
+                    tdt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                    if tdt.tzinfo is None:
+                        tdt = tdt.replace(tzinfo=timezone.utc)
+                    if str(ts).startswith(today_str):
+                        trades_today.append(pnl)
+                    if tdt >= cutoff_24h:
+                        trades_24h.append(pnl)
+                    if tdt >= cutoff_7d:
+                        trades_7d.append(pnl)
+                except Exception:
+                    continue
         except Exception:
             pass
 
@@ -9047,14 +9113,41 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         return "\n".join(lines)
 
     def _send_daily_summary(self):
-        """Send daily summary via Telegram alert bridge."""
+        """Send daily summary via Telegram alert bridge.
+
+        DAILY_SUMMARY_GROSS_SINCE_RESTART_FIX (2026-07-20): three corrections
+        to the previous implementation:
+          1. Rolling 24h window (event.timestamp >= now-24h) instead of the
+             implicit "since this process started" window — survives long
+             uptimes AND restarts alike, so a restart no longer resets the
+             reported day to near-zero trades.
+          2. Skip action=="OPEN" events outright. Every TradeEvent.pnl
+             defaults to 0.0 (dataclass default), so the old
+             `hasattr(event, 'pnl')` check was ALWAYS True — every OPEN event
+             was being counted as a zero-pnl "trade", inflating total_trades
+             and diluting the win rate.
+          3. Net-of-fee/funding accumulation instead of raw gross event.pnl,
+             and terminal-close-only trade counting via `is_position_close`
+             (set by _close_position() regardless of the action/reason
+             string — TP1/PARTIAL_CLOSE/LLM_EXIT_PARTIAL/EXIT_ENGINE_PARTIAL
+             leg events still contribute their net $ to net_pnl but are not
+             double-counted as their own "trade"). Win/loss and best/worst
+             classification for a terminal event uses
+             metadata["total_pnl"] — the position's true cumulative net
+             realized PnL across every leg — so a round trip that banked
+             profit on TP1 and gave back a little on the trailing-stop
+             remainder is correctly scored a WIN, not a loss.
+        """
         try:
             from alerts.telegram_alert_bridge import get_telegram_alert_bridge
             bridge = get_telegram_alert_bridge()
             if not bridge.enabled:
                 return
 
-            # Gather today's stats
+            from datetime import timedelta
+            now_utc = datetime.now(timezone.utc)
+            window_start = now_utc - timedelta(hours=24)
+
             total_trades = 0
             wins = 0
             net_pnl = 0.0
@@ -9062,15 +9155,30 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             worst_trade = None
 
             for event in self.pos_mgr.trade_log:
-                if hasattr(event, 'pnl'):
-                    total_trades += 1
-                    net_pnl += event.pnl
-                    if event.pnl > 0:
-                        wins += 1
-                    if best_trade is None or event.pnl > best_trade.get("pnl", 0):
-                        best_trade = {"symbol": event.symbol, "pnl": event.pnl}
-                    if worst_trade is None or event.pnl < worst_trade.get("pnl", 0):
-                        worst_trade = {"symbol": event.symbol, "pnl": event.pnl}
+                ts = event.timestamp
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                if ts < window_start:
+                    continue
+                if event.action == "OPEN":
+                    continue
+
+                metadata = event.metadata or {}
+                leg_funding = metadata.get("funding_share", metadata.get("funding_costs", 0.0))
+                leg_net = event.pnl - event.fee - leg_funding
+                net_pnl += leg_net
+
+                if not event.is_position_close:
+                    continue  # partial leg: $ counted above, not its own "trade"
+
+                total_trades += 1
+                classify_pnl = metadata.get("total_pnl", leg_net)
+                if classify_pnl > 0:
+                    wins += 1
+                if best_trade is None or classify_pnl > best_trade.get("pnl", float("-inf")):
+                    best_trade = {"symbol": event.symbol, "pnl": classify_pnl}
+                if worst_trade is None or classify_pnl < worst_trade.get("pnl", float("inf")):
+                    worst_trade = {"symbol": event.symbol, "pnl": classify_pnl}
 
             # LLM cost info
             llm_cost = 0.0

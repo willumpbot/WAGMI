@@ -353,6 +353,66 @@ class TestMetricsComputation:
 
         assert result["signals_1h"] == 1  # only the valid one
 
+    def test_sl_hit_and_tp_hit_counted_as_closes(self):
+        """SL_HIT and TP_HIT (terminal, no remaining_qty) must count exactly
+        like TRADE_CLOSED — position_manager.py only ever emits ONE of the
+        three per position close (regression test for 2026-07-20 close-
+        coverage fix: dashboard previously counted TRADE_CLOSED only and
+        silently dropped ~84% of real closes).
+        """
+        from dashboard.server import _compute_metrics, DashboardHandler, clear_metrics_cache
+        DashboardHandler.bot_instance = None
+        clear_metrics_cache()
+
+        events = [
+            {"event": "SL_HIT", "symbol": "BTC", "timestamp": _ts(hours_ago=1),
+             "pnl": -30.0, "strategy": "ensemble"},
+            {"event": "TP_HIT", "symbol": "ETH", "timestamp": _ts(hours_ago=2),
+             "pnl": 40.0, "strategy": "ensemble", "exit_reason": "TP2"},
+            {"event": "TRADE_CLOSED", "symbol": "SOL", "timestamp": _ts(hours_ago=3),
+             "pnl": 10.0, "strategy": "ensemble"},
+        ]
+
+        with patch("dashboard.server._read_trade_events", return_value=events):
+            result = _compute_metrics(None)
+
+        assert result["win_rate_24h"] == pytest.approx(round(2 / 3, 2))
+        assert result["total_pnl_24h"] == pytest.approx(20.0)
+        assert result["strategy_performance"]["ensemble"]["trades"] == 3
+        assert result["top_symbols"]["BTC"]["trades"] == 1
+        assert result["top_symbols"]["ETH"]["trades"] == 1
+
+    def test_tp1_partial_leg_pnl_counted_but_not_double_counted_as_trade(self):
+        """A TP_HIT carrying 'remaining_qty' is the TP1 partial fill — the
+        position is still open. Its PnL must be banked into totals, but it
+        must NOT inflate the trade count / win-rate denominator on top of
+        that same position's eventual terminal close.
+        """
+        from dashboard.server import _compute_metrics, DashboardHandler, clear_metrics_cache
+        DashboardHandler.bot_instance = None
+        clear_metrics_cache()
+
+        events = [
+            # TP1 partial leg (non-terminal) — position stays open
+            {"event": "TP_HIT", "symbol": "BTC", "timestamp": _ts(hours_ago=2),
+             "pnl": 25.0, "strategy": "ensemble", "partial_close_pct": 0.5,
+             "remaining_qty": 0.1},
+            # Final leg for the SAME position, closed on the stop later
+            {"event": "SL_HIT", "symbol": "BTC", "timestamp": _ts(hours_ago=1),
+             "pnl": -10.0, "strategy": "ensemble"},
+        ]
+
+        with patch("dashboard.server._read_trade_events", return_value=events):
+            result = _compute_metrics(None)
+
+        # Total realized PnL includes both legs.
+        assert result["total_pnl_24h"] == pytest.approx(15.0)
+        # Only the terminal leg counts as a completed trade.
+        assert result["strategy_performance"]["ensemble"]["trades"] == 1
+        assert result["top_symbols"]["BTC"]["trades"] == 1
+        # Trade count reflects only the terminal (loss) leg.
+        assert result["win_rate_24h"] == 0.0
+
 
 class TestReadTradeEvents:
     """Tests for _read_trade_events file reading."""
@@ -400,6 +460,43 @@ class TestReadTradeEvents:
                 with patch("dashboard.server.os.path.join", return_value=path):
                     result = _read_trade_events(hours=24.0)
             assert len(result) == 1
+        finally:
+            os.unlink(path)
+
+    def test_test_and_mock_and_popcat_rows_filtered_out(self):
+        """trade_events.jsonl accumulates pytest/mock contamination (symbol
+        'TEST', MagicMock repr symbols, strategy 'test'/'test_strat') and
+        rows from POPCAT, a symbol that failed backtest and was never
+        enabled live. None of these must reach dashboard consumers
+        (regression test for 2026-07-20 TEST-filter fix).
+        """
+        from dashboard.server import _read_trade_events
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
+            path = f.name
+            events = [
+                {"event": "TRADE_CLOSED", "symbol": "TEST", "timestamp": _ts(minutes_ago=5),
+                 "pnl": 999.0, "strategy": "ensemble"},
+                {"event": "SIGNAL_GENERATED", "symbol": "<MagicMock name='mock.evaluate().symbol' id='1'>",
+                 "timestamp": _ts(minutes_ago=5), "strategy": "test_strat"},
+                {"event": "TRADE_CLOSED", "symbol": "POPCAT", "timestamp": _ts(minutes_ago=5),
+                 "pnl": 500.0, "strategy": "ensemble"},
+                {"event": "TRADE_CLOSED", "symbol": "BTC", "timestamp": _ts(minutes_ago=5),
+                 "pnl": 12.0, "strategy": "test"},
+                # The one real row that must survive.
+                {"event": "TRADE_CLOSED", "symbol": "BTC", "timestamp": _ts(minutes_ago=5),
+                 "pnl": 12.0, "strategy": "ensemble"},
+            ]
+            for evt in events:
+                f.write(json.dumps(evt) + "\n")
+
+        try:
+            with patch("dashboard.server._BOT_DIR", os.path.dirname(path)):
+                with patch("dashboard.server.os.path.join", return_value=path):
+                    result = _read_trade_events(hours=24.0)
+            assert len(result) == 1
+            assert result[0]["symbol"] == "BTC"
+            assert result[0]["strategy"] == "ensemble"
         finally:
             os.unlink(path)
 

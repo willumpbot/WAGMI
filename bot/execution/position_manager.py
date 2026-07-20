@@ -199,6 +199,16 @@ class TradeEvent:
     strategy: str = ""
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)
+    # TRADE_SUMMARY_PER_POSITION_FIX (2026-07-20): True only for the event that
+    # terminates a position's lifecycle (created inside _close_position(), which
+    # runs pos._transition(CLOSED, ...) — regardless of the `action`/reason
+    # string, so "SL", "TP2", "TP1_FULL", "TIME_STOP", "LLM_EXIT_AGENT",
+    # "CIRCUIT_BREAKER", a new reason added tomorrow, etc. are ALL covered
+    # automatically with no whitelist to maintain). False for OPEN and for
+    # partial/leg events (_partial_close_tp1's "TP1" leg, partial_close()'s
+    # "PARTIAL_CLOSE"/"LLM_EXIT_PARTIAL" legs) — those don't end the position,
+    # so they must never be counted as their own win/loss in get_trade_summary().
+    is_position_close: bool = False
 
 
 class PositionManager:
@@ -211,11 +221,24 @@ class PositionManager:
 
     def __init__(
         self,
-        taker_fee_bps: int = 4,
+        # 4.5 = Hyperliquid Tier-0 taker rate; matches TradingConfig.taker_fee_bps'
+        # canonical default. Production always passes config.taker_fee_bps explicitly
+        # (see multi_strategy_main.py) -- this default only fires for direct/test
+        # construction without an explicit rate.
+        taker_fee_bps: float = 4.5,
         enable_trailing: bool = True,
         trailing_atr_mult: float = 1.5,
         time_stop_hours: int = 12,
         hold_time_rules=None,  # Optional HoldTimeRuleManager for blocking early exits
+        # Safe-by-default: True ONLY for the real live/paper trading engine
+        # (multi_strategy_main.py's self.pos_mgr / wallet A / wallet B).
+        # Gates whether this instance's closes are allowed to mutate the
+        # shared, on-disk momentum_state.json (see _record_momentum_outcome
+        # below). Backtest, replay, scenario_sim, and all test constructions
+        # intentionally leave this at the default False so a fabricated/
+        # simulated close can never flip the book-level after-loss
+        # multiplier or a symbol's win/loss streak for real trading.
+        is_live: bool = False,
     ):
         self.positions: Dict[str, Position] = {}
         self.trade_log: List[TradeEvent] = []
@@ -224,6 +247,7 @@ class PositionManager:
         self.trailing_atr_mult = trailing_atr_mult
         self._time_stop_hours = time_stop_hours
         self.hold_time_rules = hold_time_rules  # Optional HoldTimeRuleManager
+        self.is_live = is_live
         # LIVING VALUES (2026-07-15): the frozen "2,172-signal analysis" table
         # was contradicted by the realized ledger (BTC_BUY claimed 69% WR /
         # 8h-optimal but realized 35% WR / -$2.25/tr with all >2h buckets
@@ -243,6 +267,25 @@ class PositionManager:
         # Position backup directory for crash recovery
         self._backup_dir = Path("data") / "position_backups"
         self._backup_dir.mkdir(parents=True, exist_ok=True)
+        # FUNDING_ACCRUAL_CADENCE_FIX (2026-07-20): accrue_funding() used to
+        # hardcode scan_interval_s=30.0 regardless of the CALLER's real
+        # cadence (multi_strategy_main.py calls it once per symbol per scan
+        # cycle, whose actual wall-clock length varies with adaptive scan
+        # interval + per-symbol LLM pipeline time — minutes, not 30s, under
+        # slow-scan/low-power operation). Reported funding was ~60-200x too
+        # small as a result. Fixed by measuring REAL elapsed wall-clock time
+        # between consecutive accrue_funding() calls per symbol instead of
+        # assuming a constant. Keyed per-symbol so overlapping/rotated
+        # positions on different symbols don't share a clock.
+        self._last_funding_accrual_ts: Dict[str, datetime] = {}
+        # FEE_ACCOUNTING_FIX visibility (2026-07-20): the notional-methodology
+        # fix itself stays gated off-by-default (rewriting realized_pnl/fees_paid
+        # feeds circuit breakers + Kelly/EV sizing + learning aggregates, so it
+        # needs a reviewed backtest before flipping). This flag only makes the
+        # KNOWN understatement visible in logs instead of silent -- fires once
+        # per process, on the first leveraged position's fee charge, so it
+        # doesn't spam every scan cycle.
+        self._fee_accounting_warned = False
 
     def _compute_live_setup_time_stops(self) -> Dict[str, float]:
         """Live per-SYMBOL_SIDE time stops derived from realized closes.
@@ -346,6 +389,14 @@ class PositionManager:
         # and funding notional = entry*qty*leverage (accrue_funding L334).
         if os.getenv("FEE_ACCOUNTING_FIX", "false").lower() in ("1", "true", "yes"):
             return price * qty * max(leverage, 1.0) * (self.taker_fee_bps / 10000.0)
+        if leverage > 1.0 and not self._fee_accounting_warned:
+            self._fee_accounting_warned = True
+            logger.warning(
+                "FEE_ACCOUNTING_FIX=false: leveraged-position fees understated "
+                "~%.1fx vs true notional (charging on price*qty, not "
+                "price*qty*leverage). Corrected-and-ready behind the flag; "
+                "flip requires a reviewed replay backtest first.", leverage,
+            )
         return price * qty * (self.taker_fee_bps / 10000.0)
 
     def _backup_position(self, pos: 'Position') -> None:
@@ -436,11 +487,46 @@ class PositionManager:
         pos = self.positions[symbol]
         if pos.state == CLOSED or pos.qty <= 0:
             return
-        # Funding cost per tick: rate * notional * (tick_duration / interval)
-        # For a 30s tick in an 8h interval: fraction = 30 / 28800 = 0.00104
-        # We approximate: each call = 1 scan interval (~30s)
-        scan_interval_s = 30.0
-        fraction_of_interval = scan_interval_s / (interval_hours * 3600)
+        # Funding cost per call: rate * notional * (elapsed_time / interval).
+        # FUNDING_ACCRUAL_CADENCE_FIX (2026-07-20): the original code hardcoded
+        # scan_interval_s=30.0 regardless of the CALLER's real cadence
+        # (multi_strategy_main.py calls this once per symbol per scan cycle,
+        # whose actual wall-clock length varies with the adaptive scan
+        # interval + per-symbol LLM pipeline time — minutes, not 30s, under
+        # slow-scan/low-power operation). That silently understated funding
+        # ~60-200x. Fixed accrual LIVE-measures the real elapsed time between
+        # consecutive calls per symbol instead of assuming a constant.
+        #
+        # This changes pos.funding_costs, which feeds realized_pnl at final
+        # close (-> the per-symbol daily loss-limit circuit breaker in
+        # multi_strategy_main.py) and all downstream learning/reporting —
+        # same category of change as FEE_ACCOUNTING_FIX above. Gated
+        # off-by-default for the same reason: flip FUNDING_ACCRUAL_CADENCE_FIX=true
+        # deliberately once validated, don't let it silently change realized
+        # PnL / circuit-breaker timing for a running paper/live session.
+        if os.getenv("FUNDING_ACCRUAL_CADENCE_FIX", "false").lower() in ("1", "true", "yes"):
+            now = getattr(self, "_sim_now", None) or datetime.now(timezone.utc)
+            last = self._last_funding_accrual_ts.get(symbol)
+            self._last_funding_accrual_ts[symbol] = now
+            if last is None:
+                # First call since this position opened (or since process
+                # restart, which resets this in-memory dict): no prior
+                # timestamp to measure real elapsed time against. Skip this
+                # tick rather than guess a duration — the next call has a
+                # valid baseline. Self-corrects within one cycle; never
+                # fabricates a duration.
+                return
+            elapsed_s = (now - last).total_seconds()
+            if elapsed_s <= 0:
+                return
+            fraction_of_interval = elapsed_s / (interval_hours * 3600)
+        else:
+            # Legacy behavior (default, unchanged): hardcoded 30s-per-call
+            # approximation. Known to be ~60-200x understated under
+            # slow-scan/low-power cadence; kept as-is until the flag above
+            # is deliberately enabled.
+            scan_interval_s = 30.0
+            fraction_of_interval = scan_interval_s / (interval_hours * 3600)
         notional = pos.entry * pos.qty * pos.leverage
         if os.getenv("FUNDING_SIGNED_ACCRUAL", "false").lower() in ("1", "true", "yes"):
             # Signed carry (2026-07-14 funding_asymmetric fix): LONG pays when
@@ -516,6 +602,14 @@ class PositionManager:
                 f"Every trade MUST have a stop loss. This is non-negotiable."
             )
             return None
+
+        # FUNDING_ACCRUAL_CADENCE_FIX: defensive reset — if a stale accrual
+        # timestamp survived from a prior position on this symbol (e.g. a
+        # close path other than _close_position), don't let the first
+        # accrue_funding() call on this NEW position measure elapsed time
+        # against a flat/no-position gap. Belt-and-suspenders alongside the
+        # pop() in _close_position.
+        self._last_funding_accrual_ts.pop(symbol, None)
 
         # Apply precision rounding
         entry = round_price(symbol, entry)
@@ -1454,7 +1548,12 @@ class PositionManager:
         # Proportionally allocate funding costs to TP1 partial close
         # (prevents dumping all funding onto final close, distorting per-leg PnL)
         funding_share = pos.funding_costs * (close_qty / pos.qty) if pos.qty > 0 else 0.0
-        pos.realized_pnl += (pnl - fee - funding_share)
+        # PNL_SEMANTICS_FIX (2026-07-20): capture this leg's own NET
+        # contribution (fee + funding deducted) as a named value so the
+        # trade_events.jsonl TP_HIT record below can log it directly instead
+        # of the raw gross `pnl` local. See tel.log() call further down.
+        tp1_net_leg_pnl = pnl - fee - funding_share
+        pos.realized_pnl += tp1_net_leg_pnl
         pos.funding_costs -= funding_share  # Reduce remaining balance for final close
         pos.qty = round_qty(pos.symbol, pos.qty - close_qty)
 
@@ -1557,7 +1656,21 @@ class PositionManager:
                     side=pos.side,
                     exit_price=price,
                     entry_price=pos.entry,
-                    pnl=pnl,
+                    # PNL_SEMANTICS_FIX (2026-07-20): was the GROSS leg pnl
+                    # (no fee/funding deducted). Now the NET leg contribution,
+                    # matching the units of the final-close event's `pnl`
+                    # field below -- so summing `pnl` across a position's
+                    # TP_HIT + terminal-close events equals the true total
+                    # net trade pnl with zero overlap and zero unit mixing.
+                    pnl=tp1_net_leg_pnl,
+                    # Cumulative net pnl-to-date for this position (== what
+                    # the OLD code mistakenly put in `pnl` on the final-close
+                    # event). Consumers that want a running/"total so far"
+                    # figure (e.g. Telegram alerts) should read this field,
+                    # not `pnl`.
+                    total_pnl=pos.realized_pnl,
+                    fee=fee,
+                    funding=funding_share,
                     hold_time=_hold_s,
                     partial_close_pct=dynamic_close_pct,
                     remaining_qty=pos.qty,
@@ -1701,6 +1814,11 @@ class PositionManager:
 
     def _close_position(self, pos: Position, price: float, action: str) -> TradeEvent:
         """Fully close a position with state transition."""
+        # FUNDING_ACCRUAL_CADENCE_FIX: drop the per-symbol accrual clock so a
+        # future reopen on this symbol starts with no prior timestamp (see
+        # accrue_funding) instead of measuring elapsed time against a stale
+        # baseline left over from this now-closed position.
+        self._last_funding_accrual_ts.pop(pos.symbol, None)
         qty = pos.qty
         fee = self._fee(price, qty, pos.leverage)
         pos.fees_paid += fee
@@ -1717,7 +1835,18 @@ class PositionManager:
             pnl = (pos.entry - price) * qty * pos.leverage
 
         # Deduct accumulated funding costs at final close
-        pos.realized_pnl += (pnl - fee - pos.funding_costs)
+        # PNL_SEMANTICS_FIX (2026-07-20): capture this (final) leg's own NET
+        # contribution before mutating pos.realized_pnl, so the
+        # trade_events.jsonl close event below can log the LEG's net pnl
+        # instead of the whole-position cumulative total. Without this, a
+        # position that had an earlier TP1 partial double-counts that TP1
+        # leg's profit when its events are summed (TP1 leg logged once at
+        # TP1 time, then again folded into this event's old
+        # pnl=pos.realized_pnl). For a position with no prior TP1 leg, this
+        # value is numerically identical to pos.realized_pnl (unchanged
+        # behavior for single-leg trades).
+        final_leg_net_pnl = pnl - fee - pos.funding_costs
+        pos.realized_pnl += final_leg_net_pnl
         pos.qty = 0
         # Use simulated time in backtest mode, real time in live
         pos.close_time = getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
@@ -1731,12 +1860,21 @@ class PositionManager:
         self._last_close_time[pos.symbol] = pos.close_time
         self._last_close_won[pos.symbol] = pos.realized_pnl > 0
 
-        # Record outcome for momentum tracker (win/loss streak sizing)
-        try:
-            from execution.momentum_tracker import get_momentum_tracker
-            get_momentum_tracker().record_outcome(pos.symbol, pos.realized_pnl > 0)
-        except Exception:
-            pass
+        # Record outcome for momentum tracker (win/loss streak sizing).
+        # Gated on self.is_live: only the real live/paper trading engine's
+        # PositionManager may mutate the shared momentum_state.json (book-
+        # level _global_last_win + per-symbol streaks). Backtest/replay/
+        # scenario_sim PositionManagers default is_live=False and are never
+        # recorded here, so a fabricated/simulated close cannot halve the
+        # next REAL trade's size via get_after_loss_multiplier() or fake a
+        # win/streak on a symbol. (momentum_tracker.record_outcome() also
+        # independently filters TEST/SIM-named symbols as defense in depth.)
+        if self.is_live:
+            try:
+                from execution.momentum_tracker import get_momentum_tracker
+                get_momentum_tracker().record_outcome(pos.symbol, pos.realized_pnl > 0)
+            except Exception:
+                pass
 
         # Neuroplasticity: strengthen/weaken setup edges, detect surprises
         try:
@@ -1800,6 +1938,11 @@ class PositionManager:
             fee=fee,
             leverage=pos.leverage,
             strategy=pos.strategy,
+            # TRADE_SUMMARY_PER_POSITION_FIX: this is the ONE event per position
+            # that reaches _close_position (whatever `action` string triggered
+            # it) — get_trade_summary() uses this flag, not an action whitelist,
+            # to count positions and classify win/loss.
+            is_position_close=True,
             metadata={
                 "total_pnl": pos.realized_pnl,
                 "total_fees": pos.fees_paid,
@@ -1886,7 +2029,22 @@ class PositionManager:
                     side=pos.side,
                     exit_price=price,
                     entry_price=pos.entry,
-                    pnl=pos.realized_pnl,
+                    # PNL_SEMANTICS_FIX (2026-07-20): was pos.realized_pnl
+                    # (whole-position cumulative NET, which already includes
+                    # any earlier TP1 leg's contribution -- double-counted
+                    # when summed alongside that TP1 leg's own TP_HIT event).
+                    # Now this leg's own net contribution only, matching the
+                    # TP_HIT partial's `pnl` units above. For single-leg
+                    # trades (no TP1) this is numerically identical to the
+                    # old value.
+                    pnl=final_leg_net_pnl,
+                    # True whole-position cumulative net pnl as of this
+                    # (final) event -- for consumers that want the trade's
+                    # grand total rather than a per-leg delta (e.g. Telegram
+                    # close alerts, see alerts/telegram_alert_bridge.py).
+                    total_pnl=pos.realized_pnl,
+                    fee=fee,
+                    funding=pos.funding_costs,
                     hold_time=_hold_s,
                     exit_reason=action,
                     leverage=pos.leverage,
@@ -1994,6 +2152,11 @@ class PositionManager:
                 "tp2": pos.tp2,
                 "confidence": pos.confidence,
                 "entry_reasons": pos.entry_reasons,
+                # DAILY_SUMMARY_FIX (2026-07-20): mirrors the TP1 partial-close
+                # path's metadata — without this, a consumer summing
+                # pnl - fee - funding_share per leg (e.g. _send_daily_summary's
+                # 24h window) silently treats this leg's funding as 0.
+                "funding_share": funding_share,
             },
         )
         self.trade_log.append(event)
@@ -2120,43 +2283,113 @@ class PositionManager:
         return total
 
     def get_trade_summary(self) -> Dict[str, Any]:
-        """Summary of all trades taken."""
-        closed = [e for e in self.trade_log if e.action in
-                  ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
-                   "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE", "BACKTEST_END", "HOLD_LIMIT",
-                   "CIRCUIT_BREAKER")]
+        """Summary of all trades taken.
+
+        TRADE_SUMMARY_PER_POSITION_FIX (2026-07-20):
+        1. win_rate/wins/losses/total_trades are now PER POSITION, not per
+           closing leg. Previously `closed` mixed partial TP1 legs in with
+           full closes and classified each leg independently off its own
+           gross e.pnl, so a TP1-partial-profit-then-breakeven-stop position
+           counted as "1 win + 1 loss" (2 "trades") instead of one net
+           position. Each is_position_close=True event's
+           metadata["total_pnl"] already holds pos.realized_pnl — the FULL
+           position's cumulative net-of-fees-and-funding PnL across every
+           leg — so that (not the leg's own gross e.pnl) is what now decides
+           win/loss and total_trades/win_rate. Bonus fix: this also switches
+           win/loss classification from gross to net PnL, so a leg that was
+           gross-positive but fee-negative can no longer be mislabeled a win.
+        2. The old `closed` list was a hardcoded action-string whitelist that
+           silently dropped every close whose reason wasn't on it —
+           concretely TP1_FULL, TIME_STOP, LLM_EXIT_AGENT and
+           LLM_EXIT_PARTIAL (all added to the codebase after this whitelist
+           was written) never contributed to any stat below. Replaced with
+           the is_position_close flag, set at the one call site
+           (_close_position) that actually ends a position's lifecycle
+           regardless of the reason string passed in — so no future exit
+           reason can silently fall out of these numbers again the same way.
+        3. Dollar aggregates (total_pnl/total_fees/net_pnl/profit_factor)
+           stay leg-summed across ALL closing events (position closes +
+           partial legs) exactly as before — each leg's own event.pnl/fee
+           together already equal the position's full round-trip economics —
+           just computed over the now-complete event set instead of the
+           whitelist.
+        4. `window` flags that every number here is scoped to self.trade_log,
+           which lives only in this process's memory and is empty again
+           after every restart — never an all-time record.
+        """
+        position_closes = [e for e in self.trade_log if e.is_position_close]
+        # Partial/leg events: TP1 (from _partial_close_tp1), PARTIAL_CLOSE /
+        # LLM_EXIT_PARTIAL (from partial_close()). Never OPEN, never a
+        # position-terminal close.
+        legs = [e for e in self.trade_log if not e.is_position_close and e.action != "OPEN"]
+        all_closes = position_closes + legs
         opens = [e for e in self.trade_log if e.action == "OPEN"]
-        if not closed:
-            return {"total_trades": 0, "positions_opened": len(opens), "close_events": 0}
+        if not position_closes:
+            return {
+                "total_trades": 0, "positions_opened": len(opens), "close_events": 0,
+                "best_trade": None, "worst_trade": None,
+                "window": "since_process_start",
+            }
 
-        wins = [e for e in closed if e.pnl > 0]
-        losses = [e for e in closed if e.pnl <= 0]
-        total_pnl = sum(e.pnl for e in closed)
-        # Include entry fees (OPEN events) + exit fees for accurate total
-        total_fees = sum(e.fee for e in closed) + sum(e.fee for e in opens)
+        def _position_pnl(e: "TradeEvent") -> float:
+            # metadata["total_pnl"] = pos.realized_pnl at terminal close: the
+            # position's full net PnL across every leg. Fall back to the raw
+            # event pnl only for synthetic/mocked events with no metadata
+            # (e.g. unit tests constructing bare TradeEvent/MagicMock rows).
+            return (e.metadata or {}).get("total_pnl", e.pnl)
 
-        gross_wins = sum(e.pnl for e in wins)
-        gross_losses = abs(sum(e.pnl for e in losses))
+        wins = [e for e in position_closes if _position_pnl(e) > 0]
+        losses = [e for e in position_closes if _position_pnl(e) <= 0]
+
+        # DAILY_SUMMARY_GROSS_TO_NET_FIX (2026-07-20): best/worst trade, keyed
+        # off the same position-level, fee/funding-netted _position_pnl() used
+        # for wins/losses above (not raw per-leg e.pnl) — consistent with the
+        # rest of this already-rewritten method.
+        best_trade = None
+        worst_trade = None
+        for e in position_closes:
+            p = _position_pnl(e)
+            if best_trade is None or p > best_trade["pnl"]:
+                best_trade = {"symbol": e.symbol, "pnl": p}
+            if worst_trade is None or p < worst_trade["pnl"]:
+                worst_trade = {"symbol": e.symbol, "pnl": p}
+
+        total_pnl = sum(e.pnl for e in all_closes)
+        # Include entry fees (OPEN events) + every leg's exit fee for accurate total
+        total_fees = sum(e.fee for e in all_closes) + sum(e.fee for e in opens)
+
+        gross_wins = sum(e.pnl for e in all_closes if e.pnl > 0)
+        gross_losses = abs(sum(e.pnl for e in all_closes if e.pnl <= 0))
         profit_factor = round(gross_wins / gross_losses, 2) if gross_losses > 0 else 99.0
+
+        by_action: Dict[str, int] = {}
+        for e in all_closes:
+            by_action[e.action] = by_action.get(e.action, 0) + 1
 
         return {
             "positions_opened": len(opens),
-            "close_events": len(closed),
-            "total_trades": len(closed),  # backwards compat
+            "close_events": len(all_closes),
+            "positions_closed": len(position_closes),
+            # backwards-compat key name, but the VALUE is now a true position
+            # count (was a leg count) — see fix note above.
+            "total_trades": len(position_closes),
             "wins": len(wins),
             "losses": len(losses),
-            "win_rate": len(wins) / len(closed) if closed else 0,
+            "win_rate": len(wins) / len(position_closes) if position_closes else 0,
             "total_pnl": total_pnl,
             "gross_pnl": total_pnl,
             "total_fees": total_fees,
             "net_pnl": total_pnl - total_fees,
             "profit_factor": profit_factor,
-            "avg_win": sum(e.pnl for e in wins) / len(wins) if wins else 0,
-            "avg_loss": sum(e.pnl for e in losses) / len(losses) if losses else 0,
-            "by_action": {
-                action: sum(1 for e in closed if e.action == action)
-                for action in ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
-                               "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE", "BACKTEST_END", "HOLD_LIMIT",
-                               "CIRCUIT_BREAKER")
-            },
+            "avg_win": sum(_position_pnl(e) for e in wins) / len(wins) if wins else 0,
+            "avg_loss": sum(_position_pnl(e) for e in losses) / len(losses) if losses else 0,
+            "best_trade": best_trade,
+            "worst_trade": worst_trade,
+            # Partial legs (TP1 / PARTIAL_CLOSE / LLM_EXIT_PARTIAL) are folded
+            # into their parent position's win/loss + avg_win/avg_loss above,
+            # not counted as separate trades. Exposed here so a consumer can
+            # see how many exist without having to re-derive them.
+            "legs_total": len(legs),
+            "by_action": by_action,
+            "window": "since_process_start",
         }

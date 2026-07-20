@@ -14,6 +14,17 @@ import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone, timedelta
 
+# trade_events.jsonl is ~93-95% fabricated PnL mass unless filtered (pytest
+# fixtures, backtest-in-process runs, dormant symbol trials) — see
+# core.structured_logging.is_fake_trade_event for the full explanation.
+try:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from core.structured_logging import is_fake_trade_event
+except Exception:
+    def is_fake_trade_event(evt):  # fail open rather than crash the report
+        return False
+
+
 def generate_report(hours_back=12):
     cutoff = datetime.now(timezone.utc) - timedelta(hours=hours_back)
     cutoff_str = cutoff.isoformat()[:19]
@@ -51,7 +62,7 @@ def generate_report(hours_back=12):
             for line in f.readlines()[-5000:]:
                 try:
                     e = json.loads(line.strip())
-                    if "MagicMock" not in str(e.get("symbol", "")):
+                    if not is_fake_trade_event(e):
                         events.append(e)
                 except:
                     pass

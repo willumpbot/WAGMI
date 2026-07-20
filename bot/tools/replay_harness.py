@@ -56,10 +56,26 @@ COPY_IGNORE = shutil.ignore_patterns(
 )
 # Production data trees snapshotted for the isolation proof.
 ISOLATION_SCOPE = ["data", "ml_data", "backtest_ml_data"]
-# The whole trade lifecycle actions that count as a final close.
-FINAL_CLOSE_ACTIONS = ("SL", "TP2", "TRAILING_STOP", "EARLY_EXIT",
-                       "LLM_EXIT_AGENT", "CIRCUIT_BREAKER", "HOLD_LIMIT",
-                       "FORCE_CLOSE", "TIME_STOP")
+
+
+def _is_final_close_action(action: str) -> bool:
+    """A trade-log action that finishes a whole replayed position.
+
+    CLOSE_TAXONOMY_FIX: was a hardcoded allowlist tuple (FINAL_CLOSE_ACTIONS)
+    that silently dropped any free-text force_close() reason not on it
+    (TELEGRAM_CLOSE, LLM_EXIT_<urgency>, LIQUIDATION_PROXIMITY,
+    FUNDING_AVOIDANCE, MFE_TAKE_PROFIT, EXIT_NOW, LIQUIDATION_AVOID, ...).
+    Replaced with a blocklist mirroring core.close_taxonomy.is_close_action
+    (anything that isn't "OPEN"), reimplemented inline rather than imported
+    to keep this harness's deliberate zero-bot-import isolation property.
+    TP1 stays excluded: it's the partial leg written by
+    _partial_close_tp1() and never finishes the position (the final close on
+    the remainder arrives as a later event) -- including it here would pop
+    open_by_symbol[sym] early and orphan the real final-close event, matching
+    the same partial-vs-final distinction data/db.py's is_full_close_action
+    makes.
+    """
+    return bool(action) and action != "OPEN" and action != "TP1"
 
 TRADES_CSV_COLUMNS = [
     "timestamp", "symbol", "side", "entry", "exit", "tp1_hit", "tp2_hit",
@@ -202,7 +218,7 @@ def build_replay_trades_csv(sandbox: Path, run_dir: Path) -> list:
             ev["_thesis"] = sym_theses[idx] if idx < len(sym_theses) else ""
             thesis_cursor[sym] = idx + 1
             open_by_symbol[sym] = ev
-        elif ev["action"] in FINAL_CLOSE_ACTIONS:
+        elif _is_final_close_action(ev["action"]):
             meta = ev.get("metadata", {}) or {}
             open_ev = open_by_symbol.pop(sym, {})
             open_meta = (open_ev.get("metadata") or {})

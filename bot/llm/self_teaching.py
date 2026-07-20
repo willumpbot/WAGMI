@@ -231,6 +231,82 @@ class KnowledgeType:
     RULE = "rule"             # Proposed trading rule
 
 
+# Entries created before this instant predate the provenance standard
+# (THE_STANDARD 3b, 2026-07-02) and were mostly n=1 LLM self-labels on a
+# dirty ledger. Module-level (not class-level) so both self_teaching's own
+# getters AND prompt_enricher.py's independent reader of the same
+# knowledge_base.json file share one definition instead of two that can drift.
+KB_PROVENANCE_EPOCH = 1782864000.0  # 2026-07-01T00:00:00Z
+
+# Content/source/tag substrings that only ever appear in synthetic test
+# fixtures, never in real market or trade data. FALLACY_AUDIT: trade_events.jsonl
+# is ~93.5% fake PnL mass from these same fixtures (TEST/sim/POPCAT/MagicMock);
+# some of it got laundered into "principles" via neuroplasticity's consolidation
+# path, e.g. content == "[trade_outcome] Pattern from 5 observations:
+# TEST_BUY_0-agree: WIN in unknown, pnl=500.00%" at confidence=0.75 (n=0 real
+# validations) -- exactly the kind of entry this screen exists to catch.
+_KB_FABRICATION_MARKERS = (
+    "test_buy", "test_sell", "test_hold", "magicmock", "mock_",
+    "popcat", "sim_test", "unittest", "faketest",
+)
+
+# knowledge_types that are statistical generalizations mined from trade
+# outcomes -- these are the ones the provenance-epoch quarantine applies to.
+# Axioms (hand-curated, source=seed/student_course, never carry a validation
+# counter by design) and raw observations (not injected into prompts as
+# claims) are intentionally excluded -- gating them on validation_count would
+# quarantine 100% of the legitimate curriculum content, not just fabrications.
+_KB_STATISTICAL_TYPES = frozenset({
+    KnowledgeType.PRINCIPLE, KnowledgeType.ANTI_PATTERN,
+    KnowledgeType.HYPOTHESIS, KnowledgeType.SNIPER_PROFILE,
+    KnowledgeType.RULE,
+})
+
+
+def is_kb_entry_servable(e: Dict) -> bool:
+    """Universal serve-time trust gate for a knowledge_base.json entry.
+
+    This is the ONE place that decides whether an entry may reach an agent
+    prompt -- independent of knowledge_type, independent of which reader
+    calls it (self_teaching.py's own getters AND prompt_enricher.py's
+    separate direct read of the same file both call this), and independent
+    of the caller's symbol/regime filter state.
+
+    FALLACY_AUDIT gap this closes: previously the only quarantine was an
+    epoch+validation_count check applied inline, ONLY inside
+    get_for_llm_prompt's principle branch -- so axioms, anti-patterns,
+    hypotheses and sniper_profiles were served with no screen at all, and
+    _is_relevant's `if not symbol and not regime: return True` short-circuit
+    meant ANY caller passing no filters bypassed even that one check.
+    Relevance (topical match) and trust (fabrication/provenance) were
+    conflated into a single filter; they are now separate and trust is
+    checked first, unconditionally.
+
+    Returns False (must not be served) if:
+      1. `stale` is explicitly True -- honors prior purge/audit flags that
+         were being written but never enforced (e.g. entries carrying this
+         flag today were still being read by get_for_llm_prompt).
+      2. content/source/tags contain a synthetic-fixture marker.
+      3. [statistical types only] the entry predates the provenance epoch
+         with fewer than 3 real validations against live outcomes.
+    """
+    if e.get("stale") is True:
+        return False
+    blob = " ".join([
+        str(e.get("content", "")),
+        str(e.get("source", "")),
+        " ".join(e.get("tags", []) or []),
+    ]).lower()
+    if any(marker in blob for marker in _KB_FABRICATION_MARKERS):
+        return False
+    if e.get("knowledge_type") in _KB_STATISTICAL_TYPES:
+        vc = int(e.get("validation_count", 0) or 0)
+        ca = float(e.get("created_at", 0) or 0)
+        if ca < KB_PROVENANCE_EPOCH and vc < 3:
+            return False
+    return True
+
+
 @dataclass
 class KnowledgeEntry:
     """A single piece of knowledge in the system."""
@@ -370,6 +446,8 @@ class KnowledgeBase:
                 continue
             if e.get("confidence", 0) < min_confidence:
                 continue
+            if not is_kb_entry_servable(e):
+                continue
             results.append(e)
             if len(results) >= limit:
                 break
@@ -390,6 +468,7 @@ class KnowledgeBase:
             e for e in self._entries
             if e.get("knowledge_type") == KnowledgeType.HYPOTHESIS
             and (e.get("validation_count", 0) + e.get("invalidation_count", 0)) < 10
+            and is_kb_entry_servable(e)
         ]
 
     def get_anti_patterns(self) -> List[Dict]:
@@ -400,10 +479,10 @@ class KnowledgeBase:
         """Get sniper trade profiles."""
         return self.search(knowledge_type=KnowledgeType.SNIPER_PROFILE)
 
-    # Entries created before this instant predate the provenance standard
-    # (THE_STANDARD 3b, 2026-07-02) and were mostly n=1 LLM self-labels on a
-    # dirty ledger — quarantined from prompts until dollar re-scored.
-    _PROVENANCE_EPOCH = 1782864000.0  # 2026-07-01T00:00:00Z
+    # Alias to the module-level constant (kept for any external reference by
+    # name) — single source of truth lives in KB_PROVENANCE_EPOCH so it can't
+    # drift between this class and is_kb_entry_servable() / prompt_enricher.py.
+    _PROVENANCE_EPOCH = KB_PROVENANCE_EPOCH
 
     @staticmethod
     def _prov_tag(e: Dict) -> str:
@@ -448,17 +527,18 @@ class KnowledgeBase:
             axiom_strs = [a["content"] + self._prov_tag(a) for a in axioms[:5]]
             parts.append("AXIOMS: " + " | ".join(axiom_strs))
 
-        # Include relevant principles. Pre-2026-07 principles are quarantined:
-        # 208/237 were created 2026-06 with val=0/inv=0 (naked n=1 opinions on
-        # a dirty ledger) — they re-enter only via dollar re-score (D6).
+        # Include relevant principles. Provenance/fabrication quarantine is
+        # now enforced centrally inside search() via is_kb_entry_servable()
+        # (FALLACY_AUDIT: this used to be the ONLY quarantine in the whole
+        # file, applied only here, only to principles — axioms/anti-patterns/
+        # hypotheses/sniper_profiles were unscreened). get_principles() ->
+        # search() has already dropped fabricated and pre-standard/
+        # never-validated entries by the time we see them here.
         principles = self.get_principles(min_confidence=0.6)
-        relevant_principles = []
-        for p in principles:
-            if float(p.get("created_at", 0) or 0) < self._PROVENANCE_EPOCH and \
-                    int(p.get("validation_count", 0) or 0) < 3:
-                continue  # quarantined: pre-standard era, never validated
-            if self._is_relevant(p, symbol, regime):
-                relevant_principles.append(p["content"] + self._prov_tag(p))
+        relevant_principles = [
+            p["content"] + self._prov_tag(p) for p in principles
+            if self._is_relevant(p, symbol, regime)
+        ]
         if relevant_principles:
             parts.append("PRINCIPLES: " + " | ".join(relevant_principles[:8]))
 

@@ -2947,7 +2947,10 @@ class EnsembleStrategy:
             from trading_config import TradingConfig as _TConf
             _fee_bps = _TConf().taker_fee_bps
         except Exception:
-            _fee_bps = 4
+            # 4.5 = Hyperliquid Tier-0 taker rate; matches TradingConfig.taker_fee_bps'
+            # canonical default (see trading_config.py). Only reached if importing
+            # TradingConfig itself fails.
+            _fee_bps = 4.5
         # Regime-specific slippage: high-vol/panic markets have wider spreads
         # and worse fills. Add slippage as additional cost beyond fees.
         # 2026-07-15 (de-hardcode F10): the static table boosted losing

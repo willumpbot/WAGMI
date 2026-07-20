@@ -1,10 +1,25 @@
 # bt_signal_sources.py — Lane: which entry SOURCE has edge?
 # READ-ONLY on bot data. Outputs stats to stdout (parsed into coordination/BT_SIGNAL_SOURCES.md).
-import csv, json, math, sys
+import csv, json, math, os, sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
+from pathlib import Path
 
 ROOT = r"C:\Users\vince\WAGMI\bot\data"
+
+# trade_events.jsonl is ~93-95% fabricated PnL mass unless filtered (pytest
+# fixtures, backtest-in-process runs, dormant symbol trials) — see
+# core.structured_logging.is_fake_trade_event for the full explanation.
+# NOTE: import this script's OWN bot/ (parents[2] of this file), not the
+# ROOT data path above (which intentionally points at the live bot's data
+# dir) — otherwise this would silently pick up whichever core/structured_
+# logging.py happens to be on the live bot's path instead of this repo's.
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # bot/
+    from core.structured_logging import is_fake_trade_event
+except Exception:
+    def is_fake_trade_event(evt):  # fail open rather than crash the lane
+        return False
 
 def parse_ts(s):
     return datetime.fromisoformat(s.replace("Z", "+00:00"))

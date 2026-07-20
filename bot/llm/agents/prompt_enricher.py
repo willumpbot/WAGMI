@@ -66,7 +66,25 @@ def _side_to_buysell(side: str) -> str:
 
 
 def _load_all_trades_for_recompute(path: str, cap: int = _ALL_TRADES_FOR_RECOMPUTE) -> List[Dict[str, str]]:
-    """Load up to the last `cap` trades from trades.csv for rule-accuracy recompute."""
+    """Load up to the last `cap` trades from trades.csv for rule-accuracy recompute.
+
+    TRADES_CSV_COMPLETENESS_FILTER (2026-07-20, off by default): this is the
+    highest-stakes trades.csv consumer — its output feeds
+    _dedup_and_resolve_graduated()'s live-evidence recompute, which directly
+    decides whether a stale/graduated boost/penalize/veto rule is re-admitted
+    into the live agent prompt. Gated behind a new flag (mirroring the
+    EDGE_STATS_FROM_LEDGER precedent) for a burn-in period: when enabled, rows
+    are sourced via the shared data/trade_log.py reader (post-completeness-fix
+    cutover + TEST scrub) instead of the raw, possibly-gapped file. Default
+    OFF until the corrected rule-readmission counts have been spot-checked
+    against trade_ledger.csv. Revert: TRADES_CSV_COMPLETENESS_FILTER=false.
+    """
+    if os.getenv("TRADES_CSV_COMPLETENESS_FILTER", "false").strip().lower() in ("1", "true", "yes"):
+        try:
+            from data.trade_log import read_trades_csv
+            return read_trades_csv(path=path)[-cap:]
+        except Exception as e:
+            logger.debug(f"[ENRICHER] completeness-filter load failed, falling back: {e}")
     if not os.path.exists(path):
         return []
     try:
@@ -339,17 +357,22 @@ def _load_recent_trades(path: str, max_trades: int = 10) -> List[Dict[str, str]]
             # too few ledger rows -> fall through to legacy trades.csv
         except Exception as e:
             logger.debug(f"[ENRICHER] ledger source failed, using trades.csv: {e}")
-    if not os.path.exists(path):
-        return []
+    # TRADES_CSV_COMPLETENESS_FILTER (2026-07-20): legacy trades.csv branch —
+    # text display only, no hard-veto consumer (see docstring above) — sources
+    # rows via the shared data/trade_log.py reader, honoring the caller's
+    # `path` (so a monkeypatched/test path is respected). The completeness
+    # *date cutover* is intentionally NOT applied here (min_ts=""): this
+    # method already scopes to the last `max_trades` rows, so a stale/gapped
+    # historical row can only surface transiently right after the fix ships
+    # on a low-volume symbol, and applying the cutover would make this
+    # display-only "recent performance" text go blank whenever the tail of
+    # trades.csv happens to be older than the cutover (e.g. long idle
+    # periods) instead of gracefully showing what's there. The TEST/synthetic
+    # scrub still applies (exclude_test=True, the default).
     try:
-        trades = []
-        with open(path, "r", newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                trades.append(row)
-        # Return last N trades
-        return trades[-max_trades:]
-    except (IOError, OSError, csv.Error) as e:
+        from data.trade_log import read_trades_csv
+        return read_trades_csv(min_ts="", path=path)[-max_trades:]
+    except Exception as e:
         logger.debug(f"[ENRICHER] Failed to load trades CSV: {e}")
         return []
 
@@ -372,7 +395,13 @@ def _refresh_cache() -> None:
     recent_trades = _load_recent_trades(_TRADES_CSV_PATH, max_trades=10)
 
     kb_data = _load_json_safe(_KB_PATH, {"entries": []})
-    kb_entries = kb_data.get("entries", [])
+    # FALLACY_AUDIT: this module reads knowledge_base.json independently of
+    # self_teaching.py's own getters (its filter here is evidence_count>0 OR
+    # source=='seed', with no fabrication screen) -- share the same serve-time
+    # trust gate so a TEST/sim/mock-laundered entry can't sneak in through
+    # this reader even after self_teaching.py's readers are screened.
+    from llm.self_teaching import is_kb_entry_servable
+    kb_entries = [e for e in kb_data.get("entries", []) if is_kb_entry_servable(e)]
 
     meta_data = _load_json_safe(_META_PATH, {"insights": []})
     meta_insights = meta_data.get("insights", [])

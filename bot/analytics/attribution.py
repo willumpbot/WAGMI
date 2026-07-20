@@ -29,14 +29,9 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any
 
 from data.db import get_connection
+from core.close_taxonomy import OPEN_ACTIONS
 
 logger = logging.getLogger("bot.attribution")
-
-# Actions that represent position closes (must stay in sync with data.db)
-CLOSE_ACTIONS = {
-    "SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
-    "EMERGENCY", "ROTATE_OUT", "ROTATE_LOSS", "MANUAL_CLOSE",
-}
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -176,13 +171,19 @@ def _build_sub_attribution(pnl_list: List[float], wins: int) -> SubAttribution:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 def _fetch_closed_trades(conn: sqlite3.Connection, cutoff: str) -> List[Dict[str, Any]]:
-    """Fetch all closed trades since *cutoff* as dicts."""
-    placeholders = ",".join("?" for _ in CLOSE_ACTIONS)
+    """Fetch all closed trades since *cutoff* as dicts.
+
+    CLOSE_TAXONOMY_FIX: blocklist (action NOT IN OPEN_ACTIONS) instead of a
+    hardcoded close-action allowlist, which drifted stale against
+    force_close()'s free-text reason strings (TELEGRAM_CLOSE, LLM_EXIT_*,
+    LIQUIDATION_PROXIMITY, ...).
+    """
+    placeholders = ",".join("?" for _ in OPEN_ACTIONS)
     query = (
-        f"SELECT * FROM trades WHERE timestamp >= ? AND action IN ({placeholders}) "
+        f"SELECT * FROM trades WHERE timestamp >= ? AND action NOT IN ({placeholders}) "
         "ORDER BY timestamp"
     )
-    params: list = [cutoff] + sorted(CLOSE_ACTIONS)
+    params: list = [cutoff] + sorted(OPEN_ACTIONS)
     try:
         rows = conn.execute(query, params).fetchall()
         return [dict(r) for r in rows]

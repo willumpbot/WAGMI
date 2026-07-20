@@ -54,14 +54,13 @@ def _load_recent_trades(n: int = 50) -> List[Dict[str, str]]:
                 } for t in _led]
         except Exception:
             pass
-    if not os.path.exists(_TRADES_CSV):
-        return []
+    # TRADES_CSV_COMPLETENESS_FILTER (2026-07-20): legacy-path branch (used
+    # when EDGE_STATS_FROM_LEDGER is off) now sources rows via the shared
+    # data/trade_log.py reader — post-completeness-fix cutover + TEST scrub —
+    # instead of a raw csv.DictReader over the whole (possibly gapped) file.
     try:
-        rows = []
-        with open(_TRADES_CSV, newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                rows.append(row)
+        from data.trade_log import read_trades_csv
+        rows = read_trades_csv()
         return rows[-n:]
     except Exception:
         return []

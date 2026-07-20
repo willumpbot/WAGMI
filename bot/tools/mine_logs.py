@@ -21,10 +21,32 @@ BOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGS = os.path.join(BOT, "logs")
 DAYS = int(sys.argv[1]) if len(sys.argv) > 1 else 5
 
+# TradeEventLogger emits every trade_events.jsonl row through the standard
+# logger too (structured_logging.TradeEventLogger.log()), so the same
+# pytest/backtest fabrication that contaminates trade_events.jsonl (~93-95%
+# of PnL mass unless filtered) also shows up in the "data" payload of
+# SIGNAL_GENERATED / TRADE_CLOSED log lines mined here.
+try:
+    sys.path.insert(0, BOT)
+    from core.structured_logging import is_fake_trade_event
+except Exception:
+    def is_fake_trade_event(evt):  # fail open rather than crash the miner
+        return False
+
+try:
+    from core.close_taxonomy import CLOSE_EVENT_TYPES
+except Exception:
+    # Fail open to the pre-fix (undercounting) behavior rather than crash.
+    CLOSE_EVENT_TYPES = frozenset({"TRADE_CLOSED"})
+
 # Substrings to prefilter lines before json.loads (speed on huge files).
-MARKERS = ("SIGNAL_GENERATED", "Pipeline done", "TRADE_CLOSED", "SHADOW-GATE",
-           "[EXIT-AGENT]", "[REGIME]", "GRAD_VETO", "COOLDOWN-DROP", "LLM-FIRST TRADE",
-           "safety reject", "EXPLORATION")
+# SL_HIT/TP_HIT added alongside TRADE_CLOSED — position_manager.py logs a
+# position's terminal close as exactly one of these three strings, and the
+# old TRADE_CLOSED-only marker silently threw the other two away before
+# json.loads ever ran (CLOSE_TAXONOMY_FIX).
+MARKERS = ("SIGNAL_GENERATED", "Pipeline done", "TRADE_CLOSED", "SL_HIT", "TP_HIT",
+           "SHADOW-GATE", "[EXIT-AGENT]", "[REGIME]", "GRAD_VETO", "COOLDOWN-DROP",
+           "LLM-FIRST TRADE", "safety reject", "EXPLORATION")
 
 
 def _hour(ts):
@@ -68,24 +90,29 @@ def main():
                         continue
                     msg = str(o.get("msg", ""))
                     data = o.get("data", {}) or {}
+                    is_fake = is_fake_trade_event(data)
                     if "SIGNAL_GENERATED" in msg:
-                        sym = data.get("symbol", "?"); side = data.get("side", "?")
-                        signals[f"{sym}_{side}"] += 1
-                        h = _hour(data.get("timestamp") or o.get("ts"))
-                        if h is not None:
-                            sig_by_hour[h] += 1
+                        if is_fake:
+                            pass
+                        else:
+                            sym = data.get("symbol", "?"); side = data.get("side", "?")
+                            signals[f"{sym}_{side}"] += 1
+                            h = _hour(data.get("timestamp") or o.get("ts"))
+                            if h is not None:
+                                sig_by_hour[h] += 1
                     elif "Pipeline done" in msg:
                         for tok in msg.split():
                             if tok.startswith("action="):
                                 pipe_action[tok.split("=", 1)[1]] += 1
                             if tok.startswith("regime="):
                                 pipe_regime[tok.split("=", 1)[1]] += 1
-                    elif "TRADE_CLOSED" in msg:
-                        closes[data.get("outcome", "?")] += 1
-                        try:
-                            close_pnl[data.get("symbol", "?") + "_" + data.get("side", "?")] += float(data.get("pnl") or 0)
-                        except Exception:
-                            pass
+                    elif any(m in msg for m in CLOSE_EVENT_TYPES):
+                        if not is_fake:
+                            closes[data.get("outcome", "?")] += 1
+                            try:
+                                close_pnl[data.get("symbol", "?") + "_" + data.get("side", "?")] += float(data.get("pnl") or 0)
+                            except Exception:
+                                pass
                     elif "[EXIT-AGENT]" in msg:
                         for tok in msg.split():
                             if tok.startswith("action="):

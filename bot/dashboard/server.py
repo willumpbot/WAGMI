@@ -7741,12 +7741,33 @@ _metrics_cache: Dict[str, Any] = {}
 _metrics_cache_ts: float = 0.0
 _METRICS_CACHE_TTL: float = 30.0  # seconds
 
+try:
+    from core.structured_logging import TradeEventLogger as _TEL
+    _CLOSE_EVENT_TYPES = _TEL.CLOSE_EVENT_TYPES
+except Exception:
+    # Fail open to the pre-fix (undercounting) behavior rather than crash
+    # the dashboard if core.structured_logging is ever unimportable here.
+    _CLOSE_EVENT_TYPES = frozenset({"TRADE_CLOSED"})
+
 
 def _read_trade_events(hours: float = 24.0) -> List[dict]:
-    """Read trade events from the JSONL file within the time window."""
+    """Read trade events from the JSONL file within the time window.
+
+    Filters out test/mock/non-live rows (pytest runs, dormant symbols like
+    POPCAT) via core.structured_logging.is_fake_trade_event so every caller
+    of this function — metrics aggregation and the recent-signals feed —
+    gets clean data without duplicating the filter logic (audited 2026-07-20:
+    trade_events.jsonl carries substantial TEST/MagicMock/POPCAT contamination).
+    """
     events_path = os.path.join(_BOT_DIR, "data", "trade_events.jsonl")
     if not os.path.exists(events_path):
         return []
+
+    try:
+        from core.structured_logging import is_fake_trade_event
+    except Exception:
+        def is_fake_trade_event(evt):  # fail open: don't crash the dashboard
+            return False
 
     cutoff = datetime.now(timezone.utc) - __import__("datetime").timedelta(hours=hours)
     results = []
@@ -7758,6 +7779,8 @@ def _read_trade_events(hours: float = 24.0) -> List[dict]:
                     continue
                 try:
                     evt = json.loads(line)
+                    if is_fake_trade_event(evt):
+                        continue
                     ts_str = evt.get("timestamp", "")
                     if ts_str:
                         try:
@@ -7832,35 +7855,48 @@ def _compute_metrics(handler) -> dict:
                 except (ValueError, TypeError):
                     pass
 
-        elif event_type == "TRADE_CLOSED":
+        elif event_type in _CLOSE_EVENT_TYPES:
+            # DASHBOARD-CLOSE-COVERAGE-FIX (2026-07-20): position_manager.py
+            # logs a position's terminal close as SL_HIT, TP_HIT, or
+            # TRADE_CLOSED depending on exit reason — only one of the three
+            # per close. Counting TRADE_CLOSED alone silently dropped ~84%
+            # of real closes (audited 2026-07-20). All three must be summed.
             pnl = evt.get("pnl", 0)
             try:
                 pnl = float(pnl)
             except (ValueError, TypeError):
                 pnl = 0.0
+
+            # A TP_HIT with "remaining_qty" is the TP1 *partial* leg — the
+            # position stays open, so its PnL is real and counted below, but
+            # it must NOT be counted as a second completed trade/win/loss on
+            # top of that same position's eventual terminal close (which
+            # would inflate trade counts and the win-rate denominator).
+            is_partial_leg = event_type == "TP_HIT" and "remaining_qty" in evt
+
             total_pnl_24h += pnl
-            if pnl > 0:
-                wins_24h += 1
-            elif pnl < 0:
-                losses_24h += 1
 
             # Strategy breakdown
             strategy = evt.get("strategy", "unknown")
             if strategy not in strategy_perf:
                 strategy_perf[strategy] = {"trades": 0, "wins": 0, "pnl": 0.0}
-            strategy_perf[strategy]["trades"] += 1
-            if pnl > 0:
-                strategy_perf[strategy]["wins"] += 1
             strategy_perf[strategy]["pnl"] += pnl
 
             # Symbol breakdown
             symbol = evt.get("symbol", "UNKNOWN")
             if symbol not in symbol_perf:
                 symbol_perf[symbol] = {"trades": 0, "wins": 0, "pnl": 0.0}
-            symbol_perf[symbol]["trades"] += 1
-            if pnl > 0:
-                symbol_perf[symbol]["wins"] += 1
             symbol_perf[symbol]["pnl"] += pnl
+
+            if not is_partial_leg:
+                if pnl > 0:
+                    wins_24h += 1
+                    strategy_perf[strategy]["wins"] += 1
+                    symbol_perf[symbol]["wins"] += 1
+                elif pnl < 0:
+                    losses_24h += 1
+                strategy_perf[strategy]["trades"] += 1
+                symbol_perf[symbol]["trades"] += 1
 
     # Compute derived metrics
     total_closed_24h = wins_24h + losses_24h

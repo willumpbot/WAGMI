@@ -54,6 +54,19 @@ EVENTS_JSONL = ROOT / "data" / "trade_events.jsonl"
 CACHE_DIR = ROOT / "data" / "cache" / "exit_geometry_bt"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Narrow exception to "no bot imports" above: trade_events.jsonl is ~93-95%
+# fabricated PnL mass unless filtered (pytest fixtures, backtest-in-process
+# runs, dormant symbol trials). core.structured_logging has zero bot-internal
+# imports and zero import-time side effects (pure stdlib), so importing only
+# its is_fake_trade_event() predicate does not compromise this script's
+# read-only/standalone guarantee.
+try:
+    sys.path.insert(0, str(ROOT))
+    from core.structured_logging import is_fake_trade_event
+except Exception:
+    def is_fake_trade_event(evt):  # fail open rather than crash the backtest
+        return False
+
 HL_INFO = "https://api.hyperliquid.xyz/info"
 TAKER_FEE_BPS = 4                 # position_manager default
 FEE_BUFFER_EXTRA = 0.001          # position_manager BE fee buffer extra
@@ -132,7 +145,7 @@ def load_open_events():
                 e = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if e.get("event") == "TRADE_OPENED":
+            if e.get("event") == "TRADE_OPENED" and not is_fake_trade_event(e):
                 opens.append(e)
     return opens
 

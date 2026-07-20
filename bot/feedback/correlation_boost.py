@@ -34,6 +34,8 @@ from collections import deque
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from core.close_taxonomy import is_close_action
+
 logger = logging.getLogger("bot.feedback.correlation_boost")
 
 
@@ -45,11 +47,6 @@ class CrossAssetCorrelationBoost:
     as the signal, apply a confidence boost.
     """
 
-    # Closed-trade actions that represent a realized (not partial-open) exit.
-    LEDGER_CLOSE_ACTIONS = {
-        "SL", "TP1", "TP2", "TRAILING_STOP", "TIME_STOP",
-        "LLM_EXIT_AGENT", "LLM_EXIT_PARTIAL",
-    }
     # Ledger 'side' values (LONG/SHORT) map to signal-side vocabulary (BUY/SELL).
     _SIDE_MAP = {"LONG": "BUY", "SHORT": "SELL"}
     # Synthetic/test-fixture prices that must never contaminate live stats.
@@ -142,7 +139,12 @@ class CrossAssetCorrelationBoost:
                             continue
 
                         action = (row.get("action") or "").strip().upper()
-                        if action not in self.LEDGER_CLOSE_ACTIONS:
+                        # CLOSE_TAXONOMY_FIX: blocklist (anything that isn't
+                        # OPEN) instead of a hardcoded close-action allowlist,
+                        # which silently dropped legs closed for reasons never
+                        # added to the tuple (e.g. TELEGRAM_CLOSE,
+                        # LIQUIDATION_PROXIMITY, MFE_TAKE_PROFIT, ...).
+                        if not is_close_action(action):
                             continue
 
                         raw_side = (row.get("side") or "").strip().upper()

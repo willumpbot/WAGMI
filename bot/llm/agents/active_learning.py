@@ -76,26 +76,20 @@ class ActiveLearningEngine:
     # ══════════════════════════════════════════════════════════
 
     def _load_trades(self, max_rows: int = 200) -> List[Dict]:
-        """Load recent trades from CSV."""
-        trades = []
+        """Load recent trades from the canonical ledger.
+
+        FALLACY_AUDIT (measurework, item 5, learning_input): trades.csv
+        silently misses closes vs trade_ledger.csv (accounting hole),
+        biasing this module's diagnosis/hypothesis generation. Reads via
+        the shared trade_source reader instead.
+        """
         try:
-            if not os.path.exists(TRADES_CSV):
-                return []
-            with open(TRADES_CSV, "r") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    try:
-                        row["pnl"] = float(row.get("pnl", 0))
-                        row["fees"] = float(row.get("fees", 0))
-                        row["leverage"] = float(row.get("leverage", 1))
-                        row["confidence"] = float(row.get("confidence", 0))
-                        row["entry"] = float(row.get("entry", 0))
-                        row["exit"] = float(row.get("exit", 0))
-                        row["win"] = row["pnl"] > 0
-                        trades.append(row)
-                    except (ValueError, KeyError):
-                        continue
-            return trades[-max_rows:]
+            from data.trade_source import load_closed_trades
+            trades = load_closed_trades(max_trades=max_rows)
+            # keep the "win" key this module's downstream code expects
+            for t in trades:
+                t["win"] = t["pnl"] > 0
+            return trades
         except Exception as e:
             logger.warning("Failed to load trades: %s", e)
             return []

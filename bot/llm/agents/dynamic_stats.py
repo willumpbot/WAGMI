@@ -158,7 +158,11 @@ def _load_recent_trades(max_trades: int = 100) -> List[dict]:
     _load_recent_trades_from_ledger for the accounting-hole rationale.
     Revert: EDGE_STATS_FROM_LEDGER=false."""
     import os as _os
-    if _os.getenv("EDGE_STATS_FROM_LEDGER", "false").strip().lower() in ("1", "true", "yes"):
+    # FALLACY_AUDIT (measurework, item 5): the ledger path has been proven in
+    # production use in this file; flip the default from "false" to "true" so
+    # dynamic_stats' edge map reads the complete ledger by default. Override
+    # remains available (EDGE_STATS_FROM_LEDGER=false) for instant rollback.
+    if _os.getenv("EDGE_STATS_FROM_LEDGER", "true").strip().lower() in ("1", "true", "yes"):
         _led = _load_recent_trades_from_ledger(max_trades)
         if len(_led) >= 10:
             return _led

@@ -21,6 +21,16 @@ from typing import Optional
 import pandas as pd
 import ccxt
 
+# trade_events.jsonl is ~93-95% fabricated PnL mass unless filtered (pytest
+# fixtures, backtest-in-process runs, dormant symbol trials) — see
+# core.structured_logging.is_fake_trade_event for the full explanation.
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from core.structured_logging import is_fake_trade_event
+except Exception:
+    def is_fake_trade_event(evt):  # fail open rather than crash the analysis
+        return False
+
 
 ROOT = Path(r"C:\Users\vince\WAGMI PROJECT\WAGMI")
 TRADES_CSV = ROOT / "bot" / "data" / "trades.csv"
@@ -60,6 +70,8 @@ def load_opened_events() -> pd.DataFrame:
             except Exception:
                 continue
             if e.get("event") != "TRADE_OPENED":
+                continue
+            if is_fake_trade_event(e):
                 continue
             try:
                 rows.append(

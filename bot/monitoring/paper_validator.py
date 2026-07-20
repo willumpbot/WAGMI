@@ -142,14 +142,18 @@ class PaperValidator:
     def _get_closed_trades(self, hours: int = 24) -> List[Dict]:
         try:
             from data import db
+            from core.close_taxonomy import OPEN_ACTIONS
             cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
             conn = db.get_connection()
-            _CLOSE_ACTIONS = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
-                              "EMERGENCY", "ROTATE_OUT", "ROTATE_LOSS", "MANUAL_CLOSE")
-            placeholders = ",".join("?" * len(_CLOSE_ACTIONS))
+            # CLOSE_TAXONOMY_FIX: blocklist (action NOT IN OPEN_ACTIONS) instead
+            # of a hardcoded close-action allowlist, which drifted stale against
+            # force_close()'s free-text reason strings (TELEGRAM_CLOSE,
+            # LLM_EXIT_*, LIQUIDATION_PROXIMITY, ...) that feed this hourly
+            # go-live checkpoint.
+            placeholders = ",".join("?" * len(OPEN_ACTIONS))
             rows = conn.execute(
-                f"SELECT * FROM trades WHERE timestamp >= ? AND action IN ({placeholders})",
-                [cutoff] + list(_CLOSE_ACTIONS)
+                f"SELECT * FROM trades WHERE timestamp >= ? AND action NOT IN ({placeholders})",
+                [cutoff] + sorted(OPEN_ACTIONS)
             ).fetchall()
             conn.close()
             return [dict(r) for r in rows]

@@ -6,8 +6,12 @@ Filter accuracy tracker: measures how often each filter's rejections were correc
 This is the key feedback loop that lets the system learn which filters
 are helping and which are blocking profitable trades.
 
-Uses data from bot/core/signal_tracker.py (signal_outcomes.jsonl)
-and bot/data/trades.csv (actual trade outcomes).
+Uses data from bot/core/signal_tracker.py (signal_outcomes.jsonl).
+
+Note (measurework, item 5): this module only reads signal_outcomes.jsonl --
+the docstring's prior reference to bot/data/trades.csv did not correspond to
+an actual read in this file (verified: no trades.csv/trade_ledger.csv access
+exists here), so there is no accounting-hole site to swap in this module.
 """
 
 import json

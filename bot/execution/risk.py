@@ -487,7 +487,33 @@ class RiskManager:
         except Exception as e:
             logger.warning(f"[RISK] Could not load equity state: {e}")
 
-        # Fallback: reconstruct from trades.csv
+        # Fallback: reconstruct from trades.csv (rare, cold-start-only path --
+        # only reached when risk_equity_state.json is missing/corrupt).
+        #
+        # FALLACY_AUDIT (measurework, item 5, behavior_gated): trades.csv
+        # undercounts closes vs trade_ledger.csv, so summing it here would
+        # under-reconstruct equity -> feeds self.risk_mgr.equity -> the
+        # daily-loss-% circuit breaker. Per execution-safety.md,
+        # circuit-breaker-adjacent code must never change behavior without
+        # explicit approval, so the ledger-sourced sum is gated OFF by
+        # default. Set EQUITY_RECONSTRUCT_LEDGER_SOURCE=true to opt in.
+        _use_ledger = os.environ.get("EQUITY_RECONSTRUCT_LEDGER_SOURCE", "false").strip().lower() in ("1", "true", "yes")
+        if _use_ledger:
+            try:
+                from data.trade_source import load_closed_trades
+                _ledger_trades = load_closed_trades()
+                if _ledger_trades:
+                    total_pnl = sum(t["pnl"] for t in _ledger_trades)
+                    n = len(_ledger_trades)
+                    reconstructed = fallback + total_pnl
+                    logger.info(
+                        f"[RISK] Reconstructed equity from {n} ledger trades: "
+                        f"${fallback:.2f} + ${total_pnl:+.2f} = ${reconstructed:.2f}"
+                    )
+                    return reconstructed, True
+            except Exception as e:
+                logger.warning(f"[RISK] Could not reconstruct equity from trade_ledger.csv: {e}")
+
         trades_path = os.path.join("data", "trades.csv")
         try:
             if os.path.exists(trades_path):

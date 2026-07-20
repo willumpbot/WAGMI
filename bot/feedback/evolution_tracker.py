@@ -190,19 +190,20 @@ class EvolutionTracker:
         return decisions
 
     def _load_trades(self) -> List[Dict[str, str]]:
-        """Load closed trades from CSV."""
-        trades = []
-        if not os.path.exists(self._trades_path):
-            return trades
+        """Load closed trades from CSV.
+
+        TRADES_CSV_COMPLETENESS_FILTER (2026-07-20): delegates to the shared
+        data/trade_log.py reader instead of a raw csv.DictReader — applies the
+        post-completeness-fix cutover (excludes rows written before the
+        terminal-close gate was state-based, which can have silent undercount
+        gaps) and the standard TEST/synthetic scrub.
+        """
         try:
-            import csv
-            with open(self._trades_path, "r") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    trades.append(row)
-        except (OSError, Exception) as e:
+            from data.trade_log import read_trades_csv
+            return read_trades_csv()
+        except Exception as e:
             logger.warning(f"Could not read trades CSV: {e}")
-        return trades
+            return []
 
     def _load_signal_quality(self) -> Dict[str, Any]:
         """Load signal quality tracker state."""

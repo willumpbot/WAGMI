@@ -193,6 +193,14 @@ class MomentumTracker:
 
     def _save_state(self):
         try:
+            # Mirror the _load_state guard: never let a pytest process persist
+            # to the shared on-disk state file (previously only LOAD was
+            # guarded, so pytest runs that exercise position_manager close
+            # paths could still write fabricated streaks/global_last_win to
+            # the live file).
+            import sys
+            if "pytest" in sys.modules:
+                return
             os.makedirs(os.path.dirname(self._state_path) or ".", exist_ok=True)
             with open(self._state_path, "w") as f:
                 json.dump({
@@ -205,7 +213,19 @@ class MomentumTracker:
             logger.debug(f"Momentum state save error: {e}")
 
     def record_outcome(self, symbol: str, won: bool):
-        """Record a trade outcome for streak tracking."""
+        """Record a trade outcome for streak tracking.
+
+        Filters out TEST/SIM-named symbols before touching ANY state (per-
+        symbol streak, last_outcome, and the book-level _global_last_win
+        used by get_after_loss_multiplier) -- mirrors the exact same
+        exclusion execution/leverage.py:_is_sim_pollution_row / this module's
+        own _read_ledger_closes() apply when computing the live multiplier
+        table, so a fabricated close can no longer flip book-level sizing.
+        """
+        sym_check = (symbol or "").replace("/USDC:USDC", "").replace("/USDT:USDT", "").strip().upper()
+        if not sym_check or "TEST" in sym_check or "SIM" in sym_check:
+            logger.debug(f"[MOMENTUM] Ignoring non-live symbol '{symbol}' -- outcome not recorded")
+            return
         sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
         current = self._streaks.get(sym, 0)
 

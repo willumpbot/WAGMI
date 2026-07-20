@@ -392,7 +392,10 @@ class RiskFilterChain:
         # Gate 1c: Fee-drag filter
         # Reject trades where round-trip fees + slippage consume too much of stop width.
         # A stop width of 0.3% with 0.10% round-trip fees = 33% fee drag — barely viable.
-        fee_bps = getattr(self.config, "taker_fee_bps", 4)
+        # Fallback (4.5) matches trading_config.TradingConfig.taker_fee_bps' true-rate
+        # default; only used if self.config lacks the attribute (defensive, not the
+        # normal path -- self.config is always a real TradingConfig instance in prod).
+        fee_bps = getattr(self.config, "taker_fee_bps", 4.5)
         slippage_bps = getattr(self.config, "slippage_bps", 3)
         # Regime-specific slippage: high-vol/panic have wider spreads
         _regime_slippage = {
@@ -1150,7 +1153,9 @@ class RiskFilterChain:
         ))
 
         # ── Soft Gate: Fee-drag (regime-aware slippage) ──
-        fee_bps = getattr(self.config, "taker_fee_bps", 4)
+        # Fallback (4.5) matches trading_config.TradingConfig.taker_fee_bps' true-rate
+        # default; see identical fallback + rationale at the Gate 1c fee-drag filter above.
+        fee_bps = getattr(self.config, "taker_fee_bps", 4.5)
         _regime_slip_ann = {
             "trending_bull": 1, "trending_bear": 2, "trend": 1,
             "consolidation": 1, "range": 1,

@@ -19,6 +19,13 @@ class LivePromptInjection:
     """Builds and injects live edge data into agent prompts."""
 
     def __init__(self, trades_csv_path: str = "data/trades.csv", data_dir: str = "data/learning"):
+        # NOTE (measurework, item 5, learning_input): trades_csv_path kept for
+        # back-compat/tests, but compute_live_edges() below is an unimplemented
+        # stub (TODO) -- no functional trades.csv read exists in this class
+        # today, so there is no accounting-hole bug to fix yet. When this is
+        # implemented, source trades via data.trade_source.load_closed_trades()
+        # (the canonical trade_ledger.csv reader) instead of parsing
+        # self.trades_csv_path directly -- trades.csv silently misses closes.
         self.trades_csv_path = trades_csv_path
         self.data_dir = data_dir
         os.makedirs(data_dir, exist_ok=True)
@@ -42,7 +49,8 @@ class LivePromptInjection:
         logger.info(f"[LIVE_INJECT] Computing live edges from last {lookback_trades} trades")
 
         # TODO: Implementation
-        # 1. Read trades.csv (last N)
+        # 1. Read closed trades via data.trade_source.load_closed_trades()
+        #    (NOT self.trades_csv_path / trades.csv directly -- accounting hole)
         # 2. For each trade, compute:
         #    - win = pnl > 0
         #    - symbol, side, regime, confidence, hour (UTC)

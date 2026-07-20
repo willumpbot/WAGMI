@@ -19,6 +19,8 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
+from core.close_taxonomy import is_close_action
+
 logger = logging.getLogger("bot.db")
 
 DB_PATH = Path("ml_data") / "bot.db"
@@ -445,33 +447,97 @@ def get_recent_trades(limit: int = 10) -> List[Dict]:
         return []
 
 
-# All actions that represent a position close (for consistent filtering)
+# All actions that represent a position close (for consistent filtering).
+# LEGACY ALLOWLIST: kept unchanged (name + members) only for the one external
+# importer, llm/self_performance.py. db.py's own accounting below no longer
+# reads this set directly -- it uses the blocklist-based is_close_action() /
+# is_full_close_action() (core.close_taxonomy) instead, since force_close()
+# accepts arbitrary free-text reasons (TELEGRAM_CLOSE, LLM_EXIT_*,
+# LIQUIDATION_PROXIMITY, FUNDING_AVOIDANCE, MFE_TAKE_PROFIT, EXIT_NOW,
+# LIQUIDATION_AVOID, HOLD_LIMIT, CIRCUIT_BREAKER, BACKTEST_END, TIME_STOP,
+# ...) that this finite set can never enumerate completely.
 CLOSE_ACTIONS = {"SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
                  "ROTATE_OUT", "ROTATE_LOSS", "MANUAL_CLOSE"}
+
+# TRADE_ROW_SEMANTICS_FIX (2026-07-20): TP1 is a PARTIAL leg written by
+# position_manager._partial_close_tp1() — it books only the closed slice's
+# own gross pnl and never finishes the position (SL/TP2/trailing on the
+# remainder still to come). It was previously inside CLOSE_ACTIONS, so a
+# single TP1-then-SL position produced TWO "trades" (1W from the TP1 slice,
+# 1L from the SL slice) instead of its one true outcome, and every remaining
+# leg's win/loss was decided on that leg's own pre-fee pnl instead of the
+# position's real result.
+#
+# Every OTHER CLOSE_ACTIONS action is written by position_manager's
+# _close_position()/force_close() (the only place that zeroes pos.qty), which
+# stamps metadata["total_pnl"] = pos.realized_pnl — the WHOLE position's PnL
+# across every leg, already net of every leg's fee and all accrued funding
+# (position_manager.py:1493/1761 accumulate into pos.realized_pnl on every
+# partial AND the final close). So the final-close row already carries the
+# correct single-trade outcome; is_full_close_action() + _position_trade_pnl()
+# below is "one row == one finished trade, valued at its true net result".
+#
+# CLOSE_TAXONOMY_FIX: defined via the blocklist is_close_action() (anything
+# that isn't "OPEN") rather than a hardcoded allowlist minus TP1, so free-text
+# force_close() reasons are never silently excluded from "full close" either.
+def is_full_close_action(action) -> bool:
+    """A close action that finishes a whole position (excludes TP1 partial legs)."""
+    return is_close_action(action) and action != "TP1"
+
+
+def _position_trade_pnl(t: Dict[str, Any]) -> "tuple[float, float]":
+    """Return (net_pnl, fees) for ONE finished position from an is_full_close_action() row.
+
+    Reads metadata["total_pnl"]/["total_fees"] — the whole-position, all-legs,
+    fee+funding-netted figures position_manager._close_position() stamps on
+    every final-close event (see is_full_close_action() comment above). Falls back
+    to the row's own leg pnl/fee only for legacy rows logged before that
+    metadata field existed (single-leg positions are exact either way; older
+    multi-leg positions fall back to the final leg's own gross-fee figure,
+    same as pre-fix behavior, rather than silently dropping the row).
+    """
+    meta = t.get("metadata")
+    if meta:
+        try:
+            meta = json.loads(meta) if isinstance(meta, str) else meta
+        except Exception:
+            meta = {}
+    else:
+        meta = {}
+    net = meta.get("total_pnl") if isinstance(meta, dict) else None
+    fees = meta.get("total_fees") if isinstance(meta, dict) else None
+    if net is None:
+        net = (t.get("pnl") or 0) - (t.get("fee") or 0)
+    if fees is None:
+        fees = t.get("fee") or 0
+    return float(net), float(fees)
 
 
 def get_daily_summary() -> Dict[str, Any]:
     """Generate daily performance summary."""
     trades = get_trades_today()
-    closes = [t for t in trades if t["action"] in CLOSE_ACTIONS]
+    closes = [t for t in trades if is_full_close_action(t["action"])]
 
     if not closes:
         return {"total_trades": 0, "net_pnl": 0, "win_rate": 0}
 
-    wins = [t for t in closes if t["pnl"] > 0]
-    total_pnl = sum(t["pnl"] for t in closes)
-    total_fees = sum(t["fee"] for t in closes)
+    pnl_fees = [_position_trade_pnl(t) for t in closes]
+    net_pnls = [p for p, _ in pnl_fees]
+
+    wins = [p for p in net_pnls if p > 0]
+    total_pnl = sum(net_pnls)
+    total_fees = sum(f for _, f in pnl_fees)
 
     # By strategy
     by_strategy = {}
-    for t in closes:
+    for t, (net, _fee) in zip(closes, pnl_fees):
         s = t.get("strategy", "unknown")
         if s not in by_strategy:
             by_strategy[s] = {"trades": 0, "wins": 0, "pnl": 0.0}
         by_strategy[s]["trades"] += 1
-        if t["pnl"] > 0:
+        if net > 0:
             by_strategy[s]["wins"] += 1
-        by_strategy[s]["pnl"] += t["pnl"]
+        by_strategy[s]["pnl"] += net
 
     # Best/worst strategy
     best = max(by_strategy.items(), key=lambda x: x[1]["pnl"]) if by_strategy else ("none", {})
@@ -482,7 +548,7 @@ def get_daily_summary() -> Dict[str, Any]:
         "wins": len(wins),
         "losses": len(closes) - len(wins),
         "win_rate": len(wins) / len(closes) if closes else 0,
-        "net_pnl": total_pnl - total_fees,
+        "net_pnl": total_pnl,
         "total_fees": total_fees,
         "by_strategy": by_strategy,
         "best_strategy": best[0],
@@ -783,7 +849,7 @@ def update_daily_performance(date: str = ""):
             return
 
         trades = [dict(r) for r in rows]
-        closes = [t for t in trades if t["action"] in CLOSE_ACTIONS]
+        closes = [t for t in trades if is_full_close_action(t["action"])]
         if not closes:
             return
 
@@ -820,11 +886,16 @@ def update_daily_performance(date: str = ""):
 
 def _upsert_perf(conn, date: str, symbol: str, strategy: str,
                  closes: List[Dict]):
-    """Insert or update a performance_daily row."""
-    wins = [t for t in closes if t["pnl"] > 0]
-    gross = sum(t["pnl"] for t in closes)
-    fees = sum(t["fee"] for t in closes)
-    pnls = [t["pnl"] for t in closes]
+    """Insert or update a performance_daily row.
+
+    `closes` is expected to already be filtered via is_full_close_action() (one row
+    per finished position) by the caller — see update_daily_performance().
+    """
+    pnl_fees = [_position_trade_pnl(t) for t in closes]
+    pnls = [p for p, _ in pnl_fees]
+    fees = sum(f for _, f in pnl_fees)
+    gross = sum(pnls) + fees  # back out fees from the netted per-trade pnl
+    wins = [p for p in pnls if p > 0]
 
     conn.execute(
         """INSERT INTO performance_daily
