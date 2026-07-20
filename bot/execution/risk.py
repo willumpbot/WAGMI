@@ -586,15 +586,94 @@ class RiskManager:
         try:
             os.makedirs(os.path.dirname(state_path), exist_ok=True)
             tmp_path = state_path + ".tmp"
+            payload = {
+                "equity": round(self.equity, 4),
+                "saved_at": datetime.now(timezone.utc).isoformat(),
+                "peak_equity": round(self.circuit_breaker.peak_equity, 4),
+            }
+            # EQUITY_LEDGER_DRIFT (measurement-integrity, Phase 0): additive
+            # fields, all readers use .get() so this is backward-compatible.
+            # accumulator_equity == "equity" above (kept explicit for
+            # readers that want the pair without re-deriving); derived_equity
+            # / drift are the epoch-fenced ledger cross-check (None until an
+            # epoch baseline is stamped — see data/epoch.py).
+            drift_info = getattr(self, "_last_ledger_drift", None)
+            if drift_info is not None:
+                payload["accumulator_equity"] = round(drift_info["accumulator_equity"], 4)
+                payload["derived_equity"] = round(drift_info["derived_equity"], 4)
+                payload["drift"] = round(drift_info["drift"], 4)
+                payload["epoch_id"] = drift_info.get("epoch_id", "")
             with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump({
-                    "equity": round(self.equity, 4),
-                    "saved_at": datetime.now(timezone.utc).isoformat(),
-                    "peak_equity": round(self.circuit_breaker.peak_equity, 4),
-                }, f, indent=2)
+                json.dump(payload, f, indent=2)
             os.replace(tmp_path, state_path)
         except Exception as e:
             logger.warning(f"[RISK] Could not save equity state: {e}")
+
+    def compute_ledger_drift(self) -> Optional[Dict[str, Any]]:
+        """Cross-check the mutable accumulator (self.equity) against the
+        epoch-derived truth (epoch_equity + sum(in-epoch ledger net_pnl)).
+
+        Read-only: no writes, no network calls, no behavior change. Returns
+        None when no epoch baseline is stamped yet (data/epoch_start.json
+        missing/epoch_equity unset) — there is nothing to reconcile against.
+        """
+        try:
+            from data.trade_source import get_run_stats
+            stats = get_run_stats(epoch=True)
+        except Exception as e:
+            logger.debug(f"[RISK] ledger drift check skipped: {e}")
+            return None
+        derived = stats.get("derived_equity")
+        if derived is None:
+            return None
+        return {
+            "accumulator_equity": self.equity,
+            "derived_equity": derived,
+            "drift": self.equity - derived,
+            "epoch_id": stats.get("epoch_id", ""),
+        }
+
+    def _reconcile_equity_with_ledger(self) -> None:
+        """Measurement-integrity cross-check (Phase 0). ALARMS (log, throttled)
+        when the accumulator has drifted from the epoch-derived ledger truth.
+
+        Off-by-default behavior change: only ADOPTS the derived value as
+        self.equity when EQUITY_DERIVE_FROM_LEDGER=true. Default is
+        observe-only — the accumulator stays authoritative, per
+        execution-safety.md ("never change circuit-breaker-adjacent equity
+        behavior without explicit approval"). Skipped entirely under pytest
+        to keep unit tests deterministic and I/O-free (same guard pattern as
+        save_equity_state's PYTEST_CURRENT_TEST check).
+        """
+        if os.getenv("PYTEST_CURRENT_TEST"):
+            return
+        drift_info = self.compute_ledger_drift()
+        self._last_ledger_drift = drift_info
+        if drift_info is None:
+            return
+        drift = drift_info["drift"]
+        try:
+            tol = float(os.environ.get("EQUITY_DRIFT_ALARM_USD", "0.50"))
+        except (TypeError, ValueError):
+            tol = 0.50
+        if abs(drift) > tol:
+            _now = time.time()
+            _last_warn = getattr(self, "_ledger_drift_last_warn", 0.0)
+            if _now - _last_warn > 600:  # throttle: at most once per 10 min
+                self._ledger_drift_last_warn = _now
+                logger.error(
+                    f"[EQUITY-LEDGER-DRIFT] accumulator=${self.equity:.2f} "
+                    f"derived=${drift_info['derived_equity']:.2f} "
+                    f"(epoch_equity + in-epoch ledger net) drift=${drift:+.2f} "
+                    f"(tolerance ${tol:.2f}, epoch={drift_info.get('epoch_id') or 'unset'})"
+                )
+        if os.environ.get("EQUITY_DERIVE_FROM_LEDGER", "false").strip().lower() in ("1", "true", "yes"):
+            if abs(drift) > tol:
+                logger.warning(
+                    f"[RISK] EQUITY_DERIVE_FROM_LEDGER active — adopting derived "
+                    f"equity ${drift_info['derived_equity']:.2f} (was ${self.equity:.2f})"
+                )
+            self.equity = drift_info["derived_equity"]
 
     def can_open_position(self, current_open: int, confidence: float = 0.0,
                           cb_conf_override_pct: float = 0.92,
@@ -717,6 +796,12 @@ class RiskManager:
         """
         self.equity += pnl
         self.circuit_breaker.record_trade(pnl, self.equity, sim_time=sim_time)
+        # EQUITY_LEDGER_DRIFT (measurement-integrity, Phase 0): cross-check
+        # the accumulator against epoch-derived ledger truth and ALARM on
+        # drift. Off-by-default adoption (EQUITY_DERIVE_FROM_LEDGER) — see
+        # _reconcile_equity_with_ledger docstring. Runs before save so a
+        # derived-equity adoption (if enabled) is what gets persisted.
+        self._reconcile_equity_with_ledger()
         # Persist equity to disk so bot restarts don't lose progress.
         # ALWAYS attempt to save (sanity checks in save_equity_state prevent test pollution).
         # Previous guard `if _should_persist_equity` caused equity to freeze when:

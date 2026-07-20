@@ -56,6 +56,11 @@ LEDGER_COLUMNS = [
     "predicted_ev",   # ev_per_dollar from entry_reasons at open
     "realized_rr",    # net_pnl / (original stop width * original qty * leverage)
     "win",            # 1 if net_pnl > 0 else 0
+    # EPOCH_FENCE (measurement-integrity, Phase 0, 2026-07-20): identifies
+    # which canonical epoch (data/epoch_start.json / data/epoch.py) this row
+    # belongs to. Blank on rows written before this column existed — those
+    # are fenced by timestamp instead (see data/trade_source.get_run_stats).
+    "epoch_id",
 ]
 
 
@@ -165,6 +170,17 @@ class TradeLedger:
                 row["trade_id"] = uuid.uuid4().hex[:12]
             if not row["timestamp"]:
                 row["timestamp"] = str(time.time())
+
+            # EPOCH_FENCE: auto-stamp the active epoch when the caller didn't
+            # supply one explicitly, so every new row is self-identifying
+            # without every record_trade() call site needing to know about
+            # epochs. Fail-soft: leaves "" if data/epoch.py can't resolve one.
+            if not row.get("epoch_id"):
+                try:
+                    from data.epoch import epoch_id as _active_epoch_id
+                    row["epoch_id"] = _active_epoch_id()
+                except Exception as e:
+                    logger.debug(f"[LEDGER] epoch stamp skipped: {e}")
 
             # Stable A/B bucket (0-99) derived from trade_id — reproducible per trade
             if not row["ab_gate_hash"]:

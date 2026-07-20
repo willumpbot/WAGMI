@@ -4,11 +4,32 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 os.chdir(Path(__file__).parent.parent)
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Equity + CB state
+# EPOCH_FENCE headline (measurement-integrity, Phase 0): canonical epoch-
+# fenced run stats + derived equity, replacing the old "Lifetime" sum (which
+# had no TEST-row filter at all) and the peak_equity+daily_pnl equity guess
+# below (a THIRD, independently-drifting equity derivation).
+try:
+    from data.trade_source import get_run_stats
+    _rs = get_run_stats(epoch=True)
+    if _rs["epoch_id"] or _rs["epoch_start"]:
+        print(f"Epoch:        {_rs['epoch_id'] or _rs['epoch_start'][:19]}")
+    if _rs["derived_equity"] is not None:
+        print(f"Equity (derived): ${_rs['derived_equity']:.2f}")
+    print(f"Run trades:   {_rs['n']}")
+    if _rs["n"]:
+        print(f"Run WR:       {_rs['wr']:.1f}%")
+    print(f"Run net PnL:  ${_rs['net']:+.2f}")
+except Exception as e:
+    print(f"Epoch stats unavailable: {e}")
+
+print()
+
+# Equity + CB state (accumulator cross-check — see Equity (derived) above)
 try:
     cb = json.load(open("data/circuit_breaker_state.json"))
-    print(f"Equity:      ${cb.get('peak_equity', 0) + cb.get('daily_pnl', 0):.2f}")
+    print(f"Equity (CB accumulator): ${cb.get('peak_equity', 0) + cb.get('daily_pnl', 0):.2f}")
     print(f"Daily PnL:   ${cb.get('daily_pnl', 0):+.2f}")
     print(f"CB tripped:  {'YES' if cb.get('tripped') else 'no'}")
     print(f"Consec loss: {cb.get('consecutive_losses', 0)}")
@@ -17,15 +38,12 @@ except: print("CB state unavailable")
 
 print()
 
-# Trade count
+# Trade count (lifetime, all-time — distinct from the epoch-fenced Run
+# numbers above; kept for continuity but no longer the headline).
 try:
     trades = list(csv.DictReader(open("data/trade_ledger.csv")))
-    print(f"Total trades: {len(trades)}")
-    wins = sum(1 for t in trades if float(t.get('net_pnl', 0)) > 0)
-    print(f"Lifetime WR:  {wins/len(trades)*100:.1f}%")
-    total_pnl = sum(float(t.get('net_pnl', 0)) for t in trades)
-    print(f"Lifetime PnL: ${total_pnl:+.2f}")
-    
+    print(f"Total trades (lifetime, unfiltered): {len(trades)}")
+
     # Last 5 trades
     print(f"\nLast 5 trades:")
     for t in trades[-5:]:

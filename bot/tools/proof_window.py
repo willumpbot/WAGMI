@@ -113,6 +113,27 @@ def main():
          f"- clean trades **{n}** / {MIN_TO_JUDGE} to judge "
          f"({max(0, MIN_TO_JUDGE - n)} more needed) / {CONFIDENT} for confidence", ""]
 
+    # EPOCH_FENCE cross-reference (measurement-integrity, Phase 0): this
+    # honest-numbers cutoff is a DIFFERENT window than the canonical
+    # operational epoch (data/epoch_start.json, the $5k reset baseline) —
+    # they measure different things (fees/funding accuracy vs. the reset
+    # balance). Surface both so nobody mistakes one for the other.
+    try:
+        sys.path.insert(0, BOT)
+        from data.trade_source import get_run_stats
+        _rs = get_run_stats(epoch=True)
+        if _rs["epoch_id"] or _rs["epoch_start"]:
+            L.append(
+                f"_Canonical epoch (operational $5k reset, separate from the "
+                f"honest-numbers cutoff above): {_rs['epoch_id'] or _rs['epoch_start']} "
+                f"— {_rs['n']} trades, net ${_rs['net']:+.2f}"
+                + (f", derived equity ${_rs['derived_equity']:.2f}" if _rs["derived_equity"] is not None else "")
+                + "._"
+            )
+            L.append("")
+    except Exception:
+        pass
+
     for label, pnls in (("PRE-foundation (optimistic / contaminated)", pre),
                         ("POST-foundation (CLEAN honest window)", post)):
         if not pnls:

@@ -2315,6 +2315,21 @@ class TelegramCommandBot:
                 return f"  {label}: {n} trades | {wins}W/{n-wins}L ({wr:.0f}% WR) | net {fmt_usd(net)} | avg {fmt_usd(avg)}"
 
             lines = ["*PnL Summary*"]
+            # EPOCH_FENCE headline (measurement-integrity, Phase 0): the ONE
+            # canonical run-level number, replacing the old habit of reading
+            # whichever rolling window happened to be handy. Falls back
+            # silently (no line) if no epoch is stamped yet.
+            try:
+                from data.trade_source import get_run_stats
+                _rs = get_run_stats(epoch=True)
+                if _rs["epoch_id"] or _rs["epoch_start"]:
+                    lines.append(
+                        f"  Since reset (epoch): {_rs['n']} trades | "
+                        f"{_rs['wins']}W/{_rs['n']-_rs['wins']}L ({_rs['wr']:.0f}% WR) | "
+                        f"net {fmt_usd(_rs['net'])}"
+                    )
+            except Exception:
+                pass
             lines.append(_line("Today (UTC)  ", today_pnls))
             lines.append(_line("24h rolling  ", d24_pnls))
             lines.append(_line("7d rolling   ", d7_pnls))
