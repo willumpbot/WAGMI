@@ -142,6 +142,18 @@ def position_journal_path() -> Path:
     return DATA_DIR / "position_journal.jsonl"
 
 
+def close_outbox_path() -> Path:
+    """Path to the append-only durable close-delivery log (Phase 0.4-B2,
+    core/close_pipeline/close_outbox.py). Each line is one TradeClosed
+    event, written durably (fsync'd append) BEFORE the CloseBus runs any
+    subscriber, so a crash between "fill happened" and "subscribers ran"
+    leaves a durable, replayable record on disk instead of a silently lost
+    close. Not read/written by any live code path yet -- Phase B builds
+    this in isolation; the god-block in multi_strategy_main.py remains the
+    authoritative live close path until Phase D/E."""
+    return DATA_DIR / "close_outbox.jsonl"
+
+
 def momentum_state_path() -> Path:
     """Path to the per-symbol win/loss streak state used for sizing
     multipliers (execution/momentum_tracker.py).

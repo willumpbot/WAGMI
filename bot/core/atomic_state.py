@@ -163,6 +163,48 @@ def atomic_write_text(path: PathLike, text: str, *, encoding: str = "utf-8") -> 
     _atomic_write_bytes(target, text.encode(encoding))
 
 
+def append_jsonl_line(path: PathLike, obj: Any) -> None:
+    """Durably append one JSON-serialized line to an append-only log file
+    (Phase 0.3a companion primitive, added Phase 0.4-B for
+    core/close_pipeline/close_outbox.py's ``data/close_outbox.jsonl``).
+
+    This is deliberately NOT ``atomic_write_json`` -- an append-only JSONL
+    log (close_outbox, position_journal) needs "this one line, once
+    appended, is durable on disk" semantics, not "the whole file is
+    atomically replaced." Rewriting the entire file on every append would
+    be both wasteful and would reintroduce a torn-file window for every
+    OTHER line already in the log, which is exactly what atomic replace is
+    supposed to prevent.
+
+    Guarantees, mirroring ``_atomic_write_bytes``'s discipline:
+      1. Durable: ``flush()`` + ``os.fsync()`` before returning, so a crash
+         immediately after this call cannot lose the appended line even if
+         the OS page cache hasn't been flushed by the kernel yet.
+      2. Concurrent appenders to the SAME path serialize via the same
+         per-path lock ``_atomic_write_bytes`` uses, so two threads
+         appending to the same log cannot interleave and tear each other's
+         lines.
+      3. The parent directory is created if missing.
+
+    Does NOT protect against a torn LAST line from a crash mid-write of
+    THIS call (a crash between the partial ``f.write`` and the fsync can
+    still leave a half-written final line) -- readers of append-only logs
+    in this codebase (position_journal.py, close_outbox.py) are required to
+    tolerate and skip an unparseable last line rather than crash; see
+    ``read_json_or_none`` and each module's own line-reader for that
+    contract.
+    """
+    target = Path(path)
+    line = json.dumps(obj, default=str)
+    lock = _lock_for(target)
+    with lock:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with open(target, "a", encoding="utf-8") as f:
+            f.write(line if line.endswith("\n") else line + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+
+
 def read_json_or_none(path: PathLike) -> Optional[dict]:
     """Robustly load JSON from ``path``, returning None instead of raising
     on any failure: missing file, empty file, or corrupt/truncated JSON.
