@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -107,6 +108,9 @@ def should_skip_stale_signals(filepath: str = _HEARTBEAT_FILE) -> Tuple[bool, fl
 def _position_to_dict(pos) -> Dict[str, Any]:
     """Serialize a Position object to a JSON-safe dict."""
     d = {
+        # Position identity (Phase 0.3b): survives serialize/deserialize so
+        # a recovered position keeps the same id it was opened with.
+        "position_id": pos.position_id,
         "symbol": pos.symbol,
         "side": pos.side,
         "entry": pos.entry,
@@ -181,6 +185,10 @@ def _dict_to_position(d: Dict[str, Any]):
             logger.warning(f"[RECOVERY] Failed to restore trade_profile for {d.get('symbol')}: {e}")
 
     pos = Position(
+        # Backward-compat (Phase 0.3b): an OLD persisted position dict saved
+        # before position_id existed has no such key -- mint a fresh one
+        # rather than crashing or carrying forward an empty/missing id.
+        position_id=d.get("position_id") or uuid.uuid4().hex,
         symbol=d["symbol"],
         side=d["side"],
         entry=d["entry"],

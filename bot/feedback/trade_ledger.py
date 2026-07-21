@@ -63,6 +63,14 @@ LEDGER_COLUMNS = [
     # belongs to. Blank on rows written before this column existed — those
     # are fenced by timestamp instead (see data/trade_source.get_run_stats).
     "epoch_id",
+    # POSITION_IDENTITY (measurement-integrity, Phase 0.3b, 2026-07-21):
+    # the position_id assigned at open (execution/position_manager.py::
+    # Position.position_id) -- a stable per-position identity used by
+    # core/position_journal.py's exactly-once crash recovery (LEDGER IS
+    # TRUTH: a position_id present here is never re-booked). Appended at
+    # the END of the schema so existing column positions/readers are
+    # unchanged; blank on rows written before this column existed.
+    "position_id",
 ]
 
 
@@ -151,7 +159,13 @@ class TradeLedger:
 
     # ── Write ─────────────────────────────────────────────────────
 
-    def record_trade(self, trade_data: dict, *, source: Optional[str] = None) -> None:
+    def record_trade(
+        self,
+        trade_data: dict,
+        *,
+        source: Optional[str] = None,
+        position_id: Optional[str] = None,
+    ) -> None:
         """Append a closed trade to the ledger CSV.
 
         Missing columns are filled with empty strings.  A ``trade_id``
@@ -168,10 +182,15 @@ class TradeLedger:
         unaffected -- see core/provenance.py for the full incident writeup.
 
         Args:
-            trade_data: Dict whose keys should match LEDGER_COLUMNS.
+            trade_data: Dict whose keys should match LEDGER_COLUMNS. May
+                already contain a "position_id" key (preferred).
             source: Optional explicit provenance (e.g. "backtest") -- see
                 core.provenance.resolve_source() for the resolution order
                 when omitted.
+            position_id: Optional convenience override (Phase 0.3b) for
+                callers that don't build the "position_id" key into
+                trade_data directly. Ignored if trade_data already supplies
+                a non-empty "position_id".
         """
         # Gate the ACTUAL resolved write target (self._csv_path, which
         # tests legitimately redirect via TradeLedger(data_dir=tmp_path)),
@@ -191,6 +210,11 @@ class TradeLedger:
                 row["trade_id"] = uuid.uuid4().hex[:12]
             if not row["timestamp"]:
                 row["timestamp"] = str(time.time())
+            # POSITION_IDENTITY: prefer an explicit trade_data["position_id"]
+            # (already handled by the loop above); fall back to the
+            # position_id= convenience kwarg if the dict didn't supply one.
+            if not row["position_id"] and position_id:
+                row["position_id"] = str(position_id)
 
             # EPOCH_FENCE: auto-stamp the active epoch when the caller didn't
             # supply one explicitly, so every new row is self-identifying

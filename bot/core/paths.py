@@ -132,6 +132,16 @@ def trade_outcomes_path() -> Path:
     return DATA_DIR / "analysis" / "trade_outcomes.csv"
 
 
+def position_journal_path() -> Path:
+    """Path to the write-ahead position lifecycle journal (Phase 0.3b,
+    core/position_journal.py). Append-only log of OPEN / CLOSING /
+    CLOSED_BOOKED events keyed by position_id, used for exactly-once
+    crash recovery of the close-then-book sequence (see position_journal.py
+    module docstring for the "-$370 double-count" / "silent drop" incident
+    class this exists to make detectable)."""
+    return DATA_DIR / "position_journal.jsonl"
+
+
 def momentum_state_path() -> Path:
     """Path to the per-symbol win/loss streak state used for sizing
     multipliers (execution/momentum_tracker.py).

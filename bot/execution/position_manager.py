@@ -24,6 +24,7 @@ Flow:
 import json
 import logging
 import os
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -88,6 +89,14 @@ class Position:
     strategy: str = ""
     confidence: float = 0.0
 
+    # Position identity (Phase 0.3b, measurement-integrity): a stable,
+    # unique id assigned once at OPEN and carried through the position's
+    # entire lifecycle (persisted state, close event, ledger row, journal).
+    # Replaces fragile value-tuple dedup (symbol, entry, exit, pnl), which
+    # false-positives on a genuine second identical trade and
+    # false-negatives on re-fires. See core/position_journal.py.
+    position_id: str = field(default_factory=lambda: uuid.uuid4().hex)
+
     atr: float = 0.0            # ATR at entry (for progressive trailing)
     tp1_close_pct: float = 0.5  # fraction to close at TP1 (matches MEDIUM profile default)
 
@@ -134,6 +143,13 @@ class Position:
     setup_type: str = ""     # Classified setup (trend_at_zone, zone_validated, etc.)
 
     def __post_init__(self):
+        # Backward-compat: any construction path that explicitly passes a
+        # falsy position_id (e.g. an old persisted dict with no key, loaded
+        # via execution/auto_recovery.py::_dict_to_position before this
+        # field existed) still gets a fresh, valid id rather than silently
+        # carrying "" forward.
+        if not self.position_id:
+            self.position_id = uuid.uuid4().hex
         if self.original_qty == 0:
             self.original_qty = self.qty
         if self.original_sl == 0:
@@ -674,6 +690,17 @@ class PositionManager:
         self._backup_position(pos)
 
         self.positions[symbol] = pos
+
+        # Write-ahead journal (Phase 0.3b): record OPEN synchronously so a
+        # crash immediately after this point still leaves evidence that
+        # this position existed, even if position_state.json itself never
+        # made it to disk. Journaling is a safety net, not a gate -- never
+        # let a journal failure block or crash a real open.
+        try:
+            from core.position_journal import journal_open
+            journal_open(pos.position_id, {"side": side, "entry": entry, "qty": qty}, symbol=symbol)
+        except Exception:
+            logger.debug(f"[{symbol}] [POSITION-JOURNAL] journal_open failed (non-fatal)", exc_info=True)
 
         fee = self._fee(entry, qty, leverage)
         pos.fees_paid += fee
@@ -1814,6 +1841,25 @@ class PositionManager:
 
     def _close_position(self, pos: Position, price: float, action: str) -> TradeEvent:
         """Fully close a position with state transition."""
+        # Write-ahead journal (Phase 0.3b): record intent-to-close BEFORE
+        # any booking (ledger row / equity credit) happens, so a crash
+        # between this point and the ledger write is detectable on restart
+        # via core.position_journal.startup_reconcile(). Journaling is a
+        # safety net, not a gate -- never let a journal failure block or
+        # crash a real close.
+        try:
+            from core.position_journal import journal_closing
+            journal_closing(
+                pos.position_id,
+                {"action": action, "price": price},
+                symbol=pos.symbol,
+            )
+        except Exception:
+            logger.debug(
+                f"[{pos.symbol}] [POSITION-JOURNAL] journal_closing failed (non-fatal)",
+                exc_info=True,
+            )
+
         # FUNDING_ACCRUAL_CADENCE_FIX: drop the per-symbol accrual clock so a
         # future reopen on this symbol starts with no prior timestamp (see
         # accrue_funding) instead of measuring elapsed time against a stale

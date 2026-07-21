@@ -4173,7 +4173,24 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "predicted_ev": str(_predicted_ev),
                                 "realized_rr": str(_realized_rr),
                                 "win": "1" if total_pnl > 0 else "0",
+                                # POSITION_IDENTITY (Phase 0.3b): stamps this
+                                # ledger row with the same position_id minted
+                                # at open, so core/position_journal.py's
+                                # exactly-once reconcile can match journal
+                                # entries to ledger truth.
+                                "position_id": getattr(pos, "position_id", "") or "",
                             })
+                            # Write-ahead journal (Phase 0.3b): mark this
+                            # position's close as fully booked ONLY after the
+                            # ledger write above succeeded (no exception
+                            # raised). Journaling is a safety net, not a
+                            # gate -- never let a journal failure affect the
+                            # trade itself.
+                            try:
+                                from core.position_journal import journal_booked
+                                journal_booked(getattr(pos, "position_id", ""), symbol=symbol)
+                            except Exception as _jb_err:
+                                logger.debug(f"[POSITION-JOURNAL] journal_booked failed (non-fatal): {_jb_err}")
                         except Exception as e:
                             logger.warning(f"Trade ledger record error: {e}")
 
