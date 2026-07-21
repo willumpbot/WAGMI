@@ -13,6 +13,28 @@ Phase 4 scalping agents: MicroTrend, Scalper, Conviction
 Phase 4A core trading agents: PositionSizer, EntryOptimizer, ExitAdvisor, RiskGuard, AgentRouter, ConsensusBuilder
 """
 
+import os
+
+# RIP-OUT PHASE 1 (#6, DEFABRICATE_PROMPT_PHANTOMS, default off): several
+# TRADE/RISK/CRITIC prompt bullets below reference enriched-context
+# fields/section-names that NO generator ever emits into the multi-agent
+# pipeline's snapshot (verified against llm/agents/comprehensive_snapshot.py
+# and llm/agents/dynamic_stats.py, 2026-07-21): `signals.validated_edges`
+# (its source table _AGENT_SHADOW_EDGES was emptied to {} on 2026-06-05 --
+# the field can NEVER be present), `noise_floor_pct`, `min_ev_per_dollar` /
+# `break_even_wr`, the "SIZING STATS" block, and the "CONFLUENCE CALIBRATION
+# (live)" section name (only a differently-named "CALIBRATION:" section and
+# a `g.confl_wr` field exist, and only in the separate monolithic
+# decision_engine.py pipeline, not this one). Telling the LLM to "use" a
+# field/section that never appears is hallucination bait -- best case it
+# silently no-ops, worst case the model fabricates plausible-looking numbers
+# under that name, unmeasured. When ON, the bullets are reworded below to
+# state the operative fallback constant honestly, and the `validated_edges`
+# bullets (which can never have data) are deleted outright.
+# Flag OFF (default) = every prompt below is byte-identical to before.
+DEFABRICATE_PROMPT_PHANTOMS_ENABLED = os.getenv(
+    "DEFABRICATE_PROMPT_PHANTOMS", "false").strip().lower() in ("1", "true", "yes")
+
 # ── Regime Analysis Agent ───────────────────────────────────────
 
 REGIME_AGENT_PROMPT = """You are a market regime classifier for crypto perpetual futures (Hyperliquid).
@@ -972,6 +994,63 @@ Your input also contains named enrichment fields (structured versions of the "en
 - `exec_quality`: Execution quality. Poor recent execution = factor into adjusted_confidence.
 - `enriched`: Combined blob of all above (backward compat). Prefer the named fields above.
 """
+
+# RIP-OUT PHASE 1 (#6, DEFABRICATE_PROMPT_PHANTOMS): rewrite/delete the
+# phantom-field bullets identified above. Applied via exact-substring
+# .replace() (not string .format()) because these prompts embed literal
+# `{...}` JSON examples that .format() would choke on. Flag OFF (default) =
+# no-op, every constant below stays byte-identical to its definition above.
+if DEFABRICATE_PROMPT_PHANTOMS_ENABLED:
+    TRADE_AGENT_PROMPT = (
+        TRADE_AGENT_PROMPT
+        .replace(
+            "   - `signals.validated_edges` — when present, this signal MATCHES a validated alpha edge. Trust the WR/n shown.\n",
+            "",
+        )
+        .replace(
+            "Solo cap: use g.confl_wr / agreement-level stats (CONFLUENCE CALIBRATION (live)) in ENRICHED CONTEXT — if the solo slice (agreement_level=1) has n>=13 realized trades, derive the cap from its live performance (no extra cap when solo avg net pnl > 0; cap at 0.55 only if solo avg net pnl < 0); if n<13, fall back to the conservative 0.55 cap. YOUR job is to filter; rely on ENRICHED CONTEXT for per-strategy live performance, not hardcoded numbers.",
+            "Solo cap: 0.55 (operative constant — applies to every solo agreement_level=1 signal; no live per-agreement-level confidence data is available in ENRICHED CONTEXT for this pipeline). YOUR job is to filter; rely on ENRICHED CONTEXT sections that ARE wired (CURRENT EDGES, REGIME PERFORMANCE, STRATEGY PERFORMANCE, CALIBRATION, KELLY FRACTIONS) for live performance, not hardcoded numbers.",
+        )
+        .replace(
+            "Confluence adjustment: use the CONFLUENCE CALIBRATION (live) values from ENRICHED CONTEXT for the signal agreement level. Fallback ONLY if that section is absent or the slice has n<13: treat agreement level as neutral (0.00 adjustment) — do NOT penalize solo or boost multi-agree by default.",
+            "Confluence adjustment: 0.00 (operative constant — treat every agreement level as neutral; no live per-agreement-level calibration data is available in ENRICHED CONTEXT for this pipeline). Do NOT penalize solo or boost multi-agree by default.",
+        )
+        .replace(
+            "Cap 0.75, or 0.85 when the live CONFLUENCE CALIBRATION slice for this setup shows positive avg net pnl at n>=13 and self_perf cal is not >+0.10. Floor 0.25.",
+            "Cap 0.75 (operative constant — a live per-setup confluence-performance slice is not available in ENRICHED CONTEXT for this pipeline, so the higher conditional cap never applies). Floor 0.25.",
+        )
+        .replace(
+            "- EV-PRIMARY GATE: skip if `ev_per_dollar < min_ev_per_dollar` (LIVE — realized fee+funding cost per traded dollar for this symbol+side slice, n>=13; fallback 0.10 if n<13) OR `win_prob < break_even_wr` (LIVE — |avg_loss|/(avg_win+|avg_loss|) for this symbol+side slice, n>=13; fallback 0.48 if n<13) UNLESS `rr_tp1 > 1` (payoff asymmetry compensates for a sub-break-even win rate — do NOT auto-skip proven low-WR/high-payoff setups just because win_prob looks low).",
+            "- EV-PRIMARY GATE: skip if `ev_per_dollar < 0.10` (operative constant — a live realized fee+funding-cost threshold per symbol+side is not available in `signal_quality_data` for this pipeline) OR `win_prob < 0.48` (operative constant — a live break-even win-rate threshold per symbol+side is likewise not available) UNLESS `rr_tp1 > 1` (payoff asymmetry compensates for a sub-break-even win rate — do NOT auto-skip proven low-WR/high-payoff setups just because win_prob looks low).",
+        )
+    )
+    RISK_AGENT_PROMPT = (
+        RISK_AGENT_PROMPT
+        .replace(
+            "2. Adjust based on (use the live SIZING STATS block in ENRICHED CONTEXT — confidence/regime/streak slices with n>=13 — when present; the numbers below are n<13 fallbacks, not overrides):",
+            "2. Adjust based on (the multipliers below are the operative constants for this pipeline — live confidence/regime/streak performance slices beyond these are not available in ENRICHED CONTEXT):",
+        )
+        .replace(
+            "- Recent streak: 3+ losses → sz*0.6 (safety fallback — never weaken; realized -$12.73/tr, 20% WR). 3+ wins → sz*1.0 or live-derived value from SIZING STATS — realized after-3-wins is the BEST state (+$0.97/tr, 83% WR, n=83); do NOT apply a giveback penalty by default.",
+            "- Recent streak: 3+ losses → sz*0.6 (safety fallback — never weaken; realized -$12.73/tr, 20% WR). 3+ wins → sz*1.0 (operative constant; historical baseline was the BEST state, +$0.97/tr, 83% WR, n=83 — no live override beyond this constant is available in ENRICHED CONTEXT); do NOT apply a giveback penalty by default.",
+        )
+        .replace(
+            "7. **Per-symbol noise floor (live):** Use the `noise_floor_pct` field injected per symbol in enriched context — derived from that symbol's own realized winning-trade MAE (min 0.30% hard floor), with an ATR-derived fallback when the symbol has n<13 closed trades. Do NOT anchor to a fixed per-symbol table; it goes stale and misses new/expansion symbols.\n   ACTION: compute stop_width = abs(signal.entry - signal.sl) / signal.entry * 100. If stop_width < noise_floor_pct[symbol], apply override=\"skip\" or reduce sz 50%. NEVER let a sub-noise stop through at full size.",
+            "7. **Per-symbol noise floor:** Use the operative constant 0.30% as the minimum stop width for every symbol (a live per-symbol floor derived from realized winning-trade MAE is not available in enriched context for this pipeline — do not anchor to a fixed per-symbol table either; it goes stale and misses new/expansion symbols).\n   ACTION: compute stop_width = abs(signal.entry - signal.sl) / signal.entry * 100. If stop_width < 0.30, apply override=\"skip\" or reduce sz 50%. NEVER let a sub-noise stop through at full size.",
+        )
+    )
+    CRITIC_AGENT_PROMPT = (
+        CRITIC_AGENT_PROMPT
+        .replace(
+            "   - `signals.validated_edges` — a wired edge entry is EVIDENCE, not immunity: weigh the wr/n/era shown on the entry itself. An entry without n and era attached carries no authority. (Do not veto on strategy-trust folklore when a wired entry with adequate n contradicts it.)\n",
+            "",
+        )
+        .replace(
+            "Judge strategy trust from live evidence: CURRENT EDGES / dynamic stats lines that carry (n, era). Do not veto or approve on strategy-name folklore. (The old fixed strategy-trust table and its WR claims were fee-bug-era references — stripped 2026-07-02, FALLACY_AUDIT D5/M11. validated_edges entries carry their own wr/n/era; weigh them like any other stat.)",
+            "Judge strategy trust from live evidence: CURRENT EDGES / dynamic stats lines that carry (n, era). Do not veto or approve on strategy-name folklore. (The old fixed strategy-trust table and its WR claims were fee-bug-era references — stripped 2026-07-02, FALLACY_AUDIT D5/M11.)",
+        )
+    )
+
 
 # ── RQ15 Thesis-Quality Checklist (env-gated injection) ─────────
 # Evidence (coordination/RQ15_THESIS_FORENSICS.md, n=155 deduped graded

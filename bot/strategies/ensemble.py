@@ -27,6 +27,7 @@ import pandas as pd
 
 from .base import BaseStrategy, Signal
 from core.filter_annotations import FilterAnnotation, AnnotatedSignal
+from feedback import live_edge
 
 logger = logging.getLogger("bot.strategy.ensemble")
 
@@ -721,18 +722,29 @@ class EnsembleStrategy:
         data/trade_ledger.csv, grouped by frozenset(contributing_factors).
         A combo is toxic when n>=13 AND (WR<35% or avg net_pnl<0). For any
         seed combo with n<13, fall back to blocking it (unchanged current
-        behavior, safety preserved) until real data accumulates."""
+        behavior, safety preserved) until real data accumulates.
+
+        RIP-OUT PHASE 1 (#4, DEFABRICATE_LOSING_COMBOS, default off): when the
+        flag is ON, the n<13 seed fallback below is DEPRECATED and NOT
+        injected -- a seed combo only blocks once it graduates to n>=13
+        live-toxic evidence (already captured in `live_toxic` above). Seed-
+        only matches (n<13, fabricated) are shadow-logged and allowed to
+        proceed at the call site in weighted_veto(), not blocked here.
+        Flag OFF (default) = fabricated seed fallback injected exactly as
+        before (unchanged byte-identical behavior)."""
         stats = _load_combo_stats()
         live_toxic = set()
         for combo, (n, wr, avg_net) in stats.items():
             if n >= 13 and (wr < 0.35 or avg_net < 0):
                 live_toxic.add(combo)
         result = set(live_toxic)
+        if live_edge.defabricate_losing_combos_enabled():
+            return result  # fabricated seed fallback not injected; see call-site shadow-log
         for seed in self._LOSING_COMBOS_SEED:
             n, wr, avg_net = stats.get(seed, (0, 0.0, 0.0))
             if n >= 13:
                 continue  # graduated to live data — only block if live_toxic said so above
-            result.add(seed)  # n<13: seed fallback, current behavior unchanged
+            result.add(seed)  # n<13: seed fallback (DEPRECATED fabricated path, flag-off only)
         return result
 
     def _get_live_regime_blocklist(self, regime: str) -> set:
@@ -2362,6 +2374,7 @@ class EnsembleStrategy:
         # unchanged) until real data accumulates.
         _LOSING_COMBOS = self._get_live_losing_combos()
         _base_sym_lc = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+        _defab_combos_on = live_edge.defabricate_losing_combos_enabled()
         for side_signals in [buy_signals, sell_signals]:
             if len(side_signals) >= 2:
                 signal_names = frozenset(s.strategy for s in side_signals)
@@ -2380,6 +2393,25 @@ class EnsembleStrategy:
                                 symbol=symbol, signals=signals, reason="losing_combo"
                             )
                         return None
+                if _defab_combos_on:
+                    # RIP-OUT PHASE 1 (#4, DEFABRICATE_LOSING_COMBOS): shadow-log
+                    # seed-only matches that the fabricated _LOSING_COMBOS_SEED
+                    # table (n<13, pre-live-data) would have blocked under the
+                    # flag-OFF behavior above, but do NOT block them -- a combo
+                    # with real n>=13 live-toxic evidence is already present in
+                    # _LOSING_COMBOS and was blocked (return None) in the loop
+                    # above; this only fires for combos the fabricated seed
+                    # alone would have vetoed.
+                    _combo_stats = _load_combo_stats()
+                    for seed in self._LOSING_COMBOS_SEED:
+                        if seed in _LOSING_COMBOS:
+                            continue  # graduated to live-toxic — already blocked above
+                        if seed.issubset(signal_names) and signal_names != seed:
+                            _n, _wr, _avg = _combo_stats.get(seed, (0, 0.0, 0.0))
+                            logger.info(
+                                f"[DEFAB-LOSING-COMBOS] combo={sorted(seed)} "
+                                f"would_block=True live_n={_n} acting=proceed"
+                            )
 
         buy_strength = self._weighted_confidence_sum(buy_signals) if buy_signals else 0
         sell_strength = self._weighted_confidence_sum(sell_signals) if sell_signals else 0

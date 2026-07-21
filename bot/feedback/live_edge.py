@@ -85,6 +85,22 @@ def defabricate_sniper_sizing_enabled() -> bool:
     return os.getenv("DEFABRICATE_SNIPER_SIZING", "false").strip().lower() in ("1", "true", "yes")
 
 
+def defabricate_losing_combos_enabled() -> bool:
+    """RIP-OUT PHASE 1 gate #4 (default OFF -> zero live behavior change on deploy).
+
+    When true, strategies/ensemble.py's `_get_live_losing_combos()` stops
+    injecting the fabricated `_LOSING_COMBOS_SEED` fallback (two frozensets
+    seeded at n=0, e.g. {regime_trend, vmc_cipher} "PF 0.39, 29% WR" -- a
+    pre-live-data guess, never corroborated) for any seed combo that hasn't
+    graduated to n>=13 live-toxic ledger evidence. The n>=13 live_toxic block
+    (data-driven, legit) is always preserved regardless of this flag. Seed-
+    only matches are shadow-logged ("[DEFAB-LOSING-COMBOS] ... acting=proceed")
+    and allowed to proceed instead of being hard-blocked.
+    When false (default), the fabricated seed fallback blocks seed-only
+    matches exactly as before."""
+    return os.getenv("DEFABRICATE_LOSING_COMBOS", "false").strip().lower() in ("1", "true", "yes")
+
+
 def split_setup_key(setup: str):
     """"SYMBOL_BUY"/"SYMBOL_SELL" -> (symbol, side), or (None, None) if unparseable.
 
