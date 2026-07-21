@@ -85,6 +85,82 @@ close_subscribers_learning.py):
     ``llm.graduated_rules.get_graduated_rules_engine()`` inside the
     subscriber, mirroring the ``_default_*`` lazy-import pattern) so
     importing this module never drags in ``llm.graduated_rules`` eagerly.
+
+LEARNING-TIER (T2) FIELDS, BATCH 2 (Phase 0.4-B, see
+close_subscribers_learning2.py) -- ten MEMORY/ML/LEARNING terminal hooks:
+  - ``deep_memory``: anything exposing ``.record_full_trade(trade_id,
+    symbol, side, entry_price, exit_price, sl, tp1, tp2, confidence,
+    leverage, regime, strategies_agreed, outcome, pnl, hold_time_s,
+    exit_reason, llm_action="", llm_confidence=0.0, llm_reasoning="",
+    entry_type="", setup_type="", btc_trend="", volume_ratio=0.0,
+    funding_rate=0.0, atr=0.0)`` -- matches
+    ``llm.deep_memory.DeepMemoryManager``. ``None`` means "skip" (matches
+    the god-block's ``if _dm_pos:`` guard); no lazy default resolver here
+    (unlike the T2-batch-1 singletons) because the god-block itself always
+    has ``_DEEP_MEMORY_AVAILABLE`` gating this via an explicit collaborator,
+    never re-fetches a singleton inline at the call site.
+  - ``thesis_grader``: anything exposing ``.close_thesis(thesis_id,
+    exit_price, pnl_pct, max_favorable=None, max_adverse=None,
+    actual_hold_h=None)`` -- matches the ``llm.brain_wiring`` module itself
+    (its ``close_thesis`` function). ``None`` means "use the real module"
+    (resolved lazily via ``import llm.brain_wiring``).
+  - ``post_trade_learner``: anything exposing
+    ``.generate_immediate_lesson(trade_data: dict) -> Optional[str]`` and
+    ``.apply_memory_update(update, *, symbol="", regime="")`` -- matches a
+    thin wrapper over ``llm.post_trade_learner.generate_immediate_lesson``
+    + ``llm.memory_store.apply_memory_update``. ``None`` means "skip"
+    (matches the god-block's bare ``try/except`` around this whole section
+    having no separate availability gate of its own -- tests should treat
+    "not configured" as the off switch here).
+  - ``reflection``: anything exposing ``.on_close(symbol, side, entry_price,
+    exit_price, pnl, hold_time_s, leverage, confidence, regime, exit_action,
+    sl_price=0, tp1_price=0, peak_price=0, lowest_price=0, win_prob=0, ev=0,
+    rr=0, entry_reasons=None, atr=0)`` -- matches
+    ``llm.reflection_engine.ReflectionEngine``. ``None`` means "skip"
+    (matches the god-block's ``if hasattr(self, '_reflection_engine') and
+    self._reflection_engine is not None:`` guard).
+  - ``autopsy``: optional, anything exposing ``.should_run_autopsy(count) ->
+    bool`` and ``.generate_autopsy() -> str`` -- matches the
+    ``llm.trade_autopsy`` module itself. ``None`` means "use the real
+    module" (resolved lazily). See ``closed_trade_count`` below for the
+    stateful cadence counter this collaborator needs.
+  - ``learning_integrator``: optional, anything exposing
+    ``.on_trade_closed(trade_data: dict)`` -- matches
+    ``llm.learning_integrator.LearningIntegrator``. ``None`` means "use the
+    real process-wide singleton" (resolved lazily via
+    ``llm.learning_integrator.get_learning_integrator()``).
+  - ``ml``: optional, anything exposing ``.record_outcome(TradeOutcome)`` --
+    matches ``ml.learner.MLLearner``-shaped collaborator (the god-block's
+    ``self.ml``). ``None`` means "skip" (matches the god-block's ``if
+    self.ml and ...:`` guard). No lazy default -- this is a stateful,
+    already-constructed learner instance on the bot, never a
+    freshly-resolved singleton.
+  - ``counterfactual``: optional, anything exposing
+    ``.record_exit_alternative(symbol, actual_exit_action,
+    actual_exit_price, tp1_price, tp2_price, entry_price, actual_pnl)`` --
+    matches ``analytics.counterfactual.CounterfactualEngine`` (the
+    god-block's ``self.counterfactual``). ``None`` means "skip" (matches
+    the god-block's ``if self.counterfactual:`` guard).
+  - ``log_signal_outcome_fn`` / ``rl_append_transition_fn``: optional
+    injectable overrides of ``data.db.log_signal_outcome`` /
+    ``rl.buffer.append_transition``. ``None`` means "use the real function"
+    (resolved lazily by local import), same rationale as the accounting
+    tier's ``log_trade_fn``-family fields.
+  - ``risk_per_trade``: optional static config passthrough (NOT a live
+    mutable read) -- the god-block's signal-outcome pnl_pct divides by
+    ``self.config.risk_per_trade`` in addition to equity; threaded here so
+    ``on_close_signal_outcome`` never has to reach into a bot config object.
+  - ``llm_mode_name``: optional static config/state passthrough -- the
+    god-block's RL buffer action dict reads ``self.llm_mode.name`` (current
+    bot-level LLM autonomy mode, not a per-position value). ``None``
+    defaults to ``""``.
+  - ``closed_trade_count``: plain mutable ``int``, default 0. Mirrors the
+    god-block's ``self._closed_trade_count`` -- a counter incremented on
+    EVERY full close (not derivable from any single frozen event) that
+    drives the autopsy subscriber's every-5-trades cadence. Lives on this
+    long-lived, per-bot ``CloseCtx`` instance and is incremented in place by
+    ``on_close_autopsy``, exactly like the god-block increments its own
+    instance attribute.
 """
 
 from __future__ import annotations
@@ -126,3 +202,23 @@ class CloseCtx:
     feedback: Optional[Any] = None
     ic_tracker: Optional[Any] = None
     graduated_rules_engine: Optional[Any] = None
+
+    # ---- LEARNING-TIER (T2) collaborators, Phase 0.4-B batch 2 -- see the
+    # module docstring's "LEARNING-TIER (T2) FIELDS, BATCH 2" section for
+    # each collaborator's expected duck-type. All optional so tests only
+    # wire in what the subscriber under test actually needs.
+    deep_memory: Optional[Any] = None
+    thesis_grader: Optional[Any] = None
+    post_trade_learner: Optional[Any] = None
+    reflection: Optional[Any] = None
+    autopsy: Optional[Any] = None
+    learning_integrator: Optional[Any] = None
+    ml: Optional[Any] = None
+    counterfactual: Optional[Any] = None
+
+    log_signal_outcome_fn: Optional[Callable[..., Any]] = None
+    rl_append_transition_fn: Optional[Callable[..., Any]] = None
+
+    risk_per_trade: Optional[float] = None
+    llm_mode_name: Optional[str] = None
+    closed_trade_count: int = 0
