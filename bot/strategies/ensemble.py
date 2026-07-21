@@ -1116,29 +1116,23 @@ class EnsembleStrategy:
             # (23% WR, -$77.26 — F8 audit 2026-05-04). The bypass no longer
             # fires; the would-have-bypassed case is logged + counterfactual-
             # recorded so the opinion gets graded against price.
-            # Kill-switch: HYPE_BUY_BYPASS_ENFORCE=true restores the bypass.
+            # Rip-out P2 (2026-07-21): removed the HYPE_BUY_BYPASS_ENFORCE
+            # kill-switch branch — it never fired in any live config (env
+            # var never set) and was a dormant hard-bypass backdoor around
+            # this same shadow-gate. The shadow-log/counterfactual path
+            # below (the branch that actually runs) is unchanged.
             elif (symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "") == "HYPE"
                   and result.side == "BUY"
                   and result.confidence >= 55.0):
-                import os as _os
-                if _os.environ.get("HYPE_BUY_BYPASS_ENFORCE", "false").lower() == "true":
-                    result.metadata["hype_buy_bypass"] = True
-                    result.metadata["risk_mult_override"] = 0.70
-                    logger.info(
-                        f"[{symbol}] HYPE BUY bypass ENFORCED (kill-switch): conf "
-                        f"{result.confidence:.0f}% < floor {effective_floor:.0f}%"
-                    )
-                else:
-                    logger.info(
-                        f"[{symbol}] [SHADOW-GATE] hype_buy_bypass would_pass conf="
-                        f"{result.confidence:.0f}% < floor {effective_floor:.0f}% — M5 "
-                        f"shadow (88.6% WR claim refuted live: 23% WR n=35; "
-                        f"HYPE_BUY_BYPASS_ENFORCE=true restores)"
-                    )
-                    self._record_counterfactual(
-                        result, f"confidence_floor_{effective_floor:.0f}"
-                    )
-                    return None
+                logger.info(
+                    f"[{symbol}] [SHADOW-GATE] hype_buy_bypass would_pass conf="
+                    f"{result.confidence:.0f}% < floor {effective_floor:.0f}% — M5 "
+                    f"shadow (88.6% WR claim refuted live: 23% WR n=35)"
+                )
+                self._record_counterfactual(
+                    result, f"confidence_floor_{effective_floor:.0f}"
+                )
+                return None
             else:
                 logger.info(
                     f"[{symbol}] Signal rejected: confidence {result.confidence:.0f}% "

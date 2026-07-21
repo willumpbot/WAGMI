@@ -778,7 +778,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         # ── Quant Brain Pre-Filter (zero-cost, rule-based signal gating) ──
         self._quant_brain = None
-        self._quant_brain_enabled = os.getenv("QUANT_BRAIN_ENABLED", "true").lower() == "true"
+        self._quant_brain_enabled = os.getenv("QUANT_BRAIN_ENABLED", "false").lower() == "true"
         if self._quant_brain_enabled:
             try:
                 from llm.quant_brain import get_quant_brain

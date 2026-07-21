@@ -295,8 +295,8 @@ class QuantBrain:
         # 2026-06-07: Live calibrations replace hardcoded constants.
         # _calibrations holds per-setup base win-probs computed from live trade DNA
         # (refreshable). _default_wp is the system baseline computed dynamically.
-        # _calibration_overrides is read from bot/data/quant_brain_overrides.json
-        # for manual intervention (e.g. force a specific setup to a known value).
+        # _calibration_overrides is kept as an empty dict (manual override-file
+        # loader removed 2026-07-21, Rip-out P2 — see _refresh_calibrations).
         self._calibrations: Dict[str, float] = {}
         self._default_wp: float = _DEFAULT_WIN_PROB  # fallback to constant until refresh
         self._calibration_overrides: Dict[str, float] = {}
@@ -312,15 +312,15 @@ class QuantBrain:
     # ── Calibration management ───────────────────────────────────────
 
     def _refresh_calibrations(self, initial: bool = False) -> None:
-        """Recompute setup-base WPs from live trade DNA + check for overrides.
+        """Recompute setup-base WPs from live trade DNA.
 
         Live calibrations replace stale hardcoded `_SETUP_WIN_PROBS`.
-        Override file at `bot/data/quant_brain_overrides.json` always wins —
-        lets operator manually pin a value (e.g. for a known regime).
+        (Manual override-file loader removed 2026-07-21, Rip-out P2 — it was
+        a dormant backdoor that could silently pin a stale win-prob.)
 
         Called on init and on demand via `refresh_calibrations()`.
         """
-        import os, json
+        import os
         import time as _t
         # Step 1: pull live WR per setup from trade DNA if available
         live: Dict[str, float] = {}
@@ -361,23 +361,12 @@ class QuantBrain:
             else:
                 merged[setup] = round(0.6 * wr + 0.4 * prior, 3)  # legacy fixed 60/40
 
-        # Step 4: apply overrides (always wins) — skip null/None values gracefully
-        try:
-            ov_path = os.path.join(os.path.dirname(__file__), "..", "data", "quant_brain_overrides.json")
-            if os.path.exists(ov_path):
-                with open(ov_path) as f:
-                    ov = json.load(f)
-                # Only include non-null entries
-                self._calibration_overrides = {
-                    k: float(v) for k, v in (ov.get("setup_wp") or {}).items()
-                    if v is not None
-                }
-                _ov_default = ov.get("default_wp")
-                if _ov_default is not None:
-                    self._default_wp = float(_ov_default)
-                merged.update(self._calibration_overrides)
-        except Exception as e:
-            logger.warning(f"[QUANT-BRAIN] override file load failed: {e}")
+        # Step 4 (removed 2026-07-21, Rip-out P2): manual override-file loader
+        # (bot/data/quant_brain_overrides.json) deleted as a dormant backdoor —
+        # it could `merged.update()` a manually pinned win-prob, silently
+        # overriding the living decay-blended calibration above with no
+        # audit trail. The file never existed on disk; zero behavior change.
+        self._calibration_overrides = {}
 
         self._calibrations = merged
 
@@ -734,10 +723,9 @@ class QuantBrain:
         # label is poison: it traps the LLM into reading a frozen statistic
         # instead of evaluating current setup with current data.
 
-        # ── Get base win probability (live calibration, override-aware) ──
+        # ── Get base win probability (live calibration) ──
         # 2026-06-07: replaced hardcoded _SETUP_WIN_PROBS with self._calibrations
-        # which is computed from live trade DNA on init + refreshable. Overrides
-        # from bot/data/quant_brain_overrides.json take precedence.
+        # which is computed from live trade DNA on init + refreshable.
         base_wp = self._calibrations.get(setup_key, self._default_wp)
 
         # ── Regime-keyed empirical-Bayes prior (USE_REGIME_PRIORS, default off) ──
