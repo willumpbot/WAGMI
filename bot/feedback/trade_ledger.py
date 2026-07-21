@@ -22,6 +22,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from core.provenance import gate_live_write
+
 logger = logging.getLogger("bot.feedback.trade_ledger")
 
 # ── Schema ────────────────────────────────────────────────────────
@@ -149,16 +151,35 @@ class TradeLedger:
 
     # ── Write ─────────────────────────────────────────────────────
 
-    def record_trade(self, trade_data: dict) -> None:
+    def record_trade(self, trade_data: dict, *, source: Optional[str] = None) -> None:
         """Append a closed trade to the ledger CSV.
 
         Missing columns are filled with empty strings.  A ``trade_id``
         is auto-generated if not supplied.  ``timestamp`` defaults to
         the current UTC epoch if absent.
 
+        Gated by core.provenance.gate_live_write(): a call whose provenance
+        resolves to a simulated source (backtest/test/sim) raises
+        PollutionError instead of writing -- this is the canonical ledger
+        every dashboard, the Learning Agent, and Kelly/IC sizing read as
+        ground truth, so it gets the same write-time pollution gate Phase
+        0.2 put on data/learning.py's record_trade_outcome(). Real live/
+        paper calls (the default when `source` is not given) are
+        unaffected -- see core/provenance.py for the full incident writeup.
+
         Args:
             trade_data: Dict whose keys should match LEDGER_COLUMNS.
+            source: Optional explicit provenance (e.g. "backtest") -- see
+                core.provenance.resolve_source() for the resolution order
+                when omitted.
         """
+        # Gate the ACTUAL resolved write target (self._csv_path, which
+        # tests legitimately redirect via TradeLedger(data_dir=tmp_path)),
+        # not a separately-computed canonical path -- mirrors
+        # data/learning.py::record_trade_outcome's Phase 0.2 gating so
+        # monkeypatch/tmp_path-redirected tests still pass.
+        gate_live_write(os.path.abspath(self._csv_path), source=source)
+
         with self._lock:
             row: Dict[str, str] = {}
             for col in LEDGER_COLUMNS:

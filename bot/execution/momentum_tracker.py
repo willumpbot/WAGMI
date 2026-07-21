@@ -27,6 +27,8 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, Optional, Any
 
+from core.atomic_state import atomic_write_json
+
 logger = logging.getLogger("bot.execution.momentum_tracker")
 
 # ── LIVE PER-STREAK-BUCKET SIZING MULTIPLIER (LIVING VALUES, 2026-07-15) ────
@@ -201,14 +203,15 @@ class MomentumTracker:
             import sys
             if "pytest" in sys.modules:
                 return
-            os.makedirs(os.path.dirname(self._state_path) or ".", exist_ok=True)
-            with open(self._state_path, "w") as f:
-                json.dump({
-                    "streaks": self._streaks,
-                    "last_outcome": self._last_outcome,
-                    "global_last_win": self._global_last_win,
-                    "updated": datetime.now(timezone.utc).isoformat(),
-                }, f)
+            # Phase 0.3c: crash-safe via atomic_write_json (mkstemp+fsync+
+            # os.replace) instead of a plain open('w')+json.dump, which could
+            # leave a truncated file on disk if the process died mid-write.
+            atomic_write_json(self._state_path, {
+                "streaks": self._streaks,
+                "last_outcome": self._last_outcome,
+                "global_last_win": self._global_last_win,
+                "updated": datetime.now(timezone.utc).isoformat(),
+            })
         except Exception as e:
             logger.debug(f"Momentum state save error: {e}")
 

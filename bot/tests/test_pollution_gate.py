@@ -26,6 +26,7 @@ from core.provenance import (
     quarantine,
     resolve_source,
 )
+from feedback.trade_ledger import TradeLedger
 
 
 # ---------------------------------------------------------------------------
@@ -91,6 +92,73 @@ class TestGateLiveWrite:
         live_target = sandbox_data_dir / "trade_ledger.csv"
         with pytest.raises(PollutionError):
             gate_live_write(live_target)
+
+
+# ---------------------------------------------------------------------------
+# trade_ledger.py's TradeLedger.record_trade -- Phase 0.2c extension
+# ---------------------------------------------------------------------------
+class TestTradeLedgerGate:
+    """trade_ledger.csv is the canonical ledger every dashboard, the
+    Learning Agent, and Kelly/IC sizing read as ground truth -- same class
+    of incident as the 253 fabricated POPCAT rows in trade_outcomes.csv.
+    A backtest/test process must never be able to append to it.
+    """
+
+    def _trade_data(self):
+        return {
+            "symbol": "BTC",
+            "side": "BUY",
+            "net_pnl": "12.34",
+            "win": "1",
+        }
+
+    def test_backtest_source_raises_pollution_error(self, sandbox_data_dir):
+        ledger_path = sandbox_data_dir / "trade_ledger.csv"
+        ledger = TradeLedger(data_dir=str(sandbox_data_dir))
+        assert ledger._csv_path == str(ledger_path)
+
+        with pytest.raises(PollutionError):
+            ledger.record_trade(self._trade_data(), source=Source.BACKTEST)
+
+        # The write must have been blocked BEFORE it touched the file.
+        assert not ledger_path.exists()
+
+    def test_pytest_context_autodetects_and_blocks_with_no_explicit_source(
+        self, sandbox_data_dir
+    ):
+        ledger_path = sandbox_data_dir / "trade_ledger.csv"
+        ledger = TradeLedger(data_dir=str(sandbox_data_dir))
+
+        with pytest.raises(PollutionError):
+            ledger.record_trade(self._trade_data())
+
+        assert not ledger_path.exists()
+
+    def test_paper_source_is_not_blocked(self, sandbox_data_dir):
+        ledger_path = sandbox_data_dir / "trade_ledger.csv"
+        ledger = TradeLedger(data_dir=str(sandbox_data_dir))
+
+        ledger.record_trade(self._trade_data(), source=Source.PAPER)
+
+        assert ledger_path.exists()
+        rows = ledger.get_trades(lookback_days=3650)
+        assert len(rows) == 1
+        assert rows[0]["symbol"] == "BTC"
+
+    def test_gate_uses_actual_resolved_path_not_hardcoded(self, sandbox_data_dir, tmp_path):
+        """A TradeLedger pointed OUTSIDE DATA_DIR (e.g. a tests's own
+        tmp_path fixture, unrelated to sandbox_data_dir/core.paths.DATA_DIR)
+        is not this gate's concern -- mirrors data/learning.py's Phase 0.2
+        requirement that monkeypatch/tmp_path-redirected tests keep working."""
+        outside_dir = tmp_path / "outside_data_dir"
+        outside_dir.mkdir()
+        ledger = TradeLedger(data_dir=str(outside_dir))
+
+        # Even under a live pytest process (TEST source auto-detected), a
+        # target outside DATA_DIR is not gated -- should not raise.
+        ledger.record_trade(self._trade_data())
+
+        assert (outside_dir / "trade_ledger.csv").exists()
 
 
 # ---------------------------------------------------------------------------

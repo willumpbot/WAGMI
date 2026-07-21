@@ -176,6 +176,94 @@ def test_concurrent_writes_never_produce_a_torn_file(tmp_path):
     assert parsed["payload"] == expected_payload
 
 
+# ---------------------------------------------------------------------------
+# Phase 0.3c: the two remaining state writers now route through
+# atomic_write_json instead of plain open('w')+json.dump -- see
+# execution/adaptive_risk.py (AdaptiveRiskManager + AdaptiveSizer) and
+# execution/momentum_tracker.py (MomentumTracker). These tests assert the
+# call happens (via monkeypatch) rather than re-testing atomic_write_json's
+# own guarantees, which are already covered above.
+# ---------------------------------------------------------------------------
+def test_adaptive_risk_manager_save_state_uses_atomic_write_json(tmp_path, monkeypatch):
+    import execution.adaptive_risk as adaptive_risk
+
+    calls = []
+
+    def _fake_atomic_write_json(path, data, *, indent=2):
+        calls.append((path, data))
+
+    monkeypatch.setattr(adaptive_risk, "atomic_write_json", _fake_atomic_write_json)
+    monkeypatch.setattr(adaptive_risk, "_STATE_PATH", str(tmp_path / "adaptive_risk_state.json"))
+    monkeypatch.setattr(
+        adaptive_risk.AdaptiveRiskManager, "_backfill_from_trade_dna", lambda self: None
+    )
+
+    mgr = adaptive_risk.AdaptiveRiskManager(base_risk=0.01)
+    mgr.record_outcome(win=True, regime="trend")
+
+    assert calls, "atomic_write_json was not called by AdaptiveRiskManager._save_state"
+    path, data = calls[-1]
+    assert path == str(tmp_path / "adaptive_risk_state.json")
+    assert data["recent_outcomes"] == [True]
+    assert data["regime_wr"]["trend"] == {"wins": 1, "total": 1}
+
+
+def test_adaptive_sizer_save_state_uses_atomic_write_json(tmp_path, monkeypatch):
+    import execution.adaptive_risk as adaptive_risk
+
+    calls = []
+
+    def _fake_atomic_write_json(path, data, *, indent=2):
+        calls.append((path, data))
+
+    monkeypatch.setattr(adaptive_risk, "atomic_write_json", _fake_atomic_write_json)
+    monkeypatch.setattr(
+        adaptive_risk, "_ADAPTIVE_SIZER_STATE_PATH", str(tmp_path / "adaptive_sizer_state.json")
+    )
+    monkeypatch.setattr(
+        adaptive_risk.AdaptiveSizer, "_backfill_from_trade_dna", lambda self: None
+    )
+
+    sizer = adaptive_risk.AdaptiveSizer(window=20, max_boost=1.5, min_floor=0.5)
+    sizer.record_outcome("BTC", won=True)
+
+    assert calls, "atomic_write_json was not called by AdaptiveSizer._save_state"
+    path, data = calls[-1]
+    assert path == str(tmp_path / "adaptive_sizer_state.json")
+    assert data["outcomes"]["BTC"] == [True]
+
+
+def test_momentum_tracker_save_state_uses_atomic_write_json(tmp_path, monkeypatch):
+    import sys
+
+    import execution.momentum_tracker as momentum_tracker
+
+    calls = []
+
+    def _fake_atomic_write_json(path, data, *, indent=2):
+        calls.append((path, data))
+
+    monkeypatch.setattr(momentum_tracker, "atomic_write_json", _fake_atomic_write_json)
+    # _read_ledger_closes() is a no-op for a nonexistent ledger path -- keeps
+    # this test hermetic (no read of the real bot/data/trade_ledger.csv).
+    monkeypatch.setattr(momentum_tracker, "_LEDGER_PATH", str(tmp_path / "no_such_ledger.csv"))
+    # MomentumTracker's _load_state/_save_state guard against persisting
+    # under a live pytest process (see the module's own pollution-hardening
+    # comment) -- lift that guard for this one test so we can observe the
+    # atomic_write_json call, exactly like _load_state is deliberately
+    # bypassed in the sizer/manager fixtures above via _backfill patches.
+    monkeypatch.delitem(sys.modules, "pytest", raising=False)
+
+    state_path = str(tmp_path / "momentum_state.json")
+    tracker = momentum_tracker.MomentumTracker(state_path=state_path)
+    tracker.record_outcome("BTC", True)
+
+    assert calls, "atomic_write_json was not called by MomentumTracker._save_state"
+    path, data = calls[-1]
+    assert path == state_path
+    assert data["streaks"]["BTC"] == 1
+
+
 def test_concurrent_writes_to_different_paths_do_not_block_forever(tmp_path):
     """Sanity check that per-path locking doesn't serialize writers of
     UNRELATED files behind a single global lock forever (i.e. this

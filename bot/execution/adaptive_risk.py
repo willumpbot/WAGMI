@@ -13,6 +13,8 @@ import os
 import time
 from typing import Dict, Optional
 
+from core.atomic_state import atomic_write_json
+
 logger = logging.getLogger("bot.execution.adaptive_risk")
 
 # Defaults from env
@@ -103,15 +105,18 @@ class AdaptiveRiskManager:
         }
 
     def _save_state(self):
-        """Persist recent outcomes and regime WR to disk."""
+        """Persist recent outcomes and regime WR to disk.
+
+        Phase 0.3c: crash-safe via atomic_write_json (mkstemp+fsync+
+        os.replace) instead of a plain open('w')+json.dump, which could
+        leave a truncated file on disk if the process died mid-write.
+        """
         try:
-            os.makedirs(os.path.dirname(_STATE_PATH), exist_ok=True)
             state = {
                 "recent_outcomes": self._recent_outcomes,
                 "regime_wr": self._regime_wr,
             }
-            with open(_STATE_PATH, "w") as f:
-                json.dump(state, f, indent=2)
+            atomic_write_json(_STATE_PATH, state)
         except Exception as e:
             logger.warning(f"Failed to save adaptive risk state: {e}")
 
@@ -330,12 +335,14 @@ class AdaptiveSizer:
         return symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "")
 
     def _save_state(self):
-        """Persist state to disk."""
+        """Persist state to disk.
+
+        Phase 0.3c: crash-safe via atomic_write_json (mkstemp+fsync+
+        os.replace) instead of a plain open('w')+json.dump.
+        """
         try:
-            os.makedirs(os.path.dirname(_ADAPTIVE_SIZER_STATE_PATH), exist_ok=True)
             state = {"outcomes": self._outcomes, "window": self.window}
-            with open(_ADAPTIVE_SIZER_STATE_PATH, "w") as f:
-                json.dump(state, f, indent=2)
+            atomic_write_json(_ADAPTIVE_SIZER_STATE_PATH, state)
         except Exception as e:
             logger.warning(f"Failed to save adaptive sizer state: {e}")
 
