@@ -262,6 +262,41 @@ matching each god-block call site's own availability guard:
     attributes -- same "stateful, lives on the long-lived per-bot CloseCtx"
     pattern as ``closed_trade_count`` above, mutated in place by
     ``on_close_cooldown_tracking``.
+
+LLM-LEARNING-AGENT (T3) FIELDS, PHASE 0.4-B FINAL BATCH (see
+close_subscribers_llm_learning_agent.py) -- the last remaining god-block
+subscriber, deliberately deferred by every prior batch because it makes a
+LIVE LLM call (``claude -p`` via the multi-agent coordinator, never an API
+key -- see CLI-routing convention):
+  - ``learning_agent_fn``: optional, anything with the signature
+    ``(trade_data: Dict[str, Any]) -> Optional[Dict[str, Any]]`` -- matches
+    ``llm.agents.coordinator.get_coordinator().get_post_trade_lesson``
+    (bound method). ``None`` means "use the real process-wide coordinator
+    singleton" (resolved lazily via ``llm.agents.coordinator.
+    get_coordinator()`` inside the subscriber, mirroring the
+    ``graduated_rules_engine``/``learning_integrator`` lazy-singleton
+    pattern) so importing this module never drags in the coordinator (and
+    therefore the LLM client) eagerly. Tests MUST pass a ``Mock`` here --
+    never let the real resolver run -- so no test can ever make a live LLM
+    call.
+  - ``process_agent_lesson_fn``: optional, anything with the signature
+    ``(lesson_data: Dict[str, Any], trade_data: Dict[str, Any]) -> None`` --
+    matches ``llm.agents.learning_integration.process_agent_lesson``.
+    ``None`` means "use the real module-level function" (resolved lazily by
+    local import), same rationale as the accounting tier's
+    ``log_trade_fn``-family fields.
+  - ``llm_multi_agent_enabled``: optional static gate passthrough mirroring
+    the god-block's own ``os.getenv("LLM_MULTI_AGENT", "").lower() in ("1",
+    "true", "yes")`` check at multi_strategy_main.py:4394 (re-read at every
+    close, not cached) -- reading an env var directly is not a "live
+    mutable per-position value" the extraction mandate forbids (it is
+    process-wide static config, same class as ``risk_per_trade`` /
+    ``llm_mode_name`` above), so this field is threaded through rather than
+    read as a bare ``os.getenv`` inside the subscriber. ``None`` means
+    "resolve ``LLM_MULTI_AGENT`` from the environment the same way the
+    god-block does" (lazy default); tests set this explicitly (``True`` /
+    ``False``) so the gate is exercised deterministically without depending
+    on process environment state.
 """
 
 from __future__ import annotations
@@ -355,3 +390,12 @@ class CloseCtx:
     symbol_daily_loss_limit: float = float("-inf")
     last_close_win: Dict[str, bool] = field(default_factory=dict)
     last_close_side: Dict[str, str] = field(default_factory=dict)
+
+    # ---- LLM-LEARNING-AGENT (T3) collaborators, Phase 0.4-B FINAL batch --
+    # see the module docstring's "LLM-LEARNING-AGENT (T3) FIELDS" section.
+    # All optional; ``None`` means "resolve the real production
+    # collaborator lazily" for the two callables, and "read LLM_MULTI_AGENT
+    # from the environment" for the gate flag.
+    learning_agent_fn: Optional[Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]] = None
+    process_agent_lesson_fn: Optional[Callable[[Dict[str, Any], Dict[str, Any]], None]] = None
+    llm_multi_agent_enabled: Optional[bool] = None
