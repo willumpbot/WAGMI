@@ -62,6 +62,43 @@ def defabricate_sol_veto_enabled() -> bool:
     return os.getenv("DEFABRICATE_SOL_VETO", "false").strip().lower() in ("1", "true", "yes")
 
 
+def defabricate_sniper_sizing_enabled() -> bool:
+    """RIP-OUT PHASE 1 gate #2+#3 (default OFF -> zero live behavior change on deploy).
+
+    When true:
+      - execution/sizing_optimizer.py replaces its fabricated per-setup
+        _DEFAULT_PRIORS table (e.g. HYPE_BUY prior (0.52, 1.34) vs an audited
+        live WR of ~22-23%) and the fabricated 1.15x dip_mult leverage boost
+        with living per-(symbol,side) win-rate/payoff computed from the trade
+        ledger (n>=13; below that, the single documented neutral prior
+        _DEFAULT_PRIOR, never a fabricated per-setup value).
+      - manual/sniper_filter.py replaces its fabricated positive_ev_setups
+        "elite" grade table with `living_setup_grade()` below (n>=13 required
+        to be graded A/B "proven +EV"; below that, "unproven" -- never a
+        fabricated WR/grade).
+      - manual/signal_scorer.py's dip-buy score bonus is only awarded when
+        the underlying (symbol, side) is living-graded A/B, not unconditionally.
+    When false (default), all three keep using the fabricated tables exactly
+    as before. Both states always shadow-log the counterfactual
+    ("[DEFAB-SNIPER-SIZE]" / "[DEFAB-SNIPER-LABEL]") once the flag machinery
+    is invoked, so the delta is measurable before the flag is trusted."""
+    return os.getenv("DEFABRICATE_SNIPER_SIZING", "false").strip().lower() in ("1", "true", "yes")
+
+
+def split_setup_key(setup: str):
+    """"SYMBOL_BUY"/"SYMBOL_SELL" -> (symbol, side), or (None, None) if unparseable.
+
+    Shared helper so sizing_optimizer / sniper_filter / signal_scorer all
+    parse manual-sniper "setup" keys (e.g. "HYPE_BUY") the same way when
+    looking up living per-(symbol,side) evidence."""
+    s = str(setup or "").upper()
+    if s.endswith("_BUY"):
+        return s[:-4], "BUY"
+    if s.endswith("_SELL"):
+        return s[:-5], "SELL"
+    return None, None
+
+
 def _norm_side(side: str) -> str:
     return "BUY" if str(side).upper() in ("BUY", "LONG") else "SELL"
 
@@ -71,6 +108,26 @@ def _pnl_to_mult(avg_pnl: float) -> float:
     +$10/tr -> ~1.5 boost, -$10/tr -> ~0.5 cut, break-even -> ~1.0. Clamp [0.25, 1.5]."""
     m = 1.0 + max(-0.75, min(0.5, avg_pnl / 20.0))
     return round(max(0.25, min(1.5, m)), 3)
+
+
+def _win_rate_payoff(pnls) -> dict:
+    """{win_rate, payoff_ratio} from a list of net PnL values. Mirrors
+    feedback/kelly_engine.py's _win_rate_and_payoff (per-factor axis) but
+    applied to live_edge's per-(symbol,side) axis -- reuses the same
+    all-wins/all-losses degenerate-case handling (payoff capped at 3.0)."""
+    if not pnls:
+        return {"win_rate": 0.0, "payoff_ratio": 0.0}
+    wins = [p for p in pnls if p > 0]
+    losses = [p for p in pnls if p <= 0]
+    win_rate = len(wins) / len(pnls)
+    if not losses:
+        return {"win_rate": win_rate, "payoff_ratio": 3.0 if wins else 0.0}
+    if not wins:
+        return {"win_rate": win_rate, "payoff_ratio": 0.0}
+    avg_win = sum(wins) / len(wins)
+    avg_loss = sum(abs(p) for p in losses) / len(losses)
+    payoff_ratio = (avg_win / avg_loss) if avg_loss > 1e-9 else 3.0
+    return {"win_rate": round(win_rate, 4), "payoff_ratio": round(payoff_ratio, 3)}
 
 
 def _row_ts(r) -> float:
@@ -137,7 +194,8 @@ def _recompute():
                 continue  # not enough evidence -> caller stays neutral
             avg = sum(pnls) / len(pnls)
             mult[key] = _pnl_to_mult(avg)
-            meta[key] = {"n": len(pnls), "avg_pnl": round(avg, 2)}
+            meta[key] = {"n": len(pnls), "avg_pnl": round(avg, 2),
+                         **_win_rate_payoff(pnls)}
         for sym, pnls in symbol_cells.items():
             if len(pnls) < _MIN_N:
                 continue
@@ -192,6 +250,53 @@ def get_side_stats(symbol: str, side: str):
     _ensure_fresh()
     with _lock:
         return _cache["meta"].get((base, _norm_side(side)))
+
+
+def get_side_wr_payoff(symbol: str, side: str):
+    """Live per-(symbol,side) {n, avg_pnl, win_rate, payoff_ratio}, or None if n<13.
+
+    RIP-OUT PHASE 1 (#2 sizing): backs execution/sizing_optimizer.py's Kelly
+    fraction, replacing the fabricated _DEFAULT_PRIORS table. Built on the
+    same n>=13 ledger evidence as get_side_stats()/get_side_mult() -- just
+    surfaces win_rate/payoff_ratio (needed by the Kelly formula) instead of
+    the PnL-per-trade size multiplier."""
+    return get_side_stats(symbol, side)
+
+
+def living_setup_grade(symbol: str, side: str) -> dict:
+    """Data-driven replacement for the fabricated positive_ev_setups grade
+    table (manual/sniper_filter.py) and the fabricated setup_scores /
+    dip-buy bonus (manual/signal_scorer.py).
+
+    RIP-OUT PHASE 1 (#3 labels): a setup is only graded "proven +EV" (A/B)
+    if the ledger has n>=13 closed (symbol,side) trades AND the average net
+    PnL/trade is positive. Insufficient evidence (n<13) is always "unproven"
+    (neutral) -- never a fabricated grade/WR.
+
+    Returns:
+        {"grade": "A"|"B"|"F"|"unproven", "n": int, "win_rate": float|None,
+         "avg_pnl": float|None, "reason": str}
+        reason is one of:
+          - "insufficient_evidence"      (n<13 -> grade="unproven")
+          - "live_positive_ev_strong"    (n>=13, avg_pnl>0, WR>=45% -> grade="A")
+          - "live_positive_ev_marginal"  (n>=13, avg_pnl>0, WR<45%  -> grade="B")
+          - "live_negative_ev"           (n>=13, avg_pnl<=0        -> grade="F")
+    """
+    stats = get_side_wr_payoff(symbol, side)
+    if stats is None:
+        return {"grade": "unproven", "n": 0, "win_rate": None, "avg_pnl": None,
+                "reason": "insufficient_evidence"}
+    n = stats.get("n", 0)
+    wr = stats.get("win_rate", 0.0)
+    avg = stats.get("avg_pnl", 0.0)
+    if avg > 0 and wr >= 0.45:
+        return {"grade": "A", "n": n, "win_rate": wr, "avg_pnl": avg,
+                "reason": "live_positive_ev_strong"}
+    if avg > 0:
+        return {"grade": "B", "n": n, "win_rate": wr, "avg_pnl": avg,
+                "reason": "live_positive_ev_marginal"}
+    return {"grade": "F", "n": n, "win_rate": wr, "avg_pnl": avg,
+            "reason": "live_negative_ev"}
 
 
 def living_veto_decision(symbol: str, side: str) -> dict:

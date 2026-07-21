@@ -19,6 +19,8 @@ Factors (from overnight research + counterfactual + edge study):
 import logging
 from typing import Dict, Any, Optional
 
+from feedback import live_edge
+
 logger = logging.getLogger("bot.manual.signal_scorer")
 
 
@@ -85,10 +87,27 @@ def score_signal(
     factors["chop"] = chop_pts
 
     # 3. DIP-BUY BONUS (15 points)
+    # RIP-OUT PHASE 1 (#3 labels, DEFABRICATE_SNIPER_SIZING): flag OFF
+    # (default) awards the fabricated flat +15 unconditionally ("proven 88.5%
+    # WR on dips" -- a frozen backtest claim never corroborated live). Flag
+    # ON: the bonus now consumes feedback/live_edge's living grade for this
+    # (symbol, side) -- only awarded if the ledger itself shows a proven +EV
+    # edge (n>=13, A/B grade); "unproven"/F setups get zero. Counterfactual
+    # is always shadow-logged.
     if is_dip_buy and side == "BUY":
-        dip_pts = 15
-        score += dip_pts
-        factors["dip_buy"] = dip_pts
+        if live_edge.defabricate_sniper_sizing_enabled():
+            _living = live_edge.living_setup_grade(symbol, side)
+            dip_pts = 15 if _living["grade"] in ("A", "B") else 0
+            logger.info(
+                f"[DEFAB-SNIPER-LABEL] dip_bonus setup={setup_key} fabricated_pts=15 "
+                f"live_grade={_living['grade']} live_pts={dip_pts} n={_living['n']} "
+                f"avg_pnl={_living['avg_pnl']} reason={_living['reason']}"
+            )
+        else:
+            dip_pts = 15
+        if dip_pts:
+            score += dip_pts
+            factors["dip_buy"] = dip_pts
 
     # 4. CONSENSUS (10 points max)
     if num_agree >= 3:

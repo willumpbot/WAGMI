@@ -28,6 +28,8 @@ import os
 from dataclasses import dataclass, field
 from typing import Dict, Optional, List, Tuple
 
+from feedback import live_edge
+
 logger = logging.getLogger("bot.execution.sizing_optimizer")
 
 
@@ -104,7 +106,16 @@ class OptimalSizing:
 # ─── Default Setup Priors ───────────────────────────────────────────────
 # Used when we don't have enough data for a setup.
 # Conservative — real data will override these quickly.
-
+#
+# DEPRECATED (RIP-OUT PHASE 1, 2026-07): this table is FABRICATED and never
+# corroborated against live outcomes -- record_trade_outcome() (the only
+# thing that could ever grow self._setup_stats past min_trades_for_kelly and
+# make this fallback unreachable) has ZERO production callers, so every
+# non-conviction sniper call runs on THESE frozen numbers forever. Audited
+# live HYPE_BUY WR is ~22-23%, not the 0.52 claimed below. Kept ONLY as the
+# flag-OFF (default) fallback for DEFABRICATE_SNIPER_SIZING -- see
+# `_get_prior()` below, which is the flag-gated real entry point. Do not add
+# new setups here; extend feedback/live_edge.py's living-values path instead.
 _DEFAULT_PRIORS: Dict[str, Tuple[float, float]] = {
     # (win_rate, payoff_ratio)
     # Updated 2026-03-25: edge study shows HYPE_BUY WR declining (64%→40% over 418 trades).
@@ -209,11 +220,53 @@ class SizingOptimizer:
         """Get current stats for a setup."""
         return self._setup_stats.get(setup, SetupStats())
 
+    def _get_prior(self, setup: str) -> Tuple[float, float]:
+        """Prior (win_rate, payoff_ratio) for a setup with no in-memory Kelly
+        data (i.e. self._setup_stats empty -- the normal production case,
+        since record_trade_outcome has zero callers; see sniper_filter.py).
+
+        Flag OFF (default): the fabricated _DEFAULT_PRIORS table (deprecated,
+        kept only as the characterized fallback) -- ZERO behavior change.
+
+        Flag ON (DEFABRICATE_SNIPER_SIZING=true): live per-(symbol,side)
+        win-rate/payoff computed from the trade ledger (feedback/live_edge,
+        n>=13). Below n=13, falls back to the single documented neutral
+        prior _DEFAULT_PRIOR (0.50, 1.5) -- the existing "unknown setup"
+        default -- NEVER the fabricated per-setup table. Always
+        shadow-logs the counterfactual (fabricated vs live) so the delta is
+        measurable before the flag is trusted.
+        """
+        fab_wr, fab_payoff = _DEFAULT_PRIORS.get(setup, _DEFAULT_PRIOR)
+
+        if not live_edge.defabricate_sniper_sizing_enabled():
+            return fab_wr, fab_payoff
+
+        symbol, side = live_edge.split_setup_key(setup)
+        live_stats = live_edge.get_side_wr_payoff(symbol, side) if symbol else None
+        if live_stats is not None:
+            wr, payoff = live_stats["win_rate"], live_stats["payoff_ratio"]
+            logger.info(
+                f"[DEFAB-SNIPER-SIZE] setup={setup} "
+                f"fabricated_wr={fab_wr:.2f} fabricated_payoff={fab_payoff:.2f} "
+                f"live_wr={wr:.2f} live_payoff={payoff:.2f} "
+                f"n={live_stats['n']} avg_pnl={live_stats['avg_pnl']} source=live"
+            )
+            return wr, payoff
+
+        logger.info(
+            f"[DEFAB-SNIPER-SIZE] setup={setup} "
+            f"fabricated_wr={fab_wr:.2f} fabricated_payoff={fab_payoff:.2f} "
+            f"live_wr=None live_payoff=None n<13 source=neutral_insufficient_evidence "
+            f"neutral_wr={_DEFAULT_PRIOR[0]:.2f} neutral_payoff={_DEFAULT_PRIOR[1]:.2f}"
+        )
+        return _DEFAULT_PRIOR
+
     def kelly_fraction(self, setup: str) -> Tuple[float, float, float]:
         """Calculate Kelly fraction for a setup.
 
         Returns (full_kelly, win_rate, payoff_ratio).
-        Uses rolling data if available, falls back to priors.
+        Uses rolling data if available, falls back to priors (see
+        `_get_prior()` -- flag-gated fabricated vs living-values).
         """
         stats = self._setup_stats.get(setup)
 
@@ -222,7 +275,7 @@ class SizingOptimizer:
             payoff = stats.payoff_ratio
         else:
             # Use prior, blended with any data we have
-            prior_wr, prior_payoff = _DEFAULT_PRIORS.get(setup, _DEFAULT_PRIOR)
+            prior_wr, prior_payoff = self._get_prior(setup)
             if stats is not None and stats.total > 0:
                 # Blend: weight data proportionally to sample size
                 data_weight = min(stats.total / self.min_trades_for_kelly, 1.0)
@@ -284,8 +337,23 @@ class SizingOptimizer:
         # as a risk control. Re-derive from n_independent + measured edge before letting agreement boost.
         agree_mult = {1: 0.7, 2: 1.0, 3: 1.0}.get(num_agree, 1.0)
 
-        # Dip-buy bonus (proven 88.5% WR on dips)
-        dip_mult = 1.15 if is_dip_buy else 1.0
+        # Dip-buy bonus. FABRICATED (RIP-OUT PHASE 1, 2026-07): "proven 88.5%
+        # WR on dips" is a frozen backtest claim never corroborated live, and
+        # live_edge has no dip-conditioned axis to corroborate it against
+        # (only per-(symbol,side), not per-(symbol,side,dip)). Flag OFF
+        # (default): unchanged 1.15x boost. Flag ON (DEFABRICATE_SNIPER_SIZING):
+        # boost removed (neutral 1.0x) -- there is no living evidence backing
+        # it, so it is de-fabricated rather than re-fabricated under a new
+        # name. Counterfactual always shadow-logged.
+        if live_edge.defabricate_sniper_sizing_enabled():
+            dip_mult = 1.0
+            if is_dip_buy:
+                logger.info(
+                    "[DEFAB-SNIPER-SIZE] dip_mult fabricated=1.15 live=1.0 "
+                    "reason=no_living_dip_axis_boost_removed"
+                )
+        else:
+            dip_mult = 1.15 if is_dip_buy else 1.0
 
         # Confidence scaling (gentle: 60% → 0.9x, 80% → 1.0x, 90% → 1.05x)
         conf_mult = 0.8 + (confidence / 100.0) * 0.3

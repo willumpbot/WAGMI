@@ -33,6 +33,26 @@ from feedback import live_edge
 
 logger = logging.getLogger("bot.manual.sniper")
 
+# DEPRECATED (RIP-OUT PHASE 1, 2026-07): FABRICATED "elite/proven +EV" setup
+# grades -- frozen backtest claims (e.g. "HYPE_BUY 85.2%/60.6%/etc WR") never
+# corroborated against live trade outcomes, labeling the ledger's worst slice
+# as "elite" to the human. Kept ONLY as the flag-OFF (default) fallback for
+# DEFABRICATE_SNIPER_SIZING -- see `_positive_ev_setups()` below, which is the
+# flag-gated real entry point. Do not add new setups here; a genuinely proven
+# setup earns living_setup_grade() A/B on its own once n>=13.
+_FABRICATED_POSITIVE_EV_SETUPS: Dict[str, Dict[str, Any]] = {
+    "HYPE_BUY": {"grade": "A", "max_chop": 0.55},   # Edge WEAKENING (64%→40%). Require higher confluence.
+    "HYPE_SELL": {"grade": "A", "max_chop": 0.65},   # LIVE: 85.2% WR (225W/39L). Was hard-blocked by mistake!
+    "SOL_SELL": {"grade": "A", "max_chop": 0.55},    # Edge STRENGTHENING (35%→68%). Best at Normal Vol.
+    "BTC_SELL": {"grade": "A", "max_chop": 0.60},    # LIVE: 60.6% WR. Real trades: 100% WR (+$92).
+    "ETH_BUY":  {"grade": "B", "max_chop": 0.55},    # LIVE: 60.2% WR. New discovery from rejection analysis.
+}
+# DEPRECATED alongside the table above -- fabricated expanded-setups override
+# applied only when config.expanded_setups is set (paper-mode validation).
+_FABRICATED_EXPANDED_BTC_SELL: Dict[str, Any] = {
+    "grade": "B+", "max_chop": 0.5, "min_confidence": 90,
+}
+
 
 @dataclass
 class SniperSignal:
@@ -148,6 +168,17 @@ class ManualSniperFilter:
         """Record a trade outcome for Kelly sizing optimizer learning.
 
         Call this when a sniper trade closes to update per-setup WR/payoff.
+
+        # DEAD API — zero callers, see rip-out plan M4. This method is never
+        # invoked anywhere in the live close path, so self._sizing_optimizer's
+        # in-memory _setup_stats never accumulates real trades and
+        # SizingOptimizer.kelly_fraction() ALWAYS falls through to its prior
+        # (_get_prior(), see execution/sizing_optimizer.py) in production.
+        # RIP-OUT PHASE 1 (DEFABRICATE_SNIPER_SIZING) replaces the fabricated
+        # prior with feedback/live_edge living values when the flag is on,
+        # which effectively takes over this method's intended role (closing
+        # the loop from the ledger instead of a never-called callback). Wiring
+        # this into the live close path directly is a separate, later task.
         """
         if self._sizing_optimizer is not None:
             self._sizing_optimizer.record_outcome(setup, won, pnl_pct)
@@ -156,6 +187,47 @@ class ManualSniperFilter:
         """Update running equity for compound sizing."""
         if new_equity > 0:
             self._running_equity = new_equity
+
+    def _living_positive_ev_setups(self, setup_key: str) -> Dict[str, Dict[str, Any]]:
+        """Flag-ON (DEFABRICATE_SNIPER_SIZING) replacement for the fabricated
+        _FABRICATED_POSITIVE_EV_SETUPS grade table.
+
+        Structural risk thresholds (max_chop, min_confidence) are preserved
+        from the deprecated fabricated table when available (they gate
+        SIGNAL QUALITY, not the WR/EV claim being de-fabricated here); a
+        newly-proven setup with no prior fabricated entry gets the codebase's
+        existing neutral max_chop default (0.5, already used elsewhere as
+        `setup.get("max_chop", 0.5)`). Only whether a setup counts as
+        "proven +EV" at all (dict membership) is decided by the live ledger
+        (feedback/live_edge, n>=13) -- never a fabricated grade string.
+        Always shadow-logs the counterfactual.
+        """
+        fab = dict(_FABRICATED_POSITIVE_EV_SETUPS)
+        if self.config.expanded_setups:
+            fab["BTC_SELL"] = dict(_FABRICATED_EXPANDED_BTC_SELL)
+        fab_entry = fab.get(setup_key)
+
+        symbol, side = live_edge.split_setup_key(setup_key)
+        if symbol:
+            living = live_edge.living_setup_grade(symbol, side)
+        else:
+            living = {"grade": "unproven", "n": 0, "win_rate": None,
+                       "avg_pnl": None, "reason": "unparseable_setup_key"}
+
+        logger.info(
+            f"[DEFAB-SNIPER-LABEL] setup={setup_key} "
+            f"fabricated_grade={(fab_entry or {}).get('grade')} "
+            f"live_grade={living['grade']} n={living['n']} "
+            f"wr={living['win_rate']} avg_pnl={living['avg_pnl']} "
+            f"reason={living['reason']}"
+        )
+
+        result: Dict[str, Dict[str, Any]] = {}
+        if living["grade"] in ("A", "B"):
+            entry = dict(fab_entry) if fab_entry is not None else {"max_chop": 0.5}
+            entry["grade"] = living["grade"]  # overwrite fabricated grade with the living one
+            result[setup_key] = entry
+        return result
 
     def _update_price_history(self, symbol: str, price: float) -> None:
         """Track rolling price for dip detection."""
@@ -314,13 +386,17 @@ class ManualSniperFilter:
                 # neutral/positive edge -> do NOT block, signal proceeds
                 # (epsilon-preserving; no fabricated block).
 
-        positive_ev_setups = {
-            "HYPE_BUY": {"grade": "A", "max_chop": 0.55},   # Edge WEAKENING (64%→40%). Require higher confluence.
-            "HYPE_SELL": {"grade": "A", "max_chop": 0.65},   # LIVE: 85.2% WR (225W/39L). Was hard-blocked by mistake!
-            "SOL_SELL": {"grade": "A", "max_chop": 0.55},    # Edge STRENGTHENING (35%→68%). Best at Normal Vol.
-            "BTC_SELL": {"grade": "A", "max_chop": 0.60},    # LIVE: 60.6% WR. Real trades: 100% WR (+$92).
-            "ETH_BUY":  {"grade": "B", "max_chop": 0.55},    # LIVE: 60.2% WR. New discovery from rejection analysis.
-        }
+        # RIP-OUT PHASE 1 (#3 labels, DEFABRICATE_SNIPER_SIZING): flag OFF
+        # (default) keeps the fabricated grade table exactly as before. Flag
+        # ON replaces the fabricated grade for THIS setup with a live
+        # ledger-corroborated one (n>=13 -> A/B "proven"; else "unproven",
+        # dropped from the dict entirely so downstream gates treat it as an
+        # unproven/discovery setup rather than a fabricated "elite" one).
+        # Counterfactual is always shadow-logged as "[DEFAB-SNIPER-LABEL]".
+        if live_edge.defabricate_sniper_sizing_enabled():
+            positive_ev_setups = self._living_positive_ev_setups(setup_key)
+        else:
+            positive_ev_setups = dict(_FABRICATED_POSITIVE_EV_SETUPS)
 
         # ── TREND-AWARE GATE for HYPE_BUY in bearish conditions ──
         # Edge study: HYPE_BUY edge is WEAKENING (-24pp). In a bear market,
@@ -354,14 +430,19 @@ class ManualSniperFilter:
                     pass
 
         # Expanded setups (paper-mode validation)
-        # These are research-identified edges that need live validation
-        if self.config.expanded_setups:
+        # These are research-identified edges that need live validation.
+        # NOTE: BTC_BUY removed — counterfactuals show 15% WR (toxic).
+        # BTC_BUY is in the toxic_setups block above. Do NOT add here.
+        # RIP-OUT: when the flag is ON, `_living_positive_ev_setups()` above
+        # already folded this expanded-mode structural override in (via
+        # _FABRICATED_EXPANDED_BTC_SELL) before deciding on live grade — do
+        # NOT re-apply the fabricated grade here, that would silently
+        # overwrite the living decision.
+        if self.config.expanded_setups and not live_edge.defabricate_sniper_sizing_enabled():
             positive_ev_setups.update({
                 # BTC SHORT only at >=90% conf — 67% WR, PF 1.98
                 # NEVER below 90%: 70-80% conf is a death trap (PF 0.31-0.79)
-                "BTC_SELL": {"grade": "B+", "max_chop": 0.5, "min_confidence": 90},
-                # NOTE: BTC_BUY removed — counterfactuals show 15% WR (toxic).
-                # BTC_BUY is in the toxic_setups block above. Do NOT add here.
+                "BTC_SELL": dict(_FABRICATED_EXPANDED_BTC_SELL),
             })
 
         setup = positive_ev_setups.get(setup_key)
@@ -510,6 +591,11 @@ class ManualSniperFilter:
         # Data shows HYPE BUY during moderate dips (2-5% from recent high) has 88.5% WR
         # vs 85% baseline. Detect dip conditions from signal metadata.
         # Only boost tier for proven setups — unproven setups shouldn't get free upgrades.
+        # RIP-OUT: `setup is not None` below already reflects the living-values
+        # decision when DEFABRICATE_SNIPER_SIZING is on (positive_ev_setups was
+        # built by `_living_positive_ev_setups()` above) — so this tier boost is
+        # transitively de-fabricated with no separate gate needed here: a
+        # setup graded "unproven"/F by the live ledger no longer qualifies.
         is_dip_buy = False
         if signal.side == "BUY":
             is_dip_buy = self._detect_dip_buy(signal, meta, regime_lower, chop)
@@ -1204,6 +1290,10 @@ class ManualSniperFilter:
 
         # ── Path 1: ELITE setup qualification ──
         setup_key = f"{signal.symbol}_{signal.side}"
+        # DEPRECATED/fabricated (RIP-OUT PHASE 1, same sweep as
+        # _FABRICATED_POSITIVE_EV_SETUPS above, "no urgency" per swarm audit
+        # -- not flag-gated in this pass). Micro-sniper qualification only;
+        # left as-is intentionally, see rip-out plan M4/M-sweep notes.
         elite_setups = {"HYPE_BUY", "SOL_SELL"}  # Proven +EV setups only
 
         if setup_key in elite_setups:
