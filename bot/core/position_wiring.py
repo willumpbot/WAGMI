@@ -19,6 +19,7 @@ from trading_config import DEFAULT_SYMBOLS
 from data.db import log_trade
 from data.fetchers.telemetry import Telemetry
 from execution.precision import get_min_qty, round_qty
+from feedback import live_edge
 
 # Optional imports
 try:
@@ -331,6 +332,28 @@ class PositionWiringMixin:
                 try:
                     _qb_solo = self._quant_brain.evaluate_signal(signal)
                     if _qb_solo.action in ("veto", "skip"):
+                        # RIP-OUT PHASE 1 (DEFABRICATE_SOL_VETO): this hard-return
+                        # already respects the flag transparently -- QuantBrain's
+                        # own SOL_BUY RSI<20 veto (llm/quant_brain.py _run_critic)
+                        # is itself flag-gated, so when the flag is ON and living
+                        # data doesn't justify a veto, _qb_solo.action won't be
+                        # "veto"/"skip" for that reason in the first place. We
+                        # still shadow-log here for full call-site traceability
+                        # whenever the veto that DID fire was our living-gated one.
+                        try:
+                            _qb_reasons = (
+                                _qb_solo.critic_verdict.veto_reasons
+                                if _qb_solo.critic_verdict else []
+                            )
+                        except Exception:
+                            _qb_reasons = []
+                        if any("DEFAB-SOL-VETO" in r for r in _qb_reasons):
+                            logger.info(
+                                f"[DEFAB-SOL-VETO][position_wiring] {signal.symbol} "
+                                f"{signal.side} QB hard-return fires on living-gated "
+                                f"veto (flag={'on' if live_edge.defabricate_sol_veto_enabled() else 'off'}): "
+                                f"{'; '.join(_qb_reasons)}"
+                            )
                         logger.debug(
                             f"[SNIPER-SOLO-QB] {signal.symbol} {signal.side} "
                             f"blocked by QuantBrain: {_qb_solo.action}"

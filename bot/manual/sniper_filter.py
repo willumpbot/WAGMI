@@ -29,6 +29,7 @@ from typing import Optional, Dict, Any, List
 
 from manual.config import ManualSniperConfig
 from manual.trade_scorecard import TradeScorecard
+from feedback import live_edge
 
 logger = logging.getLogger("bot.manual.sniper")
 
@@ -288,11 +289,30 @@ class ManualSniperFilter:
             if setup_key == "HYPE_BUY" and rsi_val > 75:
                 self._log_rejection(signal, f"rsi_overbought_{rsi_val:.0f}")
                 return None
-            # SOL RSI<20 is a DEATH TRAP: 0% up at 6h, avg -4.73% at 24h.
-            # SOL extreme oversold is continuation, not reversal.
+            # SOL RSI<20 "DEATH TRAP" — FABRICATED: frozen "0% up at 6h, avg
+            # -4.73% at 24h" backtest stat, never corroborated against live
+            # trade outcomes. RIP-OUT PHASE 1 (DEFABRICATE_SOL_VETO, default
+            # off): flag-gated replacement with a living-values gate sourced
+            # from feedback/live_edge (n>=13 ledger evidence, else no block).
+            # Flag OFF (default) = this fabricated hard veto fires exactly as
+            # before; kept as the fallback until the living gate is validated
+            # live. Flag ON = counterfactual is always shadow-logged.
             if setup_key == "SOL_BUY" and rsi_val < 20:
-                self._log_rejection(signal, f"sol_rsi_death_trap_{rsi_val:.0f}")
-                return None
+                if not live_edge.defabricate_sol_veto_enabled():
+                    self._log_rejection(signal, f"sol_rsi_death_trap_{rsi_val:.0f}")
+                    return None
+                _decision = live_edge.living_veto_decision(signal.symbol, signal.side)
+                self._log_rejection(
+                    signal,
+                    f"[DEFAB-SOL-VETO] rsi={rsi_val:.0f} old_would_veto=True "
+                    f"n={_decision['n']} avg_pnl={_decision['avg_pnl']} "
+                    f"reason={_decision['reason']} living_veto={_decision['veto']}"
+                )
+                if _decision["veto"]:
+                    return None
+                # else: n<13 (insufficient live evidence) or living data shows
+                # neutral/positive edge -> do NOT block, signal proceeds
+                # (epsilon-preserving; no fabricated block).
 
         positive_ev_setups = {
             "HYPE_BUY": {"grade": "A", "max_chop": 0.55},   # Edge WEAKENING (64%→40%). Require higher confluence.

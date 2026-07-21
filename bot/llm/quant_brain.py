@@ -32,6 +32,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
+from feedback import live_edge
+
 logger = logging.getLogger("bot.llm.quant_brain")
 
 
@@ -1201,11 +1203,33 @@ class QuantBrain:
             elif signal.side == "SELL" and rsi > 75:
                 warnings.append(f"RSI {rsi:.0f} > 75 for SELL (squeeze risk)")
                 confidence_adj *= 0.6
-            # SOL RSI<20 is a death trap: 0% up at 6h, avg -4.73% at 24h.
-            # Extreme oversold on SOL is continuation, not reversal.
+            # SOL RSI<20 "death trap" — FABRICATED: frozen "0% up at 6h, avg
+            # -4.73% at 24h" backtest stat, never corroborated live. RIP-OUT
+            # PHASE 1 (DEFABRICATE_SOL_VETO, default off): flag-gated
+            # replacement with the living-values gate (feedback/live_edge,
+            # n>=13 ledger evidence, else no block). Flag OFF (default) =
+            # this fabricated veto fires exactly as before (dormant copy —
+            # QuantBrain is off live — kept consistent with the live sniper
+            # copy in manual/sniper_filter.py).
             if setup_key == "SOL_BUY" and rsi < 20:
-                veto_reasons.append(f"SOL RSI {rsi:.0f} < 20 death trap (0% up at 6h)")
-                confidence_adj = 0.0
+                if not live_edge.defabricate_sol_veto_enabled():
+                    veto_reasons.append(f"SOL RSI {rsi:.0f} < 20 death trap (0% up at 6h)")
+                    confidence_adj = 0.0
+                else:
+                    _decision = live_edge.living_veto_decision(signal.symbol, signal.side)
+                    _cf_msg = (
+                        f"[DEFAB-SOL-VETO] rsi={rsi:.0f} old_would_veto=True "
+                        f"n={_decision['n']} avg_pnl={_decision['avg_pnl']} "
+                        f"reason={_decision['reason']} living_veto={_decision['veto']}"
+                    )
+                    logger.info(f"[QUANT-BRAIN] {_cf_msg}")
+                    if _decision["veto"]:
+                        veto_reasons.append(_cf_msg)
+                        confidence_adj = 0.0
+                    else:
+                        # n<13 (insufficient live evidence) or living data shows
+                        # neutral/positive edge -> do NOT veto (epsilon-preserving)
+                        warnings.append(_cf_msg)
 
         # ── Veto 4: Fee drag check ──
         stop_pct = signal.stop_width_pct if hasattr(signal, "stop_width_pct") else 0
@@ -1301,6 +1325,28 @@ class QuantBrain:
         )
 
     # ── Helpers ──────────────────────────────────────────────────────
+
+    def _sol_oversold_setup_blocked(self, rsi_val: float) -> bool:
+        """Should SOL be excluded from the oversold-reversal BUY setup?
+
+        Legacy fabricated rule (FLAG OFF, default): SOL is unconditionally
+        excluded ("NEVER on SOL: SOL RSI<20 is a death trap ... never
+        corroborated live) — this is the same frozen backtest stat as the
+        RSI<20 hard veto in _run_critic(), just applied at signal-generation
+        time instead of filter time. RIP-OUT PHASE 1 (DEFABRICATE_SOL_VETO):
+        when the flag is on, only exclude SOL if the living-values gate
+        (feedback/live_edge, n>=13 ledger evidence) confirms SOL_BUY is
+        genuinely toxic; always shadow-log the counterfactual.
+        """
+        if not live_edge.defabricate_sol_veto_enabled():
+            return True  # fabricated blanket exclusion, unchanged
+        _decision = live_edge.living_veto_decision("SOL", "BUY")
+        logger.info(
+            f"[QUANT-BRAIN] [DEFAB-SOL-VETO][setup3] rsi={rsi_val:.0f} "
+            f"old_would_veto=True n={_decision['n']} avg_pnl={_decision['avg_pnl']} "
+            f"reason={_decision['reason']} living_veto={_decision['veto']}"
+        )
+        return _decision["veto"]
 
     def _load_recent_outcomes(self) -> None:
         """Load recent trade outcomes from trades.csv for chase prevention.
@@ -1522,9 +1568,14 @@ class QuantBrain:
 
         # ── Setup 3: Oversold Reversal (only with confirmation) ──
         # RSI < 25 + BB squeeze + mean reversion conditions
-        # NEVER on SOL: SOL RSI<20 is a death trap (0% up at 6h, avg -4.73% at 24h)
+        # NEVER on SOL (FABRICATED, flag-gated -- see _sol_oversold_setup_blocked):
+        # SOL RSI<20 is a death trap (0% up at 6h, avg -4.73% at 24h), a frozen
+        # backtest stat never corroborated live. RIP-OUT PHASE 1: flag OFF
+        # (default) preserves this blanket exclusion exactly; flag ON only
+        # excludes SOL if the living-values gate confirms toxicity (n>=13).
         # SUPPRESSED when macro is bearish — catching knives in downtrends loses money.
-        if rsi < 25 and squeeze and red_streak >= 2 and symbol != "SOL" and not macro_bearish:
+        if (rsi < 25 and squeeze and red_streak >= 2 and not macro_bearish
+                and (symbol != "SOL" or not self._sol_oversold_setup_blocked(rsi))):
             sl = c - 2.5 * atr
             tp1 = ema20  # Snap back to mean
             tp2 = c + 3.0 * atr

@@ -51,6 +51,17 @@ def enabled() -> bool:
     return os.getenv("DATA_DRIVEN_SIDE_MULT", "true").strip().lower() in ("1", "true", "yes")
 
 
+def defabricate_sol_veto_enabled() -> bool:
+    """RIP-OUT PHASE 1 gate (default OFF -> zero live behavior change on deploy).
+
+    When true, callers (manual/sniper_filter.py, llm/quant_brain.py,
+    core/position_wiring.py) replace their fabricated SOL_BUY RSI<20 hard
+    veto (a frozen, never-corroborated "0% up at 6h" backtest stat) with the
+    living-values gate in `living_veto_decision()` below. When false (default),
+    those callers keep firing the fabricated veto exactly as before."""
+    return os.getenv("DEFABRICATE_SOL_VETO", "false").strip().lower() in ("1", "true", "yes")
+
+
 def _norm_side(side: str) -> str:
     return "BUY" if str(side).upper() in ("BUY", "LONG") else "SELL"
 
@@ -169,6 +180,44 @@ def get_side_mult(symbol: str, side: str):
     _ensure_fresh()
     with _lock:
         return _cache["mult"].get((base, _norm_side(side)))
+
+
+def get_side_stats(symbol: str, side: str):
+    """Raw {n, avg_pnl} live evidence behind get_side_mult(), or None if n<13.
+
+    Callers that need to reason about the underlying evidence (e.g. a veto
+    decision, not just a size multiplier) should use this instead of trying
+    to invert get_side_mult()'s clamped/rounded output."""
+    base = str(symbol).replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "").upper()
+    _ensure_fresh()
+    with _lock:
+        return _cache["meta"].get((base, _norm_side(side)))
+
+
+def living_veto_decision(symbol: str, side: str) -> dict:
+    """Data-driven replacement for a fabricated hard veto on (symbol, side).
+
+    This is the RIP-OUT PHASE 1 rule: a hard veto is only "living" (justified
+    by the bot's own experience) if the ledger has n>=13 closed trades for
+    this (symbol, side) AND the average net PnL/trade is clearly negative.
+    Insufficient evidence (n<13) or a neutral/positive average must NEVER
+    veto — that would just be re-fabricating the block under a new name.
+
+    Returns:
+        {"veto": bool, "n": int, "avg_pnl": float|None, "reason": str}
+        reason is one of:
+          - "insufficient_evidence" (n<13 -> veto=False, epsilon-preserving)
+          - "toxic_confirmed"       (n>=13, avg_pnl<0 -> veto=True)
+          - "neutral_or_positive"   (n>=13, avg_pnl>=0 -> veto=False)
+    """
+    stats = get_side_stats(symbol, side)
+    if stats is None:
+        return {"veto": False, "n": 0, "avg_pnl": None, "reason": "insufficient_evidence"}
+    n = stats.get("n", 0)
+    avg = stats.get("avg_pnl", 0.0)
+    if avg < 0:
+        return {"veto": True, "n": n, "avg_pnl": avg, "reason": "toxic_confirmed"}
+    return {"veto": False, "n": n, "avg_pnl": avg, "reason": "neutral_or_positive"}
 
 
 def get_symbol_mult(symbol: str):
