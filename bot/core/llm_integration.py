@@ -1224,7 +1224,7 @@ class LLMIntegrationMixin:
                             if action in ("full_close", "close") and urgency in ("high", "critical"):
                                 try:
                                     _pm = getattr(self, 'pos_mgr', None) or getattr(self, 'position_manager', None)
-                                    _price = (_last_prices if hasattr(self, '_last_prices') else {}).get(symbol, 0)
+                                    _price = (self._last_prices if hasattr(self, '_last_prices') else {}).get(symbol, 0)
                                     if _pm and _price > 0 and hasattr(_pm, 'force_close'):
                                         _pm.force_close(symbol, _price, f"LLM_EXIT_{urgency.upper()}")
                                         logger.warning(

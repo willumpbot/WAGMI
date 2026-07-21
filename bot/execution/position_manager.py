@@ -215,6 +215,13 @@ class TradeEvent:
     strategy: str = ""
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)
+    # Phase 0.4-A (T-TAX prereq): the originating Position's stable id (see
+    # Position.position_id, :98/:147-152), so downstream close-pipeline
+    # consumers can key events without falling back to (symbol, timestamp)
+    # heuristics. Populated at all 4 construction sites from `pos.position_id`.
+    # Defaults to "" only for events built without a live Position in scope
+    # (none currently exist, but keep the default safe for future/test code).
+    position_id: str = ""
     # TRADE_SUMMARY_PER_POSITION_FIX (2026-07-20): True only for the event that
     # terminates a position's lifecycle (created inside _close_position(), which
     # runs pos._transition(CLOSED, ...) — regardless of the `action`/reason
@@ -714,6 +721,7 @@ class PositionManager:
             fee=fee,
             leverage=leverage,
             strategy=strategy,
+            position_id=pos.position_id,
             metadata={
                 "entry_reasons": entry_reasons or {},
                 "confidence": confidence,
@@ -1648,6 +1656,7 @@ class PositionManager:
             fee=fee,
             leverage=pos.leverage,
             strategy=pos.strategy,
+            position_id=pos.position_id,
             metadata={
                 "remaining_qty": pos.qty,
                 "new_sl": pos.sl,
@@ -1984,6 +1993,7 @@ class PositionManager:
             fee=fee,
             leverage=pos.leverage,
             strategy=pos.strategy,
+            position_id=pos.position_id,
             # TRADE_SUMMARY_PER_POSITION_FIX: this is the ONE event per position
             # that reaches _close_position (whatever `action` string triggered
             # it) — get_trade_summary() uses this flag, not an action whitelist,
@@ -2189,6 +2199,7 @@ class PositionManager:
             fee=fee,
             leverage=pos.leverage,
             strategy=pos.strategy,
+            position_id=pos.position_id,
             metadata={
                 "remaining_qty": pos.qty,
                 "partial_pct": pct,
