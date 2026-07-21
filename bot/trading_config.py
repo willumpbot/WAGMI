@@ -884,6 +884,11 @@ PAPER_PROFILE_OVERRIDES = {
 # LIVING VALUES refresh 2026-07-15 — comments now show REALIZED stats from the
 # ledger (paper_trades trades_*.csv, 265 clean closes; SL exits overall: n=91,
 # net -$690.83, avg -$7.59/tr):
+# DEPRECATED (2026-07-21, RIP-OUT PHASE 1 #5): the tp1_mult/tp2_mult columns
+# in this table are fabricated/stale (no live corroboration path exists).
+# They are only applied when DEFABRICATE_REGIME_TP=false (default); when
+# true, get_regime_sl_tp() clamps TP scaling to neutral 1.0 instead. Kept
+# here as the flag-off fallback -- do not treat tp1_mult/tp2_mult as trusted.
 REGIME_SL_TP_SCALARS = {
     "trending_bull":    {"sl_mult": 1.2, "tp1_mult": 1.3, "tp2_mult": 1.5},
     "trending_bear":    {"sl_mult": 1.1, "tp1_mult": 1.2, "tp2_mult": 1.4},
@@ -990,6 +995,16 @@ SYMBOL_RISK_MULTIPLIERS = {
 # fallback dict) to call get_lead_lag_boost_cap() instead is a follow-up
 # change to that file (out of scope here). lead_lag_max_boost=12.0 above is
 # the absolute safety ceiling and is intentionally left untouched.
+# DEPRECATED beta/lag_minutes (2026-07-21, RIP-OUT PHASE 1 #7): these two
+# fields are a hand-set, never-corroborated per-symbol table. When
+# DEFABRICATE_LEAD_LAG=true, execution/cross_asset_alert.py's
+# LeadLagBoostEngine stops reading them and instead computes beta/lag live
+# from its own rolling BTC/follower return windows (falling back to a
+# neutral default, never these values, when there isn't yet enough
+# evidence) — see LeadLagBoostEngine._live_beta_lag. Default false = zero
+# live behavior change on deploy; correlation/boost_cap above are NOT part
+# of this flag (boost_cap already has its own live path via
+# get_lead_lag_boost_cap(), gated on DATA_DRIVEN_LEAD_LAG_CAP).
 LEAD_LAG_SYMBOL_CONFIG = {
     "SOL": {
         "lag_minutes": (30, 60),       # SOL lags BTC by 30-60 min
@@ -1274,6 +1289,15 @@ def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
     historically validated range. TP1/TP2 have no live path yet (would need
     trade_dna TP1-hit-rate/MFE data — out of scope for this file).
 
+    RIP-OUT PHASE 1 (#5, DEFABRICATE_REGIME_TP, default off): when the flag
+    is on, the static tp1_mult/tp2_mult columns above are no longer applied
+    -- the returned TP multipliers are the caller's unscaled base values
+    (neutral 1.0 clamp) instead of the stale per-regime scaling. SL is
+    unaffected either way. Always shadow-logs "[DEFAB-REGIME-TP]" with the
+    fabricated values and which behavior is acting, so the delta is
+    measurable before the flag is trusted. Revert: DEFABRICATE_REGIME_TP=false
+    -> legacy static tp1_mult/tp2_mult scaling (unchanged from before this flag).
+
     Returns (adjusted_sl_mult, adjusted_tp1_mult, adjusted_tp2_mult).
     """
     scalars = REGIME_SL_TP_SCALARS.get(regime)
@@ -1304,10 +1328,31 @@ def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
     # Clamp to the table's existing safety envelope
     sl_scalar = max(0.85, min(1.5, sl_scalar))
 
+    # RIP-OUT PHASE 1 (#5, DEFABRICATE_REGIME_TP, default off = zero live
+    # behavior change on deploy). The tp1_mult/tp2_mult columns above are
+    # static and admittedly stale -- there is no live TP path yet (would
+    # need trade_dna TP1-hit-rate/MFE data; out of scope for this file, see
+    # comment on get_regime_sl_tp above). When the flag is on, stop applying
+    # that fabricated scaling: use tp1_mult=tp2_mult=1.0 (neutral -- the
+    # caller's base TP, unscaled) instead. SL stays governed exclusively by
+    # the symmetric live-blended sl_scalar above regardless of this flag --
+    # it is NOT touched here. Both states always shadow-log the
+    # counterfactual so the delta is measurable before the flag is trusted.
+    fabricated_tp1_mult = scalars["tp1_mult"]
+    fabricated_tp2_mult = scalars["tp2_mult"]
+    if os.getenv("DEFABRICATE_REGIME_TP", "false").strip().lower() in ("1", "true", "yes"):
+        tp1_mult, tp2_mult, _acting = 1.0, 1.0, "neutral_1.0"
+    else:
+        tp1_mult, tp2_mult, _acting = fabricated_tp1_mult, fabricated_tp2_mult, "fabricated_static"
+    logger.info(
+        "[DEFAB-REGIME-TP] regime=%s fabricated_tp1_mult=%s fabricated_tp2_mult=%s acting=%s",
+        regime, fabricated_tp1_mult, fabricated_tp2_mult, _acting,
+    )
+
     return (
         base_sl_mult * sl_scalar,
-        base_tp1_mult * scalars["tp1_mult"],
-        base_tp2_mult * scalars["tp2_mult"],
+        base_tp1_mult * tp1_mult,
+        base_tp2_mult * tp2_mult,
     )
 
 

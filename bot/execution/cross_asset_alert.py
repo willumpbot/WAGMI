@@ -35,12 +35,29 @@ from __future__ import annotations
 
 import logging
 import math
+import os
 import time
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+
+def _defabricate_lead_lag_enabled() -> bool:
+    """RIP-OUT PHASE 1 gate #7 (default OFF -> zero live behavior change on
+    deploy). When true, LeadLagBoostEngine replaces the fabricated per-symbol
+    beta/lag_minutes in trading_config.LEAD_LAG_SYMBOL_CONFIG (and the
+    duplicate static fallback dict below) with beta/lag computed LIVE from
+    the engine's own rolling BTC/follower return windows (_btc_returns /
+    _follower_returns -- the same data already used for real-time
+    correlation), falling back to a neutral default (never the fabricated
+    per-symbol value) when there isn't yet enough evidence. Always
+    shadow-logs the counterfactual ("[DEFAB-LEAD-LAG]") in both states so
+    the delta is measurable before the flag is trusted. The boost_cap side
+    is unaffected (already live via trading_config.get_lead_lag_boost_cap)."""
+    return os.getenv("DEFABRICATE_LEAD_LAG", "false").strip().lower() in ("1", "true", "yes")
+
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -352,6 +369,14 @@ class LeadLagBoostEngine:
     # Rolling window size for real-time correlation tracking
     _CORRELATION_WINDOW = 60  # last 60 price observations
 
+    # RIP-OUT PHASE 1 (#7, DEFABRICATE_LEAD_LAG): live beta/lag computation
+    # bounds, reusing the _btc_returns/_follower_returns windows above.
+    _MIN_LIVE_LEAD_LAG_N = 13         # house n>=13 evidence standard (matches feedback/live_edge.py)
+    _MAX_LAG_SAMPLES = 20             # cross-correlation search bound, in return-sample ticks
+    _LIVE_LAG_SAMPLE_MINUTES = 1.0    # ~1 return sample per update tick (docstring: "every ~1 minute")
+    _NEUTRAL_LAG_MINUTES = (15.0, 45.0)  # neutral fallback window when live evidence is insufficient
+    _NEUTRAL_BETA = 1.0               # neutral fallback beta (no assumed amplification)
+
     def __init__(
         self,
         btc_move_threshold: float = 0.3,
@@ -392,6 +417,10 @@ class LeadLagBoostEngine:
         # Real-time correlation tracking: symbol -> rolling correlation estimate
         self._realtime_correlation: Dict[str, float] = {}
 
+        # RIP-OUT PHASE 1 (#7): live-computed beta, symbol -> latest estimate
+        # (diagnostics/shadow-log only; see _live_beta_lag).
+        self._realtime_beta: Dict[str, float] = {}
+
         # Per-follower return series for correlation calculation
         self._btc_returns: deque = deque(maxlen=self._CORRELATION_WINDOW)
         self._follower_returns: Dict[str, deque] = {}
@@ -408,11 +437,25 @@ class LeadLagBoostEngine:
             # these static boost_cap values only apply if trading_config
             # itself is unimportable, in which case ledger lookup is
             # impossible anyway).
-            self._symbol_configs = {
-                "SOL": {"lag_minutes": (30, 60), "correlation": 0.87, "beta": 1.16, "boost_cap": 12.0},
-                "ETH": {"lag_minutes": (15, 30), "correlation": 0.91, "beta": 1.20, "boost_cap": 10.0},
-                "HYPE": {"lag_minutes": (15, 45), "correlation": 0.44, "beta": 1.50, "boost_cap": 5.0},
-            }
+            # RIP-OUT PHASE 1 (#7, DEFABRICATE_LEAD_LAG): when the flag is on,
+            # even this emergency fallback stops carrying the fabricated
+            # per-symbol beta/lag_minutes -- correlation and boost_cap (not
+            # in scope for #7) are preserved unchanged.
+            if _defabricate_lead_lag_enabled():
+                self._symbol_configs = {
+                    "SOL": {"lag_minutes": self._NEUTRAL_LAG_MINUTES, "correlation": 0.87,
+                            "beta": self._NEUTRAL_BETA, "boost_cap": 12.0},
+                    "ETH": {"lag_minutes": self._NEUTRAL_LAG_MINUTES, "correlation": 0.91,
+                            "beta": self._NEUTRAL_BETA, "boost_cap": 10.0},
+                    "HYPE": {"lag_minutes": self._NEUTRAL_LAG_MINUTES, "correlation": 0.44,
+                             "beta": self._NEUTRAL_BETA, "boost_cap": 5.0},
+                }
+            else:
+                self._symbol_configs = {
+                    "SOL": {"lag_minutes": (30, 60), "correlation": 0.87, "beta": 1.16, "boost_cap": 12.0},
+                    "ETH": {"lag_minutes": (15, 30), "correlation": 0.91, "beta": 1.20, "boost_cap": 10.0},
+                    "HYPE": {"lag_minutes": (15, 45), "correlation": 0.44, "beta": 1.50, "boost_cap": 5.0},
+                }
 
         # Initialize real-time correlations from historical values
         for sym, cfg in self._symbol_configs.items():
@@ -614,6 +657,11 @@ class LeadLagBoostEngine:
             "realtime_correlations": {
                 k: round(v, 3) for k, v in self._realtime_correlation.items()
             },
+            # RIP-OUT PHASE 1 (#7): populated only when DEFABRICATE_LEAD_LAG
+            # is on and live evidence was sufficient for at least one symbol.
+            "realtime_beta": {
+                k: round(v, 3) for k, v in self._realtime_beta.items()
+            },
             "btc_move_threshold": self.btc_move_threshold,
             "max_boost": self.max_boost,
             "min_correlation": self.min_correlation,
@@ -646,6 +694,77 @@ class LeadLagBoostEngine:
                 symbol, side, e,
             )
             return cfg.get("boost_cap", self.max_boost)
+
+    def _live_beta_lag(self, symbol: str) -> Optional[Dict]:
+        """Live beta/lag for `symbol`, computed from the SAME rolling return
+        windows already maintained for real-time correlation (_btc_returns /
+        _follower_returns, fed by update_btc_price/update_follower_price;
+        see _update_realtime_correlation).
+
+        RIP-OUT PHASE 1 (#7, DEFABRICATE_LEAD_LAG): replaces
+        trading_config.LEAD_LAG_SYMBOL_CONFIG's fabricated per-symbol
+        beta/lag_minutes with values measured from this engine's own price
+        history instead of a frozen, hand-set table.
+
+        beta: OLS regression slope of follower returns on BTC returns
+        (cov/var_b), bounded to [0.3, 3.0] as a sanity envelope so a noisy
+        window can't produce an extreme multiplier.
+        lag_minutes: (min, max) window built around the sample-offset (in
+        ~_LIVE_LAG_SAMPLE_MINUTES-minute update ticks) that maximizes the
+        absolute cross-correlation between the two return series -- the
+        same empirical question the static table encoded by hand, now
+        measured live.
+
+        Returns None if fewer than _MIN_LIVE_LEAD_LAG_N paired observations
+        are available. Callers MUST fall back to a neutral default
+        (_NEUTRAL_BETA / _NEUTRAL_LAG_MINUTES) in that case -- never the
+        fabricated per-symbol LEAD_LAG_SYMBOL_CONFIG value.
+        """
+        btc_rets = list(self._btc_returns)
+        foll_rets = list(self._follower_returns.get(symbol, []))
+        n = min(len(btc_rets), len(foll_rets))
+        if n < self._MIN_LIVE_LEAD_LAG_N:
+            return None
+
+        btc_r = btc_rets[-n:]
+        fol_r = foll_rets[-n:]
+
+        mean_b = sum(btc_r) / n
+        mean_f = sum(fol_r) / n
+        cov = sum((b - mean_b) * (f - mean_f) for b, f in zip(btc_r, fol_r)) / n
+        var_b = sum((b - mean_b) ** 2 for b in btc_r) / n
+        if var_b <= 1e-12:
+            return None
+        beta = max(0.3, min(3.0, cov / var_b))
+
+        # Cross-correlation lag search: shift the follower series later by
+        # `lag` samples and find the offset with the strongest |correlation|.
+        best_lag_samples = 0
+        best_abs_corr = -1.0
+        max_lag = min(self._MAX_LAG_SAMPLES, n - 5)
+        for lag in range(0, max_lag + 1):
+            b = btc_r[: n - lag] if lag else btc_r
+            f = fol_r[lag:] if lag else fol_r
+            m = len(b)
+            if m < 5:
+                continue
+            mb = sum(b) / m
+            mf = sum(f) / m
+            cv = sum((x - mb) * (y - mf) for x, y in zip(b, f)) / m
+            vb = sum((x - mb) ** 2 for x in b) / m
+            vf = sum((y - mf) ** 2 for y in f) / m
+            denom = math.sqrt(vb * vf) if vb > 0 and vf > 0 else 0.0
+            if denom <= 0:
+                continue
+            corr = cv / denom
+            if abs(corr) > best_abs_corr:
+                best_abs_corr = abs(corr)
+                best_lag_samples = lag
+
+        lag_center = best_lag_samples * self._LIVE_LAG_SAMPLE_MINUTES
+        live_lag_minutes = (round(max(0.0, lag_center), 2), round(lag_center + 15.0, 2))
+
+        return {"beta": round(beta, 3), "lag_minutes": live_lag_minutes, "n": n}
 
     def _check_btc_momentum(self, now: float) -> List[LeadSignal]:
         """Check if BTC has made a decisive move in the last 15 minutes."""
@@ -681,7 +800,33 @@ class LeadLagBoostEngine:
             if (now - last_time) < self._SIGNAL_COOLDOWN:
                 continue
 
-            lag_min, lag_max = cfg["lag_minutes"]
+            # RIP-OUT PHASE 1 (#7, DEFABRICATE_LEAD_LAG, default off = zero
+            # live behavior change on deploy): cfg["lag_minutes"]/cfg["beta"]
+            # are a fabricated per-symbol table. Always compute the live
+            # counterfactual from the engine's own rolling return windows
+            # (_live_beta_lag) and shadow-log it; only ACT on it (swap in
+            # live_lag/beta, else a neutral default -- never the fabricated
+            # value) when the flag is on.
+            fabricated_lag = cfg["lag_minutes"]
+            fabricated_beta = cfg.get("beta")
+            live = self._live_beta_lag(sym)
+            live_beta = live["beta"] if live else None
+            live_lag = live["lag_minutes"] if live else None
+            live_n = live["n"] if live else 0
+            if _defabricate_lead_lag_enabled():
+                if live is not None:
+                    lag_min, lag_max = live_lag
+                    self._realtime_beta[sym] = live_beta
+                else:
+                    lag_min, lag_max = self._NEUTRAL_LAG_MINUTES
+                    self._realtime_beta[sym] = self._NEUTRAL_BETA
+            else:
+                lag_min, lag_max = fabricated_lag
+            logger.info(
+                "[DEFAB-LEAD-LAG] symbol=%s fabricated_beta=%s fabricated_lag=%s "
+                "live_beta=%s live_lag=%s n=%s",
+                sym, fabricated_beta, fabricated_lag, live_beta, live_lag, live_n,
+            )
             corr = self._realtime_correlation.get(sym, cfg.get("correlation", 0.5))
 
             # Skip if correlation too low
@@ -807,6 +952,7 @@ class LeadLagBoostEngine:
         self._follower_returns.clear()
         self._lead_signals.clear()
         self._last_signal_time.clear()
+        self._realtime_beta.clear()
         # Re-initialize correlations from config
         for sym, cfg in self._symbol_configs.items():
             self._realtime_correlation[sym] = cfg.get("correlation", 0.5)
