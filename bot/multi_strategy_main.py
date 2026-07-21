@@ -3834,7 +3834,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                            "LLM_EXIT_AGENT",
                            # 2026-07-01 (audit #51): heuristic exit-engine full closes
                            # now inject their event — persist them like the agent's.
-                           "LLM_EXIT_ENGINE")
+                           "LLM_EXIT_ENGINE",
+                           # SILENT-DROP FIX (interim, pre close_pipeline wiring):
+                           # LLM_EXIT_HIGH/LLM_EXIT_CRITICAL (core/llm_integration.py
+                           # _run_exit_agent_checks) were missing here even after being
+                           # routed onto _pending_exit_events — the close would book
+                           # equity/ledger but skip weight/regime/ML/learning
+                           # record_outcome calls, same class of bug as the 2026-06-06
+                           # LLM_EXIT_AGENT gap above. Already registered in
+                           # core/close_types.py as HELPER/FULL close types.
+                           "LLM_EXIT_HIGH", "LLM_EXIT_CRITICAL")
 
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
             # 2026-06-05: removed `and event.strategy` guard — empty strategy was silently

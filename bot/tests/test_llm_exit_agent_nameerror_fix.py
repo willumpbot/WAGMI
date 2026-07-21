@@ -99,7 +99,27 @@ class TestUrgentExitForceClosesWithoutNameError(unittest.TestCase):
 
         obj.pos_mgr = MagicMock()
         obj.pos_mgr.positions = {"BTC": fake_pos}
-        obj.pos_mgr.force_close = MagicMock()
+
+        def _force_close(symbol, price, reason):
+            ev = MagicMock()
+            ev.symbol = symbol
+            ev.metadata = {}
+            return ev
+        obj.pos_mgr.force_close = MagicMock(side_effect=_force_close)
+
+        # 2026-07-21 SILENT-DROP FIX: the urgent-exit branch now routes
+        # through the booked path (submit exchange order -> force_close on
+        # fill -> queue onto _pending_exit_events), mirroring LLM_EXIT_AGENT
+        # (core/position_wiring.py). Without an order_executor + pending
+        # queue on self, force_close() is intentionally never reached (see
+        # test_llm_exit_high_routing.py's anti-silent-drop invariant tests)
+        # -- so this harness must provide them for the pre-existing
+        # NameError-regression assertions below to still exercise
+        # force_close().
+        obj.order_executor = MagicMock()
+        obj.order_executor.close_position = MagicMock(return_value=MagicMock(filled=True))
+        obj._pending_exit_events = []
+
         obj._last_prices = {"BTC": last_price}
         obj._tick_regime_cache = {}
         return obj

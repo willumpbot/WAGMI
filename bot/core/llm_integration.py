@@ -1220,17 +1220,90 @@ class LLMIntegrationMixin:
                             logger.warning(
                                 f"[EXIT-AGENT] {symbol} urgency={urgency} action={action} — {reason}"
                             )
-                            # Give Exit Agent actual teeth: force-close when it says to
+                            # Give Exit Agent actual teeth: force-close when it says to.
+                            #
+                            # SILENT-DROP FIX (interim, pre close_pipeline wiring):
+                            # this used to call _pm.force_close() directly and DISCARD
+                            # the returned TradeEvent. The position closed internally
+                            # (state -> CLOSED, qty -> 0, [TRADE_CLOSED] logged) but the
+                            # close was never dispatched to equity/ledger/learning (no
+                            # exchange order submitted either) — it vanished from the
+                            # books while the logs showed a clean close. Route through
+                            # the SAME booked path LLM_EXIT_AGENT uses (see
+                            # core/position_wiring.py::_check_llm_exit_suggestions):
+                            # submit the exchange close order first, force_close the
+                            # position-manager state only on a confirmed fill, stamp
+                            # _exchange_submitted so the god-block doesn't resubmit,
+                            # then queue the TradeEvent onto self._pending_exit_events
+                            # (under _pending_exit_lock — T0-A-race, 2026-07-14 — since
+                            # symbol scans can run in a worker pool concurrently with
+                            # this tick's queue drain) so multi_strategy_main's
+                            # per-symbol event loop drains + books it (equity, ledger,
+                            # trades.csv, weight/regime/ML learning, CLOSED_BOOKED).
+                            #
+                            # INVARIANT: never close a position here without routing
+                            # the event onward. If the routing path isn't reachable on
+                            # this object (no order_executor / no pos_mgr), do NOT
+                            # close — a lingering position that mechanical SL/TP or a
+                            # routed exit path closes later is strictly better than a
+                            # silent drop.
                             if action in ("full_close", "close") and urgency in ("high", "critical"):
                                 try:
                                     _pm = getattr(self, 'pos_mgr', None) or getattr(self, 'position_manager', None)
+                                    _oe = getattr(self, 'order_executor', None)
                                     _price = (self._last_prices if hasattr(self, '_last_prices') else {}).get(symbol, 0)
-                                    if _pm and _price > 0 and hasattr(_pm, 'force_close'):
-                                        _pm.force_close(symbol, _price, f"LLM_EXIT_{urgency.upper()}")
+                                    _can_route = bool(
+                                        _pm and _oe and _price > 0
+                                        and hasattr(_pm, 'force_close')
+                                        and hasattr(_oe, 'close_position')
+                                    )
+                                    if not _can_route:
                                         logger.warning(
-                                            f"[EXIT-AGENT] {symbol} FORCE-CLOSED by LLM "
-                                            f"(urgency={urgency}): {reason[:60]}"
+                                            f"[EXIT-AGENT] {symbol} urgency={urgency} close SKIPPED: "
+                                            f"booked routing path unavailable on this object "
+                                            f"(order_executor/pos_mgr missing) — leaving position "
+                                            f"open rather than risk a silent drop. Mechanical SL/TP "
+                                            f"or a routed exit path will close it."
                                         )
+                                    else:
+                                        _exit_pos = _pm.positions.get(symbol)
+                                        if not _exit_pos or _exit_pos.qty <= 0:
+                                            logger.debug(f"[EXIT-AGENT] {symbol} no open position to close.")
+                                        else:
+                                            _ex_side = "SELL" if _exit_pos.side == "LONG" else "BUY"
+                                            _reason = f"LLM_EXIT_{urgency.upper()}"
+                                            _close_result = _oe.close_position(
+                                                symbol, _ex_side, _exit_pos.qty, _price,
+                                                reason=_reason,
+                                            )
+                                            if _close_result and getattr(_close_result, "filled", False):
+                                                _fc = _pm.force_close(symbol, _price, _reason)
+                                                if _fc:
+                                                    _fc.metadata["_exchange_submitted"] = True
+                                                    _lock = getattr(self, '_pending_exit_lock', None)
+                                                    if not hasattr(self, '_pending_exit_events'):
+                                                        self._pending_exit_events = []
+                                                    if _lock is not None:
+                                                        with _lock:
+                                                            self._pending_exit_events.append(_fc)
+                                                    else:
+                                                        self._pending_exit_events.append(_fc)
+                                                    logger.warning(
+                                                        f"[EXIT-AGENT] {symbol} FORCE-CLOSED by LLM "
+                                                        f"(urgency={urgency}): {reason[:60]}"
+                                                    )
+                                                else:
+                                                    logger.critical(
+                                                        f"[{symbol}] {_reason} exchange order filled but "
+                                                        f"force_close() returned no event — position may "
+                                                        f"be closed on-exchange without being booked. "
+                                                        f"Reconciliation will handle."
+                                                    )
+                                            else:
+                                                logger.critical(
+                                                    f"[{symbol}] {_reason} CLOSE FAILED — position still "
+                                                    f"open. Reconciliation will handle."
+                                                )
                                 except Exception as _ex:
                                     logger.debug(f"[EXIT-AGENT] force_close error for {symbol}: {_ex}")
                         else:
