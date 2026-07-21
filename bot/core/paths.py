@@ -203,6 +203,20 @@ def assert_boot_integrity() -> None:
        that silent auto-create is precisely what produced the 7-day
        silent-trading incident.
 
+    WARNING -- NOT WIRED, DO NOT WIRE CASUALLY: as of this writing, this
+    function has ZERO production callers (nothing in run.py or any other
+    live entry point calls it). Wiring it in is a real boot-behavior
+    change, not a no-op refactor: it performs an ``os.chdir()`` (rule 1
+    above) AND can outright refuse to start the process by raising
+    BootIntegrityError (rule 2 above). Do not add a call site to this
+    function as an incidental/drive-by edit -- that is a deliberate
+    decision requiring its own validation first: confirm the chdir is safe
+    for every actual launch path (Task Scheduler's cwd, a manual
+    ``cd bot && python run.py``, any other entry point), and confirm
+    ``_REQUIRED_NONEMPTY`` correctly reflects every file that can
+    legitimately be absent/empty on a fresh epoch (an epoch reset must not
+    itself trip this and refuse to boot).
+
     Raises:
         BootIntegrityError: if DATA_DIR is missing, or if any file in
             _REQUIRED_NONEMPTY is missing or empty (0 bytes).

@@ -365,7 +365,16 @@ class QuantBrain:
         # (bot/data/quant_brain_overrides.json) deleted as a dormant backdoor —
         # it could `merged.update()` a manually pinned win-prob, silently
         # overriding the living decay-blended calibration above with no
-        # audit trail. The file never existed on disk; zero behavior change.
+        # audit trail. CORRECTED (audit finding): the file DOES exist on
+        # disk (small, ~402B) -- it is not "never existed" -- but its
+        # content is empty/{}-equivalent today, so the loader was already a
+        # no-op in practice and removing it is zero behavior change right
+        # now. The actual reason to remove the seam is forward-looking: a
+        # FUTURE hand-edit that wrote a non-empty override into that file
+        # would silently pin a fabricated win-prob and permanently defeat
+        # the living decay blend above with no audit trail -- so the
+        # footgun is removed now rather than left dormant for someone to
+        # trip over later.
         self._calibration_overrides = {}
 
         self._calibrations = merged

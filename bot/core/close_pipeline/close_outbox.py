@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 from dataclasses import fields as dataclass_fields
 from datetime import datetime, timezone
 from pathlib import Path
@@ -174,19 +175,39 @@ def load_acks(*, path: Optional[PathLike] = None) -> Dict[str, List[str]]:
     return read_json_or_none(acks_path(path=path)) or {}
 
 
+# Guards the read-modify-write critical section in ack() below.
+# ``atomic_write_json``'s own per-path lock (see core/atomic_state.py)
+# only serializes the WRITE half of that call -- it does nothing for the
+# READ (``read_json_or_none``) that happens before it. Two concurrent
+# ack() calls (e.g. close_with_execution invoked from the Telegram poll
+# thread racing the main thread) can therefore both read the same
+# pre-update map, each add their own subscriber locally, then each write --
+# and the second atomic_write_json to complete simply overwrites the
+# first's addition, silently losing an ack. This lock makes the whole
+# read-modify-write section (not just the final write) atomic w.r.t. other
+# ack() calls, closing that window. Deliberately a single process-wide
+# lock rather than per-path: ack() is not a hot path, and correctness
+# (never lose an ack) matters far more here than cross-path concurrency.
+_ACK_LOCK = threading.Lock()
+
+
 def ack(event_id: str, subscriber_name: str, *, path: Optional[PathLike] = None) -> None:
     """Record that ``subscriber_name`` successfully processed ``event_id``.
     Idempotent -- acking the same (event_id, subscriber_name) pair twice is
     a no-op on the second call. Crash-safe: the whole ack map is rewritten
     via ``atomic_write_json`` (atomic replace), so a crash mid-write leaves
-    either the old or the new complete map, never a torn one."""
+    either the old or the new complete map, never a torn one. Thread-safe:
+    the read-modify-write is guarded by ``_ACK_LOCK`` (see its comment) so
+    concurrent ack() calls -- e.g. from the Telegram poll thread via
+    close_with_execution racing the main thread -- never lose an update."""
     target = acks_path(path=path)
-    data = read_json_or_none(target) or {}
-    subs = list(data.get(event_id, []))
-    if subscriber_name not in subs:
-        subs.append(subscriber_name)
-    data[event_id] = subs
-    atomic_write_json(target, data)
+    with _ACK_LOCK:
+        data = read_json_or_none(target) or {}
+        subs = list(data.get(event_id, []))
+        if subscriber_name not in subs:
+            subs.append(subscriber_name)
+        data[event_id] = subs
+        atomic_write_json(target, data)
 
 
 def unacked(

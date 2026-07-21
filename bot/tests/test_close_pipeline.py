@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import threading
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -238,9 +239,12 @@ class TestTradeClosed:
         assert tc.open_time is None
 
     def test_empty_position_id_raises(self):
+        """from_trade_event's own invariant check is an explicit `raise
+        ValueError`, not `assert` (assertions are compiled out under
+        `python -O`) -- see trade_closed.py FIX 2."""
         pos = _make_position()
         event = _terminal_event(pos, position_id="")
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             TradeClosed.from_trade_event(event)
 
     def test_direct_construction_empty_position_id_raises(self):
@@ -254,14 +258,34 @@ class TestTradeClosed:
 
     def test_total_pnl_never_falls_back_to_event_pnl_silently(self):
         """If NEITHER metadata["total_pnl"] NOR position.realized_pnl is
-        available, from_trade_event must refuse (assert), never silently
-        substitute event.pnl."""
+        available, from_trade_event must refuse, never silently substitute
+        event.pnl. This is an explicit `raise ValueError`, not `assert`
+        (assertions are compiled out under `python -O`) -- see
+        trade_closed.py FIX 2."""
         pos = _make_position()
         event = _partial_event(pos)
         event.metadata.pop("total_pnl", None)  # already absent, explicit for clarity
         # Use a bare dict "position" with no realized_pnl key at all.
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             TradeClosed.from_trade_event(event, position={})
+
+    def test_invariants_raise_not_assert(self):
+        """Both from_trade_event invariants (non-empty position_id,
+        total_pnl availability) must be explicit `raise ValueError`, not
+        `assert` -- `assert` is compiled out under `python -O`, which would
+        silently let a bad event through in an optimized run. This directly
+        exercises the raise/message rather than relying on AssertionError's
+        accidental-pass-under -O behavior."""
+        pos = _make_position()
+
+        empty_id_event = _terminal_event(pos, position_id="")
+        with pytest.raises(ValueError, match="position_id is empty"):
+            TradeClosed.from_trade_event(empty_id_event)
+
+        no_pnl_event = _partial_event(pos)
+        no_pnl_event.metadata.pop("total_pnl", None)
+        with pytest.raises(ValueError, match="no total_pnl available"):
+            TradeClosed.from_trade_event(no_pnl_event, position={})
 
     def test_deep_copy_isolation_entry_reasons(self):
         pos = _make_position()
@@ -378,6 +402,47 @@ class TestCloseOutbox:
 
         acks = close_outbox.load_acks(path=target)
         assert "ev-old" not in acks  # pruned alongside the dropped row
+
+    def test_ack_concurrent_writes_no_lost_updates(self, tmp_path):
+        """FIX 3: ack() used to do an unlocked read-modify-write of the acks
+        map. Single-threaded that's fine, but close_with_execution is
+        designed to be called from the Telegram poll thread concurrently
+        with the main thread -- many threads acking DIFFERENT (event_id,
+        subscriber) pairs against the SAME acks file must never lose an
+        update. Uses a barrier to force maximum contention."""
+        target = tmp_path / "close_outbox.jsonl"
+        n_events = 12
+        n_subs = 5
+        events = [
+            _minimal_closed(position_id=f"pid-{i}", event_id=f"ev-{i}")
+            for i in range(n_events)
+        ]
+        for e in events:
+            close_outbox.append(e, path=target)
+
+        sub_names = [f"sub{i}" for i in range(n_subs)]
+        pairs = [(e.event_id, sub) for e in events for sub in sub_names]
+
+        barrier = threading.Barrier(len(pairs))
+
+        def _do_ack(event_id: str, sub_name: str) -> None:
+            barrier.wait()  # release every thread at (roughly) the same instant
+            close_outbox.ack(event_id, sub_name, path=target)
+
+        threads = [
+            threading.Thread(target=_do_ack, args=(event_id, sub_name))
+            for event_id, sub_name in pairs
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        acks = close_outbox.load_acks(path=target)
+        for e in events:
+            assert set(acks.get(e.event_id, [])) == set(sub_names), (
+                f"lost ack(s) for {e.event_id}: got {acks.get(e.event_id, [])}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -572,3 +637,66 @@ class TestCloseBus:
         bus2.subscribe("equity", lambda e: calls_2.append(1), tier=Tier.T0_CORE_ACCOUNTING, required=True)
         bus2.publish(event)
         assert calls_2 == []  # deduped via the persisted applied-store
+
+    def test_required_subscriber_raise_stays_unacked_and_is_recovered_by_replay(self, tmp_path):
+        """FIX 1: a raised REQUIRED subscriber must never be acked, and the
+        position_id must never be recorded as "applied" -- otherwise the
+        failed booking (e.g. equity) becomes permanently unrecoverable:
+        replay_unacked's own already-applied skip (tier==T0, required,
+        already_applied) would then skip retrying the very subscriber that
+        never actually ran successfully."""
+        outbox_path = tmp_path / "close_outbox.jsonl"
+        calls = {"equity": 0, "cb": 0, "log_trade": 0}
+        fail_cb = {"raise": True}
+
+        def equity_fn(e):
+            calls["equity"] += 1
+
+        def cb_fn(e):
+            calls["cb"] += 1
+            if fail_cb["raise"]:
+                raise RuntimeError("cb boom")
+
+        def log_trade_fn(e):
+            calls["log_trade"] += 1
+
+        bus = CloseBus(outbox_path=outbox_path)
+        bus.subscribe("equity", equity_fn, tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True)
+        bus.subscribe("cb", cb_fn, tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True)
+        bus.subscribe("log_trade", log_trade_fn, tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True)
+
+        event = _minimal_closed(position_id="pid-req-fail", event_id="ev-req-fail")
+        report = bus.publish(event)
+
+        assert dict(report.failed) and report.failed[0][0] == "cb"
+        assert "equity" in report.delivered and "log_trade" in report.delivered
+        assert calls == {"equity": 1, "cb": 1, "log_trade": 1}
+
+        # (a) The failed subscriber ("cb") must remain UNACKED -- unacked()
+        # for just that subscriber still returns the event. The subscribers
+        # that DID succeed ("equity") must already be acked.
+        pending_for_cb = close_outbox.unacked(["cb"], path=outbox_path)
+        assert {e.event_id for e in pending_for_cb} == {"ev-req-fail"}
+        pending_for_equity = close_outbox.unacked(["equity"], path=outbox_path)
+        assert pending_for_equity == []
+
+        # The position must NOT be recorded as "applied" -- a raised
+        # required subscriber blocks mark_applied entirely.
+        assert bus._applied_store.is_applied("pid-req-fail") is False
+
+        # (b) replay_unacked() must redeliver ONLY to the failed subscriber
+        # ("cb") -- "equity"/"log_trade" already succeeded and must NOT run
+        # again (idempotent recovery, no double-booking).
+        fail_cb["raise"] = False  # subscriber recovers on retry
+        delivered = bus.replay_unacked()
+
+        assert calls == {"equity": 1, "cb": 2, "log_trade": 1}
+        assert delivered == 1
+
+        # (c) Having succeeded on replay, "cb" is now acked and the position
+        # is recorded applied; a second replay is a no-op.
+        assert close_outbox.unacked(["cb"], path=outbox_path) == []
+        assert bus._applied_store.is_applied("pid-req-fail") is True
+
+        delivered_again = bus.replay_unacked()
+        assert delivered_again == 0

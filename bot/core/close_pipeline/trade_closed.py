@@ -230,12 +230,17 @@ class TradeClosed:
         """
         meta: Dict[str, Any] = event.metadata or {}
         position_id = getattr(event, "position_id", "") or ""
-        assert position_id, (
-            "TradeClosed.from_trade_event: event.position_id is empty -- "
-            "every TradeEvent constructor must populate position_id from "
-            "pos.position_id (Phase 0.4-A1); refusing to build an event "
-            "with no identity."
-        )
+        if not position_id:
+            # Explicit raise, not `assert`: assertions are compiled out
+            # under `python -O`, which would let an empty position_id pass
+            # through silently in an optimized run -- this invariant must
+            # hold unconditionally.
+            raise ValueError(
+                "TradeClosed.from_trade_event: event.position_id is empty -- "
+                "every TradeEvent constructor must populate position_id from "
+                "pos.position_id (Phase 0.4-A1); refusing to build an event "
+                "with no identity."
+            )
 
         leg_kind = LegKind.TERMINAL if event.is_position_close else LegKind.PARTIAL
 
@@ -256,12 +261,17 @@ class TradeClosed:
                 position.get("realized_pnl") if isinstance(position, dict)
                 else getattr(position, "realized_pnl", None)
             )
-        assert total_pnl is not None, (
-            "TradeClosed.from_trade_event: no total_pnl available from "
-            "event.metadata['total_pnl'] nor position.realized_pnl -- "
-            "refusing to fall back to event.pnl (a per-leg delta, not the "
-            "authoritative total; see spec04.md R7/R10)."
-        )
+        if total_pnl is None:
+            # Explicit raise, not `assert`: assertions are compiled out
+            # under `python -O`, which would let a missing total_pnl source
+            # silently pass through in an optimized run -- this invariant
+            # must hold unconditionally.
+            raise ValueError(
+                "TradeClosed.from_trade_event: no total_pnl available from "
+                "event.metadata['total_pnl'] nor position.realized_pnl -- "
+                "refusing to fall back to event.pnl (a per-leg delta, not the "
+                "authoritative total; see spec04.md R7/R10)."
+            )
 
         trade_profile = meta.get("trade_profile")
         if not trade_profile:

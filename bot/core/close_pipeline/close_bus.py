@@ -271,6 +271,7 @@ class CloseBus:
 
         event_kind = _leg_as_kind(event)
         already_applied = self._applied_store.is_applied(event.position_id)
+        any_required_failed = False
 
         for sub in self._ordered_subs():
             if event_kind not in sub.kind:
@@ -287,6 +288,10 @@ class CloseBus:
             try:
                 sub.fn(event)
                 report.delivered.append(sub.name)
+                # Ack ONLY on successful delivery -- this is what makes the
+                # event recoverable via replay_unacked() if a LATER
+                # subscriber (or a later publish()) fails: a raised
+                # subscriber must never be recorded as "processed".
                 if sub.required:
                     close_outbox.ack(event.event_id, sub.name, path=self._outbox_path)
             except Exception as e:  # noqa: BLE001 - isolation is the point
@@ -296,8 +301,16 @@ class CloseBus:
                 )
                 report.failed.append((sub.name, repr(e)))
                 _record_subscriber_failure(sub.name)
+                if sub.required:
+                    # A raised REQUIRED subscriber must block mark_applied
+                    # below -- otherwise a failed booking (e.g. equity) gets
+                    # permanently recorded as "applied" and replay_unacked's
+                    # own already-applied skip (see there) would then skip
+                    # retrying it forever. See module docstring's
+                    # EXACTLY-ONCE SEAM.
+                    any_required_failed = True
 
-        if not already_applied:
+        if not already_applied and not any_required_failed:
             self._applied_store.mark_applied(event.position_id)
 
         return report
@@ -333,6 +346,7 @@ class CloseBus:
             event_kind = _leg_as_kind(event)
             acked = set(ack_data.get(event.event_id, []))
             already_applied = self._applied_store.is_applied(event.position_id)
+            any_required_failed = False
 
             for sub in self._ordered_subs():
                 if not sub.replay:
@@ -355,8 +369,14 @@ class CloseBus:
                         sub.name, event.event_id,
                     )
                     _record_subscriber_failure(sub.name)
+                    if sub.required:
+                        # Same rule as publish(): a raised required
+                        # subscriber must block mark_applied so a future
+                        # replay_unacked() call keeps retrying it instead of
+                        # the already-applied skip masking the failure.
+                        any_required_failed = True
 
-            if not already_applied:
+            if not already_applied and not any_required_failed:
                 self._applied_store.mark_applied(event.position_id)
 
         return delivered_count
