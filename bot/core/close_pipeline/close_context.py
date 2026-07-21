@@ -47,6 +47,44 @@ FIELD NOTES:
     helpers) so importing this module never drags in ``data.db`` /
     ``data.learning`` / ``data.trade_log`` eagerly. Tests pass a ``Mock`` /
     plain callable here instead so NO real data file is ever touched.
+
+LEARNING-TIER (T2) FIELDS (Phase 0.4-B, batch 1 -- see
+close_subscribers_learning.py):
+  - ``weight_mgr``: anything exposing ``.record_outcome(strategy, win,
+    symbol="")`` -- matches ``data.strategy_weights.StrategyWeightManager``.
+  - ``regime_feedback``: anything exposing ``.record_trade(regime, pnl,
+    confidence, strategy, hold_hours=0.0, metadata=None)`` -- matches
+    ``feedback.regime_feedback.RegimeFeedbackManager``.
+  - ``confidence_floor``: anything exposing ``.record_outcome(confidence,
+    win, pnl, strategy="", symbol="", regime="")`` -- matches
+    ``feedback.adaptive_confidence.AdaptiveConfidenceFloor``.
+  - ``hold_time_rules``: anything exposing ``.record_trade(regime,
+    hold_hours, win, pnl)`` -- matches
+    ``feedback.hold_time_rules.HoldTimeRuleManager``.
+  - ``parameter_tuner``: anything exposing ``.record_trade_outcome(pnl)`` --
+    matches ``feedback.parameter_tuner.ParameterTuner``.
+  - ``feedback``: anything exposing ``.record_outcome(confidence, win, pnl,
+    strategy, symbol, regime, side, entry_type, num_agree, hold_time_s,
+    exit_action, leverage, llm_action, llm_confidence, llm_agreed)`` --
+    matches ``feedback.loop.FeedbackLoop``. NOT the same collaborator as
+    accounting-tier's fields; this is the god-block's ``self.feedback``
+    (signal-quality-adjacent feedback loop), unrelated to
+    ``feedback.signal_quality.SignalQualityScorer`` (that scorer's
+    ``record_outcome`` call was already dead code removed by
+    FEEDBACK_RECORD_FIX per multi_strategy_main.py's comment at the
+    god-block source -- nothing to extract for it).
+  - ``ic_tracker``: anything exposing ``.record(factor, predicted_direction,
+    actual_return)`` -- matches ``feedback.ic_tracker.ICTracker``.
+    (``kelly_engine`` above is reused, not duplicated, for the Kelly
+    subscriber -- see close_subscribers_learning.py's ``on_close_kelly``.)
+  - ``graduated_rules_engine``: optional, anything exposing
+    ``.record_outcome(symbol, regime, side, won, hour_utc,
+    strategies_active, num_agree, confidence)`` -- matches
+    ``llm.graduated_rules.GraduatedRulesEngine``. ``None`` means "use the
+    real process-wide singleton" (resolved lazily via
+    ``llm.graduated_rules.get_graduated_rules_engine()`` inside the
+    subscriber, mirroring the ``_default_*`` lazy-import pattern) so
+    importing this module never drags in ``llm.graduated_rules`` eagerly.
 """
 
 from __future__ import annotations
@@ -75,3 +113,16 @@ class CloseCtx:
     log_trade_fn: Optional[Callable[..., None]] = None
     record_trade_outcome_fn: Optional[Callable[..., None]] = None
     log_closed_trade_fn: Optional[Callable[..., None]] = None
+
+    # ---- LEARNING-TIER (T2) collaborators, Phase 0.4-B batch 1 -- see the
+    # module docstring's "LEARNING-TIER (T2) FIELDS" section for each
+    # collaborator's expected duck-type. All optional so tests only wire in
+    # what the subscriber under test actually needs.
+    weight_mgr: Optional[Any] = None
+    regime_feedback: Optional[Any] = None
+    confidence_floor: Optional[Any] = None
+    hold_time_rules: Optional[Any] = None
+    parameter_tuner: Optional[Any] = None
+    feedback: Optional[Any] = None
+    ic_tracker: Optional[Any] = None
+    graduated_rules_engine: Optional[Any] = None
