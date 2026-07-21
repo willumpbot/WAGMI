@@ -50,6 +50,18 @@ bot/data/ml/
 bot/data/logs/
 bot/data/backtest/
 
+# Re-include Python SOURCE modules under bot/data/ (runtime csv/json above stay ignored).
+# The broad `data/` rule silently ignored bot/data/*.py source files — so `git add` on a
+# new source module there did nothing without erroring (this hid epoch.py/trade_source.py
+# from git despite a commit message claiming to add them). These negations keep runtime
+# data ignored via `bot/data/**` while re-including only .py source. Enforced by
+# tests/test_source_tracked.py.
+!bot/data/
+bot/data/**
+!bot/data/**/
+!bot/data/*.py
+!bot/data/**/*.py
+
 # IDE & editor
 .vscode/
 .idea/
