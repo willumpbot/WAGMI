@@ -121,6 +121,26 @@ def epoch_start_path() -> Path:
     return DATA_DIR / "epoch_start.json"
 
 
+def trade_outcomes_path() -> Path:
+    """Path to the per-trade outcomes CSV (data/learning.py:record_trade_outcome).
+
+    Added for Phase 0.2 (core/provenance.py write-time pollution gate) --
+    this is the file that absorbed 253 fabricated POPCAT rows (~23% of the
+    file) from a backtest run that reused the live write path. Every ML
+    training/graduation reader treats this file as ground truth, so
+    provenance.gate_live_write() protects it explicitly."""
+    return DATA_DIR / "analysis" / "trade_outcomes.csv"
+
+
+def momentum_state_path() -> Path:
+    """Path to the per-symbol win/loss streak state used for sizing
+    multipliers (execution/momentum_tracker.py).
+
+    Added for Phase 0.2 -- this file previously had a live ``"TEST"`` key
+    written into it by a test/sim process sharing the live state path."""
+    return DATA_DIR / "momentum_state.json"
+
+
 # The trade ledger is the minimum bar for "the bot has memory": every other
 # state file can in principle be reconstructed/regenerated (position_state
 # from exchange reconciliation, heartbeat is transient, circuit breaker

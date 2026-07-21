@@ -1664,6 +1664,7 @@ class BacktestEngine:
 
         try:
             from data.learning import record_trade_outcome
+            from core.provenance import PollutionError
 
             pos = self.pos_mgr.positions.get(event.symbol)
             meta = event.metadata or {}
@@ -1682,27 +1683,43 @@ class BacktestEngine:
             # heartbeat, and prompt_enricher reader consumes. Only persist when the
             # caller explicitly opted in with --learn (backtest/runner.py --learn,
             # run.py); otherwise every backtest silently corrupts live measurement.
+            #
+            # Phase 0.2 (core/provenance.py): --learn opt-in alone is no longer
+            # sufficient. source="backtest" is passed explicitly so
+            # record_trade_outcome()'s internal gate_live_write() call raises
+            # PollutionError and this write is skipped (caught below) instead
+            # of landing in the live CSV -- this is exactly the write path
+            # that appended 253 fabricated POPCAT rows into trade_outcomes.csv.
+            # A backtest can no longer append to the live file, --learn or not.
             if self.learn:
-                record_trade_outcome(
-                    symbol=event.symbol,
-                    side=event.side,
-                    outcome=outcome,
-                    pnl=pnl,
-                    entry=pos.entry if pos else 0,
-                    sl=pos.original_sl if pos and hasattr(pos, "original_sl") else (pos.sl if pos else 0),
-                    tp1=pos.tp1 if pos else 0,
-                    tp2=pos.tp2 if pos else 0,
-                    tp1_hit=pos.state in ("TP1_HIT", "TRAILING") if pos else False,
-                    sl_after_tp1=(event.action == "SL" and pos.state == "TP1_HIT") if pos else False,
-                    state_path=pos.state_path_str if pos and hasattr(pos, "state_path_str") else event.action,
-                    leverage=event.leverage,
-                    confidence=pos.confidence if pos else 0,
-                    strategy=event.strategy or "",
-                    entry_reasons=meta.get("entry_reasons", {}),
-                    entry_type=meta.get("entry_type", ""),
-                    primary_driver=event.strategy or "",
-                    regime=meta.get("regime", ""),
-                )
+                try:
+                    record_trade_outcome(
+                        symbol=event.symbol,
+                        side=event.side,
+                        outcome=outcome,
+                        pnl=pnl,
+                        entry=pos.entry if pos else 0,
+                        sl=pos.original_sl if pos and hasattr(pos, "original_sl") else (pos.sl if pos else 0),
+                        tp1=pos.tp1 if pos else 0,
+                        tp2=pos.tp2 if pos else 0,
+                        tp1_hit=pos.state in ("TP1_HIT", "TRAILING") if pos else False,
+                        sl_after_tp1=(event.action == "SL" and pos.state == "TP1_HIT") if pos else False,
+                        state_path=pos.state_path_str if pos and hasattr(pos, "state_path_str") else event.action,
+                        leverage=event.leverage,
+                        confidence=pos.confidence if pos else 0,
+                        strategy=event.strategy or "",
+                        entry_reasons=meta.get("entry_reasons", {}),
+                        entry_type=meta.get("entry_type", ""),
+                        primary_driver=event.strategy or "",
+                        regime=meta.get("regime", ""),
+                        source="backtest",
+                    )
+                except PollutionError as _pe:
+                    logger.warning(
+                        f"[BACKTEST] --learn requested but trade_outcomes.csv write "
+                        f"was BLOCKED by the pollution gate (this is correct -- "
+                        f"backtests must never write the live file): {_pe}"
+                    )
 
             # Adaptive confidence floor: feed outcome to production-grade system.
             # Learns per-strategy/symbol/regime floors from trade results.

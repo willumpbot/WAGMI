@@ -17,9 +17,35 @@ from __future__ import annotations
 
 import os
 
+import pytest
 
 # Apply before any test module imports trading_config
 os.environ.setdefault("TAKER_FEE_BPS", "4")
+
+
+# ---------------------------------------------------------------------------
+# Phase 0.2 (core/provenance.py) -- autouse pollution-gate sandbox.
+#
+# WHY: 253 fabricated POPCAT rows landed in the live trade_outcomes.csv, and
+# a stray "TEST" key landed in the live momentum_state.json, because nothing
+# distinguished "this write came from a test/backtest process" from a real
+# live/paper write. core.provenance.resolve_source() already auto-detects a
+# live pytest process via PYTEST_CURRENT_TEST, so this fixture is a belt-
+# and-suspenders guarantee: WAGMI_SOURCE=test is forced for the whole test
+# session (not just the ambient PYTEST_CURRENT_TEST heuristic) so any writer
+# that calls gate_live_write() during a test run is blocked from touching a
+# real "brain" file, no matter how it resolves provenance otherwise.
+#
+# Restored after each test so nothing leaks into a later real process.
+# Tests that legitimately need to exercise real-source behavior (e.g.
+# core/provenance.py's own tests, which explicitly pass source=... or
+# monkeypatch WAGMI_SOURCE per-case) are unaffected -- an explicit source=
+# argument or a test-local monkeypatch.setenv always takes precedence over
+# this session-wide default.
+# ---------------------------------------------------------------------------
+@pytest.fixture(autouse=True)
+def _wagmi_source_test_sandbox(monkeypatch):
+    monkeypatch.setenv("WAGMI_SOURCE", "test")
 
 
 def pytest_configure(config):

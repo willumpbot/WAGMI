@@ -131,8 +131,27 @@ def record_trade_outcome(
     num_agree: int = 1,
     trade_profile_type: str = "",
     volatility_profile: str = "",
+    source: Optional[str] = None,
 ):
-    """Record a trade outcome to CSV and update rolling metrics."""
+    """Record a trade outcome to CSV and update rolling metrics.
+
+    Gated by core.provenance.gate_live_write(): a call whose provenance
+    resolves to a simulated source (backtest/test/sim) raises PollutionError
+    instead of writing, because this exact write path is what appended 253
+    fabricated POPCAT rows (~23% of the file) into this live CSV during a
+    backtest run. Real live/paper calls (the default when `source` is not
+    given) are unaffected -- see core/provenance.py for the full incident
+    writeup and the conservative source-resolution rules.
+    """
+    from core.provenance import gate_live_write
+
+    # Gate the ACTUAL resolved write target (the module-level _OUTCOMES_FILE
+    # global), not a separately-computed canonical path -- tests legitimately
+    # redirect _OUTCOMES_FILE to a tmp dir via monkeypatch/unittest.mock.patch
+    # ("data.learning._OUTCOMES_FILE"), and gating a hardcoded path would
+    # ignore that redirection and false-block those tests.
+    gate_live_write(os.path.abspath(_OUTCOMES_FILE), source=source)
+
     _ensure_outcomes_file()
     _rehydrate_recent_outcomes()  # no-op after the first call this process
 
