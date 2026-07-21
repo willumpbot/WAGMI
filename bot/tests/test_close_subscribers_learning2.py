@@ -541,7 +541,15 @@ class TestMl:
 # Exactly-once via the bus / registration order / isolation
 # ---------------------------------------------------------------------------
 class TestExactlyOnceViaBus:
-    def test_duplicate_publish_runs_t2_twice_per_bus_dedup_policy(self):
+    def test_duplicate_publish_applies_t2_exactly_once(self):
+        """CloseBus's applied-store dedup is now GENERALIZED to every
+        ``dedupe=True`` subscriber (the default), keyed by
+        ``(subscriber_name, position_id)`` -- no longer scoped to
+        `sub.tier == Tier.T0_CORE_ACCOUNTING`. A duplicate publish() for
+        the same position_id must NOT re-run these learning subscribers
+        (deep-memory/thesis-grader/ML double-recording on a re-published
+        close was exactly the residual gap the old god-block's
+        CLOSE_DEDUP_GUARD left open)."""
         bus = CloseBus(applied_store=InMemoryAppliedStore())
         ctx = _fake_ctx()
         register_learning2(bus, ctx)
@@ -551,16 +559,16 @@ class TestExactlyOnceViaBus:
         bus.publish(ev)
         bus.publish(ev)
 
-        assert ctx.deep_memory.record_full_trade.call_count == 2
-        assert ctx.post_trade_learner.generate_immediate_lesson.call_count == 2
-        assert ctx.reflection.on_close.call_count == 2
-        assert ctx.autopsy.should_run_autopsy.call_count == 2
-        assert ctx.learning_integrator.on_trade_closed.call_count == 2
-        assert ctx.thesis_grader.close_thesis.call_count == 2
-        assert ctx.rl_append_transition_fn.call_count == 2
-        assert ctx.counterfactual.record_exit_alternative.call_count == 2
-        assert ctx.log_signal_outcome_fn.call_count == 2
-        assert ctx.ml.record_outcome.call_count == 2
+        assert ctx.deep_memory.record_full_trade.call_count == 1
+        assert ctx.post_trade_learner.generate_immediate_lesson.call_count == 1
+        assert ctx.reflection.on_close.call_count == 1
+        assert ctx.autopsy.should_run_autopsy.call_count == 1
+        assert ctx.learning_integrator.on_trade_closed.call_count == 1
+        assert ctx.thesis_grader.close_thesis.call_count == 1
+        assert ctx.rl_append_transition_fn.call_count == 1
+        assert ctx.counterfactual.record_exit_alternative.call_count == 1
+        assert ctx.log_signal_outcome_fn.call_count == 1
+        assert ctx.ml.record_outcome.call_count == 1
 
     def test_partial_leg_skips_all_full_only_learning_subscribers(self):
         bus = CloseBus(applied_store=InMemoryAppliedStore())

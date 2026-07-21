@@ -32,17 +32,52 @@ logged, recorded in the ``DeliveryReport``, and counted in a telemetry
 counter -- it NEVER stops the remaining subscribers (including the rest of
 its own tier) from running.
 
-EXACTLY-ONCE SEAM: mandatory T0 subscribers (equity/circuit-breaker) must
-never re-apply for the same ``position_id`` twice. The spec's end-state
-(R1) is for this applied-set to live INSIDE the equity state file itself
-(execution/risk.py's risk_equity_state.json), written in the SAME atomic
-write as the equity mutation, so the two can never diverge. That file does
-not yet expose this seam, so Phase B introduces ``AppliedStore`` -- a small
-injectable interface with an in-memory default and an optional
-file-backed implementation (``atomic_write_json`` to a JSON file keyed by
-position_id) -- fully unit-testable today, and swapped for a real
-equity-file-backed implementation with ZERO change to ``CloseBus`` once
-that wiring lands (a later phase, not this one).
+EXACTLY-ONCE SEAM (GENERALIZED): every ``dedupe=True`` subscriber (the
+default -- see ``subscribe()``) must never re-apply its side effect for the
+same ``position_id`` twice. This generalizes what used to be a T0-only
+("mandatory equity/circuit-breaker") rule into the same guarantee for
+EVERY tier: T1 persistence (ledger, trades.csv), T2 derived readers
+(kelly, IC, weights, learning hooks), anything. This is the CloseBus
+replacement for the old god-block's ``CLOSE_DEDUP_GUARD``, which only made
+a duplicate close idempotent for ledger/IC/Kelly but left equity able to
+double-count (the 12-phantom-rows/-$370 incident) -- here the SAME
+mechanism covers every subscriber uniformly, so no side effect can be
+missed from the guarantee by construction. A subscriber that must
+legitimately run on every publish (e.g. a fire-and-forget alert/telemetry
+sink where "ran twice" is harmless or even correct) opts out with
+``dedupe=False``.
+
+The applied-store is keyed by ``(subscriber_name, position_id)`` --
+"did THIS subscriber already apply for THIS position" -- not by
+position_id alone, since different subscribers each need their own
+independent exactly-once record (a duplicate publish that arrives while
+one subscriber's first attempt raised must still retry only that one
+subscriber, not skip the others that already succeeded, and must not
+re-run the ones that already succeeded).
+
+This is deliberately a DIFFERENT mechanism from the outbox's ack-set
+(``close_outbox.ack``, keyed by ``(event_id, subscriber_name)``): the
+ack-set answers "did subscriber X process THIS SPECIFIC EVENT" and drives
+boot-time REPLAY recovery (an event can be re-delivered to subscribers
+that never acked it, regardless of position_id history); the applied-store
+answers "did subscriber X already apply ITS SIDE EFFECT for this
+POSITION" and drives duplicate-publish idempotence, since a position may
+be re-published (same or different event_id) without that meaning the
+side effect should run again. Both are consulted together in
+``publish()``/``replay_unacked()``: the ack-set decides "must I retry this
+subscriber for this event," the applied-store decides "may I actually run
+it, or has it already had its effect."
+
+The spec's end-state (R1) is for the applied-store to live INSIDE the
+equity state file itself (execution/risk.py's risk_equity_state.json),
+written in the SAME atomic write as the equity mutation, so the two can
+never diverge. That file does not yet expose this seam, so Phase B
+introduces ``AppliedStore`` -- a small injectable interface with an
+in-memory default and an optional file-backed implementation
+(``atomic_write_json`` to a JSON file keyed by ``subscriber_name`` ->
+``position_id`` -> ``True``) -- fully unit-testable today, and swapped for
+a real equity-file-backed implementation with ZERO change to ``CloseBus``
+once that wiring lands (a later phase, not this one).
 
 REPLAY CLASSIFICATION: ``replay=True`` (default) marks a subscriber as
 "must be caught up on boot" -- required T0/T1/T2 subscribers. ``replay=False``
@@ -127,6 +162,7 @@ class Subscription:
     kind: Tuple[CloseKind, ...]
     required: bool
     replay: bool
+    dedupe: bool
     order: int  # insertion sequence -- deterministic same-tier ordering
 
 
@@ -134,58 +170,63 @@ class Subscription:
 # Exactly-once applied-store seam (see module docstring)
 # ---------------------------------------------------------------------------
 class AppliedStore:
-    """Interface for the exactly-once applied-``position_id`` set consulted
-    by mandatory T0 subscribers. See module docstring for the seam this
-    exists to provide (future: backed by the equity state file itself)."""
+    """Interface for the exactly-once applied-``(subscriber_name,
+    position_id)`` set consulted by every ``dedupe=True`` subscriber (the
+    default -- see ``subscribe()``). See module docstring for the seam
+    this exists to provide (future: backed by the equity state file
+    itself) and for how this differs from the outbox's per-event ack-set."""
 
-    def is_applied(self, position_id: str) -> bool:
+    def is_applied(self, subscriber_name: str, position_id: str) -> bool:
         raise NotImplementedError
 
-    def mark_applied(self, position_id: str) -> None:
+    def mark_applied(self, subscriber_name: str, position_id: str) -> None:
         raise NotImplementedError
 
 
 class InMemoryAppliedStore(AppliedStore):
-    """Default applied-store: an in-memory set, thread-safe. Sufficient for
-    a single process's lifetime; does NOT survive a restart (a restart
-    should rely on ``replay_unacked`` + the outbox's own ack state instead,
-    not on this set having remembered anything)."""
+    """Default applied-store: an in-memory set of ``(subscriber_name,
+    position_id)`` pairs, thread-safe. Sufficient for a single process's
+    lifetime; does NOT survive a restart (a restart should rely on
+    ``replay_unacked`` + the outbox's own ack state instead, not on this
+    set having remembered anything)."""
 
     def __init__(self) -> None:
-        self._applied: Set[str] = set()
+        self._applied: Set[Tuple[str, str]] = set()
         self._lock = threading.Lock()
 
-    def is_applied(self, position_id: str) -> bool:
+    def is_applied(self, subscriber_name: str, position_id: str) -> bool:
         with self._lock:
-            return position_id in self._applied
+            return (subscriber_name, position_id) in self._applied
 
-    def mark_applied(self, position_id: str) -> None:
+    def mark_applied(self, subscriber_name: str, position_id: str) -> None:
         with self._lock:
-            self._applied.add(position_id)
+            self._applied.add((subscriber_name, position_id))
 
 
 class FileBackedAppliedStore(AppliedStore):
-    """Optional file-backed applied-store: ``{position_id: true}`` written
-    via ``atomic_write_json`` (atomic replace) on every ``mark_applied``.
-    NOT wired to the real equity state file yet -- that is the later-phase
-    seam described in the module docstring (R1). Provided so tests/boot
-    code can exercise crash-persistence of the applied-set today without
-    waiting for that wiring."""
+    """Optional file-backed applied-store: ``{subscriber_name:
+    {position_id: true}}`` written via ``atomic_write_json`` (atomic
+    replace) on every ``mark_applied``. NOT wired to the real equity state
+    file yet -- that is the later-phase seam described in the module
+    docstring (R1). Provided so tests/boot code can exercise
+    crash-persistence of the applied-set today without waiting for that
+    wiring."""
 
     def __init__(self, path: PathLike) -> None:
         self._path = Path(path)
         self._lock = threading.Lock()
 
-    def _load(self) -> Dict[str, bool]:
+    def _load(self) -> Dict[str, Dict[str, bool]]:
         return read_json_or_none(self._path) or {}
 
-    def is_applied(self, position_id: str) -> bool:
-        return bool(self._load().get(position_id))
+    def is_applied(self, subscriber_name: str, position_id: str) -> bool:
+        return bool(self._load().get(subscriber_name, {}).get(position_id))
 
-    def mark_applied(self, position_id: str) -> None:
+    def mark_applied(self, subscriber_name: str, position_id: str) -> None:
         with self._lock:
             data = self._load()
-            data[position_id] = True
+            subs = data.setdefault(subscriber_name, {})
+            subs[position_id] = True
             atomic_write_json(self._path, data)
 
 
@@ -238,13 +279,23 @@ class CloseBus:
         kind: Sequence[CloseKind] = (CloseKind.FULL, CloseKind.PARTIAL),
         required: bool = True,
         replay: bool = True,
+        dedupe: bool = True,
     ) -> None:
+        """Register ``fn`` for delivery. ``dedupe`` (default ``True``) --
+        a position closes once, so by default every subscriber's side
+        effect fires AT MOST ONCE per ``position_id`` even if the same
+        close is ``publish()``-ed more than once (see module docstring's
+        EXACTLY-ONCE SEAM). Pass ``dedupe=False`` only for a subscriber
+        that must legitimately re-run on every publish regardless of
+        position_id history (e.g. a fire-and-forget alert/telemetry sink
+        where re-running is harmless) -- the default keeps everything else
+        safe without each call site having to reason about it."""
         with self._lock:
             self._seq += 1
             self._subs.append(
                 Subscription(
                     name=name, fn=fn, tier=Tier(tier), kind=tuple(kind),
-                    required=required, replay=replay, order=self._seq,
+                    required=required, replay=replay, dedupe=dedupe, order=self._seq,
                 )
             )
 
@@ -270,30 +321,33 @@ class CloseBus:
         close_outbox.append(event, path=self._outbox_path)
 
         event_kind = _leg_as_kind(event)
-        already_applied = self._applied_store.is_applied(event.position_id)
-        any_required_failed = False
 
         for sub in self._ordered_subs():
             if event_kind not in sub.kind:
                 report.skipped.append(sub.name)
                 continue
-            if sub.tier == Tier.T0_CORE_ACCOUNTING and sub.required and already_applied:
-                # Exactly-once: a duplicate publish() for a position_id
-                # already applied must not re-run mandatory T0 accounting.
-                # Non-mandatory / non-T0 subscribers are NOT deduped here --
-                # per spec, a no-dedup T3 (fire-and-forget) subscriber may
-                # legitimately run again on a duplicate publish.
+            if sub.dedupe and self._applied_store.is_applied(sub.name, event.position_id):
+                # Exactly-once (generalized): THIS subscriber already
+                # applied its side effect for THIS position_id -- a
+                # duplicate publish() (same or different event_id) must not
+                # re-run it. Checked/marked per-(subscriber, position_id),
+                # not once for the whole event, so a subscriber that failed
+                # on a previous publish is still retried here while its
+                # siblings that already succeeded are correctly skipped.
                 report.skipped.append(sub.name)
                 continue
             try:
                 sub.fn(event)
                 report.delivered.append(sub.name)
-                # Ack ONLY on successful delivery -- this is what makes the
-                # event recoverable via replay_unacked() if a LATER
-                # subscriber (or a later publish()) fails: a raised
-                # subscriber must never be recorded as "processed".
+                # Ack + mark-applied ONLY on successful delivery -- this is
+                # what makes the event recoverable via replay_unacked() if
+                # this subscriber (or a sibling) fails: a raised subscriber
+                # must never be recorded as "processed" or "applied", so a
+                # later replay/publish keeps retrying exactly it.
                 if sub.required:
                     close_outbox.ack(event.event_id, sub.name, path=self._outbox_path)
+                if sub.dedupe:
+                    self._applied_store.mark_applied(sub.name, event.position_id)
             except Exception as e:  # noqa: BLE001 - isolation is the point
                 logger.exception(
                     "close_bus: subscriber %r raised on event %s (position_id=%s)",
@@ -301,17 +355,6 @@ class CloseBus:
                 )
                 report.failed.append((sub.name, repr(e)))
                 _record_subscriber_failure(sub.name)
-                if sub.required:
-                    # A raised REQUIRED subscriber must block mark_applied
-                    # below -- otherwise a failed booking (e.g. equity) gets
-                    # permanently recorded as "applied" and replay_unacked's
-                    # own already-applied skip (see there) would then skip
-                    # retrying it forever. See module docstring's
-                    # EXACTLY-ONCE SEAM.
-                    any_required_failed = True
-
-        if not already_applied and not any_required_failed:
-            self._applied_store.mark_applied(event.position_id)
 
         return report
 
@@ -345,8 +388,6 @@ class CloseBus:
         for event in sorted(events, key=lambda e: (e.close_time or "", e.event_id)):
             event_kind = _leg_as_kind(event)
             acked = set(ack_data.get(event.event_id, []))
-            already_applied = self._applied_store.is_applied(event.position_id)
-            any_required_failed = False
 
             for sub in self._ordered_subs():
                 if not sub.replay:
@@ -355,7 +396,17 @@ class CloseBus:
                     continue
                 if sub.name in acked:
                     continue  # this subscriber already processed this event
-                if sub.tier == Tier.T0_CORE_ACCOUNTING and sub.required and already_applied:
+                if sub.dedupe and self._applied_store.is_applied(sub.name, event.position_id):
+                    # Belt & suspenders: the applied-store is the source of
+                    # truth for "already had the side effect," even if the
+                    # ack is (for whatever reason) missing -- e.g. applied
+                    # via a different event_id for the same position. Never
+                    # re-run the subscriber; if it's required, converge the
+                    # ack-set too so this doesn't keep showing up as
+                    # unacked on every future replay.
+                    if sub.required:
+                        close_outbox.ack(event.event_id, sub.name, path=self._outbox_path)
+                        acked.add(sub.name)
                     continue
                 try:
                     sub.fn(event)
@@ -363,21 +414,17 @@ class CloseBus:
                     if sub.required:
                         close_outbox.ack(event.event_id, sub.name, path=self._outbox_path)
                         acked.add(sub.name)
+                    if sub.dedupe:
+                        self._applied_store.mark_applied(sub.name, event.position_id)
                 except Exception:
                     logger.exception(
                         "close_bus.replay_unacked: subscriber %r raised replaying event %s",
                         sub.name, event.event_id,
                     )
                     _record_subscriber_failure(sub.name)
-                    if sub.required:
-                        # Same rule as publish(): a raised required
-                        # subscriber must block mark_applied so a future
-                        # replay_unacked() call keeps retrying it instead of
-                        # the already-applied skip masking the failure.
-                        any_required_failed = True
-
-            if not already_applied and not any_required_failed:
-                self._applied_store.mark_applied(event.position_id)
+                    # Do NOT ack, do NOT mark_applied -- a future
+                    # replay_unacked() call must keep retrying exactly this
+                    # subscriber (same rule as publish()).
 
         return delivered_count
 

@@ -481,15 +481,15 @@ class TestKelly:
 # Exactly-once via the bus
 # ---------------------------------------------------------------------------
 class TestExactlyOnceViaBus:
-    def test_duplicate_publish_runs_t2_twice_per_bus_dedup_policy(self):
-        """CloseBus's applied-store dedup (close_bus.py:279) is scoped to
-        ``sub.tier == Tier.T0_CORE_ACCOUNTING`` only -- T2 (this file) is
-        NOT deduped by the bus, so a duplicate publish() for the same
-        position_id runs every learning subscriber again, exactly like T1
-        in close_subscribers_accounting.py. This documents the bus's real,
-        verified behavior rather than a stronger guarantee it doesn't
-        provide at this phase (see module docstring's CLOSE_DEDUP_GUARD
-        scope note).
+    def test_duplicate_publish_applies_t2_exactly_once(self):
+        """CloseBus's applied-store dedup is now GENERALIZED to every
+        ``dedupe=True`` subscriber (the default), keyed by
+        ``(subscriber_name, position_id)`` -- no longer scoped to
+        `sub.tier == Tier.T0_CORE_ACCOUNTING`. T2 (this file) is NOT
+        exempt from the seam: a duplicate publish() for the same
+        position_id must NOT re-run these learning subscribers (kelly/IC
+        double-updating on a re-published close was exactly the residual
+        gap the old god-block's CLOSE_DEDUP_GUARD left open).
         """
         bus = CloseBus(applied_store=InMemoryAppliedStore())
         ctx = _fake_ctx()
@@ -500,15 +500,21 @@ class TestExactlyOnceViaBus:
         bus.publish(ev)
         bus.publish(ev)
 
-        assert ctx.weight_mgr.record_outcome.call_count == 2
-        assert ctx.regime_feedback.record_trade.call_count == 2
-        assert ctx.confidence_floor.record_outcome.call_count == 2
-        assert ctx.hold_time_rules.record_trade.call_count == 2
-        assert ctx.parameter_tuner.record_trade_outcome.call_count == 2
-        assert ctx.feedback.record_outcome.call_count == 2
-        assert ctx.graduated_rules_engine.record_outcome.call_count == 2
-        assert ctx.ic_tracker.record.call_count >= 2
-        assert ctx.kelly_engine.record_trade.call_count >= 2
+        assert ctx.weight_mgr.record_outcome.call_count == 1
+        assert ctx.regime_feedback.record_trade.call_count == 1
+        assert ctx.confidence_floor.record_outcome.call_count == 1
+        assert ctx.hold_time_rules.record_trade.call_count == 1
+        assert ctx.parameter_tuner.record_trade_outcome.call_count == 1
+        assert ctx.feedback.record_outcome.call_count == 1
+        assert ctx.graduated_rules_engine.record_outcome.call_count == 1
+        # ic_tracker/kelly each iterate _contributing_factors(ev) internally
+        # (2 factors in this fixture's entry_reasons["strategies_agree"]) --
+        # the SUBSCRIBER fires exactly once across the duplicate publish,
+        # but that one firing legitimately makes 2 record() calls. The
+        # exactly-once guarantee is about the subscriber invocation, not
+        # about how many times it calls its own collaborator internally.
+        assert ctx.ic_tracker.record.call_count == 2
+        assert ctx.kelly_engine.record_trade.call_count == 2
 
     def test_partial_leg_skips_all_full_only_learning_subscribers(self):
         bus = CloseBus(applied_store=InMemoryAppliedStore())

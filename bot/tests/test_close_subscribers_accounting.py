@@ -531,24 +531,21 @@ class TestTradeLogger:
 # Exactly-once via the bus
 # ---------------------------------------------------------------------------
 class TestExactlyOnceViaBus:
-    def test_duplicate_publish_applies_t0_once_t1_per_bus_dedup_policy(self):
+    def test_duplicate_publish_applies_t0_and_t1_exactly_once(self):
         """Publishing the SAME TradeClosed (same position_id, same event_id)
         twice through a CloseBus with all six accounting subscribers
-        registered: T0 (equity/circuit_breaker/log_trade) are ``required``
-        T0_CORE_ACCOUNTING subscribers, so CloseBus.publish's applied-store
-        check (close_bus.py:279) skips them entirely on the second publish
-        -- equity/CB genuinely apply exactly once (spec04.md T-R1).
+        registered: CloseBus.publish's applied-store check is now
+        GENERALIZED to every ``dedupe=True`` subscriber (the default --
+        see close_bus.py's ``subscribe()``), keyed by
+        ``(subscriber_name, position_id)``, not scoped to
+        `sub.tier == Tier.T0_CORE_ACCOUNTING` as it used to be.
 
-        T1 (ledger/trades_csv/trade_logger) are NOT gated by that same
-        check -- close_bus.py's applied-store skip is scoped to
-        `sub.tier == Tier.T0_CORE_ACCOUNTING` only (see its publish()
-        implementation) -- so under the CURRENTLY SHIPPED CloseBus, T1
-        subscribers run again on a duplicate publish. This test documents
-        that real, verified behavior ("ledger/trades.csv per the bus's
-        dedup policy") rather than asserting a stronger guarantee the bus
-        does not provide at this phase; T1-level dedup today still depends
-        on other layers (e.g. the god-block's CLOSE_DEDUP_GUARD, or a
-        future outbox-ack-based mechanism), not on CloseBus.publish().
+        T0 (equity/circuit_breaker/log_trade) AND T1
+        (ledger/trades_csv/trade_logger) -- none of these subscribers opt
+        out with ``dedupe=False`` (see register_accounting) -- must each
+        apply EXACTLY ONCE on a duplicate publish. This closes the gap the
+        old god-block's ``CLOSE_DEDUP_GUARD`` never fully covered (ledger
+        could double-book even though equity/CB were guarded).
         """
         bus = CloseBus(applied_store=InMemoryAppliedStore())
         ctx = _fake_ctx()
@@ -562,11 +559,13 @@ class TestExactlyOnceViaBus:
         assert ctx.risk_mgr.update_equity.call_count == 1
         assert ctx.log_trade_fn.call_count == 1
 
-        # T1: NOT deduped by CloseBus at this phase -- both publishes ran.
-        assert ctx.trade_ledger.record_trade.call_count == 2
-        assert ctx.record_trade_outcome_fn.call_count == 2
-        assert ctx.log_closed_trade_fn.call_count == 2
-        assert ctx.trade_logger.log_trade_event.call_count == 2
+        # T1: now deduped by CloseBus's generalized applied-store -- the
+        # second publish's ledger/trades_csv/trade_logger subscribers are
+        # skipped, not re-run.
+        assert ctx.trade_ledger.record_trade.call_count == 1
+        assert ctx.record_trade_outcome_fn.call_count == 1
+        assert ctx.log_closed_trade_fn.call_count == 1
+        assert ctx.trade_logger.log_trade_event.call_count == 1
 
     def test_partial_leg_skips_full_only_subscribers(self):
         """A PARTIAL leg (TP1) must reach T0 (unconditional) and

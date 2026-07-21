@@ -248,8 +248,17 @@ class TestTradeClosed:
             TradeClosed.from_trade_event(event)
 
     def test_direct_construction_empty_position_id_raises(self):
-        with pytest.raises(AssertionError):
+        """__post_init__'s invariants are explicit `raise ValueError`, not
+        `assert` (assertions are compiled out under `python -O`, which
+        would let an empty position_id pass through silently in an
+        optimized run) -- finishes FIX 2 for the direct-construction path
+        (from_trade_event's path was already converted)."""
+        with pytest.raises(ValueError, match="position_id must be non-empty"):
             _minimal_closed(position_id="")
+
+    def test_direct_construction_empty_event_id_raises(self):
+        with pytest.raises(ValueError, match="event_id must be non-empty"):
+            _minimal_closed(event_id="")
 
     def test_frozen_mutation_raises(self):
         tc = _minimal_closed()
@@ -520,20 +529,136 @@ class TestCloseBus:
         assert order2 == ["equity", "alert"]
 
     def test_exactly_once_mandatory_vs_fire_and_forget(self, tmp_path):
+        """T0 (equity) keeps the default dedupe=True -- applied exactly
+        once. "alert" is fire-and-forget AND explicitly opts out of the
+        exactly-once seam (dedupe=False) -- the documented case for a
+        subscriber that legitimately re-runs on a duplicate publish. A
+        fire-and-forget subscriber that does NOT opt out is, by the new
+        generalized default, deduped exactly like any other subscriber --
+        see test_duplicate_publish_idempotent_for_all_dedupe_subscribers."""
         equity_calls = []
         alert_calls = []
         bus = CloseBus(outbox_path=tmp_path / "close_outbox.jsonl")
         bus.subscribe("equity", lambda e: equity_calls.append(1), tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True)
-        bus.subscribe("alert", lambda e: alert_calls.append(1), tier=Tier.T3_FIRE_AND_FORGET, required=False, replay=False)
+        bus.subscribe(
+            "alert", lambda e: alert_calls.append(1),
+            tier=Tier.T3_FIRE_AND_FORGET, required=False, replay=False, dedupe=False,
+        )
 
         event = _minimal_closed(position_id="pid-dup", event_id="ev-dup")
         report1 = bus.publish(event)
         report2 = bus.publish(event)  # duplicate publish, same position_id + event_id
 
-        assert len(equity_calls) == 1  # mandatory T0: applied exactly once
-        assert len(alert_calls) == 2  # fire-and-forget: no dedup guarantee
+        assert len(equity_calls) == 1  # mandatory T0: applied exactly once (default dedupe=True)
+        assert len(alert_calls) == 2  # explicit dedupe=False opt-out: no dedup guarantee
         assert "equity" in report1.delivered
         assert "equity" in report2.skipped  # second delivery explicitly skipped
+
+    def test_duplicate_publish_idempotent_for_all_dedupe_subscribers(self, tmp_path):
+        """GENERALIZED exactly-once: the old CLOSE_DEDUP_GUARD only made a
+        duplicate close idempotent for T0 (equity/CB) -- ledger (T1) and
+        kelly/IC (T2) could still double-fire on a re-published close (the
+        12-phantom-rows/-$370 incident's real cause: equity double-counted
+        because the guard was incomplete). Every dedupe=True subscriber,
+        across every tier, must now fire EXACTLY ONCE per position_id even
+        when the duplicate publish uses a DIFFERENT event_id."""
+        calls = {"equity": 0, "ledger": 0, "kelly": 0}
+        bus = CloseBus(outbox_path=tmp_path / "close_outbox.jsonl")
+        bus.subscribe(
+            "equity", lambda e: calls.__setitem__("equity", calls["equity"] + 1),
+            tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True,
+        )
+        bus.subscribe(
+            "ledger", lambda e: calls.__setitem__("ledger", calls["ledger"] + 1),
+            tier=Tier.T1_PERSISTENCE, required=True, replay=True,
+        )
+        bus.subscribe(
+            "kelly", lambda e: calls.__setitem__("kelly", calls["kelly"] + 1),
+            tier=Tier.T2_DERIVED_READERS, required=True, replay=True,
+        )
+
+        event1 = _minimal_closed(position_id="pid-dup-all", event_id="ev-dup-all-1")
+        event2 = _minimal_closed(position_id="pid-dup-all", event_id="ev-dup-all-2")
+        report1 = bus.publish(event1)
+        report2 = bus.publish(event2)  # duplicate publish: SAME position_id, different event_id
+
+        assert calls == {"equity": 1, "ledger": 1, "kelly": 1}
+        assert set(report1.delivered) == {"equity", "ledger", "kelly"}
+        assert report1.skipped == []
+        assert report2.delivered == []
+        assert set(report2.skipped) == {"equity", "ledger", "kelly"}
+
+    def test_dedupe_false_opt_out_runs_on_every_publish(self, tmp_path):
+        """A subscriber registered with dedupe=False is NOT covered by the
+        exactly-once seam -- it must run on every publish() regardless of
+        position_id repetition (the documented opt-out for legitimately
+        re-run fire-and-forget sinks)."""
+        calls = []
+        bus = CloseBus(outbox_path=tmp_path / "close_outbox.jsonl")
+        bus.subscribe(
+            "telemetry", lambda e: calls.append(1),
+            tier=Tier.T3_FIRE_AND_FORGET, required=False, replay=False, dedupe=False,
+        )
+
+        event1 = _minimal_closed(position_id="pid-nodedup", event_id="ev-nodedup-1")
+        event2 = _minimal_closed(position_id="pid-nodedup", event_id="ev-nodedup-2")
+        bus.publish(event1)
+        bus.publish(event2)
+
+        assert calls == [1, 1]
+
+    def test_generalized_dedupe_raise_then_replay_recovers_then_publish_skips(self, tmp_path):
+        """Combines aed7f79's raise/replay guarantee with the GENERALIZED
+        dedupe: a dedupe=True required T2 subscriber ("kelly") raises on
+        the first publish -> stays un-applied (and unacked) while its
+        sibling ("equity") already succeeded and IS applied -> replay
+        redelivers ONLY kelly (not equity again) -> kelly succeeds -> now
+        applied -> a further publish() of the same position_id skips BOTH
+        subscribers, proving exactly-once still holds after a recovered
+        failure."""
+        outbox_path = tmp_path / "close_outbox.jsonl"
+        calls = {"equity": 0, "kelly": 0}
+        fail_kelly = {"raise": True}
+
+        def equity_fn(e):
+            calls["equity"] += 1
+
+        def kelly_fn(e):
+            calls["kelly"] += 1
+            if fail_kelly["raise"]:
+                raise RuntimeError("kelly boom")
+
+        bus = CloseBus(outbox_path=outbox_path)
+        bus.subscribe("equity", equity_fn, tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True)
+        bus.subscribe("kelly", kelly_fn, tier=Tier.T2_DERIVED_READERS, required=True, replay=True)
+
+        event = _minimal_closed(position_id="pid-gen-raise", event_id="ev-gen-raise")
+        report1 = bus.publish(event)  # 1st publish: kelly raises
+
+        assert calls == {"equity": 1, "kelly": 1}
+        assert "equity" in report1.delivered
+        assert report1.failed and report1.failed[0][0] == "kelly"
+        assert bus._applied_store.is_applied("equity", "pid-gen-raise") is True
+        assert bus._applied_store.is_applied("kelly", "pid-gen-raise") is False
+        assert close_outbox.unacked(["kelly"], path=outbox_path) != []
+
+        fail_kelly["raise"] = False
+        delivered = bus.replay_unacked()  # must redeliver ONLY kelly
+
+        assert calls == {"equity": 1, "kelly": 2}  # equity NOT re-run by replay
+        assert delivered == 1
+        assert bus._applied_store.is_applied("kelly", "pid-gen-raise") is True
+        assert close_outbox.unacked(["kelly"], path=outbox_path) == []
+
+        # A further publish() of the same position_id (after the recovered
+        # failure) must now skip BOTH subscribers -- kelly's side effect
+        # landed via replay, so exactly-once still holds.
+        event2 = _minimal_closed(position_id="pid-gen-raise", event_id="ev-gen-raise-2")
+        report3 = bus.publish(event2)
+
+        assert calls == {"equity": 1, "kelly": 2}  # unchanged: both skipped
+        assert set(report3.skipped) == {"equity", "kelly"}
+        assert report3.delivered == []
 
     def test_replay_unacked_drives_only_must_replay_subscribers(self, tmp_path):
         outbox_path = tmp_path / "close_outbox.jsonl"
@@ -680,9 +805,14 @@ class TestCloseBus:
         pending_for_equity = close_outbox.unacked(["equity"], path=outbox_path)
         assert pending_for_equity == []
 
-        # The position must NOT be recorded as "applied" -- a raised
-        # required subscriber blocks mark_applied entirely.
-        assert bus._applied_store.is_applied("pid-req-fail") is False
+        # The failed subscriber ("cb") must NOT be recorded as "applied" --
+        # a raised subscriber blocks its OWN mark_applied entirely, while
+        # its siblings that already succeeded ARE independently recorded
+        # applied (generalized per-(subscriber, position_id) applied-store
+        # -- see close_bus.py's EXACTLY-ONCE SEAM).
+        assert bus._applied_store.is_applied("equity", "pid-req-fail") is True
+        assert bus._applied_store.is_applied("log_trade", "pid-req-fail") is True
+        assert bus._applied_store.is_applied("cb", "pid-req-fail") is False
 
         # (b) replay_unacked() must redeliver ONLY to the failed subscriber
         # ("cb") -- "equity"/"log_trade" already succeeded and must NOT run
@@ -693,10 +823,10 @@ class TestCloseBus:
         assert calls == {"equity": 1, "cb": 2, "log_trade": 1}
         assert delivered == 1
 
-        # (c) Having succeeded on replay, "cb" is now acked and the position
-        # is recorded applied; a second replay is a no-op.
+        # (c) Having succeeded on replay, "cb" is now acked and applied; a
+        # second replay is a no-op.
         assert close_outbox.unacked(["cb"], path=outbox_path) == []
-        assert bus._applied_store.is_applied("pid-req-fail") is True
+        assert bus._applied_store.is_applied("cb", "pid-req-fail") is True
 
         delivered_again = bus.replay_unacked()
         assert delivered_again == 0

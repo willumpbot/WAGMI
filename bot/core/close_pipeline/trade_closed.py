@@ -179,8 +179,15 @@ class TradeClosed:
     sim: bool = False
 
     def __post_init__(self) -> None:
-        assert self.position_id, "TradeClosed: position_id must be non-empty"
-        assert self.event_id, "TradeClosed: event_id must be non-empty"
+        # Explicit raise, not `assert`: assertions are compiled out under
+        # `python -O`, which would let an empty position_id/event_id pass
+        # through silently in an optimized run -- this invariant must hold
+        # unconditionally, on the direct-construction path exactly as it
+        # already does on from_trade_event's path (see FIX 2 there).
+        if not self.position_id:
+            raise ValueError("TradeClosed: position_id must be non-empty")
+        if not self.event_id:
+            raise ValueError("TradeClosed: event_id must be non-empty")
 
         # Normalize a plain-string leg_kind (e.g. reconstructed from a JSON
         # outbox row) back into the enum.
