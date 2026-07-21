@@ -266,15 +266,6 @@ def _build_market_layer(
     return {k: v for k, v in mkt.items() if v is not None}
 
 
-# 2026-06-05: _AGENT_SHADOW_EDGES emptied per Nunu directive (overdrive strip).
-# Was injecting "100% WR validated edge" / "72.1% WR validated edge" / etc directly
-# into the agent snapshot under field name "validated_edges" — telling agents these
-# specific (symbol, side, strategy) combos were proven alpha. All from pre-fee-fix
-# 3,802-trade audit + April-19-day-window data. Agents were treating these as truth
-# every cycle. Empty until live rolling stats can be derived from corrected-fee ledger.
-_AGENT_SHADOW_EDGES: dict = {}
-
-
 def _build_signal_layer(
     strategy_signals: Optional[Dict[str, Any]],
     ensemble_result: Any,
@@ -380,30 +371,13 @@ def _build_signal_layer(
             sig["mults"] = chain
             sig["final_mult"] = round(running, 3)
 
-    # SHADOW EDGES: surface any (symbol, side, strategy) matches so the LLM sees
-    # "this is a validated alpha setup" instead of having to remember from prompt context.
-    # Wired 2026-05-30 per Nunu's directive: agents must see all evidence available.
-    if symbol and strategy_signals:
-        matches = []
-        for strat_name, info in strategy_signals.items():
-            if not isinstance(info, dict): continue
-            side = info.get("side")
-            fired = info.get("fired", False)
-            if not (side and fired): continue
-            key = (symbol.upper(), side.upper(), strat_name)
-            if key in _AGENT_SHADOW_EDGES:
-                edge = _AGENT_SHADOW_EDGES[key]
-                matches.append({
-                    "setup": f"{symbol} {side} via {strat_name}",
-                    "wr": edge["wr"],
-                    "n": edge["n"],
-                    "note": edge["hypothesis"][:120],
-                })
-        if matches:
-            sig["validated_edges"] = matches
-            sig["edge_count"] = len(matches)
-        else:
-            sig["validated_edges"] = []
+    # RIP-OUT P3 (measurement-integrity, 2026-07-21): the "SHADOW EDGES" block
+    # that used to surface (symbol, side, strategy) matches into sig["validated_edges"]
+    # was deleted here — its source table _AGENT_SHADOW_EDGES was emptied to {} on
+    # 2026-06-05, so this block always produced an empty list. prompts.py still has
+    # textual bullets referencing signals.validated_edges (a separate Phase-1 item,
+    # not touched here); they now describe a key that is simply absent from the
+    # snapshot, which downstream prompt logic already treats as "no match."
 
     return sig
 

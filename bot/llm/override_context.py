@@ -216,22 +216,12 @@ def build_override_context(
         ctx.chop_score = metadata.get("chop_score", 0.0)
         ctx.regime_1h = metadata.get("regime", "")
 
-    # Pull edge data from deep memory
-    try:
-        from llm.deep_memory import get_deep_memory
-        dm = get_deep_memory()
-        bt = dm.strategy_fps.get_all().get("_quant_backtest_2026_03_26", {})
-        setup_key = f"{symbol}_{'BUY' if side in ('LONG', 'BUY') else 'SELL'}"
-        setup = bt.get(setup_key, {})
-        if setup and setup.get("total", 0) > 0:
-            ctx.edge_setup_key = setup_key
-            ctx.edge_wr = setup.get("wr", 0.0)
-            ctx.edge_pf = setup.get("pf", 0.0)
-            ctx.edge_n = setup.get("total", 0)
-            ctx.edge_verdict = setup.get("verdict", "")
-            ctx.edge_best_hours = setup.get("best_hours_utc", "")
-    except Exception as e:
-        logger.debug(f"[OVERRIDE-CTX] Edge data unavailable: {e}")
+    # RIP-OUT P3 (measurement-integrity, 2026-07-21): edge data used to be pulled
+    # here from deep_memory key '_quant_backtest_2026_03_26', which has no writer
+    # in the live strategy_fingerprints store (dead — lookup always returned {},
+    # so ctx.edge_* fields were never actually set; they keep their dataclass
+    # defaults). Dead try/except removed. See strategies/ensemble.py:230-236 for
+    # the scoped-in-file replacement that already documented this as dead.
 
     # Pull portfolio state if provided
     if portfolio_state:

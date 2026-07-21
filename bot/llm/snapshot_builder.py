@@ -339,31 +339,20 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
                     result["g"]["bpr"]["rg"] = {k: v["wr"] for k, v in _priors["by_regime"].items()}
         except Exception:
             pass
-        # Quant backtest edge data: MFE/MAE, time-of-day, symbol edge
-        # Computed by deep analysis tools, stored in strategy_fingerprints
+        # RIP-OUT P3 (measurement-integrity, 2026-07-21): the setup_mfe
+        # fabrication that used to read deep_memory key '_quant_backtest_2026_03_26'
+        # is removed below (that key has no writer in the live
+        # strategy_fingerprints store — dead, per FALLACY_AUDIT_2026-07-02).
+        # NOTE: the hour_edge block is deliberately LEFT nested under `if _bt:`
+        # exactly as before — un-nesting it would make previously-unreachable
+        # code reachable, which is a *behavioral* change (M8), out of scope for
+        # this delete-only pass. It stays inert/unchanged.
         try:
             from llm.deep_memory import get_deep_memory
             _dm = get_deep_memory()
             _fps = _dm.strategy_fps.get_all()
             _bt = _fps.get("_quant_backtest_2026_03_26")
             if _bt:
-                # Surface the highest-value setup data for agents
-                _setup_mfe = {}
-                for setup_key in ("HYPE_BUY", "SOL_SELL", "BTC_BUY"):
-                    _sd = _bt.get(setup_key, {})
-                    if _sd.get("total", 0) >= 10:
-                        _setup_mfe[setup_key] = {
-                            "wr": _sd.get("wr", 0),
-                            "pf": _sd.get("pf", 0),
-                            "mfe": _sd.get("median_mfe_pct", 0),
-                            "mae": _sd.get("median_mae_pct", 0),
-                            "n": _sd.get("total", 0),
-                            "best_hours": _sd.get("best_hours_utc", ""),
-                            "verdict": _sd.get("verdict", ""),
-                        }
-                if _setup_mfe:
-                    result["g"]["setup_mfe"] = _setup_mfe
-
                 # Time-of-day edge from by_hour data
                 _by_hour = _fps.get("ensemble", {}).get("by_hour", {})
                 if _by_hour:

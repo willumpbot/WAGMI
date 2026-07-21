@@ -5875,25 +5875,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         was_win = self._last_close_win.get(symbol, False)
         if was_win and last_side == side:
             # Check for confirmed edge on this symbol+side
+            # RIP-OUT P3 (measurement-integrity, 2026-07-21): the confirmed-edge
+            # relaxation to 70% used to read deep_memory key '_quant_backtest_2026_03_26',
+            # which has no writer in the live strategy_fingerprints store (dead key —
+            # lookup always returned {}, so this branch never actually fired; threshold
+            # was always 75.0 in practice). Dead try/except removed; threshold stays 75.0.
             _roundtrip_threshold = 75.0
-            try:
-                from llm.deep_memory import get_deep_memory
-                _dm = get_deep_memory()
-                _bt = _dm.strategy_fps.get_all().get("_quant_backtest_2026_03_26", {})
-                _setup_key = f"{symbol}_{'BUY' if side == 'LONG' else 'SELL'}"
-                _setup = _bt.get(_setup_key, {})
-                # WR is stored as 0-100 (percentage), not 0-1 decimal
-                _wr = _setup.get("wr", 0)
-                _n = _setup.get("total", 0)
-                if _wr >= 55 and _n >= 20:
-                    _roundtrip_threshold = 70.0
-                    logger.info(
-                        f"[{trace_id}][{symbol}] Confirmed edge detected "
-                        f"({_setup_key}: {_wr:.0f}% WR, n={_n}) — "
-                        f"roundtrip threshold lowered to 70%"
-                    )
-            except Exception:
-                pass
 
             if signal_result.confidence < _roundtrip_threshold:
                 log_rejection(symbol, "ANTI_ROUNDTRIP",
@@ -8256,23 +8243,27 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "remaining_notional_pct": round(_remaining_notional / _equity * 100, 1) if _equity > 0 else 500.0,
         }
 
-        # Enrich signal context with edge data and behavioral patterns
-        # so the LLM can make truly informed decisions.
+        # Enrich signal context with behavioral patterns so the LLM can make
+        # truly informed decisions.
         #
-        # Loads TWO kinds of edge data:
-        #   1. Global backtest verdict (CONFIRMED_EDGE / MARGINAL / NEGATIVE_EV_BLOCKED)
-        #   2. Regime-specific live performance (HYPE_BUY_illiquid = 9% WR TOXIC etc.)
-        #
+        # Regime-specific live performance (HYPE_BUY_illiquid = 9% WR TOXIC etc.)
         # is_toxic=True when regime-specific WR < 10% with n >= 10. This flag is
         # read downstream by SafetyFilterChain and the agent snapshot.
+        #
+        # RIP-OUT P3 (measurement-integrity, 2026-07-21): this block used to ALSO
+        # load a "global backtest verdict" via deep_memory key
+        # '_quant_backtest_2026_03_26' into signal_ctx["edge_data"]. That key has
+        # no writer in the live strategy_fingerprints store (dead — lookup always
+        # returned {}, so `if _setup and _setup.get("total", 0) > 0` never fired
+        # and signal_ctx["edge_data"] was never actually populated in production).
+        # Deleted. The _is_toxic / TOXIC-shadow logic below reads a DIFFERENT,
+        # live key ("ensemble" -> by_symbol_regime, written by
+        # StrategyFingerprints.update()) and is untouched.
         try:
             from llm.deep_memory import get_deep_memory
             _dm = get_deep_memory()
-            _bt = _dm.strategy_fps.get_all().get("_quant_backtest_2026_03_26", {})
             _base_sym = symbol.replace('/USDC:USDC','').replace('/USDT:USDT','')
             _side = 'BUY' if raw_signal.side == 'BUY' else 'SELL'
-            _setup_key = f"{_base_sym}_{_side}"
-            _setup = _bt.get(_setup_key, {})
 
             # Regime-specific live performance (from ensemble.by_symbol_regime bucket)
             _regime = (raw_signal.metadata or {}).get("regime_1h") or \
@@ -8289,20 +8280,6 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             # n=10 caused SOL SHORT to be hard-blocked with insufficient data.
             _is_toxic = bool(_reg_wr is not None and _reg_wr < 10.0 and _reg_n >= 20)
 
-            if _setup and _setup.get("total", 0) > 0:
-                signal_ctx["edge_data"] = {
-                    "setup_key": _setup_key,
-                    "wr": _setup.get("wr", 0),
-                    "pf": _setup.get("pf", 0),
-                    "n": _setup.get("total", 0),
-                    "verdict": _setup.get("verdict", ""),
-                    "best_hours": _setup.get("best_hours_utc", ""),
-                    # Regime-specific live verdict
-                    "regime": _regime,
-                    "regime_wr": _reg_wr,
-                    "regime_n": _reg_n,
-                    "is_toxic": _is_toxic,
-                }
             # TOXIC gate — SHADOW MODE (FALLACY_AUDIT D17, 2026-07-02).
             # History: this hard-block was DEAD since birth — the writer keyed
             # by_symbol_regime as "{symbol}_{regime}" while this reader looked

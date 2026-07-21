@@ -234,42 +234,14 @@ class TestTimeframeAlignment:
 # ═══════════════════════════════════════════════════════════════
 
 class TestCompoundSizing:
-    """D1: Compound sizing formula."""
+    """D1: Compound sizing formula.
 
-    def test_all_neutral_returns_base(self):
-        from execution.risk import RiskManager
-        rm = RiskManager(starting_equity=10000)
-        result = rm.calculate_compound_size(base_risk=0.01)
-        assert abs(result - 0.01) < 0.001
-
-    def test_bear_regime_halves_size(self):
-        from execution.risk import RiskManager
-        rm = RiskManager(starting_equity=10000)
-        result = rm.calculate_compound_size(base_risk=0.01, regime_scalar=0.5)
-        assert abs(result - 0.005) < 0.001
-
-    def test_unknown_regime_zeros_out(self):
-        from execution.risk import RiskManager
-        rm = RiskManager(starting_equity=10000)
-        result = rm.calculate_compound_size(base_risk=0.01, regime_scalar=0.0)
-        assert result == 0.0
-
-    def test_capped_at_2x_base(self):
-        from execution.risk import RiskManager
-        rm = RiskManager(starting_equity=10000)
-        result = rm.calculate_compound_size(
-            base_risk=0.01, kelly_weight=5.0, regime_scalar=2.0
-        )
-        assert result <= 0.02  # 2× base_risk
-
-    def test_regime_scalars_lookup(self):
-        from execution.risk import RiskManager
-        rm = RiskManager(starting_equity=10000)
-        assert rm.get_regime_scalar("consolidation") == 1.0
-        assert rm.get_regime_scalar("trending_bull") == 0.85
-        assert rm.get_regime_scalar("trending_bear") == 0.5
-        assert rm.get_regime_scalar("high_volatility") == 0.3
-        assert rm.get_regime_scalar("unknown") == 0.0
+    RIP-OUT P3 (measurement-integrity, 2026-07-21): calculate_compound_size /
+    REGIME_SIZE_SCALARS / get_regime_scalar were deleted from execution/risk.py
+    as provably-dead fabricated values (only these tests called them; production
+    sizing is inline ATR vol-targeting in multi_strategy_main.py). Their tests
+    are removed here. get_drawdown_dial is a separate, live method — untouched.
+    """
 
     def test_drawdown_dial_graduated(self):
         from execution.risk import RiskManager, CircuitBreaker
