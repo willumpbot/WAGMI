@@ -620,21 +620,28 @@ class RiskManager:
         Read-only: no writes, no network calls, no behavior change. Returns
         None when no epoch baseline is stamped yet (data/epoch_start.json
         missing/epoch_equity unset) — there is nothing to reconcile against.
+
+        Phase 0.5 PR-2: delegates to EquityEngine.reconcile() so there's one
+        implementation of the drift math (it already consumed get_run_stats
+        here — same call, now shared). The three correction terms
+        (open_realized_pnl / pending_pnl / funding_addback) are passed as
+        0.0, which makes this BYTE-IDENTICAL to the pre-PR-2 behavior
+        (accumulator - derived, no corrections) — they only become
+        load-bearing once a caller passes real values (PR-4 observe mode).
         """
         try:
-            from data.trade_source import get_run_stats
-            stats = get_run_stats(epoch=True)
+            from execution.equity_engine import EquityEngine
+            result = EquityEngine().reconcile(self.equity)
         except Exception as e:
             logger.debug(f"[RISK] ledger drift check skipped: {e}")
             return None
-        derived = stats.get("derived_equity")
-        if derived is None:
+        if result is None:
             return None
         return {
-            "accumulator_equity": self.equity,
-            "derived_equity": derived,
-            "drift": self.equity - derived,
-            "epoch_id": stats.get("epoch_id", ""),
+            "accumulator_equity": result["accumulator"],
+            "derived_equity": result["derived"],
+            "drift": result["adjusted_drift"],
+            "epoch_id": result["epoch_id"],
         }
 
     def _reconcile_equity_with_ledger(self) -> None:
