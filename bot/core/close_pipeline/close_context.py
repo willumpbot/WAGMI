@@ -161,12 +161,113 @@ close_subscribers_learning2.py) -- ten MEMORY/ML/LEARNING terminal hooks:
     long-lived, per-bot ``CloseCtx`` instance and is incremented in place by
     ``on_close_autopsy``, exactly like the god-block increments its own
     instance attribute.
+
+MISC-TIER (T2 + T3) FIELDS, BATCH 3 (Phase 0.4-B, see
+close_subscribers_misc.py) -- the remaining T3 fire-and-forget/misc
+subscribers plus the four explicitly-T2 "derived reader" ones (adaptive_risk,
+adaptive_sizer, shadow_ledger, continuous_backtest -- per the extraction
+mandate's tiering note). All optional, ``None``/empty default means "skip",
+matching each god-block call site's own availability guard:
+  - ``adaptive_risk``: anything exposing ``.record_outcome(win, regime="")``
+    -- matches ``execution.adaptive_risk.AdaptiveRisk`` (the god-block's
+    ``self.adaptive_risk``).
+  - ``adaptive_sizer``: anything exposing ``.record_outcome(symbol, won)``
+    -- matches ``execution.adaptive_risk.AdaptiveSizer`` (the god-block's
+    ``execution.adaptive_risk.get_adaptive_sizer(self.config)`` singleton).
+    ``None`` resolves lazily via ``get_adaptive_sizer()`` (no config arg --
+    the process-wide singleton is already configured by bot init time).
+  - ``shadow_ledger``: anything exposing ``.resolve_shadows(symbol,
+    exit_price)`` -- matches ``feedback.shadow_ledger.ShadowLedger``.
+  - ``continuous_backtest``: anything exposing ``.record_outcome(symbol,
+    win, pnl, confidence_at_entry, strategy, regime="", hold_time_s=0,
+    exit_action="", leverage=1.0)`` -- matches
+    ``feedback.continuous_backtest.ContinuousBacktest``.
+  - ``llm_triggers``: anything exposing ``.record_trade_outcome(strategy,
+    entry_type, win)`` and ``.add(trigger, symbol="", context="")`` --
+    matches ``llm.triggers`` module's trigger tracker (the god-block's
+    ``self._llm_triggers``). Two DISTINCT god-block call sites use this one
+    collaborator's two different methods (see on_close_llm_triggers_outcome
+    / on_close_llm_triggers_notify below).
+  - ``quant_brain``: optional, anything exposing ``.record_outcome(symbol,
+    won)`` -- matches ``llm.quant_brain.QuantBrain`` (the god-block's
+    ``self._quant_brain``, chase-prevention outcome tracking).
+  - ``regime_strategy_weighter``: optional, anything exposing
+    ``.record_outcome(regime, strategy, won)`` -- matches the god-block's
+    ``self._regime_strategy_weighter``. NOTE: the module this collaborator
+    would be constructed from (``data.regime_strategy_weighter``) does not
+    exist anywhere in the current tree, so the god-block's own init wraps
+    construction in a ``try/except`` that always fails today, leaving
+    ``self._regime_strategy_weighter`` permanently ``None`` in production
+    -- this field faithfully reproduces that "always None today" duck-typed
+    seam, not a bug this extraction introduces.
+  - ``growth``: optional, anything exposing ``.on_trade_closed(dict)`` --
+    matches ``llm.growth.orchestrator``'s growth intelligence orchestrator
+    (the god-block's ``self.growth``).
+  - ``ab_manager``: optional, anything exposing ``.get_active_experiments()
+    -> List[Experiment]`` (each with ``.id``), ``.get_assignment(exp_id,
+    symbol, trace_id) -> str``, and ``.record_outcome(experiment_id, group,
+    symbol, pnl, win, metadata=None)`` -- matches
+    ``analytics.ab_testing.ABTestManager`` (the god-block's
+    ``self.ab_manager``).
+  - ``agent_perf``: optional, anything exposing ``.record_outcome(symbol,
+    pnl, entry_time, exit_time, mfe_pct, mae_pct, side)`` -- matches the
+    god-block's ``self._agent_perf`` (from
+    ``llm.agents.performance_tracker.get_tracker()``). NOTE: the REAL
+    ``AgentPerformanceTracker`` class exposes no ``record_outcome`` method
+    (its actual API is ``score_trade``/``record_pipeline_run``) -- the
+    god-block's call at this site (multi_strategy_main.py:4781) always
+    raises ``AttributeError``, silently swallowed by its own
+    ``except Exception`` handler. This field's duck-type documents the
+    CALL SITE's asserted (but never-satisfied-in-production) contract
+    faithfully; a mock/stub configured with ``record_outcome`` in tests
+    will receive the call exactly as the god-block intends it to, but a
+    real ``AgentPerformanceTracker`` instance wired in here reproduces the
+    identical always-fails-silently behavior seen live today.
+  - ``cost_optimizer``: optional, anything exposing
+    ``.record_outcome(pipeline_type, pnl)`` -- matches
+    ``llm.agents.cost_optimizer.AgentCostOptimizer`` (the god-block's
+    ``self._cost_optimizer``).
+  - ``risk_telemetry``: optional, anything exposing ``.update(equity,
+    daily_pnl)`` -- matches ``risk.self_tuning.RiskTelemetry`` (the
+    god-block's ``self.risk_telemetry``).
+  - ``telemetry_cls``: optional, a ``Telemetry``-shaped class/object
+    exposing classmethods ``.inc(key)`` / ``.record(key, value)`` --
+    matches ``data.fetchers.telemetry.Telemetry``. ``None`` resolves
+    lazily to the real module-level class (a process-wide counters
+    singleton, not a live position/equity read -- safe to import lazily).
+  - ``alerts``: optional, anything exposing ``.send_trade_event(action,
+    symbol, message)`` -- matches the god-block's ``self.alerts``.
+  - ``format_trade_event_fn``: optional injectable override of
+    ``alerts.enhanced_telegram.format_trade_event_telegram``. ``None``
+    means "use the real function" (resolved lazily by local import).
+  - ``survival_record_outcome_fn``: optional injectable override of
+    ``llm.survival_pressure.record_trade_outcome``. ``None`` resolves
+    lazily; an ``ImportError`` on that lazy resolve is swallowed (mirrors
+    the god-block's own ``_SURVIVAL_PRESSURE_AVAILABLE`` import-time gate).
+  - ``learning_mode_active_fn`` / ``learning_mode_record_fn``: optional
+    injectable overrides of ``llm.learning_mode.is_learning_mode_active`` /
+    ``.record_trade_observed``. ``None`` resolves both lazily together (an
+    ``ImportError`` on either is swallowed, mirroring
+    ``_LEARNING_MODE_AVAILABLE``).
+  - ``add_observation_fn``: optional injectable override of
+    ``llm.strategy_discovery.corpus.add_observation``. ``None`` resolves
+    lazily.
+  - ``symbol_cooldown`` / ``symbol_daily_pnl`` / ``symbol_daily_pnl_date`` /
+    ``symbol_daily_loss_limit`` / ``last_close_win`` / ``last_close_side``:
+    plain mutable per-symbol dicts (+ a date string, + a static float
+    threshold), mirroring the god-block's own
+    ``self._symbol_cooldown`` / ``self._symbol_daily_pnl`` /
+    ``self._symbol_daily_pnl_date`` / ``self._symbol_daily_loss_limit`` /
+    ``self._last_close_win`` / ``self._last_close_side`` instance
+    attributes -- same "stateful, lives on the long-lived per-bot CloseCtx"
+    pattern as ``closed_trade_count`` above, mutated in place by
+    ``on_close_cooldown_tracking``.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, Optional
 
 
 @dataclass
@@ -222,3 +323,35 @@ class CloseCtx:
     risk_per_trade: Optional[float] = None
     llm_mode_name: Optional[str] = None
     closed_trade_count: int = 0
+
+    # ---- MISC-TIER (T2 + T3) collaborators, Phase 0.4-B batch 3 -- see the
+    # module docstring's "MISC-TIER (T2 + T3) FIELDS, BATCH 3" section for
+    # each collaborator's expected duck-type. All optional so tests only
+    # wire in what the subscriber under test actually needs.
+    adaptive_risk: Optional[Any] = None
+    adaptive_sizer: Optional[Any] = None
+    shadow_ledger: Optional[Any] = None
+    continuous_backtest: Optional[Any] = None
+    llm_triggers: Optional[Any] = None
+    quant_brain: Optional[Any] = None
+    regime_strategy_weighter: Optional[Any] = None
+    growth: Optional[Any] = None
+    ab_manager: Optional[Any] = None
+    agent_perf: Optional[Any] = None
+    cost_optimizer: Optional[Any] = None
+    risk_telemetry: Optional[Any] = None
+    telemetry_cls: Optional[Any] = None
+    alerts: Optional[Any] = None
+
+    format_trade_event_fn: Optional[Callable[..., str]] = None
+    survival_record_outcome_fn: Optional[Callable[..., None]] = None
+    learning_mode_active_fn: Optional[Callable[[], bool]] = None
+    learning_mode_record_fn: Optional[Callable[..., None]] = None
+    add_observation_fn: Optional[Callable[..., None]] = None
+
+    symbol_cooldown: Dict[str, float] = field(default_factory=dict)
+    symbol_daily_pnl: Dict[str, float] = field(default_factory=dict)
+    symbol_daily_pnl_date: Optional[str] = None
+    symbol_daily_loss_limit: float = float("-inf")
+    last_close_win: Dict[str, bool] = field(default_factory=dict)
+    last_close_side: Dict[str, str] = field(default_factory=dict)
