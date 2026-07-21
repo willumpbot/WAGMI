@@ -23,6 +23,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from core.atomic_state import atomic_write_json
+
 logger = logging.getLogger("bot.execution.auto_recovery")
 
 # ── Constants ──────────────────────────────────────────────
@@ -241,16 +243,13 @@ def save_position_state(pos_mgr, filepath: str = _STATE_FILE) -> bool:
             "positions": positions_data,
         }
 
-        os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
-
-        # Write atomically: write to temp file then rename
-        tmp_path = filepath + ".tmp"
-        with open(tmp_path, "w") as f:
-            json.dump(state, f, indent=2)
-        # On Windows, remove target first if it exists
-        if os.path.exists(filepath):
-            os.remove(filepath)
-        os.rename(tmp_path, filepath)
+        # Atomic write (Phase 0.3a): fsync'd temp file + os.replace(), same
+        # primitive as monitoring/health.py's heartbeat writer. This
+        # replaces a broken remove-then-rename sequence that had a window
+        # where a crash could leave NO position_state.json on disk at all
+        # (target removed, but the rename that was supposed to replace it
+        # never ran) -- see core/atomic_state.py's module docstring.
+        atomic_write_json(filepath, state)
 
         logger.debug(
             f"[RECOVERY] Saved {len(positions_data)} position(s) to {filepath}"

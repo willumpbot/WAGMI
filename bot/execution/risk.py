@@ -16,6 +16,8 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
+from core.atomic_state import atomic_write_json
+
 logger = logging.getLogger("bot.execution.risk")
 
 _SAFETY_LOG_DIR = os.path.join("data", "logs")
@@ -584,8 +586,6 @@ class RiskManager:
                 return
         state_path = os.path.join("data", "risk_equity_state.json")
         try:
-            os.makedirs(os.path.dirname(state_path), exist_ok=True)
-            tmp_path = state_path + ".tmp"
             payload = {
                 "equity": round(self.equity, 4),
                 "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -603,9 +603,13 @@ class RiskManager:
                 payload["derived_equity"] = round(drift_info["derived_equity"], 4)
                 payload["drift"] = round(drift_info["drift"], 4)
                 payload["epoch_id"] = drift_info.get("epoch_id", "")
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=2)
-            os.replace(tmp_path, state_path)
+            # Atomic write (Phase 0.3a): this writer already used a
+            # tmp-file + os.replace() swap (no torn-file window) but never
+            # fsync'd the tmp file before the swap, so the durability
+            # guarantee was incomplete. atomic_write_json adds the fsync
+            # while writing the exact same payload to the exact same path
+            # -- no behavior change beyond durability.
+            atomic_write_json(state_path, payload)
         except Exception as e:
             logger.warning(f"[RISK] Could not save equity state: {e}")
 

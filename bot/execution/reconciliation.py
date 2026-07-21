@@ -25,6 +25,7 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 
+from core.atomic_state import atomic_write_json
 from execution.position_manager import PositionManager, Position
 from execution.position_state import OPEN, TRAILING
 from execution.precision import round_price, round_qty
@@ -353,9 +354,11 @@ def save_circuit_breaker_state(risk_mgr, filepath: str = _CB_STATE_FILE):
             "peak_equity": risk_mgr.peak_equity,
             "saved_at": datetime.now(timezone.utc).isoformat(),
         }
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        with open(filepath, "w") as f:
-            json.dump(state, f, indent=2)
+        # Atomic write (Phase 0.3a): fsync'd temp file + os.replace(),
+        # replacing a plain open('w')+json.dump that could leave a
+        # truncated circuit_breaker_state.json if the process died
+        # mid-write -- see core/atomic_state.py.
+        atomic_write_json(filepath, state)
     except Exception as e:
         logger.warning(f"[RECONCILE] Failed to save CB state: {e}")
 
