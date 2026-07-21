@@ -121,6 +121,19 @@ def epoch_start_path() -> Path:
     return DATA_DIR / "epoch_start.json"
 
 
+def equity_epoch_path() -> Path:
+    """Path to the CODE-OWNED epoch marker written by data/epoch.py's
+    start_epoch() (Phase 0.5 PR-1). This supersedes the hand-edited
+    epoch_start_path() -- once this file exists, data/epoch.py's reader
+    prefers it (see epoch.py::_epoch_path() fallback order: EPOCH_START_FILE
+    env -> equity_epoch.json if exists -> legacy epoch_start.json). Unlike
+    epoch_start_path(), this file is NEVER hand-edited: start_epoch() is the
+    only writer, and it dual-fences (timestamp + raw ledger row-count/
+    trade-id) so the epoch_id fence in feedback/trade_ledger.py's auto-stamp
+    is no longer dead."""
+    return DATA_DIR / "equity_epoch.json"
+
+
 def trade_outcomes_path() -> Path:
     """Path to the per-trade outcomes CSV (data/learning.py:record_trade_outcome).
 
