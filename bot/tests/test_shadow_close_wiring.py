@@ -29,6 +29,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from core import paths
 from core.close_pipeline.close_context import CloseCtx
 from core.close_pipeline.shadow_close_wiring import (
     CallRecorder,
@@ -101,7 +102,7 @@ def _make_bot(risk_equity: float = 5000.0) -> SimpleNamespace:
 # field except the three documented exceptions -- see module docstring).
 _MUST_BE_NON_NONE = [
     "trade_ledger", "trade_logger", "kelly_engine",
-    "log_trade_fn", "record_trade_outcome_fn", "log_closed_trade_fn",
+    "log_trade_fn", "record_trade_outcome_fn", "log_closed_trade_fn", "journal_booked_fn",
     "weight_mgr", "regime_feedback", "confidence_floor", "hold_time_rules",
     "parameter_tuner", "feedback", "ic_tracker", "graduated_rules_engine",
     "deep_memory", "thesis_grader", "post_trade_learner", "reflection",
@@ -207,7 +208,10 @@ class TestIsolation:
         import core.close_pipeline.close_subscribers_llm_learning_agent as llm_mod
 
         for mod, names in [
-            (acc_mod, ["_default_log_trade", "_default_record_trade_outcome", "_default_log_closed_trade"]),
+            (acc_mod, [
+                "_default_log_trade", "_default_record_trade_outcome",
+                "_default_log_closed_trade", "_default_journal_booked",
+            ]),
             (l1_mod, ["_default_graduated_rules_engine"]),
             (l2_mod, [
                 "_default_thesis_grader", "_default_autopsy_engine",
@@ -307,6 +311,101 @@ class TestIsolation:
         all_files = [p for p in tmp_path.rglob("*") if p.is_file()]
         outside = [p for p in all_files if shadow_dir not in p.parents]
         assert outside == []
+
+
+# ---------------------------------------------------------------------------
+# REAL FOUNDATION FILES UNTOUCHED -- hardened isolation guard.
+#
+# WHY THIS CLASS EXISTS: TestIsolation above proves "zero writes outside
+# <tmp_path>/shadow/" via ``tmp_path.rglob("*")`` -- but that check is BLIND
+# to any write that escapes tmp_path entirely through a ``__file__``-anchored
+# path. ``core.position_journal.journal_booked()`` resolves its target via
+# ``core.paths.position_journal_path()``, which is anchored to the real
+# ``core/paths.py``-relative ``DATA_DIR`` REGARDLESS of any ``data_dir``
+# passed to ``build_shadow_close`` -- so a direct-import call to it (the F6
+# bug this build fixes: see close_context.py's ``journal_booked_fn`` field
+# note) writes to the REAL ``bot/data/position_journal.jsonl``, a location
+# entirely outside ``tmp_path`` and therefore invisible to the rglob check.
+# This class closes that blind spot by asserting the REAL foundation files'
+# on-disk state is byte-for-byte unchanged across a synthetic shadow
+# PARTIAL+TERMINAL publish -- it would have FAILED before the
+# ``journal_booked_fn`` routing fix (the real ``position_journal.jsonl``'s
+# mtime/size would have moved) and PASSES now that ``on_close_ledger`` only
+# ever calls the injected ``CallRecorder`` in shadow mode.
+#
+# SNAPSHOT-ONLY, NEVER CREATES: this test must not itself cause any of these
+# real files to spring into existence. It only ``stat()``s them; if a target
+# is absent before, it asserts the target is STILL absent after -- it never
+# opens/creates/writes any of them.
+# ---------------------------------------------------------------------------
+class TestRealFoundationFilesUntouched:
+    _REAL_TARGETS = {
+        "position_journal": staticmethod(paths.position_journal_path),
+        "risk_equity_state": staticmethod(paths.risk_equity_state_path),
+        "trade_ledger": staticmethod(paths.trade_ledger_path),
+        # No dedicated core.paths accessor exists for safety_events.csv
+        # (execution/risk.py resolves it via its own CWD-relative
+        # ``_SAFETY_LOG_FILE``, not core.paths) -- anchor it off the same
+        # real, __file__-anchored ``paths.DATA_DIR`` every other accessor in
+        # this module derives from, so this check still targets the one
+        # real ``bot/data/logs/safety_events.csv`` regardless of CWD.
+        "safety_events": staticmethod(lambda: paths.DATA_DIR / "logs" / "safety_events.csv"),
+    }
+
+    @classmethod
+    def _snapshot(cls) -> dict:
+        snap = {}
+        for name, getter in cls._REAL_TARGETS.items():
+            p = getter()
+            if p.exists():
+                st = p.stat()
+                snap[name] = (True, st.st_mtime_ns, st.st_size)
+            else:
+                snap[name] = (False, None, None)
+        return snap
+
+    def test_real_data_files_unchanged_by_shadow_partial_and_terminal_publish(
+        self, monkeypatch, tmp_path
+    ):
+        monkeypatch.setenv("CLOSE_BUS_SHADOW", "true")
+        before = self._snapshot()
+
+        bot = _make_bot()
+        harness = build_shadow_close(bot, data_dir=tmp_path)
+        assert harness is not None
+
+        pos = _make_position(position_id="shadow-realfile-guard-1")
+        partial_event = _partial_event(pos)
+        terminal_event = _terminal_event(pos, total_pnl=9.0)
+
+        tc_partial = TradeClosed.from_trade_event(partial_event, position=pos, equity_after=5002.5)
+        tc_terminal = TradeClosed.from_trade_event(terminal_event, position=pos, equity_after=5009.0)
+
+        report_partial = harness.bus.publish(tc_partial)
+        report_terminal = harness.bus.publish(tc_terminal)
+        assert report_partial.failed == [], f"unexpected subscriber failures: {report_partial.failed}"
+        assert report_terminal.failed == [], f"unexpected subscriber failures: {report_terminal.failed}"
+        assert report_terminal.delivered, "expected at least some subscribers to actually run"
+
+        after = self._snapshot()
+        for name in self._REAL_TARGETS:
+            assert after[name] == before[name], (
+                f"REAL foundation file changed during a SHADOW publish -- "
+                f"shadow wiring escaped data/shadow/ via a __file__-anchored "
+                f"write path: {name} before={before[name]} after={after[name]}"
+            )
+
+        # Positive control: confirm the fixed seam (journal_booked_fn) was
+        # actually exercised THROUGH the recorder for this publish, not
+        # skipped entirely -- otherwise the mtime-unchanged assertion above
+        # would trivially pass for the wrong reason (subscriber never ran).
+        journal_sink = (tmp_path / "shadow" / "calls" / "journal_booked_fn.jsonl")
+        assert journal_sink.exists(), "journal_booked_fn recorder never invoked"
+        recorded = [
+            json.loads(line) for line in journal_sink.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        assert any(r.get("subscriber") == "journal_booked_fn" for r in recorded)
 
 
 # ---------------------------------------------------------------------------

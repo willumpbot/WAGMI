@@ -27,17 +27,18 @@ module's ``_default_*`` resolvers. Concretely, leaving any of
 ``log_signal_outcome_fn`` / ``telemetry_cls`` / ``survival_record_outcome_fn``
 / ``learning_mode_active_fn`` / ``learning_mode_record_fn`` /
 ``add_observation_fn`` / ``log_trade_fn`` / ``record_trade_outcome_fn`` /
-``log_closed_trade_fn`` / ``process_agent_lesson_fn`` /
-``learning_agent_fn`` as ``None`` in a shadow ``CloseCtx`` would silently
+``log_closed_trade_fn`` / ``journal_booked_fn`` / ``process_agent_lesson_fn``
+/ ``learning_agent_fn`` as ``None`` in a shadow ``CloseCtx`` would silently
 resolve the REAL production collaborator -- writing to REAL ledger/learning
-files, or (worst case, ``learning_agent_fn``) firing a SECOND live
-``claude -p`` LLM call per close. This module explicitly injects a
-recorder/stand-in for EVERY ``CloseCtx`` field except
-``regime_strategy_weighter`` (which is faithfully left ``None`` -- see
-close_context.py's field note: the real god-block collaborator this would
-shadow is ITSELF permanently ``None`` in production, since its constructor
-module does not exist in the current tree; injecting a stand-in there would
-NOT be shadowing anything real).
+files (or, for ``journal_booked_fn``, the REAL ``__file__``-anchored
+``data/position_journal.jsonl`` -- see close_context.py's field note), or
+(worst case, ``learning_agent_fn``) firing a SECOND live ``claude -p`` LLM
+call per close. This module explicitly injects a recorder/stand-in for
+EVERY ``CloseCtx`` field except ``regime_strategy_weighter`` (which is
+faithfully left ``None`` -- see close_context.py's field note: the real
+god-block collaborator this would shadow is ITSELF permanently ``None`` in
+production, since its constructor module does not exist in the current
+tree; injecting a stand-in there would NOT be shadowing anything real).
 
 TWO KINDS OF STAND-IN:
   1. ``ShadowRiskManager`` -- the ``risk_mgr`` collaborator. Tracks an
@@ -487,6 +488,14 @@ def build_shadow_close(bot: Any, *, data_dir: Optional[Path] = None) -> Optional
             log_trade_fn=_rec("log_trade_fn"),
             record_trade_outcome_fn=_rec("record_trade_outcome_fn"),
             log_closed_trade_fn=_rec("log_closed_trade_fn"),
+            # CRITICAL (F6): journal_booked_fn MUST be a recorder, never the
+            # real core.position_journal.journal_booked -- that function is
+            # __file__-anchored to the REAL data/position_journal.jsonl
+            # regardless of this shadow_dir, so leaving it None here would
+            # both escape data/shadow/ AND (worse) falsely stamp
+            # CLOSED_BOOKED into the real journal for a close the real
+            # ledger never recorded. See close_context.py's field note.
+            journal_booked_fn=_rec("journal_booked_fn"),
             # -- learning batch 1 --
             weight_mgr=_rec("weight_mgr"),
             regime_feedback=_rec("regime_feedback"),

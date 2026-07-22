@@ -47,6 +47,26 @@ FIELD NOTES:
     helpers) so importing this module never drags in ``data.db`` /
     ``data.learning`` / ``data.trade_log`` eagerly. Tests pass a ``Mock`` /
     plain callable here instead so NO real data file is ever touched.
+  - ``journal_booked_fn``: optional injectable override of
+    ``core.position_journal.journal_booked`` -- the write-ahead-journal
+    "CLOSED_BOOKED" stamp ``on_close_ledger`` writes AFTER the ledger row
+    succeeds (Phase 0.3b safety net; see position_journal.py's module
+    docstring). ``None`` means "use the real production
+    ``core.position_journal.journal_booked``" (resolved lazily, by local
+    import, inside ``on_close_ledger`` -- same lazy-default pattern as
+    ``log_trade_fn``/``record_trade_outcome_fn``/``log_closed_trade_fn``
+    above), so PROD/flip behavior is UNCHANGED and the god-block's
+    crash-recovery safety net (startup_reconcile's "unbooked" detection)
+    stays intact once the close pipeline becomes authoritative. Shadow
+    wiring MUST inject a recorder here (never the real function) -- the
+    real ``journal_booked`` writes to the REAL, ``__file__``-anchored
+    ``data/position_journal.jsonl`` regardless of any ``data_dir`` override
+    passed elsewhere, so leaving this ``None`` in a shadow ``CloseCtx``
+    would (a) write outside ``data/shadow/`` and (b) in a god-block-ledger-
+    write-FAILED scenario, wrongly stamp CLOSED_BOOKED into the real
+    journal for a close the real ledger never recorded -- masking a lost
+    close from crash recovery. See shadow_close_wiring.py's module
+    docstring for the full hazard writeup.
 
 LEARNING-TIER (T2) FIELDS (Phase 0.4-B, batch 1 -- see
 close_subscribers_learning.py):
@@ -327,6 +347,7 @@ class CloseCtx:
     log_trade_fn: Optional[Callable[..., None]] = None
     record_trade_outcome_fn: Optional[Callable[..., None]] = None
     log_closed_trade_fn: Optional[Callable[..., None]] = None
+    journal_booked_fn: Optional[Callable[..., None]] = None
 
     # ---- LEARNING-TIER (T2) collaborators, Phase 0.4-B batch 1 -- see the
     # module docstring's "LEARNING-TIER (T2) FIELDS" section for each

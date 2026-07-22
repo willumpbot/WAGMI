@@ -85,6 +85,11 @@ def _default_log_closed_trade(**kwargs: Any) -> None:
     _fn(**kwargs)
 
 
+def _default_journal_booked(*args: Any, **kwargs: Any) -> None:
+    from core.position_journal import journal_booked as _fn
+    _fn(*args, **kwargs)
+
+
 # ---------------------------------------------------------------------------
 # T0-a -- equity
 # god-block source: multi_strategy_main.py:3797-3805
@@ -325,9 +330,16 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
     # booked ONLY after the ledger write above succeeded. Safety net, not a
     # gate -- swallow failures exactly like the god-block does
     # (multi_strategy_main.py:4189-4193).
+    # Routed through ctx.journal_booked_fn (None -> real journal_booked,
+    # lazily imported) -- NEVER a bare direct import here. A direct import
+    # is invisible to shadow/test harnesses that only inject via CloseCtx
+    # fields, and the real journal_booked() is __file__-anchored to the
+    # REAL data/position_journal.jsonl regardless of any shadow data_dir
+    # (see close_context.py's journal_booked_fn field note and
+    # shadow_close_wiring.py's module docstring for the full hazard).
     try:
-        from core.position_journal import journal_booked
-        journal_booked(ev.position_id, symbol=ev.symbol)
+        journal_booked_fn = ctx.journal_booked_fn or _default_journal_booked
+        journal_booked_fn(ev.position_id, symbol=ev.symbol)
     except Exception as _jb_err:
         logger.debug(f"[POSITION-JOURNAL] journal_booked failed (non-fatal): {_jb_err}")
 
