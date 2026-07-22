@@ -1364,6 +1364,20 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 self._wallet_dispatcher = None
                 self._account_guardian = None
 
+        # SHADOW close-bus wiring (measurement-integrity): builds a fully
+        # parallel, log-only close pipeline that writes ONLY under
+        # data/shadow/ -- dormant unless CLOSE_BUS_SHADOW=true. Never
+        # affects the god-block close handling below (see the three guarded
+        # taps in _process_symbol's close-event loop). Wrapped in its own
+        # try/except so any shadow-wiring failure can never prevent the bot
+        # from starting.
+        try:
+            from core.close_pipeline.shadow_close_wiring import build_shadow_close
+            self._shadow_close = build_shadow_close(self)
+        except Exception as _shadow_init_err:
+            logger.debug(f"[SHADOW-CLOSE] init failed (non-fatal, shadow disabled): {_shadow_init_err}")
+            self._shadow_close = None
+
     def _start_perception_capture(self):
         """Start async perception capture task (TIER 5) in background thread."""
         if not _BOT_PERCEPTION_SYSTEM_AVAILABLE:
@@ -3771,6 +3785,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             # since 2026-05-30 restart — every closed trade was information loss.
             _captured_pos = self.pos_mgr.positions.get(symbol)
 
+            # SHADOW close-bus tap (a): per-event scratch dict, reset on
+            # EVERY iteration regardless of shadow enable state (cheap,
+            # unconditional dict literal -- cannot raise, cannot leak a
+            # stale value from a prior event/symbol into this one). Guarded
+            # I/O (the compound_mult cache read) only runs when shadow mode
+            # is on. Pre-captured via .get() (not .pop()) BEFORE the
+            # god-block's own compound_mult_cache.pop(symbol, ...) below --
+            # see trade_closed.py's module docstring (D8a) for why a .pop()
+            # here would silently steal the god-block's own ledger column.
+            _shadow_scratch: Dict[str, Any] = {}
+            if self._shadow_close is not None:
+                try:
+                    _shadow_scratch["compound_mult"] = self._compound_mult_cache.get(symbol)
+                except Exception:
+                    logger.debug("[SHADOW-CLOSE] tap(a) pre-capture failed (log-only)", exc_info=True)
+
             # Submit close order to exchange for full/partial closes
             _close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
                               "EMERGENCY", "LIQUIDATION_AVOID", "LIQUIDATION_PROXIMITY",
@@ -4669,6 +4699,17 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 except Exception as e:
                     logger.debug(f"ML close-context fetch error: {e}")
 
+                # SHADOW close-bus tap (b): capture the locals this ML block
+                # just computed (never re-fetch/double-fetch OHLCV for the
+                # shadow path -- reuse the god-block's own values, see
+                # trade_closed.py's module docstring G6).
+                if self._shadow_close is not None:
+                    try:
+                        _shadow_scratch["close_volatility"] = _close_vol
+                        _shadow_scratch["close_pchange_1h"] = _close_pchange_1h
+                    except Exception:
+                        logger.debug("[SHADOW-CLOSE] tap(b) capture failed (log-only)", exc_info=True)
+
                 self.ml.record_outcome(TradeOutcome(
                     symbol=symbol,
                     strategy=event.strategy,
@@ -4994,6 +5035,74 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     )
                 except Exception:
                     pass
+
+            # SHADOW close-bus tap (c): publish this SAME TradeEvent to the
+            # shadow bus -- log-only, writes ONLY under data/shadow/ (see
+            # core/close_pipeline/shadow_close_wiring.py). Placed at the
+            # bottom of the per-event body (after the exchange-fail
+            # continue-abort further up, which this point is simply
+            # unreached on -- see multi_strategy_main.py's `continue` above
+            # -- and after every real equity/alert/CB read this iteration
+            # already did), so equity_after/session_dd/daily_pnl reflect
+            # the SAME post-booking state the god-block itself just used.
+            # Pure add-on: reads self.risk_mgr/_price_changes_1h/
+            # _last_funding_rates/llm_mode (never mutates any of them) and
+            # delegates everything else to the shadow harness, which itself
+            # writes only under data/shadow/ -- see that module's docstring
+            # for the full safety invariant.
+            if self._shadow_close is not None:
+                try:
+                    _sh_btc_1h = self._price_changes_1h.get("BTC", 0) if hasattr(self, "_price_changes_1h") else 0
+                    if _sh_btc_1h > 0.5:
+                        _sh_btc_trend = "bullish"
+                    elif _sh_btc_1h < -0.5:
+                        _sh_btc_trend = "bearish"
+                    else:
+                        _sh_btc_trend = "neutral"
+                    _sh_funding_rate = (
+                        self._last_funding_rates.get(symbol, 0.0)
+                        if hasattr(self, "_last_funding_rates") else 0.0
+                    )
+
+                    # Mirrors ms:_session_dd's own formula (see the
+                    # trade_ledger block earlier in this loop) -- recomputed
+                    # here (pure read, no mutation) so a shadow session_dd
+                    # value is available for EVERY event, not just the
+                    # subset where the god-block's own trade_ledger branch
+                    # happened to run this iteration.
+                    _sh_cb = self.risk_mgr.circuit_breaker
+                    _sh_session_dd = 0.0
+                    if hasattr(_sh_cb, "session_peak_equity") and _sh_cb.session_peak_equity > 0:
+                        _sh_session_dd = round(
+                            (_sh_cb.session_peak_equity - self.risk_mgr.equity) / _sh_cb.session_peak_equity * 100, 2
+                        )
+
+                    _sh_event = self._shadow_close.publish_shadow(
+                        event,
+                        position=_captured_pos,
+                        equity_after=self.risk_mgr.equity,
+                        session_dd_pct=_sh_session_dd,
+                        close_volatility=_shadow_scratch.get("close_volatility"),
+                        compound_mult=_shadow_scratch.get("compound_mult"),
+                        btc_trend=_sh_btc_trend,
+                        funding_rate=_sh_funding_rate,
+                    )
+                    if _sh_event is not None:
+                        self._shadow_close.append_god_reference(
+                            event_id=_sh_event.event_id,
+                            god_total_pnl=_total_pnl_alert,
+                            god_equity_after=self.risk_mgr.equity,
+                            god_session_dd=_sh_session_dd,
+                            god_daily_pnl=(
+                                self.risk_mgr.circuit_breaker.daily_pnl
+                                if hasattr(self.risk_mgr, "circuit_breaker") else 0.0
+                            ),
+                            god_llm_mode=(
+                                self.llm_mode.name if hasattr(self.llm_mode, "name") else str(self.llm_mode)
+                            ),
+                        )
+                except Exception:
+                    logger.debug("[SHADOW-CLOSE] tap(c) publish failed (log-only)", exc_info=True)
 
         # Check leverage liquidation risk on open positions
         open_pos = self.pos_mgr.get_open_positions()
