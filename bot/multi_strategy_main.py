@@ -3802,7 +3802,24 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 # disagree by the funding amount. Deducting a cost only makes risk
                 # sizing stricter, never weaker. Default OFF; revert via flag.
                 _eq_funding = float(event.metadata.get("funding_costs", 0) or 0)
-            self.risk_mgr.update_equity(event.pnl - event.fee - _eq_funding)
+            # EQUITY_LEDGER_DRIFT observe-mode false-alarm fix (measurement-
+            # integrity, PR-4): TP1 partial legs land in self.equity via this
+            # very update_equity() call, but trade_ledger.csv only gets a row
+            # once the position TERMINATES (_is_terminal_close gate further
+            # below) — so any still-open position's already-banked partial
+            # PnL looks like phantom drift until its final close. Sum
+            # currently-open (non-CLOSED) positions' realized_pnl here and
+            # pass it through so the drift check can cancel that gap. Only
+            # this RiskManager.update_equity() call site has pos_mgr in
+            # scope (RiskManager itself holds no pos_mgr reference).
+            _open_realized_pnl = sum(
+                p.realized_pnl for p in self.pos_mgr.positions.values()
+                if getattr(p, "state", None) != "CLOSED"
+            )
+            self.risk_mgr.update_equity(
+                event.pnl - event.fee - _eq_funding,
+                open_realized_pnl=_open_realized_pnl,
+            )
 
             # Log trade event to database
             log_trade(

@@ -613,7 +613,7 @@ class RiskManager:
         except Exception as e:
             logger.warning(f"[RISK] Could not save equity state: {e}")
 
-    def compute_ledger_drift(self) -> Optional[Dict[str, Any]]:
+    def compute_ledger_drift(self, open_realized_pnl: float = 0.0) -> Optional[Dict[str, Any]]:
         """Cross-check the mutable accumulator (self.equity) against the
         epoch-derived truth (epoch_equity + sum(in-epoch ledger net_pnl)).
 
@@ -623,15 +623,27 @@ class RiskManager:
 
         Phase 0.5 PR-2: delegates to EquityEngine.reconcile() so there's one
         implementation of the drift math (it already consumed get_run_stats
-        here — same call, now shared). The three correction terms
-        (open_realized_pnl / pending_pnl / funding_addback) are passed as
-        0.0, which makes this BYTE-IDENTICAL to the pre-PR-2 behavior
-        (accumulator - derived, no corrections) — they only become
-        load-bearing once a caller passes real values (PR-4 observe mode).
+        here — same call, now shared).
+
+        Phase 0.5 PR-4 (observe-mode false-alarm fix): `open_realized_pnl`
+        is now threaded through from the caller instead of always being
+        0.0. Root cause of the false alarm this fixes: TP1 partial legs are
+        added to `self.equity` immediately (multi_strategy_main.py's
+        `update_equity` call, right after a TP1/partial-close event) but
+        the ledger (`trade_ledger.csv`, what `get_run_stats`/EquityEngine
+        derive from) only gets a row once the position fully terminates
+        (`_is_terminal_close` gate in multi_strategy_main.py) — so any
+        already-banked-but-not-yet-ledgered TP1 leg looks like phantom
+        drift (and phantom "staleness", since `derived` sits frozen at the
+        pre-TP1 value) until the position's final close writes the ledger
+        row. Passing the sum of open (non-CLOSED) positions'
+        `realized_pnl` here cancels that gap. See execution/equity_engine.py
+        module docstring for the full policy (no unrealized MTM is ever
+        included — this is a REALIZED, already-banked correction only).
         """
         try:
             from execution.equity_engine import EquityEngine
-            result = EquityEngine().reconcile(self.equity)
+            result = EquityEngine().reconcile(self.equity, open_realized_pnl=open_realized_pnl)
         except Exception as e:
             logger.debug(f"[RISK] ledger drift check skipped: {e}")
             return None
@@ -644,8 +656,8 @@ class RiskManager:
             "epoch_id": result["epoch_id"],
         }
 
-    def _reconcile_equity_with_ledger(self) -> None:
-        """Measurement-integrity cross-check (Phase 0). ALARMS (log, throttled)
+    def _reconcile_equity_with_ledger(self, open_realized_pnl: float = 0.0) -> None:
+        """Measurement-integrity cross-check (Phase 0). LOGS (throttled)
         when the accumulator has drifted from the epoch-derived ledger truth.
 
         Off-by-default behavior change: only ADOPTS the derived value as
@@ -655,10 +667,17 @@ class RiskManager:
         behavior without explicit approval"). Skipped entirely under pytest
         to keep unit tests deterministic and I/O-free (same guard pattern as
         save_equity_state's PYTEST_CURRENT_TEST check).
+
+        `open_realized_pnl` (Phase 0.5 PR-4): passed through to
+        compute_ledger_drift()/EquityEngine.reconcile() so open (non-CLOSED)
+        positions' already-banked-but-not-yet-ledgered realized PnL (TP1
+        partial legs) doesn't read as drift. Default 0.0 preserves prior
+        behavior for any caller that doesn't have position data to offer
+        (e.g. a bare RiskManager with no pos_mgr reference).
         """
         if os.getenv("PYTEST_CURRENT_TEST"):
             return
-        drift_info = self.compute_ledger_drift()
+        drift_info = self.compute_ledger_drift(open_realized_pnl=open_realized_pnl)
         self._last_ledger_drift = drift_info
         if drift_info is None:
             return
@@ -672,10 +691,16 @@ class RiskManager:
             _last_warn = getattr(self, "_ledger_drift_last_warn", 0.0)
             if _now - _last_warn > 600:  # throttle: at most once per 10 min
                 self._ledger_drift_last_warn = _now
-                logger.error(
+                # Observe-mode: this is informational, not a functional
+                # error (nothing has failed, no state was corrupted) --
+                # logging it at ERROR polluted the error stream and masked
+                # real errors. WARNING is the correct level: worth a human
+                # glance, not a page. See PR-4 fix notes.
+                logger.warning(
                     f"[EQUITY-LEDGER-DRIFT] accumulator=${self.equity:.2f} "
                     f"derived=${drift_info['derived_equity']:.2f} "
-                    f"(epoch_equity + in-epoch ledger net) drift=${drift:+.2f} "
+                    f"(epoch_equity + in-epoch ledger net + open_realized_pnl "
+                    f"${open_realized_pnl:+.2f}) drift=${drift:+.2f} "
                     f"(tolerance ${tol:.2f}, epoch={drift_info.get('epoch_id') or 'unset'})"
                 )
         if os.environ.get("EQUITY_DERIVE_FROM_LEDGER", "false").strip().lower() in ("1", "true", "yes"):
@@ -798,21 +823,32 @@ class RiskManager:
         )
         return qty
 
-    def update_equity(self, pnl: float, sim_time: Optional[datetime] = None):
+    def update_equity(self, pnl: float, sim_time: Optional[datetime] = None,
+                       open_realized_pnl: float = 0.0):
         """Update equity after a trade closes.
 
         Args:
             pnl: Net PnL from the trade (after fees)
             sim_time: Optional simulation timestamp for backtest mode
+            open_realized_pnl: sum of `realized_pnl` over currently-open
+                (non-CLOSED) positions at the moment this is called —
+                already-banked TP1 partial legs that have no ledger row
+                yet. RiskManager holds no pos_mgr reference, so the caller
+                (multi_strategy_main.py, which owns pos_mgr) computes and
+                passes this in. Threaded straight through to the ledger-
+                drift observe-mode check (see _reconcile_equity_with_ledger
+                / execution/equity_engine.py). Default 0.0 is safe for any
+                caller (tests, backtest) that has no position data to
+                offer.
         """
         self.equity += pnl
         self.circuit_breaker.record_trade(pnl, self.equity, sim_time=sim_time)
         # EQUITY_LEDGER_DRIFT (measurement-integrity, Phase 0): cross-check
-        # the accumulator against epoch-derived ledger truth and ALARM on
+        # the accumulator against epoch-derived ledger truth and log on
         # drift. Off-by-default adoption (EQUITY_DERIVE_FROM_LEDGER) — see
         # _reconcile_equity_with_ledger docstring. Runs before save so a
         # derived-equity adoption (if enabled) is what gets persisted.
-        self._reconcile_equity_with_ledger()
+        self._reconcile_equity_with_ledger(open_realized_pnl=open_realized_pnl)
         # Persist equity to disk so bot restarts don't lose progress.
         # ALWAYS attempt to save (sanity checks in save_equity_state prevent test pollution).
         # Previous guard `if _should_persist_equity` caused equity to freeze when:
