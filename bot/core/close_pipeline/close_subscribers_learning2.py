@@ -61,10 +61,17 @@ the eventual emit-site/helper -- see each function's docstring for detail):
     attaches the result via ``TradeClosed.close_volatility``'s already-
     reserved (but never populated in production) field.
 
-FIELD-GAPS THIS BATCH (value needed but not on TradeClosed -- listed here,
-also called out per-function): deep_memory's ``btc_trend``/``funding_rate``
-/``atr``/``setup_type`` (pos.setup_type half); post_trade_learner's
-``funding_rate``; reflection's ``atr``; ml's ``close_price_change_1h_pct``.
+FIELD-GAPS THIS BATCH (P0-2 schema update -- listed here, also called out
+per-function): deep_memory's ``atr``/``setup_type`` and reflection's
+``atr`` are RESOLVED -- ``TradeClosed`` now carries these fields, sourced
+from the ``position=`` snapshot in ``from_trade_event`` (see
+trade_closed.py G4/G5). ``btc_trend``/``funding_rate`` (deep_memory,
+post_trade_learner) remain live bot-level cache reads with no per-event
+equivalent -- ``TradeClosed`` now carries ``btc_trend``/``funding_rate``
+fields for a future caller (the shadow tap) to populate, but default to
+the same "neutral"/0.0 fallbacks used here until a caller supplies them.
+ml's ``close_price_change_1h_pct`` remains unresolved (G6 -- needs the
+god-block's own live 1h OHLCV fetch, out of scope for this batch).
 """
 
 from __future__ import annotations
@@ -155,22 +162,19 @@ def on_close_deep_memory_dna(ev: TradeClosed, ctx: CloseCtx) -> None:
     current-regime bot state, no per-event equivalent -- see module
     docstring's "CANNOT BE FAITHFULLY REPRODUCED" list).
 
-    FIELD-GAPs (values the god-block sourced from live bot-level caches, or
-    fields TradeClosed does not carry at all -- defaulted here, never
-    refetched):
-      - btc_trend: originally from self._last_prices["BTC"] /
-        self._price_changes_1h["BTC"] (live cross-symbol cache). Defaults
-        to "neutral" here -- the SAME value the original produces when
-        btc_1h_change happens to be flat (its own no-signal default), but
-        this rewrite produces "neutral" unconditionally, not just when BTC
-        happened to be flat.
-      - funding_rate: self._last_funding_rates.get(symbol, 0.0) (live
-        cache). Defaults to 0.0.
-      - atr: pos.atr -- TradeClosed carries no atr field. Defaults to 0.0.
-      - setup_type: pos.setup_type half of the
-        ``entry_reasons["setup_key"] or pos.setup_type`` cascade --
-        TradeClosed carries no setup_type field, so only the
-        entry_reasons half survives here.
+    FIELD-GAPs, P0-2 RESOLUTION STATUS:
+      - btc_trend/funding_rate (G2/G3): still live bot-level cache reads
+        with no per-event equivalent -- TradeClosed now carries
+        ``ev.btc_trend``/``ev.funding_rate`` fields (see trade_closed.py),
+        but they are only populated once a caller (the eventual shadow
+        tap) passes them into ``from_trade_event``. Until then this falls
+        back to the SAME defaults as before ("neutral" / 0.0).
+      - atr (G4) / setup_type (G5): RESOLVED -- ``TradeClosed.atr`` and
+        ``TradeClosed.setup_type`` are now sourced from the ``position=``
+        snapshot passed to ``from_trade_event`` (pos.atr /
+        entry_reasons["setup_key"] or pos.setup_type), so this reads the
+        event's real value instead of a hardcoded 0.0/entry_reasons-only
+        value once a caller supplies the position snapshot.
     """
     if ctx.deep_memory is None:
         return
@@ -193,7 +197,11 @@ def on_close_deep_memory_dna(ev: TradeClosed, ctx: CloseCtx) -> None:
     if not strategies_agreed and ev.strategy:
         strategies_agreed = [ev.strategy]
 
-    setup_type = er.get("setup_key", "") or ""  # FIELD-GAP: pos.setup_type half gone
+    # G5 RESOLVED: mirrors the god-block's `entry_reasons["setup_key"] or
+    # pos.setup_type` cascade -- entry_reasons half same as before,
+    # `ev.setup_type` now carries the pos.setup_type half (sourced in
+    # trade_closed.py's from_trade_event from the position snapshot).
+    setup_type = er.get("setup_key") or ev.setup_type or ""
 
     # trade_id: reproduces f"{symbol}_{side}_{int(open_time.timestamp())}";
     # falls back to a position_id-based id when open_time is absent/
@@ -227,10 +235,10 @@ def on_close_deep_memory_dna(ev: TradeClosed, ctx: CloseCtx) -> None:
         llm_reasoning=er.get("llm_reasoning", "") or "",
         entry_type=entry_type,
         setup_type=setup_type,
-        btc_trend="neutral",  # FIELD-GAP -- see docstring
-        volume_ratio=0.0,     # matches god-block's own hardcoded 0.0
-        funding_rate=0.0,     # FIELD-GAP -- see docstring
-        atr=0.0,              # FIELD-GAP -- see docstring
+        btc_trend=ev.btc_trend if ev.btc_trend is not None else "neutral",  # G2: tap-supplied when wired, else same default as before
+        volume_ratio=0.0,     # matches god-block's own hardcoded 0.0 (no field gap here -- see module docstring)
+        funding_rate=ev.funding_rate if ev.funding_rate is not None else 0.0,  # G3: tap-supplied when wired, else same default as before
+        atr=ev.atr if ev.atr is not None else 0.0,  # G4 RESOLVED: sourced from position snapshot, defaults to 0.0 only when no position was supplied
     )
 
 
@@ -239,9 +247,10 @@ def on_close_deep_memory_dna(ev: TradeClosed, ctx: CloseCtx) -> None:
 # god-block source: multi_strategy_main.py:4265-4287
 # ---------------------------------------------------------------------------
 def on_close_post_trade_learner(ev: TradeClosed, ctx: CloseCtx) -> None:
-    """FIELD-GAP: funding_rate sourced from
-    self._last_funding_rates.get(symbol, 0) (live bot-level cache) -- not on
-    TradeClosed. Defaults to 0.0.
+    """G3: funding_rate is sourced from self._last_funding_rates.get(symbol,
+    0) (live bot-level cache) in the god-block -- TradeClosed now carries
+    ``ev.funding_rate`` for a caller (the eventual shadow tap) to populate;
+    falls back to the same 0.0 default until then.
     """
     if ctx.post_trade_learner is None:
         return
@@ -259,7 +268,7 @@ def on_close_post_trade_learner(ev: TradeClosed, ctx: CloseCtx) -> None:
         "exit_action": ev.close_type,
         "llm_action": ev.llm_action,
         "llm_confidence": ev.llm_conf,
-        "funding_rate": 0.0,  # FIELD-GAP -- see docstring
+        "funding_rate": ev.funding_rate if ev.funding_rate is not None else 0.0,  # G3 -- see docstring
     })
     if lesson:
         ctx.post_trade_learner.apply_memory_update(lesson, symbol=ev.symbol, regime=regime)
@@ -270,8 +279,10 @@ def on_close_post_trade_learner(ev: TradeClosed, ctx: CloseCtx) -> None:
 # god-block source: multi_strategy_main.py:4289-4316
 # ---------------------------------------------------------------------------
 def on_close_reflection(ev: TradeClosed, ctx: CloseCtx) -> None:
-    """FIELD-GAP: atr (getattr(pos, 'atr', 0)) -- TradeClosed carries no atr
-    field. Defaults to 0.0.
+    """G4 RESOLVED: atr (getattr(pos, 'atr', 0)) is now sourced from the
+    ``position=`` snapshot passed to ``from_trade_event`` (see
+    trade_closed.py) -- reads ``ev.atr``, falling back to 0.0 only when no
+    position snapshot was supplied at emit time.
     """
     if ctx.reflection is None:
         return
@@ -302,7 +313,7 @@ def on_close_reflection(ev: TradeClosed, ctx: CloseCtx) -> None:
         ev=ev_per_dollar,
         rr=rr,
         entry_reasons=er,
-        atr=0.0,  # FIELD-GAP -- see docstring
+        atr=ev.atr if ev.atr is not None else 0.0,  # G4 -- see docstring
     )
 
 

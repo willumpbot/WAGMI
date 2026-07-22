@@ -47,13 +47,24 @@ legitimately run on every publish (e.g. a fire-and-forget alert/telemetry
 sink where "ran twice" is harmless or even correct) opts out with
 ``dedupe=False``.
 
-The applied-store is keyed by ``(subscriber_name, position_id)`` --
-"did THIS subscriber already apply for THIS position" -- not by
-position_id alone, since different subscribers each need their own
-independent exactly-once record (a duplicate publish that arrives while
-one subscriber's first attempt raised must still retry only that one
-subscriber, not skip the others that already succeeded, and must not
-re-run the ones that already succeeded).
+The applied-store is keyed by ``(subscriber_name, position_id, leg_kind)``
+-- "did THIS subscriber already apply for THIS position's THIS leg" --
+not by ``(subscriber_name, position_id)`` alone. D1 FIX: a bare
+``(subscriber_name, position_id)`` key cannot distinguish a PARTIAL
+(e.g. TP1) publish from the position's later TERMINAL publish -- both
+share the same ``position_id`` -- so a PARTIAL publish would mark
+``("equity", pid)`` applied and the subsequent TERMINAL publish for the
+SAME position_id would then be silently skipped (terminal equity delta,
+ledger row, and trade_logger row all dropped -- a money-accounting bug,
+not a duplicate). Including ``leg_kind`` (``TradeClosed.leg_kind.value``,
+"PARTIAL" or "TERMINAL") in the key means a PARTIAL and a TERMINAL of the
+SAME position are distinct entries -- both run exactly once -- while an
+EXACT duplicate re-publish of the same leg (same position_id AND same
+leg_kind) is still correctly deduped. Different subscribers each need
+their own independent exactly-once record (a duplicate publish that
+arrives while one subscriber's first attempt raised must still retry
+only that one subscriber, not skip the others that already succeeded,
+and must not re-run the ones that already succeeded).
 
 This is deliberately a DIFFERENT mechanism from the outbox's ack-set
 (``close_outbox.ack``, keyed by ``(event_id, subscriber_name)``): the
@@ -171,44 +182,48 @@ class Subscription:
 # ---------------------------------------------------------------------------
 class AppliedStore:
     """Interface for the exactly-once applied-``(subscriber_name,
-    position_id)`` set consulted by every ``dedupe=True`` subscriber (the
-    default -- see ``subscribe()``). See module docstring for the seam
-    this exists to provide (future: backed by the equity state file
-    itself) and for how this differs from the outbox's per-event ack-set."""
+    position_id, leg_kind)`` set consulted by every ``dedupe=True``
+    subscriber (the default -- see ``subscribe()``). ``leg_kind`` is
+    ``TradeClosed.leg_kind.value`` ("PARTIAL" or "TERMINAL") -- see module
+    docstring's D1 FIX note for why the key must include it (a PARTIAL and
+    a TERMINAL of the same position_id are distinct events that must BOTH
+    run). See module docstring for the seam this exists to provide
+    (future: backed by the equity state file itself) and for how this
+    differs from the outbox's per-event ack-set."""
 
-    def is_applied(self, subscriber_name: str, position_id: str) -> bool:
+    def is_applied(self, subscriber_name: str, position_id: str, leg_kind: str) -> bool:
         raise NotImplementedError
 
-    def mark_applied(self, subscriber_name: str, position_id: str) -> None:
+    def mark_applied(self, subscriber_name: str, position_id: str, leg_kind: str) -> None:
         raise NotImplementedError
 
 
 class InMemoryAppliedStore(AppliedStore):
     """Default applied-store: an in-memory set of ``(subscriber_name,
-    position_id)`` pairs, thread-safe. Sufficient for a single process's
-    lifetime; does NOT survive a restart (a restart should rely on
-    ``replay_unacked`` + the outbox's own ack state instead, not on this
-    set having remembered anything)."""
+    position_id, leg_kind)`` triples, thread-safe. Sufficient for a single
+    process's lifetime; does NOT survive a restart (a restart should rely
+    on ``replay_unacked`` + the outbox's own ack state instead, not on
+    this set having remembered anything)."""
 
     def __init__(self) -> None:
-        self._applied: Set[Tuple[str, str]] = set()
+        self._applied: Set[Tuple[str, str, str]] = set()
         self._lock = threading.Lock()
 
-    def is_applied(self, subscriber_name: str, position_id: str) -> bool:
+    def is_applied(self, subscriber_name: str, position_id: str, leg_kind: str) -> bool:
         with self._lock:
-            return (subscriber_name, position_id) in self._applied
+            return (subscriber_name, position_id, leg_kind) in self._applied
 
-    def mark_applied(self, subscriber_name: str, position_id: str) -> None:
+    def mark_applied(self, subscriber_name: str, position_id: str, leg_kind: str) -> None:
         with self._lock:
-            self._applied.add((subscriber_name, position_id))
+            self._applied.add((subscriber_name, position_id, leg_kind))
 
 
 class FileBackedAppliedStore(AppliedStore):
     """Optional file-backed applied-store: ``{subscriber_name:
-    {position_id: true}}`` written via ``atomic_write_json`` (atomic
-    replace) on every ``mark_applied``. NOT wired to the real equity state
-    file yet -- that is the later-phase seam described in the module
-    docstring (R1). Provided so tests/boot code can exercise
+    {position_id: {leg_kind: true}}}`` written via ``atomic_write_json``
+    (atomic replace) on every ``mark_applied``. NOT wired to the real
+    equity state file yet -- that is the later-phase seam described in the
+    module docstring (R1). Provided so tests/boot code can exercise
     crash-persistence of the applied-set today without waiting for that
     wiring."""
 
@@ -216,17 +231,18 @@ class FileBackedAppliedStore(AppliedStore):
         self._path = Path(path)
         self._lock = threading.Lock()
 
-    def _load(self) -> Dict[str, Dict[str, bool]]:
+    def _load(self) -> Dict[str, Dict[str, Dict[str, bool]]]:
         return read_json_or_none(self._path) or {}
 
-    def is_applied(self, subscriber_name: str, position_id: str) -> bool:
-        return bool(self._load().get(subscriber_name, {}).get(position_id))
+    def is_applied(self, subscriber_name: str, position_id: str, leg_kind: str) -> bool:
+        return bool(self._load().get(subscriber_name, {}).get(position_id, {}).get(leg_kind))
 
-    def mark_applied(self, subscriber_name: str, position_id: str) -> None:
+    def mark_applied(self, subscriber_name: str, position_id: str, leg_kind: str) -> None:
         with self._lock:
             data = self._load()
             subs = data.setdefault(subscriber_name, {})
-            subs[position_id] = True
+            legs = subs.setdefault(position_id, {})
+            legs[leg_kind] = True
             atomic_write_json(self._path, data)
 
 
@@ -326,14 +342,19 @@ class CloseBus:
             if event_kind not in sub.kind:
                 report.skipped.append(sub.name)
                 continue
-            if sub.dedupe and self._applied_store.is_applied(sub.name, event.position_id):
-                # Exactly-once (generalized): THIS subscriber already
-                # applied its side effect for THIS position_id -- a
-                # duplicate publish() (same or different event_id) must not
-                # re-run it. Checked/marked per-(subscriber, position_id),
-                # not once for the whole event, so a subscriber that failed
-                # on a previous publish is still retried here while its
-                # siblings that already succeeded are correctly skipped.
+            if sub.dedupe and self._applied_store.is_applied(sub.name, event.position_id, event.leg_kind.value):
+                # Exactly-once (generalized, D1 FIX): THIS subscriber
+                # already applied its side effect for THIS position_id's
+                # THIS leg (PARTIAL vs TERMINAL) -- a duplicate publish()
+                # (same position_id AND same leg_kind, same or different
+                # event_id) must not re-run it. A PARTIAL publish and the
+                # later TERMINAL publish for the SAME position_id are
+                # DIFFERENT leg_kind values, so they are never confused for
+                # each other here -- both run. Checked/marked
+                # per-(subscriber, position_id, leg_kind), not once for the
+                # whole event, so a subscriber that failed on a previous
+                # publish is still retried here while its siblings that
+                # already succeeded are correctly skipped.
                 report.skipped.append(sub.name)
                 continue
             try:
@@ -347,7 +368,7 @@ class CloseBus:
                 if sub.required:
                     close_outbox.ack(event.event_id, sub.name, path=self._outbox_path)
                 if sub.dedupe:
-                    self._applied_store.mark_applied(sub.name, event.position_id)
+                    self._applied_store.mark_applied(sub.name, event.position_id, event.leg_kind.value)
             except Exception as e:  # noqa: BLE001 - isolation is the point
                 logger.exception(
                     "close_bus: subscriber %r raised on event %s (position_id=%s)",
@@ -396,14 +417,15 @@ class CloseBus:
                     continue
                 if sub.name in acked:
                     continue  # this subscriber already processed this event
-                if sub.dedupe and self._applied_store.is_applied(sub.name, event.position_id):
-                    # Belt & suspenders: the applied-store is the source of
-                    # truth for "already had the side effect," even if the
-                    # ack is (for whatever reason) missing -- e.g. applied
-                    # via a different event_id for the same position. Never
-                    # re-run the subscriber; if it's required, converge the
-                    # ack-set too so this doesn't keep showing up as
-                    # unacked on every future replay.
+                if sub.dedupe and self._applied_store.is_applied(sub.name, event.position_id, event.leg_kind.value):
+                    # Belt & suspenders (D1 FIX: leg-aware): the
+                    # applied-store is the source of truth for "already had
+                    # the side effect for this leg," even if the ack is
+                    # (for whatever reason) missing -- e.g. applied via a
+                    # different event_id for the same position AND leg_kind.
+                    # Never re-run the subscriber; if it's required,
+                    # converge the ack-set too so this doesn't keep showing
+                    # up as unacked on every future replay.
                     if sub.required:
                         close_outbox.ack(event.event_id, sub.name, path=self._outbox_path)
                         acked.add(sub.name)
@@ -415,7 +437,7 @@ class CloseBus:
                         close_outbox.ack(event.event_id, sub.name, path=self._outbox_path)
                         acked.add(sub.name)
                     if sub.dedupe:
-                        self._applied_store.mark_applied(sub.name, event.position_id)
+                        self._applied_store.mark_applied(sub.name, event.position_id, event.leg_kind.value)
                 except Exception:
                     logger.exception(
                         "close_bus.replay_unacked: subscriber %r raised replaying event %s",

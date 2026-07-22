@@ -212,17 +212,19 @@ matching each god-block call site's own availability guard:
   - ``agent_perf``: optional, anything exposing ``.record_outcome(symbol,
     pnl, entry_time, exit_time, mfe_pct, mae_pct, side)`` -- matches the
     god-block's ``self._agent_perf`` (from
-    ``llm.agents.performance_tracker.get_tracker()``). NOTE: the REAL
-    ``AgentPerformanceTracker`` class exposes no ``record_outcome`` method
-    (its actual API is ``score_trade``/``record_pipeline_run``) -- the
-    god-block's call at this site (multi_strategy_main.py:4781) always
-    raises ``AttributeError``, silently swallowed by its own
-    ``except Exception`` handler. This field's duck-type documents the
-    CALL SITE's asserted (but never-satisfied-in-production) contract
-    faithfully; a mock/stub configured with ``record_outcome`` in tests
-    will receive the call exactly as the god-block intends it to, but a
-    real ``AgentPerformanceTracker`` instance wired in here reproduces the
-    identical always-fails-silently behavior seen live today.
+    ``llm.agents.agent_performance.get_tracker()``, multi_strategy_main.py
+    :822-823). F1 CORRECTION: an earlier pass of this audit claimed the
+    real ``AgentPerformanceTracker`` class exposes no ``record_outcome``
+    method -- that check hit the WRONG module
+    (``llm.agents.performance_tracker``, which happens to also define a
+    class named ``AgentPerformanceTracker`` but is NOT the one the
+    god-block actually constructs). The class the god-block really uses,
+    ``llm.agents.agent_performance.AgentPerformanceTracker``, DOES define
+    ``record_outcome(symbol, pnl, entry_time, exit_time, mfe_pct, mae_pct,
+    side)`` (agent_performance.py:86-94) -- a real, live method that
+    persists its result. This call site is NOT dead code; a real
+    ``AgentPerformanceTracker`` instance wired in here reproduces the
+    identical real, persisting behavior seen live today.
   - ``cost_optimizer``: optional, anything exposing
     ``.record_outcome(pipeline_type, pnl)`` -- matches
     ``llm.agents.cost_optimizer.AgentCostOptimizer`` (the god-block's

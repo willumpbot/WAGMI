@@ -44,6 +44,17 @@ All three are accepted as optional override kwargs on
 ``from_trade_event`` so a FUTURE caller that DOES have this context
 (Phase C/D helper, once built) can populate them; today they default to
 ``None``.
+
+P0-2 SCHEMA (``atr``/``setup_type``/``btc_trend``/``funding_rate``,
+``open_realized_pnl``): ``atr`` and ``setup_type`` (G4/G5) ARE trivially
+sourceable -- from the `position=` snapshot's ``pos.atr`` /
+``entry_reasons["setup_key"] or pos.setup_type`` cascade -- and
+``from_trade_event`` sources them automatically when a position snapshot
+is supplied. ``btc_trend``/``funding_rate`` (G2/G3) and
+``open_realized_pnl`` (D2) are, like ``equity_after``/``session_dd_pct``,
+live emit-time bot state with no per-event equivalent -- accepted as
+plain override kwargs for a future caller (the shadow tap) to populate;
+default ``None`` until then.
 """
 
 from __future__ import annotations
@@ -174,6 +185,25 @@ class TradeClosed:
     compound_mult: Optional[float] = None
     candidate_ref: Optional[str] = None
 
+    # ---- P0-2 schema additions (G2-G5, D2) --------------------------------------
+    # atr / setup_type: trivially sourceable from the `position=` snapshot --
+    # see from_trade_event's sourcing below (G4/G5). btc_trend / funding_rate:
+    # NOT derivable from a single frozen event (they are live cross-symbol /
+    # bot-level cache reads) -- accepted as emit-time override kwargs on
+    # from_trade_event so a FUTURE caller (the shadow tap) that DOES have
+    # that context can populate them (G2/G3); default None until then.
+    atr: Optional[float] = None
+    setup_type: str = ""
+    btc_trend: Optional[str] = None
+    funding_rate: Optional[float] = None
+    # open_realized_pnl: sum over the bot's OTHER open positions' realized
+    # pnl at emit time (god-block ms:3815-3822) -- needed alongside
+    # equity_after for on_close_equity's drift-check parity (D2). Cannot be
+    # derived from this position's own TradeEvent/Position snapshot (it is
+    # a live cross-position sum); accepted as an emit-time override kwarg
+    # for the same reason as equity_after/session_dd_pct.
+    open_realized_pnl: Optional[float] = None
+
     # ---- delivery metadata -------------------------------------------------------
     exchange_submitted: bool = False
     sim: bool = False
@@ -219,11 +249,16 @@ class TradeClosed:
         position: Optional[Union["Position", Dict[str, Any]]] = None,
         equity_after: Optional[float] = None,
         session_dd_pct: Optional[float] = None,
+        open_realized_pnl: Optional[float] = None,
         sim: bool = False,
         exchange_submitted: bool = False,
         close_volatility: Optional[float] = None,
         compound_mult: Optional[float] = None,
         candidate_ref: Optional[str] = None,
+        atr: Optional[float] = None,
+        setup_type: Optional[str] = None,
+        btc_trend: Optional[str] = None,
+        funding_rate: Optional[float] = None,
     ) -> "TradeClosed":
         """Build a frozen ``TradeClosed`` from a ``TradeEvent`` (+ optional
         ``Position`` snapshot for fields the TradeEvent's metadata doesn't
@@ -233,7 +268,24 @@ class TradeClosed:
         plain dict (e.g. a rehydrated snapshot), or omitted. When omitted,
         fields only available on the Position (e.g. ``original_qty``,
         ``open_time`` for a PARTIAL leg) are left as ``None`` rather than
-        guessed -- callers that have the Position on hand should pass it.
+        guessed -- callers that have the Position on hand should pass it
+        (G7: ALSO needed for ``atr``/``setup_type`` below, and because a
+        TP1 PARTIAL's metadata carries no ``total_pnl`` at all -- D9,
+        see the ``total_pnl`` invariant below -- so a caller emitting a
+        PARTIAL should always supply ``position=``).
+
+        ``equity_after``/``session_dd_pct``/``open_realized_pnl`` (D2/D3/G1)
+        and ``btc_trend``/``funding_rate`` (G2/G3) cannot be derived from
+        the TradeEvent or Position snapshot alone -- they are live,
+        emit-time bot state (post-booking equity, cross-symbol price cache,
+        funding cache) that only the caller (the eventual shadow tap) has
+        at the moment of publish. They are accepted here as plain
+        pass-through override kwargs so the plumbing is correct end-to-end;
+        subscribers already read ``ev.equity_after``/``ev.pnl_pct_of_equity``
+        /``ev.session_dd_pct``/``ev.btc_trend``/``ev.funding_rate`` and will
+        see real values once a caller supplies them. ``atr``/``setup_type``
+        (G4/G5) ARE trivially sourceable from ``position`` and are sourced
+        below when not explicitly overridden.
         """
         meta: Dict[str, Any] = event.metadata or {}
         position_id = getattr(event, "position_id", "") or ""
@@ -257,6 +309,13 @@ class TradeClosed:
         entry_reasons = meta.get("entry_reasons")
         if not entry_reasons:
             entry_reasons = _get(meta, position, "entry_reasons", default={}) or {}
+        # L5 GUARD: metadata/position could (in principle) carry a
+        # non-dict value under this key (e.g. a stale string from a
+        # rehydrated snapshot) -- coerce to {} rather than let the
+        # `.get()` calls below (regime/llm_action/setup_key/...) raise
+        # AttributeError deep inside close-event construction.
+        if not isinstance(entry_reasons, dict):
+            entry_reasons = {}
 
         # total_pnl: the ONLY pnl source is metadata["total_pnl"] (the
         # position's realized_pnl at the moment this TradeEvent was built),
@@ -309,6 +368,17 @@ class TradeClosed:
 
         regime = meta.get("regime") or entry_reasons.get("regime", "") or ""
 
+        # G4/G5: atr / setup_type -- trivially sourceable from the
+        # `position=` snapshot (mirrors the god-block's
+        # `pos.atr` / `entry_reasons["setup_key"] or pos.setup_type`
+        # cascade, analytics.py:205/230). Only sourced when the caller did
+        # NOT already pass an explicit override kwarg.
+        if atr is None:
+            atr = _get(meta, position, "atr")
+        if setup_type is None:
+            setup_type = entry_reasons.get("setup_key") or _get(meta, position, "setup_type")
+        setup_type = setup_type or ""
+
         return cls(
             position_id=position_id,
             leg_kind=leg_kind,
@@ -329,6 +399,7 @@ class TradeClosed:
             equity_after=equity_after,
             pnl_pct_of_equity=pnl_pct_of_equity,
             session_dd_pct=session_dd_pct,
+            open_realized_pnl=open_realized_pnl,
             entry=_get(meta, position, "entry"),
             original_sl=_get(meta, position, "sl", pos_attr="original_sl"),
             original_qty=_get(meta, position, "original_qty"),
@@ -355,6 +426,10 @@ class TradeClosed:
             close_volatility=close_volatility,
             compound_mult=compound_mult,
             candidate_ref=candidate_ref,
+            atr=atr,
+            setup_type=setup_type,
+            btc_trend=btc_trend,
+            funding_rate=funding_rate,
             exchange_submitted=exchange_submitted,
             sim=sim,
         )

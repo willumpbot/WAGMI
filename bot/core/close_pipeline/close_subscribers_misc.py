@@ -98,16 +98,18 @@ DEFERRED / NOT EXTRACTED THIS BATCH (see report for full detail):
     off ``self.pos_mgr.get_open_positions()``, unrelated to the specific
     trade that just closed -- god-block-structural.
 
-SURPRISE FOUND DURING EXTRACTION: ``self._agent_perf.record_outcome(...)``
-(multi_strategy_main.py:4781) calls a method that does not exist on the real
-``AgentPerformanceTracker`` class (``llm/agents/performance_tracker.py`` --
-its actual API is ``score_trade``/``record_pipeline_run``, no
-``record_outcome``). This call has always raised ``AttributeError`` in
-production, silently swallowed by its own ``except Exception`` handler --
-i.e. this god-block call site has been dead code (this specific write) since
-it was added. Reproduced faithfully as-is (a duck-typed ``.record_outcome``
-call) per this extraction's "faithful re-expression, not a bug fix" mandate
--- see ``on_close_agent_perf``'s docstring and close_context.py's
+F1 CORRECTION (was a false "dead API" claim -- see below): an earlier pass
+of this audit claimed ``self._agent_perf.record_outcome(...)``
+(multi_strategy_main.py:4781) calls a method that does not exist, because
+it checked ``llm/agents/performance_tracker.py``'s
+``AgentPerformanceTracker`` class (actual API: ``score_trade``/
+``record_pipeline_run``, no ``record_outcome``). That was the WRONG
+module: the god-block's ``self._agent_perf`` attribute is actually wired
+to ``llm/agents/agent_performance.py``, whose class DOES define
+``record_outcome(...)`` (see that file's :86-94 for the exact signature) --
+a real, live method that persists its result. So this call site is NOT
+dead code; ``on_close_agent_perf`` below reproduces a real, functioning
+call. See ``on_close_agent_perf``'s docstring and close_context.py's
 ``agent_perf`` field note.
 
 Similarly, ``self._regime_strategy_weighter`` is permanently ``None`` in
@@ -505,10 +507,16 @@ def on_close_llm_triggers_notify(ev: TradeClosed, ctx: CloseCtx) -> None:
 # god-block source: multi_strategy_main.py:4778-4791
 # ---------------------------------------------------------------------------
 def on_close_agent_perf(ev: TradeClosed, ctx: CloseCtx) -> None:
-    """See module docstring's "SURPRISE FOUND" note and close_context.py's
-    ``agent_perf`` field note: the real ``AgentPerformanceTracker`` has no
-    ``record_outcome`` method, so this call always raised ``AttributeError``
-    in production (silently swallowed). Reproduced faithfully as-is.
+    """F1 CORRECTION: see module docstring's corrected note and
+    close_context.py's ``agent_perf`` field note -- an earlier audit pass
+    claimed ``record_outcome`` does not exist on ``AgentPerformanceTracker``
+    (it checked the wrong module, ``llm/agents/performance_tracker.py``).
+    The god-block's real ``self._agent_perf`` is
+    ``llm.agents.agent_performance.AgentPerformanceTracker``
+    (agent_performance.py:86-94 has the exact ``record_outcome`` signature
+    called below) -- a real, live method that persists its result. This
+    call site is NOT dead code; reproduced faithfully as a real,
+    functioning call.
 
     FIELD-GAP: ``mfe_pct``/``mae_pct`` sourced from ``getattr(pos,
     'max_favorable_pct'/'max_adverse_pct', 0)`` in the god-block -- neither

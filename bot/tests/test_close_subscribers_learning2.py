@@ -247,6 +247,31 @@ class TestDeepMemoryDna:
         ctx = _fake_ctx(deep_memory=None)
         on_close_deep_memory_dna(ev, ctx)  # must not raise
 
+    def test_p0_2_fields_flow_through_when_populated(self):
+        """G2-G5: when the event carries real atr/setup_type(via
+        entry_reasons)/btc_trend/funding_rate (i.e. a caller populated them
+        at emit time, e.g. the eventual shadow tap or a position-snapshot-
+        sourced from_trade_event call), the subscriber must use the REAL
+        values, not the hardcoded field-gap defaults."""
+        ev = _make_terminal_event(atr=2.35, btc_trend="bullish", funding_rate=0.0042)
+        ctx = _fake_ctx()
+        on_close_deep_memory_dna(ev, ctx)
+        kwargs = ctx.deep_memory.record_full_trade.call_args.kwargs
+        assert kwargs["atr"] == pytest.approx(2.35)
+        assert kwargs["btc_trend"] == "bullish"
+        assert kwargs["funding_rate"] == pytest.approx(0.0042)
+
+    def test_setup_type_falls_back_to_position_sourced_field_when_no_entry_reasons_key(self):
+        """G5: when entry_reasons carries no setup_key (unlike the default
+        fixture), the subscriber must fall back to ev.setup_type -- the
+        pos.setup_type half of the god-block's cascade, now sourced via
+        trade_closed.py's from_trade_event position-snapshot path."""
+        ev = _make_terminal_event(entry_reasons={}, setup_type="pos_sourced_setup")
+        ctx = _fake_ctx()
+        on_close_deep_memory_dna(ev, ctx)
+        kwargs = ctx.deep_memory.record_full_trade.call_args.kwargs
+        assert kwargs["setup_type"] == "pos_sourced_setup"
+
 
 # ---------------------------------------------------------------------------
 # T2-k post_trade_learner
@@ -265,6 +290,13 @@ class TestPostTradeLearner:
         ctx.post_trade_learner.apply_memory_update.assert_called_once_with(
             "BTC LONG SL — reduce confidence", symbol="BTC", regime="trending",
         )
+
+    def test_funding_rate_flows_through_when_populated(self):
+        ev = _make_terminal_event(funding_rate=0.0077)
+        ctx = _fake_ctx()
+        on_close_post_trade_learner(ev, ctx)
+        gen_kwargs = ctx.post_trade_learner.generate_immediate_lesson.call_args.args[0]
+        assert gen_kwargs["funding_rate"] == pytest.approx(0.0077)
 
     def test_no_lesson_skips_memory_update(self):
         ev = _make_terminal_event()
@@ -299,8 +331,18 @@ class TestReflection:
         assert kwargs["lowest_price"] == pytest.approx(49900.0)
         assert kwargs["win_prob"] == pytest.approx(0.6)
         assert kwargs["rr"] == pytest.approx(1.8)
-        assert kwargs["atr"] == pytest.approx(0.0)  # FIELD-GAP
+        assert kwargs["atr"] == pytest.approx(0.0)  # no position snapshot -> default
         assert kwargs["entry_reasons"]["thesis_id"] == "th-999"
+
+    def test_atr_flows_through_when_populated(self):
+        """G4: when the event carries a real atr (sourced from the
+        position snapshot at emit time), the subscriber must use it, not
+        the 0.0 default."""
+        ev = _make_terminal_event(atr=3.1)
+        ctx = _fake_ctx()
+        on_close_reflection(ev, ctx)
+        kwargs = ctx.reflection.on_close.call_args.kwargs
+        assert kwargs["atr"] == pytest.approx(3.1)
 
     def test_skipped_when_not_configured(self):
         ev = _make_terminal_event()

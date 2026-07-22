@@ -323,6 +323,114 @@ class TestTradeClosed:
         assert terminal.leg_kind == LegKind.TERMINAL
         assert partial.leg_kind == LegKind.PARTIAL
 
+    def test_equity_after_populates_nonzero_pnl_pct_of_equity(self):
+        """D2/D3/G1: pnl_pct_of_equity must be computed from
+        total_pnl/equity_after*100 whenever the caller (the eventual
+        shadow tap) supplies equity_after -- kelly/thesis/rl/signal_outcome
+        all read ev.pnl_pct_of_equity and must NOT see 0.0 once the emitter
+        wires this through."""
+        pos = _make_position()
+        event = _terminal_event(pos, pnl_leg=8.0, total_pnl=25.0)
+
+        tc = TradeClosed.from_trade_event(event, position=pos, equity_after=5000.0)
+
+        assert tc.equity_after == 5000.0
+        assert tc.pnl_pct_of_equity == pytest.approx(25.0 / 5000.0 * 100.0)
+        assert tc.pnl_pct_of_equity != 0.0
+
+    def test_equity_after_none_leaves_pnl_pct_none(self):
+        """When the caller does NOT supply equity_after (today's
+        unwired state), pnl_pct_of_equity must stay None -- not silently
+        compute against a bogus equity -- so downstream readers' explicit
+        ``if ev.pnl_pct_of_equity is not None else 0.0`` fallback is the
+        thing that produces 0.0, not a wrong division here."""
+        pos = _make_position()
+        event = _terminal_event(pos)
+
+        tc = TradeClosed.from_trade_event(event, position=pos)
+
+        assert tc.equity_after is None
+        assert tc.pnl_pct_of_equity is None
+
+    def test_open_realized_pnl_passthrough(self):
+        """D2: open_realized_pnl is a new emit-time snapshot field (sum
+        over the bot's other open positions, ms:3815-3822) -- must flow
+        through from_trade_event unchanged when supplied."""
+        pos = _make_position()
+        event = _terminal_event(pos)
+
+        tc = TradeClosed.from_trade_event(event, position=pos, open_realized_pnl=42.5)
+        assert tc.open_realized_pnl == 42.5
+
+        tc_default = TradeClosed.from_trade_event(event, position=pos)
+        assert tc_default.open_realized_pnl is None
+
+    def test_atr_and_setup_type_sourced_from_position_snapshot(self):
+        """G4/G5: atr (pos.atr) and setup_type (entry_reasons['setup_key']
+        or pos.setup_type) must be sourced automatically from the
+        `position=` snapshot when the caller doesn't pass an explicit
+        override -- TradeEvent.metadata never carries either key."""
+        pos = _make_position(atr=1.75, setup_type="breakout_retest")
+        event = _terminal_event(pos)
+        # this fixture's entry_reasons has no "setup_key" -> falls back to
+        # pos.setup_type.
+        assert "setup_key" not in event.metadata["entry_reasons"]
+
+        tc = TradeClosed.from_trade_event(event, position=pos)
+
+        assert tc.atr == 1.75
+        assert tc.setup_type == "breakout_retest"
+
+    def test_setup_type_prefers_entry_reasons_setup_key_over_position(self):
+        pos = _make_position(setup_type="fallback_setup")
+        event = _terminal_event(pos)
+        event.metadata["entry_reasons"]["setup_key"] = "sniper_reclaim"
+
+        tc = TradeClosed.from_trade_event(event, position=pos)
+
+        assert tc.setup_type == "sniper_reclaim"
+
+    def test_atr_setup_type_default_sanely_without_position(self):
+        pos = _make_position()
+        event = _terminal_event(pos)
+
+        tc = TradeClosed.from_trade_event(event)  # no position= supplied
+
+        assert tc.atr is None
+        assert tc.setup_type == ""
+
+    def test_btc_trend_and_funding_rate_kwargs_passthrough(self):
+        """G2/G3: btc_trend/funding_rate cannot be derived from the frozen
+        event -- accepted as plain override kwargs for a future emitter."""
+        pos = _make_position()
+        event = _terminal_event(pos)
+
+        tc = TradeClosed.from_trade_event(
+            event, position=pos, btc_trend="bullish", funding_rate=0.0125,
+        )
+        assert tc.btc_trend == "bullish"
+        assert tc.funding_rate == 0.0125
+
+        tc_default = TradeClosed.from_trade_event(event, position=pos)
+        assert tc_default.btc_trend is None
+        assert tc_default.funding_rate is None
+
+    def test_non_dict_entry_reasons_guarded_not_crash(self):
+        """L5: a non-dict value under metadata['entry_reasons'] (e.g. a
+        stale string from a rehydrated snapshot) must be coerced to {}
+        rather than crash the later `.get()` calls (regime/llm_action/
+        setup_key/...)."""
+        pos = _make_position()
+        event = _terminal_event(pos)
+        event.metadata["entry_reasons"] = "not-a-dict"
+
+        tc = TradeClosed.from_trade_event(event, position=pos)
+
+        assert tc.entry_reasons == {}
+        assert tc.llm_action == ""
+        assert tc.llm_conf == 0.0
+        assert tc.setup_type == ""
+
 
 # ---------------------------------------------------------------------------
 # close_outbox.py
@@ -638,8 +746,8 @@ class TestCloseBus:
         assert calls == {"equity": 1, "kelly": 1}
         assert "equity" in report1.delivered
         assert report1.failed and report1.failed[0][0] == "kelly"
-        assert bus._applied_store.is_applied("equity", "pid-gen-raise") is True
-        assert bus._applied_store.is_applied("kelly", "pid-gen-raise") is False
+        assert bus._applied_store.is_applied("equity", "pid-gen-raise", "TERMINAL") is True
+        assert bus._applied_store.is_applied("kelly", "pid-gen-raise", "TERMINAL") is False
         assert close_outbox.unacked(["kelly"], path=outbox_path) != []
 
         fail_kelly["raise"] = False
@@ -647,7 +755,7 @@ class TestCloseBus:
 
         assert calls == {"equity": 1, "kelly": 2}  # equity NOT re-run by replay
         assert delivered == 1
-        assert bus._applied_store.is_applied("kelly", "pid-gen-raise") is True
+        assert bus._applied_store.is_applied("kelly", "pid-gen-raise", "TERMINAL") is True
         assert close_outbox.unacked(["kelly"], path=outbox_path) == []
 
         # A further publish() of the same position_id (after the recovered
@@ -810,9 +918,9 @@ class TestCloseBus:
         # its siblings that already succeeded ARE independently recorded
         # applied (generalized per-(subscriber, position_id) applied-store
         # -- see close_bus.py's EXACTLY-ONCE SEAM).
-        assert bus._applied_store.is_applied("equity", "pid-req-fail") is True
-        assert bus._applied_store.is_applied("log_trade", "pid-req-fail") is True
-        assert bus._applied_store.is_applied("cb", "pid-req-fail") is False
+        assert bus._applied_store.is_applied("equity", "pid-req-fail", "TERMINAL") is True
+        assert bus._applied_store.is_applied("log_trade", "pid-req-fail", "TERMINAL") is True
+        assert bus._applied_store.is_applied("cb", "pid-req-fail", "TERMINAL") is False
 
         # (b) replay_unacked() must redeliver ONLY to the failed subscriber
         # ("cb") -- "equity"/"log_trade" already succeeded and must NOT run
@@ -826,7 +934,66 @@ class TestCloseBus:
         # (c) Having succeeded on replay, "cb" is now acked and applied; a
         # second replay is a no-op.
         assert close_outbox.unacked(["cb"], path=outbox_path) == []
-        assert bus._applied_store.is_applied("cb", "pid-req-fail") is True
+        assert bus._applied_store.is_applied("cb", "pid-req-fail", "TERMINAL") is True
 
         delivered_again = bus.replay_unacked()
         assert delivered_again == 0
+
+    def test_d1_partial_then_terminal_both_run_duplicate_terminal_deduped(self, tmp_path):
+        """D1 FIX acceptance test (anti-silent-drop): the applied-store key
+        must include leg_kind so a PARTIAL (e.g. TP1) publish and the
+        position's later TERMINAL publish -- same position_id, DIFFERENT
+        leg -- are never confused with a duplicate. BEFORE the fix, a
+        PARTIAL publish marked bare (subscriber, position_id) applied and
+        the TERMINAL publish for the SAME position_id was then silently
+        SKIPPED -- terminal equity delta, ledger row, and trade_logger row
+        all dropped. This mirrors register_accounting's real T0/T1
+        subscriber set (equity, circuit_breaker, log_trade, trade_logger)."""
+        outbox_path = tmp_path / "close_outbox.jsonl"
+        calls = {"equity": 0, "circuit_breaker": 0, "log_trade": 0, "trade_logger": 0}
+
+        def make(name):
+            def _fn(event):
+                calls[name] += 1
+            return _fn
+
+        bus = CloseBus(outbox_path=outbox_path)
+        bus.subscribe("equity", make("equity"), tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True)
+        bus.subscribe("circuit_breaker", make("circuit_breaker"), tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True)
+        bus.subscribe("log_trade", make("log_trade"), tier=Tier.T0_CORE_ACCOUNTING, required=True, replay=True)
+        bus.subscribe("trade_logger", make("trade_logger"), tier=Tier.T1_PERSISTENCE, required=True, replay=True)
+
+        partial = _minimal_closed(position_id="pid-d1", event_id="ev-d1-partial", leg_kind=LegKind.PARTIAL)
+        terminal = _minimal_closed(position_id="pid-d1", event_id="ev-d1-terminal", leg_kind=LegKind.TERMINAL)
+
+        report_partial = bus.publish(partial)
+        report_terminal = bus.publish(terminal)
+
+        # BOTH the partial and the terminal publishes ran all four
+        # subscribers -- the terminal was NOT silently skipped because the
+        # partial already "applied" that position_id under the old bare
+        # (subscriber, position_id) key.
+        assert calls == {"equity": 2, "circuit_breaker": 2, "log_trade": 2, "trade_logger": 2}
+        assert set(report_partial.delivered) == {"equity", "circuit_breaker", "log_trade", "trade_logger"}
+        assert set(report_terminal.delivered) == {"equity", "circuit_breaker", "log_trade", "trade_logger"}
+        assert report_partial.skipped == []
+        assert report_terminal.skipped == []
+
+        # An EXACT duplicate re-publish of the TERMINAL leg (same
+        # position_id, same leg_kind, different event_id) IS deduped --
+        # exactly-once still holds within a single leg.
+        duplicate_terminal = _minimal_closed(position_id="pid-d1", event_id="ev-d1-terminal-dup", leg_kind=LegKind.TERMINAL)
+        report_dup_terminal = bus.publish(duplicate_terminal)
+
+        assert calls == {"equity": 2, "circuit_breaker": 2, "log_trade": 2, "trade_logger": 2}
+        assert report_dup_terminal.delivered == []
+        assert set(report_dup_terminal.skipped) == {"equity", "circuit_breaker", "log_trade", "trade_logger"}
+
+        # A duplicate re-publish of the PARTIAL leg is likewise deduped,
+        # independently of the terminal leg's applied-state.
+        duplicate_partial = _minimal_closed(position_id="pid-d1", event_id="ev-d1-partial-dup", leg_kind=LegKind.PARTIAL)
+        report_dup_partial = bus.publish(duplicate_partial)
+
+        assert calls == {"equity": 2, "circuit_breaker": 2, "log_trade": 2, "trade_logger": 2}
+        assert report_dup_partial.delivered == []
+        assert set(report_dup_partial.skipped) == {"equity", "circuit_breaker", "log_trade", "trade_logger"}
