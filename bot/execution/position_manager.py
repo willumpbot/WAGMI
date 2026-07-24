@@ -406,6 +406,17 @@ class PositionManager:
         finally:
             self._setup_time_stops_refreshed_at = now
 
+    def _pnl_lev(self, leverage: float) -> float:
+        # PNL_LEVERAGE_FIX (default off): coordinator sizes qty as FULL
+        # base-currency exposure (qty = risk$/stop_width, "do NOT multiply by
+        # leverage"), so realized/unrealized pnl and funding notional must NOT
+        # re-apply leverage. Default off preserves current (leverage-inflated)
+        # behavior; correct base semantics needs PNL_LEVERAGE_FIX=true AND
+        # FEE_ACCOUNTING_FIX=false (paired). Flip only after a reviewed replay.
+        if os.getenv("PNL_LEVERAGE_FIX", "false").lower() in ("1", "true", "yes"):
+            return 1.0
+        return leverage
+
     def _fee(self, price: float, qty: float, leverage: float = 1.0) -> float:
         # FEE_ACCOUNTING_FIX (default off): charge fees on true notional
         # (price*qty*leverage) to match pnl = move*qty*leverage (L1216/1467/1710)
@@ -550,7 +561,7 @@ class PositionManager:
             # is deliberately enabled.
             scan_interval_s = 30.0
             fraction_of_interval = scan_interval_s / (interval_hours * 3600)
-        notional = pos.entry * pos.qty * pos.leverage
+        notional = pos.entry * pos.qty * self._pnl_lev(pos.leverage)
         if os.getenv("FUNDING_SIGNED_ACCRUAL", "false").lower() in ("1", "true", "yes"):
             # Signed carry (2026-07-14 funding_asymmetric fix): LONG pays when
             # rate > 0, SHORT pays when rate < 0; negative accrual = funding
@@ -1172,9 +1183,9 @@ class PositionManager:
                     tel = _get_tel()
                     if tel is not None:
                         if is_long:
-                            _unrealized = (current_price - pos.entry) * pos.qty * pos.leverage
+                            _unrealized = (current_price - pos.entry) * pos.qty * self._pnl_lev(pos.leverage)
                         else:
-                            _unrealized = (pos.entry - current_price) * pos.qty * pos.leverage
+                            _unrealized = (pos.entry - current_price) * pos.qty * self._pnl_lev(pos.leverage)
                         tel.log(
                             "POSITION_UPDATE",
                             symbol,
@@ -1576,9 +1587,9 @@ class PositionManager:
         pos.fees_paid += fee
 
         if pos.side == "LONG":
-            pnl = (price - pos.entry) * close_qty * pos.leverage
+            pnl = (price - pos.entry) * close_qty * self._pnl_lev(pos.leverage)
         else:
-            pnl = (pos.entry - price) * close_qty * pos.leverage
+            pnl = (pos.entry - price) * close_qty * self._pnl_lev(pos.leverage)
 
         # Proportionally allocate funding costs to TP1 partial close
         # (prevents dumping all funding onto final close, distorting per-leg PnL)
@@ -1600,7 +1611,7 @@ class PositionManager:
         fee_buffer = pos.entry * (self.taker_fee_bps * 2 / 10000.0 + 0.001)
         if remaining_qty > 0 and pos.leverage > 0:
             # How much room does the locked-in profit give us?
-            profit_cushion = pos.realized_pnl / (remaining_qty * pos.leverage)
+            profit_cushion = pos.realized_pnl / (remaining_qty * self._pnl_lev(pos.leverage))
             if pos.side == "LONG":
                 # Entry - cushion = adjusted breakeven (lower = more room)
                 be_price = pos.entry - profit_cushion + fee_buffer
@@ -1832,7 +1843,7 @@ class PositionManager:
         if action == "TP2":
             return "CLEAN_WIN"
         elif action == "EARLY_EXIT":
-            return "EARLY_EXIT_SAVE" if pos.realized_pnl > -(abs(pos.entry - pos.original_sl) * pos.original_qty * pos.leverage * 0.25) else "EARLY_EXIT_FAIL"
+            return "EARLY_EXIT_SAVE" if pos.realized_pnl > -(abs(pos.entry - pos.original_sl) * pos.original_qty * self._pnl_lev(pos.leverage) * 0.25) else "EARLY_EXIT_FAIL"
         elif action == "TRAILING_STOP":
             return "TRAILING_WIN" if win else "TRAILING_FAIL"
         elif action in ("ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE"):
@@ -1885,9 +1896,9 @@ class PositionManager:
             fee += self._fee(pos.entry, pos.original_qty, pos.leverage)
 
         if pos.side == "LONG":
-            pnl = (price - pos.entry) * qty * pos.leverage
+            pnl = (price - pos.entry) * qty * self._pnl_lev(pos.leverage)
         else:
-            pnl = (pos.entry - price) * qty * pos.leverage
+            pnl = (pos.entry - price) * qty * self._pnl_lev(pos.leverage)
 
         # Deduct accumulated funding costs at final close
         # PNL_SEMANTICS_FIX (2026-07-20): capture this (final) leg's own NET
@@ -2172,9 +2183,9 @@ class PositionManager:
         pos.fees_paid += fee
 
         if pos.side == "LONG":
-            pnl = (price - pos.entry) * close_qty * pos.leverage
+            pnl = (price - pos.entry) * close_qty * self._pnl_lev(pos.leverage)
         else:
-            pnl = (pos.entry - price) * close_qty * pos.leverage
+            pnl = (pos.entry - price) * close_qty * self._pnl_lev(pos.leverage)
 
         # Proportionally allocate funding costs to this leg
         # (mirrors _partial_close_tp1 — prevents dumping all funding onto
@@ -2334,9 +2345,9 @@ class PositionManager:
                 continue
             price = prices[symbol]
             if pos.side == "LONG":
-                total += (price - pos.entry) * pos.qty * pos.leverage
+                total += (price - pos.entry) * pos.qty * self._pnl_lev(pos.leverage)
             else:
-                total += (pos.entry - price) * pos.qty * pos.leverage
+                total += (pos.entry - price) * pos.qty * self._pnl_lev(pos.leverage)
         return total
 
     def get_trade_summary(self) -> Dict[str, Any]:
