@@ -418,19 +418,15 @@ class PositionManager:
         return leverage
 
     def _fee(self, price: float, qty: float, leverage: float = 1.0) -> float:
-        # FEE_ACCOUNTING_FIX (default off): charge fees on true notional
-        # (price*qty*leverage) to match pnl = move*qty*leverage (L1216/1467/1710)
-        # and funding notional = entry*qty*leverage (accrue_funding L334).
-        if os.getenv("FEE_ACCOUNTING_FIX", "false").lower() in ("1", "true", "yes"):
-            return price * qty * max(leverage, 1.0) * (self.taker_fee_bps / 10000.0)
-        if leverage > 1.0 and not self._fee_accounting_warned:
-            self._fee_accounting_warned = True
-            logger.warning(
-                "FEE_ACCOUNTING_FIX=false: leveraged-position fees understated "
-                "~%.1fx vs true notional (charging on price*qty, not "
-                "price*qty*leverage). Corrected-and-ready behind the flag; "
-                "flip requires a reviewed replay backtest first.", leverage,
-            )
+        # Fee = base notional * taker bps. qty is FULL base-currency exposure
+        # (coordinator sizes qty = risk$/stop_width, "do NOT multiply by
+        # leverage"), so leverage must NOT enter the fee -- it only affects
+        # margin, not the notional traded. UNCONDITIONAL (no flag): this is the
+        # ledger-proven recorded baseline (both legs at price*qty*taker_bps).
+        # The `leverage` param is kept for call-site compatibility but is
+        # intentionally unused -- it replaces the FEE_ACCOUNTING_FIX
+        # leverage-multiplier landmine, which would double-count leverage on the
+        # cost side under full-exposure (PNL_LEVERAGE_FIX) sizing.
         return price * qty * (self.taker_fee_bps / 10000.0)
 
     def _backup_position(self, pos: 'Position') -> None:
@@ -1888,12 +1884,14 @@ class PositionManager:
         qty = pos.qty
         fee = self._fee(price, qty, pos.leverage)
         pos.fees_paid += fee
-        # FEE_ACCOUNTING_FIX: the entry-leg fee (booked to fees_paid at open) was
-        # never deducted from realized_pnl nor charged to equity (equity only sees
-        # exit-event fees via update_equity(event.pnl - event.fee)). Book it into
-        # the final-close fee so realized_pnl and equity carry the full round trip.
-        if os.getenv("FEE_ACCOUNTING_FIX", "false").lower() in ("1", "true", "yes"):
-            fee += self._fee(pos.entry, pos.original_qty, pos.leverage)
+        # Round-trip fee: the entry-leg fee (booked to fees_paid at open) must be
+        # deducted from realized_pnl/equity too (equity otherwise only sees the
+        # exit-event fee via update_equity(event.pnl - event.fee)). Charge it
+        # UNCONDITIONALLY -- both legs at base notional is the ledger-proven
+        # recorded baseline; gating it on FEE_ACCOUNTING_FIX dropped the entry
+        # leg and overstated PnL by ~4.5bps/trade (regression from the 2026-07-24
+        # paired flip, caught by the accounting audit).
+        fee += self._fee(pos.entry, pos.original_qty, pos.leverage)
 
         if pos.side == "LONG":
             pnl = (price - pos.entry) * qty * self._pnl_lev(pos.leverage)
