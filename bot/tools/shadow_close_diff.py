@@ -268,13 +268,40 @@ def _row_existence(
     # (e.g. shadow was enabled mid-session) are informational, not CRITICAL.
     real_only_no_shadow_event = sorted(real_pids - terminal_pids - shadow_pids)
 
+    # Split "outside window" by time. A real close NEWER than the shadow's most
+    # recent capture -- while the shadow was demonstrably live (>=1 capture) --
+    # is a real COVERAGE GAP: the shadow silently stopped capturing. That is NOT
+    # the benign "shadow enabled mid-session" case (older, pre-first-capture
+    # closes). Without this split the diff reports is_clean=True while the shadow
+    # quietly stops covering closes -> false confidence toward the flip.
+    def _ts(row: Dict[str, str]) -> float:
+        try:
+            return float(row.get("timestamp") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    _shadow_captured_ts = [
+        _ts(real_ledger_by_pid[p]) for p in (shadow_pids & real_pids)
+        if _ts(real_ledger_by_pid[p]) > 0
+    ]
+    shadow_last_ts = max(_shadow_captured_ts) if _shadow_captured_ts else None
+    coverage_gap: List[str] = []
+    before_window: List[str] = []
+    for pid in real_only_no_shadow_event:
+        rts = _ts(real_ledger_by_pid.get(pid, {}))
+        if shadow_last_ts is not None and rts > shadow_last_ts:
+            coverage_gap.append(pid)
+        else:
+            before_window.append(pid)
+
     return {
         "terminal_position_ids_shadow": len(terminal_pids),
         "real_ledger_rows": len(real_pids),
         "shadow_ledger_rows": len(shadow_pids),
         "missing_in_real_ledger": missing_in_real,   # CRITICAL
         "missing_in_shadow_ledger": missing_in_shadow,  # CRITICAL
-        "real_rows_outside_shadow_window": real_only_no_shadow_event,  # informational
+        "real_rows_outside_shadow_window": real_only_no_shadow_event,  # informational (all)
+        "coverage_gap_after_window": sorted(coverage_gap),  # CRITICAL: shadow stopped capturing
+        "real_rows_before_shadow_window": sorted(before_window),  # informational (pre-existence)
     }
 
 
@@ -454,6 +481,7 @@ def run_diff(data_dir: Path) -> Dict[str, Any]:
     kelly_sanity = _arg_recompute_sanity(calls_dir, publishes_rows)
 
     critical: List[str] = []
+    warnings: List[str] = []
     if row_existence["missing_in_real_ledger"]:
         critical.append(
             f"{len(row_existence['missing_in_real_ledger'])} TERMINAL shadow "
@@ -464,16 +492,32 @@ def run_diff(data_dir: Path) -> Dict[str, Any]:
             f"{len(row_existence['missing_in_shadow_ledger'])} real "
             f"trade_ledger.csv row(s) have NO matching shadow ledger row"
         )
+    if row_existence.get("coverage_gap_after_window"):
+        critical.append(
+            f"{len(row_existence['coverage_gap_after_window'])} real close(s) occurred "
+            f"AFTER the shadow's last capture but were never shadow-captured -- the shadow "
+            f"stopped covering closes (validation is stale/broken, NOT clean)"
+        )
     if ledger_diff["non_whitelisted_diffs"]:
         critical.append(
             f"{len(ledger_diff['non_whitelisted_diffs'])} position(s) have "
             f"non-whitelisted ledger column diffs"
         )
+    # Recorder line-counts are an UNRELIABLE dedup signal: recorders are shared
+    # sinks touched by a variable, CONDITIONAL number of subscriber calls per close
+    # (kelly_engine via on_close_ledger + on_close_kelly + learning branches;
+    # llm_triggers via 2 subscribers; telemetry via inc()+record()). A high count
+    # can be legitimate conditional multiplicity, not a dedup regression. The
+    # authoritative dedup guarantee is the CloseBus applied-store keyed on
+    # (subscriber, position_id, leg_kind); a real regression ALSO surfaces as a
+    # ledger diff / missing row (the CRITICAL checks above). So over-count is a
+    # WARNING to eyeball -- it must not block is_clean (else false alarms stall the flip).
     over_counted = [r for r in gate_table["rows"] if r["over_count"]]
     if over_counted:
-        critical.append(
-            f"{len(over_counted)} subscriber(s) called MORE times than the "
-            f"dedup-derived upper bound -- possible dedup/leg-key regression"
+        warnings.append(
+            f"{len(over_counted)} recorder(s) logged more lines than the per-close upper "
+            f"bound ({', '.join(r['subscriber'] for r in over_counted)}) -- likely conditional "
+            f"recorder multiplicity; verify against the bus applied-store if unsure"
         )
     if failures["total"]:
         critical.append(f"{failures['total']} subscriber exception(s) found in bot log")
@@ -490,6 +534,7 @@ def run_diff(data_dir: Path) -> Dict[str, Any]:
         "kelly_arg_recompute_sanity": kelly_sanity,
         "whitelisted_ledger_columns": sorted(_WHITELISTED_LEDGER_COLUMNS),
         "critical": critical,
+        "warnings": warnings,
         "is_clean": not critical,
     }
     return report
@@ -516,6 +561,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"[shadow_close_diff] is_clean={report['is_clean']} critical={len(report['critical'])}")
     for c in report["critical"]:
         print(f"  CRITICAL: {c}")
+    for w in report.get("warnings", []):
+        print(f"  WARNING: {w}")
     return 0
 
 
