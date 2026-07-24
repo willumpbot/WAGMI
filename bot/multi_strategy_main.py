@@ -3805,7 +3805,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             _close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
                               "EMERGENCY", "LIQUIDATION_AVOID", "LIQUIDATION_PROXIMITY",
                               "FUNDING_AVOIDANCE", "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
-                              "TIME_STOP", "TP1_FULL")
+                              "TIME_STOP", "TP1_FULL", "TELEGRAM_CLOSE")
             if event.action in _close_actions and event.qty > 0 and not event.metadata.get("_exchange_submitted"):
                 # Determine close side (opposite of position side)
                 close_side = "SELL" if event.side == "LONG" else "BUY"
@@ -3890,7 +3890,13 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                            # record_outcome calls, same class of bug as the 2026-06-06
                            # LLM_EXIT_AGENT gap above. Already registered in
                            # core/close_types.py as HELPER/FULL close types.
-                           "LLM_EXIT_HIGH", "LLM_EXIT_CRITICAL")
+                           "LLM_EXIT_HIGH", "LLM_EXIT_CRITICAL",
+                           # Manual Telegram /close and /closeall -- now routed
+                           # through _pending_exit_events (order-first). Must be
+                           # in _FULL_CLOSE or the learning/CloseBus fan-out
+                           # (weight/regime/feedback/ML/growth/autopsy/learning)
+                           # would be skipped even though equity+ledger book.
+                           "TELEGRAM_CLOSE")
 
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
             # 2026-06-05: removed `and event.strategy` guard — empty strategy was silently

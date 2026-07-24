@@ -217,32 +217,25 @@ class PositionWiringMixin:
             logger.warning(f"[{trace_id}] Rotation aborted: could not close {close_symbol}")
             return
 
-        # Process the close event (equity, logging, ML, etc.)
-        self.risk_mgr.update_equity(close_event.pnl - close_event.fee)
-        log_trade(
-            symbol=close_event.symbol,
-            action=close_event.action,
-            side=close_event.side,
-            price=close_event.price,
-            qty=close_event.qty,
-            pnl=close_event.pnl,
-            fee=close_event.fee,
-            leverage=close_event.leverage,
-            strategy=close_event.strategy,
-            metadata={
-                **close_event.metadata,
-                "rotation_to": new_symbol,
-                "rotation_reason": action.close_reason,
-                "rotation_rr_improvement": action.rr_improvement,
-            }
-        )
-
-        # Record cooldown for the closed symbol
-        self._symbol_cooldown[close_symbol] = time.time()
-        pos = self.pos_mgr.positions.get(close_symbol)
-        if pos:
-            self._last_close_win[close_symbol] = pos.realized_pnl > 0
-            self._last_close_side[close_symbol] = pos.side
+        # Route the close through the SAME per-event processing every other exit
+        # uses (multi_strategy_main.py events loop). The exchange close order was
+        # already submitted+filled above, so stamp _exchange_submitted (loop skips
+        # its own exchange submit) plus the rotation metadata (loop passes
+        # event.metadata straight into log_trade), then inject under the lock.
+        # The loop books equity, writes the trade_ledger row, runs the full
+        # FULL_CLOSE learning/CloseBus fan-out, fires the shadow taps, and sets
+        # cooldown/_last_close_win/_last_close_side -- all exactly once. The direct
+        # update_equity/log_trade/cooldown booking that used to live here was
+        # removed to prevent double-counting (ROTATE_PROFIT / ROTATE_LOSS_AVOIDANCE
+        # are already in the loop's _close_actions and _FULL_CLOSE allowlists).
+        close_event.metadata["_exchange_submitted"] = True
+        close_event.metadata["rotation_to"] = new_symbol
+        close_event.metadata["rotation_reason"] = action.close_reason
+        close_event.metadata["rotation_rr_improvement"] = action.rr_improvement
+        if not hasattr(self, '_pending_exit_events'):
+            self._pending_exit_events = []
+        with self._pending_exit_lock:
+            self._pending_exit_events.append(close_event)
 
         # Send alert
         self.alerts.send_trade_event(

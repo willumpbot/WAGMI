@@ -493,6 +493,53 @@ class TelegramCommandBot:
             f"Total PnL: ${perf.get('total_pnl', 0):+,.2f}"
         )
 
+    def _routed_manual_close(self, symbol: str, price: float):
+        """Close a position via the SAME booked path every other exit uses.
+
+        Order-first (mirrors core/llm_integration.py:1275-1290): submit the
+        exchange close, force_close ONLY on a confirmed fill, stamp
+        _exchange_submitted, then inject the TradeEvent into the bot's
+        _pending_exit_events under _pending_exit_lock. The main events loop
+        then books equity + trade_ledger row + the full CloseBus/learning
+        fan-out + shadow tap exactly once. Runs on the Telegram polling
+        thread, so the lock is mandatory. Returns the TradeEvent, or None if
+        nothing was closed (no position, exchange reject, or force_close miss).
+        """
+        pos = self.bot.pos_mgr.positions.get(symbol)
+        if not pos or getattr(pos, "qty", 0) <= 0:
+            return None
+        close_side = "SELL" if pos.side == "LONG" else "BUY"
+        try:
+            close_result = self.bot.order_executor.close_position(
+                symbol, close_side, pos.qty, price, reason="TELEGRAM_CLOSE"
+            )
+        except Exception as e:
+            logger.error(f"[TELEGRAM_CLOSE] {symbol} exchange close error: {e}")
+            return None
+        if not (close_result and getattr(close_result, "filled", False)):
+            logger.critical(
+                f"[TELEGRAM_CLOSE] {symbol} exchange close FAILED -- position still "
+                f"open, not booking. Reconciliation will handle. Result: {close_result}"
+            )
+            return None
+        event = self.bot.pos_mgr.force_close(symbol, price, "TELEGRAM_CLOSE")
+        if event is None:
+            logger.critical(
+                f"[TELEGRAM_CLOSE] {symbol} exchange filled but force_close returned "
+                f"None -- position may be closed on-exchange unbooked. Reconciliation."
+            )
+            return None
+        event.metadata["_exchange_submitted"] = True
+        if not hasattr(self.bot, '_pending_exit_events'):
+            self.bot._pending_exit_events = []
+        _lock = getattr(self.bot, '_pending_exit_lock', None)
+        if _lock is not None:
+            with _lock:
+                self.bot._pending_exit_events.append(event)
+        else:
+            self.bot._pending_exit_events.append(event)
+        return event
+
     def _cmd_close(self, args: str) -> str:
         if not self.bot:
             return "Bot not connected"
@@ -505,7 +552,7 @@ class TelegramCommandBot:
         )
         if not price:
             return f"Cannot get price for {symbol}"
-        event = self.bot.pos_mgr.force_close(symbol, price, "TELEGRAM_CLOSE")
+        event = self._routed_manual_close(symbol, price)
         if event:
             return f"Closed {symbol} @ {price} | PnL: ${event.pnl:+,.2f}"
         return f"No open position for {symbol}"
@@ -520,7 +567,7 @@ class TelegramCommandBot:
                 sym, DEFAULT_SYMBOLS.get(sym, type('', (), {'coingecko_id': sym.lower()})()).coingecko_id
             )
             if price:
-                event = self.bot.pos_mgr.force_close(sym, price, "TELEGRAM_CLOSE")
+                event = self._routed_manual_close(sym, price)
                 if event:
                     closed.append(f"{sym}: ${event.pnl:+,.2f}")
         if closed:
