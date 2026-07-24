@@ -184,6 +184,20 @@ _RECORDER_GATE_TABLE: Dict[str, str] = {
     "process_agent_lesson_fn": "FULL",
 }
 
+# Some recorders are legitimately written MORE than once per close and are NOT
+# a dedup regression: the recorder sink is shared by >1 bus subscriber, or one
+# subscriber makes >1 recorded method call per delivery. Verified 2026-07-23:
+#   - llm_triggers: fan-in of 2 subscribers (llm_triggers_outcome.record_trade_outcome
+#     + llm_triggers_notify.add) -> 2 recorded calls per terminal close.
+#   - telemetry_cls: on_close_telemetry does inc(won|lost) + record("pnls") -> 2 calls.
+# Each underlying bus subscriber is still dispatched exactly once per (position, leg);
+# this multiplier only corrects the recorder-line upper bound so the gate check
+# doesn't false-flag an OVER-count. Default multiplicity is 1.
+_RECORDER_CALLS_PER_CLOSE: Dict[str, int] = {
+    "llm_triggers": 2,
+    "telemetry_cls": 2,
+}
+
 _FAILURE_LOG_RE = re.compile(r"close_bus: subscriber '([^']+)' raised")
 
 
@@ -308,7 +322,7 @@ def _gate_table_check(
 
     rows: List[Dict[str, Any]] = []
     for name, kind in sorted(_RECORDER_GATE_TABLE.items()):
-        expected = n_full if kind == "FULL" else n_both
+        expected = (n_full if kind == "FULL" else n_both) * _RECORDER_CALLS_PER_CLOSE.get(name, 1)
         actual = call_counts.get(name, 0)
         rows.append({
             "subscriber": name,
