@@ -1,1 +1,1 @@
-{"equity":4730.78,"by_symbol":{},"position_count":0,"total_notional_usd":0.0,"total_margin_usd":0.0,"total_exposure_pct":0.0,"correlation_warnings":[],"correlation_symbols":["BTC","ETH","HYPE","NEAR","SOL","XRP"]}
+{"equity":4730.78,"by_symbol":{"NEAR":{"side":"LONG","notional_usd":151.68,"margin_usd":101.12,"leverage":1.5,"pct_of_equity":2.138}},"position_count":1,"total_notional_usd":151.68,"total_margin_usd":101.12,"total_exposure_pct":2.138,"correlation_warnings":[],"correlation_symbols":["BTC","ETH","HYPE","NEAR","SOL","XRP"]}
