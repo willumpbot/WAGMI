@@ -95,6 +95,34 @@ Intended risk is on the order of 1–2.5% of equity per trade. The bot is
 currently risking about **one hundredth of that**, and the median trade now
 resolves for **sixteen cents**.
 
+### Narrowed: `stop_width_pct` is arriving as zero on every sizing decision
+
+The July root-cause fix (`SIZING_CONSTRAINT_UNITS_FIX`) **is still enabled** and
+working as written. `.env` has it `true` with `MAX_RISK_PCT_CEILING=0.005` — the
+deliberate 0.5% safety cap, lowered from the 0.02 it shipped at. But realized
+risk is 0.015%, which is **33x below even that cap**, so the cap is not what is
+binding.
+
+Every recent sizing decision in `logs/bot_20260918.log` looks like this:
+
+```
+[SIZING-CONSTRAINT] stop_frac=0.0000 remaining=500% ceiling_buggy=0.00000
+                    ceiling_fixed=0.00500 cap=0.005 applied=0.00500(FIXED)
+```
+
+`stop_frac=0.0000` on every single one. The signal's `stop_width_pct` is
+arriving as zero, so the real ceiling never computes and the fix falls back to
+its default cap on *every* trade. That fallback path was built for the rare
+"snapshot missing stop_width_pct" case flagged in July as an unbounded hole; it
+is now the normal path.
+
+That is the thread to pull. It is a data/plumbing defect upstream of sizing, not
+a sizing-math bug — `stop_width_pct` should be `stop/entry` and is instead 0.
+
+(Note: the logs also show `risk=3.0%` recurring alongside a 0.5% cap, so there
+are at least two different "risk" quantities in play. Worth resolving which one
+governs, but I did not trace it.)
+
 This is the July "size collapse" finding, still unfixed two months later, and
 worse now than when it was identified. It subsumes almost everything else:
 at $0.16 a trade, no gate, exit rule, or edge discovery can move dollars, and
