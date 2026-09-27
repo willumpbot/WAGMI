@@ -62,6 +62,12 @@ bot/data/**
 !bot/data/*.py
 !bot/data/**/*.py
 
+# Re-include frontend fallback snapshots (the broad `data/` rule above also caught
+# web/public/data). These JSONs are the CDN-served last-known-data fallback for the
+# site when the bot PC / ngrok tunnel is offline — they ARE deployable content.
+!web/public/data/
+!web/public/data/*.json
+
 # IDE & editor
 .vscode/
 .idea/
@@ -78,3 +84,17 @@ Thumbs.db
 # Export artifacts
 infra/nunuirl-platform-clean.zip
 infra/staging/
+.vercel
+
+# Ephemeral Claude agent worktrees — each is a FULL repo checkout, never commit
+# (a bare `git add -A` otherwise stages ~11.6k paths from these).
+.claude/worktrees/
+
+# Local machine cleanup snapshots (2026-09-07 box cleanup), not source
+_system_cleanup_*/
+*.lnk
+
+# Replay sandbox: a 656MB vendored fixture (bot/data/replay/C1/sandbox is an
+# entire separate codebase copy). The `!bot/data/**/*.py` negation above would
+# otherwise drag ~11.4k of its .py files into the repo. Runtime fixture, not source.
+bot/data/replay/

@@ -199,6 +199,29 @@ class BacktestEngine:
         self.risk_mgr.max_open_positions = 50
         self.risk_mgr.max_portfolio_leverage = 100.0
 
+    def _pnl_lev(self, leverage: float) -> float:
+        """Mirror PositionManager._pnl_lev for the engine's INLINE calcs.
+
+        Realized closes already route through PositionManager (update_price /
+        force_close) and inherit PNL_LEVERAGE_FIX there. But the engine keeps
+        its OWN inline unrealized-pnl (MTM equity, circuit-breaker unrealized
+        risk, Exit-Agent snapshot) and funding-notional calcs that multiplied
+        by pos.leverage and BYPASSED the fix — so exit/MFE decisions fired at
+        leverage-inflated (~2.5x) unrealized levels while booked closes did not.
+
+        PNL_LEVERAGE_FIX (default off): coordinator sizes qty as FULL
+        base-currency exposure (qty = risk$/stop_width, no leverage
+        multiplier), so pnl/notional must NOT re-apply leverage.
+        Delegates to PositionManager._pnl_lev when available so the two can
+        never drift; otherwise replicates the exact same env gate.
+        """
+        _pm_lev = getattr(self.pos_mgr, "_pnl_lev", None)
+        if callable(_pm_lev):
+            return _pm_lev(leverage)
+        if os.getenv("PNL_LEVERAGE_FIX", "false").lower() in ("1", "true", "yes"):
+            return 1.0
+        return leverage
+
     def run(
         self,
         symbols: List[str],
@@ -763,7 +786,7 @@ class BacktestEngine:
             avg_funding_rate = getattr(self.config, "backtest_funding_rate", 0.0001)  # 0.01% per 8h
             _pos = self.pos_mgr.positions.get(symbol)
             if _pos and _pos.state != "CLOSED" and _pos.qty > 0:
-                notional = _pos.entry * _pos.qty * _pos.leverage
+                notional = _pos.entry * _pos.qty * self._pnl_lev(_pos.leverage)
                 # 1 hour out of 8h funding interval = 1/8 fraction
                 cost = abs(avg_funding_rate) * notional * (1.0 / 8.0)
                 _pos.funding_costs += cost
@@ -1103,9 +1126,9 @@ class BacktestEngine:
                 # For current symbol use current_price; for others use last known
                 _price = current_price if _sym == symbol else self._last_prices.get(_sym, _pos.entry)
                 if _pos.side == "LONG":
-                    unrealized_pnl += (_price - _pos.entry) * _pos.qty * _pos.leverage
+                    unrealized_pnl += (_price - _pos.entry) * _pos.qty * self._pnl_lev(_pos.leverage)
                 else:
-                    unrealized_pnl += (_pos.entry - _price) * _pos.qty * _pos.leverage
+                    unrealized_pnl += (_pos.entry - _price) * _pos.qty * self._pnl_lev(_pos.leverage)
             mtm_equity = self.risk_mgr.equity + unrealized_pnl
             # Check CB using MTM equity — catches open-position drawdowns
             sim_time = df_1h["time"].iloc[i] if hasattr(df_1h["time"].iloc[i], "strftime") else None
@@ -1237,7 +1260,7 @@ class BacktestEngine:
             avg_funding_rate = getattr(self.config, "backtest_funding_rate", 0.0001)
             _pos = self.pos_mgr.positions.get(symbol)
             if _pos and _pos.state != "CLOSED" and _pos.qty > 0:
-                notional = _pos.entry * _pos.qty * _pos.leverage
+                notional = _pos.entry * _pos.qty * self._pnl_lev(_pos.leverage)
                 # 24h / 8h = 3 funding intervals per daily candle
                 cost = abs(avg_funding_rate) * notional * 3.0
                 _pos.funding_costs += cost
@@ -1411,9 +1434,9 @@ class BacktestEngine:
             for _sym, _pos in self.pos_mgr.get_open_positions().items():
                 _price = current_price if _sym == symbol else self._last_prices.get(_sym, _pos.entry)
                 if _pos.side == "LONG":
-                    _unrealized_pnl += (_price - _pos.entry) * _pos.qty * _pos.leverage
+                    _unrealized_pnl += (_price - _pos.entry) * _pos.qty * self._pnl_lev(_pos.leverage)
                 else:
-                    _unrealized_pnl += (_pos.entry - _price) * _pos.qty * _pos.leverage
+                    _unrealized_pnl += (_pos.entry - _price) * _pos.qty * self._pnl_lev(_pos.leverage)
             _mtm_equity = self.risk_mgr.equity + _unrealized_pnl
             _sim_time = df["time"].iloc[i] if hasattr(df["time"].iloc[i], "strftime") else None
             self.risk_mgr.check_unrealized_risk(_unrealized_pnl, sim_time=_sim_time)
@@ -1585,9 +1608,9 @@ class BacktestEngine:
             "leverage": pos.leverage,
             "state": pos.state,
             "unrealized_pnl": (
-                (current_price - pos.entry) * pos.qty * pos.leverage
+                (current_price - pos.entry) * pos.qty * self._pnl_lev(pos.leverage)
                 if pos.side == "LONG"
-                else (pos.entry - current_price) * pos.qty * pos.leverage
+                else (pos.entry - current_price) * pos.qty * self._pnl_lev(pos.leverage)
             ),
             # Exit Agent expects these for thesis-based and duration-based decisions
             "hold_time_s": (sim_dt - pos.open_time).total_seconds() if hasattr(pos, "open_time") and pos.open_time else 0,
