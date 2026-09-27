@@ -59,6 +59,14 @@ DEFAULT_SYMBOLS = {
     # (max_leverage=10, risk_per_trade=0.05) + SYMBOL_RISK_MULTIPLIERS["XRP"]=0.60
     # so n<10 uncalibrated trades stay small until the dynamic floor calibrates.
     "XRP": SymbolConfig("XRP", "XRP-USD", "ripple", "medium"),
+    # NEAR added 2026-07-27 as the next one-at-a-time breadth lever (Fable negative-screen:
+    # 61% WR / n=41, +$300, corr 0.42 = the most INDEPENDENT shots vs the existing universe;
+    # HL OI $70M; beat the SOL control 52%/-$298). The mechanical backtest is a NEGATIVE
+    # screen ONLY — it diverges from the live LLM edge, so this certifies NEAR is not a
+    # POPCAT-class dud, NOT that it will profit live. Bounded conservatively like XRP via
+    # DEFAULT_SYMBOL_OVERRIDES["NEAR"] (10x/0.05) + SYMBOL_RISK_MULTIPLIERS["NEAR"]=0.50
+    # until n>=10 live closes calibrate. Watch side-split WR before adding the next symbol.
+    "NEAR": SymbolConfig("NEAR", "NEAR-USD", "near-protocol", "medium"),
     # POPCAT (owner-requested 2026-07-14) FAILED validation — 21d backtest: 37 trades, 32% WR
     # (below 39.9% break-even), -$315 net, <60%-conf bucket 9% WR/-$210. No edge currently, so
     # NOT added to the live universe (honoring the backtest-before-add rule). Wiring kept dormant
@@ -838,6 +846,15 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
         risk_per_trade=0.05,
         volatility_profile="medium",
     ),
+    # NEAR: NEW symbol (added 2026-07-27), n=0 live history. Same conservative bound as XRP —
+    # lowest leverage cap (10x, half the 20x exchange max in symbol_precision.json) and
+    # risk_per_trade=0.05 (half the global 0.10). Tightens until n>=10 trades calibrate; relies
+    # on the existing entry-gate stack (selectivity + side-edge + long-regime veto). No global gate weakened.
+    "NEAR": SymbolOverrides(
+        max_leverage=10.0,
+        risk_per_trade=0.05,
+        volatility_profile="medium",
+    ),
     # POPCAT: NEW memecoin symbol (2026-07-14), n=0 history. Even more conservative than
     # XRP — memecoins whip hard, so lowest leverage cap (5x), risk_per_trade=0.03 (below XRP's
     # 0.05, ~1/3 of global), wide ATR stops (like HYPE) to survive mean-reversion vol.
@@ -965,6 +982,8 @@ SYMBOL_RISK_MULTIPLIERS = {
                    # payoff is negative) — sized below HYPE's old floor accordingly.
     "POPCAT": 0.50,  # NEW memecoin (2026-07-14), n=0: no edge data yet.
                      # Keeps uncalibrated POPCAT trades tiny until n>=13 validates edge.
+    "NEAR": 0.50,    # NEW (2026-07-27), n=0 live: no live edge data yet. Sized tiny (like XRP)
+                     # until n>=13 validates. Negative-screen passed, but that is not live proof.
 }
 
 # NOTE (2026-07-15): SYMBOL_SIDE_RISK_MULTIPLIERS was deleted here — it was a

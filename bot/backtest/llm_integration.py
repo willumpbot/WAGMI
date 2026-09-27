@@ -43,7 +43,11 @@ _MODEL_PRICING = {
 _DEFAULT_PRICING = (3.0, 15.0)
 
 # Exit agent throttle: evaluate every N candles per position
-_EXIT_EVAL_INTERVAL = 6
+# Exit-agent cadence: evaluate open positions EVERY bar. Live evaluates exits
+# every scan with a 120s cooldown (bot/llm/exit_engine.py EXIT_EVAL_COOLDOWN_S);
+# at the backtest's 1h bar resolution the faithful mapping is ceil(120/3600)=1,
+# i.e. every bar (the old value of 6 left a 6-hour blind window live never had).
+_EXIT_EVAL_INTERVAL = 1
 
 
 @dataclass
@@ -125,6 +129,13 @@ class BacktestLLMIntegration:
         # ── Replay-harness discipline (tools/replay_harness.py) ──────
         # All default OFF; a normal backtest is unaffected.
         # REPLAY_MAX_LLM_CALLS: hard cap on total LLM calls per run (0 = off).
+        #   NOTE (call-cap semantics, documented not changed here — lower
+        #   priority per the align-to-live task): this cap counts raw
+        #   coordinator AGENT calls (stats["total_calls"], typically 4-5 per
+        #   entry-pipeline DECISION: regime+quant+trade+risk+critic), not
+        #   entry DECISIONS. A cap of e.g. 100 therefore buys ~20-25 entry
+        #   decisions, not 100 — budget the cap accordingly when configuring
+        #   REPLAY_MAX_LLM_CALLS, or divide by ~4-5 to estimate decisions.
         # REPLAY_LLM_SLEEP_S: sleep after each coordinator invocation so the
         #   live bot's CLI quota isn't starved by the replay burst.
         # REPLAY_MODE: journal every LLM invocation to data/replay_llm_journal.jsonl.
@@ -147,16 +158,30 @@ class BacktestLLMIntegration:
         # pre-filter below. Fixes VAL1's first-come-first-served starvation
         # (cap burned on the weakest solo signals; multi-agree never seen).
         # LLM pipeline fires ONLY on entry events:
-        #   num_agree >= 2, OR solo conf >= 75 from the whitelist strategies;
-        # plus a per-symbol 4h same-direction cooldown (only the first bar
-        # of a signal cluster spends calls) and a per-symbol call budget of
-        # cap/num_symbols (BTC cannot starve ETH/SOL).
+        #   num_agree >= 2, OR solo conf >= REPLAY_SOLO_CONF_MIN from the
+        #   whitelist strategies (matched against the ORIGINATING solo
+        #   strategy, not signal.strategy — see _replay_is_entry_event);
+        # plus a per-symbol same-direction cooldown (only the first bar of a
+        # signal cluster spends calls, default REPLAY_COOLDOWN_H=0.167 i.e.
+        # ~10min, matching live's LLM-first dispatcher cooldown) and a
+        # per-symbol call budget of cap/num_symbols (BTC cannot starve
+        # ETH/SOL).
+        #
+        # ALIGN-TO-LIVE FIX A (diagnostic swarm finding): defaults were
+        # solo_conf=75 + a 4h cooldown, invented for this harness and
+        # present nowhere in live. Live's actual dispatcher
+        # (multi_strategy_main.py:5429-5475) sends every non-None solo
+        # signal to the LLM (ROUTER_SOLO_CONF_ENFORCE defaults false, so the
+        # 60% mechanical floor never engages) on a 10-minute LLM-first
+        # cooldown. Defaults now mirror that: conf floor 0, cooldown ~10min.
+        # The whitelist mechanism itself is kept (env-tunable) rather than
+        # removed, per the fix's explicit scope.
         self._replay_filter_on = bool(os.getenv("REPLAY_MODE"))
         try:
             self._replay_solo_conf = float(
-                os.getenv("REPLAY_SOLO_CONF_MIN", "75"))
+                os.getenv("REPLAY_SOLO_CONF_MIN", "0"))
         except (TypeError, ValueError):
-            self._replay_solo_conf = 75.0
+            self._replay_solo_conf = 0.0
         self._replay_solo_whitelist = {
             s.strip() for s in os.getenv(
                 "REPLAY_SOLO_WHITELIST",
@@ -165,14 +190,42 @@ class BacktestLLMIntegration:
         }
         try:
             self._replay_cooldown_s = float(
-                os.getenv("REPLAY_COOLDOWN_H", "4")) * 3600.0
+                os.getenv("REPLAY_COOLDOWN_H", "0.167")) * 3600.0
         except (TypeError, ValueError):
-            self._replay_cooldown_s = 4 * 3600.0
+            self._replay_cooldown_s = 0.167 * 3600.0
         self._replay_last_fire: Dict[str, float] = {}   # "SYM:SIDE" -> sim ts
         self._replay_symbol_calls: Dict[str, int] = {}  # symbol -> calls spent
         self.replay_entry_events = 0    # signals qualifying as entry events
         self.replay_starved_events = 0  # entry events lost to call caps
         self.replay_cooldown_skips = 0  # entry events inside a cluster cooldown
+
+        # ── Point-in-time edge map (Fix B) ────────────────────────────
+        # Live agents cite a setup EDGE MAP (g.edge / g.confl_wr / g.stperf,
+        # llm/snapshot_builder.py:302-320) to justify going on otherwise-weak
+        # signals ("SOL_SELL_consolidation 70% WR n=10"). The backtest never
+        # populated these (no live deep-memory history exists inside a
+        # replay), so agents saw only negative mechanical stats and skipped.
+        # REPLAY_PIT_EDGE_MAP reconstructs the SAME g.edge/g.confl_wr/g.stperf
+        # shape from data/trade_ledger.csv (+ data/trades.csv for the
+        # per-strategy breakdown) using ONLY rows that had CLOSED strictly
+        # before the current decision bar's timestamp — see
+        # _build_pit_edge_map() for the leak-safety argument. Default ON
+        # when REPLAY_MODE is set (this is what the replay harness needs),
+        # default OFF otherwise so ordinary/mechanical backtests are
+        # byte-for-byte unaffected.
+        self._pit_edge_map_on = os.getenv(
+            "REPLAY_PIT_EDGE_MAP",
+            "true" if os.getenv("REPLAY_MODE") else "false",
+        ).lower() in ("1", "true", "yes")
+        # PIT edge-map sources: prefer the harness-provided frozen LIVE-history
+        # seed (absolute paths via WAGMI_PIT_*), since the sandbox's own data tree
+        # is empty by design. Fall back to the relative path for unit tests / bare
+        # (non-harness) use. Leak-safety is enforced downstream by the strict
+        # `row_close_ts < decision_ts` filter in _build_pit_edge_map, not by source.
+        self._pit_ledger_path = os.getenv("WAGMI_PIT_LEDGER") or os.path.join("data", "trade_ledger.csv")
+        self._pit_trades_path = os.getenv("WAGMI_PIT_TRADES") or os.path.join("data", "trades.csv")
+        self._pit_ledger_rows_cache: Optional[List[Dict[str, Any]]] = None
+        self._pit_trades_rows_cache: Optional[List[Dict[str, Any]]] = None
 
     # ── Preflight ─────────────────────────────────────────────────
 
@@ -484,7 +537,21 @@ class BacktestLLMIntegration:
     def _replay_is_entry_event(self, signal) -> bool:
         """True if the signal qualifies as an entry event (plan §2.1):
         multi-strategy confluence (num_agree >= 2) OR a whitelisted solo
-        strategy at conf >= REPLAY_SOLO_CONF_MIN (0-100 scale)."""
+        strategy at conf >= REPLAY_SOLO_CONF_MIN (0-100 scale).
+
+        ALIGN-TO-LIVE FIX A: the ensemble stamps `strategy="ensemble"` on
+        EVERY signal it emits, including solo (num_agree==1) ones —
+        strategies/ensemble.py's merge step (~line 3275) always constructs
+        the merged Signal with strategy="ensemble" regardless of how many
+        underlying strategies fired. Comparing `signal.strategy` against the
+        solo whitelist therefore NEVER matched (it was always "ensemble",
+        never "regime_trend"/"bollinger_squeeze"/etc.), so every solo signal
+        fell through and was dropped as a non-entry-event. The actual
+        originating strategy for a solo signal is recorded by the SAME
+        ensemble merge step in `metadata["strategies_agree"]` (a length-1
+        list when num_agree==1) — match against that instead, which is
+        exactly the strategy live's dispatcher would see for this signal.
+        """
         meta = getattr(signal, "metadata", None) or {}
         try:
             if int(meta.get("num_agree", 1) or 1) >= 2:
@@ -495,8 +562,15 @@ class BacktestLLMIntegration:
             conf = float(getattr(signal, "confidence", 0) or 0)
         except (TypeError, ValueError):
             conf = 0.0
-        strat = str(getattr(signal, "strategy", "") or "")
-        return strat in self._replay_solo_whitelist and conf >= self._replay_solo_conf
+        strategies_agree = meta.get("strategies_agree") if isinstance(meta, dict) else None
+        if strategies_agree:
+            solo_strategy = str(strategies_agree[0] or "")
+        else:
+            # Fallback for signals with no metadata (e.g. direct strategy-level
+            # unit tests that never went through ensemble merge) — behave as
+            # before rather than silently dropping them.
+            solo_strategy = str(getattr(signal, "strategy", "") or "")
+        return solo_strategy in self._replay_solo_whitelist and conf >= self._replay_solo_conf
 
     def _replay_symbol_cap(self) -> int:
         """Per-symbol LLM call budget = global cap / num_symbols (0 = off)."""
@@ -744,7 +818,7 @@ class BacktestLLMIntegration:
 
             # Log ALL exit decisions for audit trail and learning
             if result:
-                self._log_exit_decision(result, position_data, call_cost)
+                self._log_exit_decision(result, position_data, call_cost, market_data)
 
             return result
 
@@ -801,6 +875,206 @@ class BacktestLLMIntegration:
             self.llm_failures += 1
             return None
 
+    # ── Point-in-Time Edge Map (Fix B) ──────────────────────────────
+    #
+    # Reconstructs the same g.edge / g.confl_wr / g.stperf shape live builds
+    # from deep-memory trade history (core/llm_integration.py:557-609,
+    # consumed via `trade_data = dict(snapshot)` in
+    # llm/agents/coordinator.py's _build_trade_input, and via the explicit
+    # `critic_data["g"] = snapshot["g"]` in _build_critic_input) — but
+    # sourced from data/trade_ledger.csv (+ data/trades.csv for the
+    # per-strategy breakdown) instead of live's deep-memory store, which is
+    # empty/meaningless inside a replay.
+    #
+    # LEAK-SAFETY (the load-bearing property of this whole feature): both
+    # source files are written to ONLY at trade CLOSE —
+    # feedback/trade_ledger.py's `record_trade()` defaults `timestamp` to
+    # `time.time()` at call time, and it is invoked from
+    # core/close_pipeline/close_subscribers_accounting.py inside the CLOSE
+    # event handler; data/trade_log.py's docstring is explicit: "File:
+    # data/trades.csv / Written on every full trade close." So the
+    # `timestamp` column IS the close time already — there is no separate
+    # open-time field to be tricked by. Every row-inclusion test below uses
+    # a STRICT `<` against the caller-supplied `cutoff_ts` (the decision
+    # bar's own timestamp): a trade is included iff `row_close_ts <
+    # cutoff_ts`. That is at least as strict as "<=T" (it only excludes the
+    # single knife-edge instant where a close and a decision would share the
+    # exact same epoch-float second, which in practice never happens) while
+    # being unambiguously leak-free at the boundary. See
+    # tests/test_backtest_llm.py TestPITEdgeMapLeakSafety for the assertion
+    # that every row surviving the filter has close_ts < cutoff_ts.
+
+    def _load_pit_ledger_rows(self) -> List[Dict[str, Any]]:
+        """Load + cache data/trade_ledger.csv as (ts, symbol, side, regime,
+        agreement_level, win, pnl) tuples. Read once per backtest run —
+        the file is append-only and read-only here, so caching the parse
+        is safe and avoids re-reading disk on every decision."""
+        if self._pit_ledger_rows_cache is not None:
+            return self._pit_ledger_rows_cache
+        rows: List[Dict[str, Any]] = []
+        try:
+            import csv
+            if os.path.exists(self._pit_ledger_path):
+                with open(self._pit_ledger_path, "r", encoding="utf-8", newline="") as f:
+                    for raw in csv.DictReader(f):
+                        try:
+                            ts = float(raw.get("timestamp", "") or "nan")
+                        except (TypeError, ValueError):
+                            continue
+                        if ts != ts:  # NaN guard (unparsable timestamp)
+                            continue
+                        symbol = (raw.get("symbol") or "").strip()
+                        side = (raw.get("side") or "").strip()
+                        if not symbol or not side:
+                            continue
+                        regime = (raw.get("regime_1h") or "").strip() or "unknown"
+                        try:
+                            agreement = int(float(raw.get("agreement_level", "") or 0))
+                        except (TypeError, ValueError):
+                            agreement = 0
+                        try:
+                            win = int(float(raw.get("win", "") or 0)) == 1
+                        except (TypeError, ValueError):
+                            win = False
+                        try:
+                            pnl = float(raw.get("net_pnl", "") or 0.0)
+                        except (TypeError, ValueError):
+                            pnl = 0.0
+                        rows.append({
+                            "ts": ts, "symbol": symbol, "side": side,
+                            "regime": regime, "agreement_level": agreement,
+                            "win": win, "pnl": pnl,
+                        })
+        except Exception as e:
+            logger.debug(f"[BACKTEST-LLM] PIT ledger load failed (non-fatal): {e}")
+            rows = []
+        self._pit_ledger_rows_cache = rows
+        return rows
+
+    def _load_pit_trades_rows(self) -> List[Dict[str, Any]]:
+        """Load + cache data/trades.csv as (ts, strategies_agree, win) tuples.
+
+        Used only for the per-strategy breakdown (g.stperf): trade_ledger.csv
+        has no per-strategy attribution field (its `contributing_factors`
+        column holds the merged signal's `strategy="ensemble"` stamp, not
+        the underlying strategy list — same root cause as Fix A). trades.csv
+        carries the real list in its `entry_reasons` JSON blob
+        (`strategies_agree`), and its `timestamp` column is ALSO close-time
+        (see module docstring), so the same strict `<cutoff_ts` filter
+        applies identically.
+        """
+        if self._pit_trades_rows_cache is not None:
+            return self._pit_trades_rows_cache
+        rows: List[Dict[str, Any]] = []
+        try:
+            import csv
+            if os.path.exists(self._pit_trades_path):
+                with open(self._pit_trades_path, "r", encoding="utf-8", newline="") as f:
+                    for raw in csv.DictReader(f):
+                        ts_str = (raw.get("timestamp") or "").strip()
+                        if not ts_str:
+                            continue
+                        try:
+                            ts = datetime.fromisoformat(
+                                ts_str.replace("Z", "+00:00")).timestamp()
+                        except (TypeError, ValueError):
+                            continue
+                        strategies: List[str] = []
+                        er = raw.get("entry_reasons") or ""
+                        if er:
+                            try:
+                                parsed = json.loads(er)
+                                sa = parsed.get("strategies_agree") if isinstance(parsed, dict) else None
+                                if isinstance(sa, list):
+                                    strategies = [str(s) for s in sa if s]
+                            except (json.JSONDecodeError, AttributeError, TypeError):
+                                pass
+                        if not strategies:
+                            continue
+                        outcome = str(raw.get("outcome") or "")
+                        if outcome:
+                            win = "WIN" in outcome.upper()
+                        else:
+                            try:
+                                win = float(raw.get("pnl", "") or 0.0) > 0
+                            except (TypeError, ValueError):
+                                win = False
+                        rows.append({"ts": ts, "strategies": strategies, "win": win})
+        except Exception as e:
+            logger.debug(f"[BACKTEST-LLM] PIT trades.csv load failed (non-fatal): {e}")
+            rows = []
+        self._pit_trades_rows_cache = rows
+        return rows
+
+    def _build_pit_edge_map(self, cutoff_ts: float) -> Dict[str, Dict[str, Any]]:
+        """Build {"edge": ..., "confl_wr": ..., "stperf": ...} from trade
+        history that had CLOSED strictly before `cutoff_ts` (the current
+        decision bar's timestamp, epoch seconds UTC).
+
+        Shapes mirror live (llm/snapshot_builder.py:302-320 /
+        core/llm_integration.py:557-609):
+          - edge:     {"{symbol}_{side}_{regime}": {"wr": pct0-100, "n": int, "pnl": float}}
+                      (n>=5, matching live's setup_edge_map threshold)
+          - confl_wr: {"{agreement_level}": {"wr": pct0-100, "n": int, "pnl": float}}
+                      (n>=3, matching live's per-level threshold)
+          - stperf:   {"{strategy}": {"wr": pct0-100, "n": int}}
+                      (n>=3, matching live's strategy_performance threshold)
+
+        Empty sub-dicts are omitted entirely (matches live's conditional
+        `if g.extra.get(...)` inclusion pattern).
+        """
+        out: Dict[str, Dict[str, Any]] = {}
+
+        # ── g.edge: per symbol+side+regime ──
+        ledger_rows = [r for r in self._load_pit_ledger_rows() if r["ts"] < cutoff_ts]
+        edge_groups: Dict[str, Dict[str, Any]] = {}
+        for r in ledger_rows:
+            key = f"{r['symbol']}_{r['side']}_{r['regime']}"
+            g = edge_groups.setdefault(key, {"n": 0, "wins": 0, "pnl": 0.0})
+            g["n"] += 1
+            g["wins"] += 1 if r["win"] else 0
+            g["pnl"] += r["pnl"]
+        edge_map = {
+            k: {"wr": round(g["wins"] / g["n"] * 100), "n": g["n"], "pnl": round(g["pnl"], 2)}
+            for k, g in edge_groups.items() if g["n"] >= 5
+        }
+        if edge_map:
+            out["edge"] = edge_map
+
+        # ── g.confl_wr: per agreement level ──
+        confl_groups: Dict[str, Dict[str, Any]] = {}
+        for r in ledger_rows:
+            if r["agreement_level"] <= 0:
+                continue
+            key = str(r["agreement_level"])
+            g = confl_groups.setdefault(key, {"n": 0, "wins": 0, "pnl": 0.0})
+            g["n"] += 1
+            g["wins"] += 1 if r["win"] else 0
+            g["pnl"] += r["pnl"]
+        confl_wr = {
+            k: {"wr": round(g["wins"] / g["n"] * 100), "n": g["n"], "pnl": round(g["pnl"], 2)}
+            for k, g in confl_groups.items() if g["n"] >= 3
+        }
+        if confl_wr:
+            out["confl_wr"] = confl_wr
+
+        # ── g.stperf: per contributing strategy ──
+        trades_rows = [r for r in self._load_pit_trades_rows() if r["ts"] < cutoff_ts]
+        strat_groups: Dict[str, Dict[str, Any]] = {}
+        for r in trades_rows:
+            for strat in r["strategies"]:
+                g = strat_groups.setdefault(strat, {"n": 0, "wins": 0})
+                g["n"] += 1
+                g["wins"] += 1 if r["win"] else 0
+        stperf = {
+            k: {"wr": round(g["wins"] / g["n"] * 100), "n": g["n"]}
+            for k, g in strat_groups.items() if g["n"] >= 3
+        }
+        if stperf:
+            out["stperf"] = stperf
+
+        return out
+
     # ── Snapshot Building ─────────────────────────────────────────
 
     def build_backtest_snapshot(
@@ -813,11 +1087,21 @@ class BacktestLLMIntegration:
         equity: float,
         daily_pnl: float = 0.0,
         circuit_breaker_active: bool = False,
+        decision_ts: Optional[float] = None,
     ) -> Optional[dict]:
         """Build a snapshot dict compatible with coordinator.get_trading_decision().
 
         Constructs the compact format that agents expect from the data available
         in the backtest walk loop.
+
+        `decision_ts` (epoch seconds, UTC) is the current decision bar's own
+        timestamp — the engine passes `sim_dt.timestamp()` (see
+        backtest/engine.py's `_apply_llm_entry`/`_run_llm_exit`, same pattern
+        already used for `signal.metadata["replay_sim_ts"]`). When provided
+        and REPLAY_PIT_EDGE_MAP is enabled, it gates the point-in-time edge
+        map (Fix B) — see `_build_pit_edge_map()` for the leak-safety
+        argument. When omitted (None, the default), no edge map is injected
+        and behavior is byte-for-byte identical to before this fix.
         """
         try:
             import pandas as pd
@@ -870,6 +1154,28 @@ class BacktestLLMIntegration:
                     "sd": signal.side.lower(),
                     "c": round(signal.confidence / 100.0, 2),  # Normalize to 0-1
                 }
+                # GAP FIX (confluence metadata): mirror live's sg structure
+                # (llm/snapshot_builder.py:225-250), which surfaces flags/quality
+                # prominently and passes the full per-signal meta blob through so
+                # Trade/Risk/Critic agents see num_agree / strategies_agree / chop
+                # score / regime alignment etc. Source: signal.metadata, populated
+                # earlier in the SAME candle's walk-loop iteration (engine.py, e.g.
+                # ~lines 870-988) from data already ≤T — no forward-looking fields.
+                _meta = signal.metadata if isinstance(getattr(signal, "metadata", None), dict) else {}
+                if _meta:
+                    _flags = _meta.get("signal_flags")
+                    if _flags:
+                        sig["flags"] = _flags
+                    _fpri = _meta.get("flag_max_priority")
+                    if _fpri and _fpri >= 3:
+                        sig["fpri"] = _fpri
+                    _qs = _meta.get("quality_multiplier") or _meta.get("quality_score")
+                    if _qs:
+                        sig["qs"] = round(float(_qs), 2)
+                    # Full confluence metadata (num_agree, strategies_agree, chop_score,
+                    # regime, win_prob, ev_per_dollar, etc.) — same catch-all pattern as
+                    # live's `sig["meta"] = s.meta`.
+                    sig["meta"] = _meta
                 market["sg"] = [sig]
 
             # Build global context
@@ -884,6 +1190,62 @@ class BacktestLLMIntegration:
             }
             if circuit_breaker_active:
                 global_ctx["cb"] = True
+
+            # FIX B: point-in-time edge map (g.edge/g.confl_wr/g.stperf).
+            # Gated on decision_ts being supplied (engine passes
+            # sim_dt.timestamp(), the decision bar's own timestamp) AND the
+            # REPLAY_PIT_EDGE_MAP flag. cutoff_ts=decision_ts means
+            # _build_pit_edge_map only aggregates trades that had closed
+            # strictly BEFORE this decision bar — see that method's
+            # docstring for the full leak-safety argument. trade_data =
+            # dict(snapshot) in coordinator.py's _build_trade_input, and the
+            # explicit `critic_data["g"] = snapshot["g"]` in
+            # _build_critic_input, both copy this "g" dict wholesale into
+            # the Trade/Critic agent inputs unfiltered by _is_backtest — the
+            # ONLY place that gate applies is the separate Quant-agent input
+            # builder (coordinator.py ~3656), which is deliberately left
+            # untouched (out of scope: a live-path file).
+            if decision_ts is not None and self._pit_edge_map_on:
+                try:
+                    _pit = self._build_pit_edge_map(float(decision_ts))
+                    if _pit:
+                        global_ctx.update(_pit)
+                except Exception as e:
+                    logger.debug(f"[BACKTEST-LLM] PIT edge map build failed (non-fatal): {e}")
+
+            # GAP FIX (BTC context): live's Regime agent gets BTC price + 1h/24h
+            # change for every symbol (llm/snapshot_builder.py:256-266); backtest
+            # previously hardcoded these to 0 for non-BTC symbols, blinding the
+            # BTC-conditioned TAILWIND edge. Source: for symbol=="BTC" we reuse the
+            # market's own d1h/d24h (already computed above from windowed_data["1h"],
+            # strictly ≤T). For other symbols we use windowed_data["_btc_1h"] — the
+            # engine (bot/backtest/engine.py:396-400) injects BTC's full 1h series
+            # into this symbol's `data` dict before the walk begins, and the SAME
+            # per-candle windowing (engine.py:577-595, cutoff=searchsorted(<candle
+            # time, side="left")) that slices every other timeframe to strictly
+            # before the decision bar also slices "_btc_1h" — so this is ≤T like
+            # everything else here. If BTC data isn't available for this run at all,
+            # the key is simply absent and we fall back to the 0.0 defaults above.
+            if symbol == "BTC":
+                global_ctx["b1h"] = market.get("d1h", 0.0)
+                global_ctx["b24h"] = market.get("d24h", 0.0)
+            else:
+                _btc_1h = windowed_data.get("_btc_1h")
+                if _btc_1h is not None and not _btc_1h.empty:
+                    _btc_last_close = float(_btc_1h["close"].iloc[-1])
+                    global_ctx["btc"] = _round_price(_btc_last_close)
+                    if len(_btc_1h) >= 2:
+                        _btc_prev = float(_btc_1h["close"].iloc[-2])
+                        if _btc_prev > 0:
+                            global_ctx["b1h"] = round(
+                                (_btc_last_close - _btc_prev) / _btc_prev * 100, 1
+                            )
+                    if len(_btc_1h) >= 25:
+                        _btc_24h_ago = float(_btc_1h["close"].iloc[-25])
+                        if _btc_24h_ago > 0:
+                            global_ctx["b24h"] = round(
+                                (_btc_last_close - _btc_24h_ago) / _btc_24h_ago * 100, 1
+                            )
 
             # Build position context
             positions = []
@@ -902,6 +1264,24 @@ class BacktestLLMIntegration:
             }
             if positions:
                 snapshot["pos"] = positions
+
+            # GAP FIX (technical arrays): the coordinator's technicals enrichment
+            # (RSI/MACD/ADX/Bollinger/ATR/EMA — llm/agents/coordinator.py, gated on
+            # "ohlcv_1h" in snapshot_data) and the mech-regime overlay need raw OHLCV
+            # candles; without them they silently produce nothing. Live builds this
+            # array from the last 50 CLOSED candles (core/llm_integration.py:296-311)
+            # as [ts_ms, open, high, low, close, volume]. Source here is
+            # windowed_data["1h"]/["5m"] — the SAME dict already sliced to strictly
+            # before the decision bar by engine.py's per-candle cutoff
+            # (cutoff = df["time"].searchsorted(current_time, side="left");
+            # windowed = df.iloc[start:cutoff], engine.py:577-595/1106-1116), i.e. it
+            # never contains the decision candle itself or anything after it.
+            _ohlcv_1h = _build_ohlcv_array(windowed_data.get("1h"))
+            if _ohlcv_1h:
+                snapshot["ohlcv_1h"] = _ohlcv_1h
+            _ohlcv_5m = _build_ohlcv_array(windowed_data.get("5m"))
+            if _ohlcv_5m:
+                snapshot["ohlcv_5m"] = _ohlcv_5m
 
             return snapshot
 
@@ -1135,12 +1515,17 @@ class BacktestLLMIntegration:
             "cost_usd": round(cost, 6),
             "trigger": trigger,
             "source": "backtest",
+            # TRACE CAPTURE: full input snapshot for the study corpus (previously
+            # missing entirely). This is the exact dict passed to
+            # coordinator.get_trading_decision() for this decision.
+            "snapshot": snapshot_data,
         }
 
         # Capture per-agent breakdown (regime, trade thesis, risk, critic)
         if self._coordinator:
             agent_detail = self._coordinator.get_last_pipeline_detail()
             if agent_detail:
+                _attach_raw_text(agent_detail, self._coordinator.last_pipeline_results)
                 entry["agents"] = agent_detail
                 # Track per-agent costs with actual model pricing
                 for agent_name, detail in agent_detail.items():
@@ -1176,6 +1561,7 @@ class BacktestLLMIntegration:
         result: Dict[str, Any],
         position_data: Dict[str, Any],
         cost: float,
+        market_data: Optional[Dict[str, Any]] = None,
     ):
         """Buffer an exit agent decision for the audit trail."""
         entry = {
@@ -1188,6 +1574,8 @@ class BacktestLLMIntegration:
             "reason": result.get("reason", "")[:300],
             "cost_usd": round(cost, 6),
             "source": "backtest",
+            # TRACE CAPTURE: full input snapshot (same rationale as _log_decision)
+            "snapshot": market_data,
         }
         # Store exit agent detail
         if self._coordinator and self._coordinator.last_exit_output:
@@ -1197,6 +1585,10 @@ class BacktestLLMIntegration:
                 "model": out.model_used,
                 "input_tokens": out.input_tokens,
                 "output_tokens": out.output_tokens,
+                # Raw text as captured by coordinator.py's AgentOutput (already
+                # capped to 500 chars at the source — see _attach_raw_text() docstring
+                # for why we can't go further without touching shared/live code).
+                "raw_text": getattr(out, "raw_text", "") or "",
             }
         self.exit_decisions.append(entry)
 
@@ -1226,11 +1618,16 @@ class BacktestLLMIntegration:
             "trigger": trigger,
             "source": "backtest",
             "skip_reason": reason,
+            # TRACE CAPTURE: full input snapshot, even for skipped decisions —
+            # the study corpus needs to see what the pipeline was fed when it
+            # produced nothing, not just the successful cases.
+            "snapshot": snapshot_data,
         }
         # Capture partial pipeline results even on failure
         if self._coordinator:
             agent_detail = self._coordinator.get_last_pipeline_detail()
             if agent_detail:
+                _attach_raw_text(agent_detail, self._coordinator.last_pipeline_results)
                 entry["agents"] = agent_detail
         self.decisions.append(entry)
 
@@ -1280,6 +1677,67 @@ class BacktestLLMIntegration:
                 "eq": 10000.0,
             },
         }
+
+
+def _attach_raw_text(agent_detail: Dict[str, Any], pipeline_results: Optional[Dict[Any, Any]]) -> None:
+    """Attach each agent's raw LLM response text to its serialized detail dict.
+
+    get_last_pipeline_detail() (llm/agents/coordinator.py) serializes data/model/
+    tokens/latency/ok/error per agent but does NOT include raw_text, even though
+    each AgentOutput already carries it. We pull it directly from the coordinator's
+    public `last_pipeline_results` dict here — no coordinator.py edit required.
+
+    LIMITATION (documented, not fixed here): coordinator.py's `_call_agent`
+    (shared with the live trading path) truncates AgentOutput.raw_text to 500
+    chars AT THE SOURCE before we ever see it (`raw_text=raw_text[:500]`). That
+    truncation happens inside code this task's constraints forbid touching
+    ("Do NOT modify llm/coordinator... or any live trading path"), so the text
+    captured here is whatever the coordinator already kept (<=500 chars), not
+    truly unbounded. Getting the full response would require either editing
+    that shared truncation point, or process-local monkeypatching of the LLM
+    call functions to side-channel-capture text before truncation — both
+    considered too invasive/fragile for this change and flagged for the owner
+    to approve separately if the full text is needed.
+    """
+    if not agent_detail or not pipeline_results:
+        return
+    for role, output in pipeline_results.items():
+        role_key = getattr(role, "value", role)
+        if role_key in agent_detail and isinstance(agent_detail[role_key], dict):
+            agent_detail[role_key]["raw_text"] = getattr(output, "raw_text", "") or ""
+
+
+def _build_ohlcv_array(df) -> Optional[List[List[float]]]:
+    """Build a [ts_ms, open, high, low, close, volume] array from a windowed df.
+
+    Matches the shape live builds in core/llm_integration.py:296-311 (last 50
+    candles) so llm/agents/technicals.py:compute_all_technicals() (needs >=30
+    rows, closes[-1] treated as "now") works identically in backtest.
+
+    `df` must already be sliced to strictly-before-decision-bar by the caller
+    (the backtest engine's windowing) — this function does no time filtering
+    of its own, it only reshapes. Returns None on missing/insufficient/malformed
+    data so callers can omit the key entirely (matches existing fallback
+    behavior — never crashes the backtest).
+    """
+    if df is None or df.empty or len(df) < 30:
+        return None
+    try:
+        rows = []
+        for _, row in df.tail(50).iterrows():
+            ts = row.get("time")
+            ts_ms = int(ts.timestamp() * 1000) if hasattr(ts, "timestamp") else 0
+            rows.append([
+                ts_ms,
+                float(row.get("open", 0)),
+                float(row.get("high", 0)),
+                float(row.get("low", 0)),
+                float(row.get("close", 0)),
+                float(row.get("volume", 0)),
+            ])
+        return rows if rows else None
+    except Exception:
+        return None
 
 
 def _round_price(price: float) -> float:

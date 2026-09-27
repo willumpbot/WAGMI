@@ -22,7 +22,10 @@ import os
 import csv
 import time
 import datetime
+import logging
 import threading
+
+logger = logging.getLogger("bot.feedback.live_edge")
 
 _BOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _LEDGER = os.path.join(_BOT, "data", "trade_ledger.csv")
@@ -31,7 +34,8 @@ _MIN_N = 13
 _TTL_S = 900          # recompute at most every 15 min
 _lock = threading.Lock()
 _cache = {"mult": {}, "computed_at": 0.0, "ledger_mtime": 0.0, "meta": {},
-          "symbol_mult": {}, "symbol_meta": {}, "breakeven_floor": None}
+          "symbol_mult": {}, "symbol_meta": {}, "breakeven_floor": None,
+          "side_mult": {}, "side_meta": {}}
 
 # Confidence-floor break-even scan (LIVING VALUES: feedback/loop.py's
 # effective_floor blend must never gate below the confidence level the
@@ -46,9 +50,62 @@ _BE_SCAN_STEP = 2.5
 # Mirrors trading_config._TEST_ENTRY_PRICES / _get_regime_ledger_ev.
 _TEST_ENTRY_PRICES = (100.0, 150.0, 50000.0)
 
+# LEARNING-INPUT DUST FLOOR (2026-07-24, adversarially verified): 181 of 250
+# ledger rows (72%) are DUST — tiny early-epoch positions (median corrected
+# base notional ~$144 vs ~$1078 for real trades) whose round-trip fees are
+# < $0.50. With dust counted as evidence, 9 of 10 (symbol,side) cells pass
+# n>=13 ONLY because of dust (e.g. HYPE_SELL mult on n_real=2), and the 77.5
+# breakeven confidence floor is dust-supported (real-only: no threshold has
+# n>=13). The ledger has no qty column, so dust is identified by recorded
+# round-trip fees below this floor. Single named constant shared by every
+# ledger-reading learning input (side-mults, symbol-mults, breakeven scan
+# here; Kelly factor stats in feedback/kelly_engine.py).
+DUST_FEE_FLOOR = 0.5
+
 
 def enabled() -> bool:
     return os.getenv("DATA_DRIVEN_SIDE_MULT", "true").strip().lower() in ("1", "true", "yes")
+
+
+def side_level_edge_enabled() -> bool:
+    """SIDE_LEVEL_EDGE (default off): when a specific (symbol,side) cell lacks
+    n>=13 evidence, fall back to the LIVING side-level mult aggregated across ALL
+    symbols (real trades only under LEARNING_INPUT_FLOOR). Captures the strong
+    side-aggregate signal (e.g. LONG vs SHORT) that the per-cell n>=13 gate
+    discards -- e.g. real longs -$29.7/tr @9%WR (n=22) vs shorts +$21.3/tr @42%WR
+    (n=38). Values are data-derived via _pnl_to_mult, NEVER hardcoded; the
+    fallback re-neutralizes automatically as a side's live avg_pnl changes."""
+    return os.getenv("SIDE_LEVEL_EDGE", "false").strip().lower() in ("1", "true", "yes")
+
+
+def side_fallback_mode() -> str:
+    """SIDE_FALLBACK_NO_BOOST (default 'shadow'). The side-level fallback in
+    get_side_mult() aggregates ALL symbols' trades for a side; on the current
+    ledger the SELL aggregate (+$21/tr -> 1.5x boost) is carried ENTIRELY by 3
+    June outlier trades (ex-those: -$3.87/tr; last-45d shorts +$0.35/tr = flat,
+    verified 2026-07-28). A (symbol,side) cell with NO own n>=13 evidence should
+    not INHERIT a boost from that stale aggregate -- at most neutral (1.0), though
+    it may still be CUT if the side is a genuine drain. Modes:
+      'off'    -> legacy (fallback may boost above 1.0).
+      'shadow' -> log the would-clamp, return the live (unchanged) value.
+      'true'   -> cap the fallback at 1.0 (cut-only) for evidence-less cells.
+    Cells with their OWN n>=13 evidence are unaffected (they never hit fallback)."""
+    m = os.getenv("SIDE_FALLBACK_NO_BOOST", "shadow").strip().lower()
+    return m if m in ("off", "shadow", "true") else "shadow"
+
+
+def learning_input_floor_enabled() -> bool:
+    """LEARNING_INPUT_FLOOR gate (default OFF -> zero live behavior change on deploy).
+
+    When true, ledger rows with recorded fees < DUST_FEE_FLOOR are treated as
+    NON-EVIDENCE by every learning input that reads the ledger: the n>=13
+    count, the per-(symbol,side) side-mults, the per-symbol mults, the
+    breakeven confidence-floor scan (all in _recompute below), and the Kelly
+    per-factor priors (feedback/kelly_engine.py). Cells that drop below n>=13
+    on real-only evidence revert to the intended safe default: None -> caller
+    stays neutral (mult 1.0 / no edge / keep fallback floor).
+    When false (default), dust rows keep counting exactly as before."""
+    return os.getenv("LEARNING_INPUT_FLOOR", "false").strip().lower() in ("1", "true", "yes")
 
 
 def defabricate_sol_veto_enabled() -> bool:
@@ -162,17 +219,20 @@ def _recompute():
     near _BE_SCAN_* for rationale)."""
     mult, meta = {}, {}
     symbol_mult, symbol_meta = {}, {}
+    side_mult, side_meta = {}, {}
     breakeven_floor = None
     try:
         if not os.path.exists(_LEDGER):
-            return mult, meta, symbol_mult, symbol_meta, breakeven_floor
+            return mult, meta, symbol_mult, symbol_meta, breakeven_floor, side_mult, side_meta
         try:
             window_days = float(os.getenv("LIVE_EDGE_WINDOW_DAYS", "0") or 0)
         except (ValueError, TypeError):
             window_days = 0.0
         cutoff = (time.time() - window_days * 86400.0) if window_days > 0 else 0.0
+        dust_floor_on = learning_input_floor_enabled()
         cells = {}
         symbol_cells = {}
+        side_cells = {}
         conf_pnl_rows = []
         with open(_LEDGER, newline="", encoding="utf-8", errors="ignore") as f:
             for r in csv.DictReader(f):
@@ -191,6 +251,18 @@ def _recompute():
                     ep = 0.0
                 if ep in _TEST_ENTRY_PRICES:
                     continue
+                if dust_floor_on:
+                    # LEARNING_INPUT_FLOOR: dust rows (fees < DUST_FEE_FLOOR)
+                    # are non-evidence for EVERY learning input built below
+                    # (side/symbol cells AND the breakeven scan). Missing or
+                    # unparseable fees count as 0 -> excluded: a row that
+                    # can't prove it paid real fees can't be evidence.
+                    try:
+                        fees = float(r.get("fees") or 0)
+                    except (ValueError, TypeError):
+                        fees = 0.0
+                    if fees < DUST_FEE_FLOOR:
+                        continue
                 try:
                     conf = float(r.get("confidence_score") or 0)
                 except (ValueError, TypeError):
@@ -200,9 +272,11 @@ def _recompute():
                 # mult/symbol_mult cells. TEST/synthetic rows are excluded above
                 # by symbol and _TEST_ENTRY_PRICES, mirroring
                 # trading_config._get_regime_ledger_ev.
-                key = (sym, _norm_side(r.get("side", "")))
+                nside = _norm_side(r.get("side", ""))
+                key = (sym, nside)
                 cells.setdefault(key, []).append(pnl)
                 symbol_cells.setdefault(sym, []).append(pnl)
+                side_cells.setdefault(nside, []).append(pnl)
                 if conf > 0:  # breakeven scan only: skip unscored rows (conf==0); TEST/entry-sim rows are excluded above
                     conf_pnl_rows.append((conf, pnl))
         for key, pnls in cells.items():
@@ -218,6 +292,16 @@ def _recompute():
             avg = sum(pnls) / len(pnls)
             symbol_mult[sym] = _pnl_to_mult(avg)
             symbol_meta[sym] = {"n": len(pnls), "avg_pnl": round(avg, 2)}
+        # LIVING side-level edge (across all symbols): same _pnl_to_mult mapping,
+        # same n>=13 gate. Used only as a fallback in get_side_mult when a
+        # specific (symbol,side) cell lacks evidence and SIDE_LEVEL_EDGE is on.
+        for s, pnls in side_cells.items():
+            if len(pnls) < _MIN_N:
+                continue
+            avg = sum(pnls) / len(pnls)
+            side_mult[s] = _pnl_to_mult(avg)
+            side_meta[s] = {"n": len(pnls), "avg_pnl": round(avg, 2),
+                            **_win_rate_payoff(pnls)}
         f_thresh = _BE_SCAN_LO
         while f_thresh <= _BE_SCAN_HI + 1e-9:
             slice_pnls = [p for c, p in conf_pnl_rows if c >= f_thresh]
@@ -227,8 +311,8 @@ def _recompute():
                 break
             f_thresh += _BE_SCAN_STEP
     except Exception:
-        return {}, {}, {}, {}, None
-    return mult, meta, symbol_mult, symbol_meta, breakeven_floor
+        return {}, {}, {}, {}, None, {}, {}
+    return mult, meta, symbol_mult, symbol_meta, breakeven_floor, side_mult, side_meta
 
 
 def _ensure_fresh():
@@ -240,10 +324,11 @@ def _ensure_fresh():
     with _lock:
         stale = (now - _cache["computed_at"] > _TTL_S) or (led_mtime != _cache["ledger_mtime"])
         if stale:
-            mult, meta, symbol_mult, symbol_meta, breakeven_floor = _recompute()
+            mult, meta, symbol_mult, symbol_meta, breakeven_floor, side_mult, side_meta = _recompute()
             _cache.update({"mult": mult, "meta": meta,
                            "symbol_mult": symbol_mult, "symbol_meta": symbol_meta,
                            "breakeven_floor": breakeven_floor,
+                           "side_mult": side_mult, "side_meta": side_meta,
                            "computed_at": now, "ledger_mtime": led_mtime})
 
 
@@ -253,7 +338,30 @@ def get_side_mult(symbol: str, side: str):
     base = str(symbol).replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "").upper()
     _ensure_fresh()
     with _lock:
-        return _cache["mult"].get((base, _norm_side(side)))
+        nside = _norm_side(side)
+        cell = _cache["mult"].get((base, nside))
+        if cell is not None:
+            return cell
+        # No per-(symbol,side) evidence: fall back to the LIVING side-level mult
+        # (data-derived, n>=13) when SIDE_LEVEL_EDGE is on, else stay neutral.
+        if side_level_edge_enabled():
+            raw = _cache.get("side_mult", {}).get(nside)
+            if raw is None:
+                return None
+            fmode = side_fallback_mode()
+            if fmode == "off":
+                return raw
+            clamped = min(1.0, raw)  # fallback may cut, never boost, evidence-less cells
+            if fmode == "true":
+                return clamped
+            # shadow: log the would-clamp on a boost, return the live value unchanged
+            if raw > 1.0:
+                logger.info(
+                    "[SIDE-FALLBACK-SHADOW] %s %s: side-level fallback %.3f would clamp "
+                    "-> %.3f (no own n>=13 evidence; SELL agg is stale June outliers)",
+                    base, nside, raw, clamped)
+            return raw
+        return None
 
 
 def get_side_stats(symbol: str, side: str):

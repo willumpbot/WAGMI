@@ -1,5 +1,5 @@
 # Auto-generated swarm recommendations
-# Generated: 2026-07-20T12:06:41.489226
+# Generated: 2026-07-31T21:20:41.050722
 # DO NOT EDIT MANUALLY
 
 REGIME_TP_SCALARS = {'high_volatility': {'use_trailing': True}}

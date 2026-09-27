@@ -5,6 +5,173 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { C, R, S, F, G, Glass, SP } from '../src/theme';
 import { staggerContainer, fadeUp } from '../src/animations';
+import { useApi } from '../hooks/useApi';
+
+// ─── Living Case Studies — real lessons the bot has learned, from /v1/lessons ───
+
+type LessonsData = {
+  insights: { category?: string; insight?: string; confidence?: number; evidence?: string; source?: string; validated?: boolean }[];
+  edges: { label?: string; kind?: string; n?: number; wr?: number; ev?: number; total_pnl?: number }[];
+  trades: { symbol?: string; side?: string; pnl?: number; outcome?: string; strategy?: string; regime?: string }[];
+  stats?: { total_trades?: number; insights_validated?: number; insights_total?: number; edges_found?: number; min_n?: number; by_category?: Record<string, number>; provenance?: string };
+};
+
+// The bot's journal stores some mis-encoded unicode (â‰¤ etc.); tidy the worst offenders.
+function tidy(s?: string): string {
+  if (!s) return '';
+  return s
+    .replace(/â‰¤/g, '≤').replace(/â‰¥/g, '≥').replace(/â†'/g, '→').replace(/â†"/g, '↓')
+    .replace(/âˆ'/g, '−').replace(/â€"/g, '—').replace(/â€™/g, '’').replace(/Ã—/g, '×')
+    .replace(/[�]/g, '').trim();
+}
+
+const CAT_LABEL: Record<string, string> = {
+  exit_pattern: 'Exit timing',
+  trade_management: 'Trade management',
+  meta: 'Meta',
+  prediction: 'Prediction',
+};
+
+function LiveCaseStudies() {
+  const { data } = useApi<LessonsData>('/v1/lessons?limit=24', { refreshInterval: 120_000 });
+  const st = data?.stats;
+  const insights = (data?.insights || []).filter((i) => tidy(i.insight)).slice(0, 6);
+  const edges = (data?.edges || []).filter((e) => e.label).slice(0, 12);
+  const trades = (data?.trades || []).filter((t) => t.symbol).slice(0, 4);
+  const loading = !data;
+
+  const stat = (n: number | undefined, label: string, color = C.text) => (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontSize: F['2xl'], fontWeight: 800, color, fontFamily: 'JetBrains Mono, monospace', lineHeight: 1 }}>
+        {n ?? '—'}
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
+    </div>
+  );
+
+  return (
+    <section style={{ margin: '8px 0 40px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.brand, boxShadow: `0 0 0 4px ${C.brand}22` }} className="live-dot" />
+        <span style={{ fontSize: F.xs, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: C.brand }}>
+          Live · from real trading
+        </span>
+      </div>
+      <h2 style={{ fontSize: F['3xl'], fontWeight: 800, color: C.text, margin: '0 0 6px', letterSpacing: -0.5 }}>
+        What the bot has actually learned
+      </h2>
+      <p style={{ fontSize: F.md, color: C.textSub, margin: '0 0 16px', maxWidth: 640, lineHeight: 1.6 }}>
+        Not textbook hypotheticals, and not frozen rules either — the edges below are recomputed live from
+        the bot's own trade ledger every time this page loads (n≥13 per bucket), so they update themselves as
+        it trades. The journal notes are filtered to only what the bot <em>validated</em>. Nothing here is a
+        hardcoded value.
+      </p>
+
+      {/* Stat band */}
+      <div
+        style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 12,
+          padding: '18px 20px', marginBottom: 22, borderRadius: R.lg,
+          border: `1px solid ${C.border}`, background: C.surface,
+        }}
+      >
+        {stat(st?.total_trades, 'Real trades')}
+        {stat(st?.edges_found, `Live edges (n≥${st?.min_n ?? 13})`, C.info)}
+        {stat(st?.insights_validated, `Validated notes${st?.insights_total ? ` of ${st.insights_total}` : ''}`, C.bull)}
+      </div>
+      <p style={{ fontSize: F.xs, color: C.muted, margin: '-10px 0 22px', fontStyle: 'italic' }}>
+        Edges are recomputed live from the trade ledger every load — never frozen into rules. Only {st?.insights_validated ?? '—'} of {st?.insights_total ?? '—'} journal notes passed the bot's own validation; the rest are hidden.
+      </p>
+
+      {loading && <div style={{ color: C.muted, fontSize: F.sm, padding: '8px 0 24px' }}>Loading the bot's lessons…</div>}
+
+      {/* Insights */}
+      {insights.length > 0 && (
+        <>
+          <h3 style={{ fontSize: F.lg, fontWeight: 700, color: C.text, margin: '0 0 12px' }}>Lessons from the journal</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 12, marginBottom: 28 }}>
+            {insights.map((i, idx) => (
+              <div key={idx} style={{ ...Glass.crystal, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: F.xs, fontWeight: 700, padding: '2px 8px', borderRadius: R.pill, background: C.brand + '22', color: C.brand }}>
+                    {CAT_LABEL[i.category || ''] || i.category || 'Lesson'}
+                  </span>
+                  {i.validated && (
+                    <span style={{ fontSize: F.xs, fontWeight: 700, padding: '2px 8px', borderRadius: R.pill, background: C.bull + '22', color: C.bull }}>✓ validated</span>
+                  )}
+                  <span style={{ marginLeft: 'auto', fontSize: F.xs, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+                    {Math.round((i.confidence || 0) * 100)}%
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: F.sm, color: C.textSub, lineHeight: 1.55 }}>{tidy(i.insight)}</p>
+                {i.evidence && (
+                  <p style={{ margin: 0, fontSize: F.xs, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>{tidy(i.evidence)}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Live edges — recomputed from the trade ledger, never hardcoded */}
+      {edges.length > 0 && (
+        <>
+          <h3 style={{ fontSize: F.lg, fontWeight: 700, color: C.text, margin: '0 0 4px' }}>Its edges, right now</h3>
+          <p style={{ fontSize: F.xs, color: C.muted, margin: '0 0 12px' }}>
+            Win-rate and expectancy per bucket, recomputed live from every closed trade (n≥{data?.stats?.min_n ?? 13}).
+            These are not frozen rules — they move as the bot trades.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 12, marginBottom: 28 }}>
+            {edges.map((e, idx) => {
+              const pos = (e.ev || 0) >= 0;
+              return (
+                <div key={idx} style={{ ...Glass.crystal, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>{e.label}</span>
+                    <span style={{ fontSize: F.sm, fontWeight: 800, color: pos ? C.bull : C.bear, fontFamily: 'JetBrains Mono, monospace' }}>
+                      {pos ? '+' : ''}{(e.ev || 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}<span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400 }}>/trade</span>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: F.xs, color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+                    <span>n={e.n}</span>
+                    <span>WR {e.wr}%</span>
+                    <span style={{ marginLeft: 'auto', color: pos ? C.bull : C.bear }}>
+                      net {pos ? '+' : ''}{(e.total_pnl || 0).toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Trades */}
+      {trades.length > 0 && (
+        <>
+          <h3 style={{ fontSize: F.lg, fontWeight: 700, color: C.text, margin: '0 0 12px' }}>Trades that taught them</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 12 }}>
+            {trades.map((t, idx) => {
+              const win = (t.pnl || 0) >= 0;
+              return (
+                <div key={idx} style={{ ...Glass.crystal, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: F.md, fontWeight: 800, color: C.text }}>{t.symbol}</span>
+                    <span style={{ fontSize: F.xs, fontWeight: 700, color: t.side === 'SELL' ? C.bear : C.bull }}>{t.side}</span>
+                  </div>
+                  <div style={{ fontSize: F.lg, fontWeight: 800, color: win ? C.bull : C.bear, fontFamily: 'JetBrains Mono, monospace', margin: '6px 0 2px' }}>
+                    {win ? '+' : ''}{(t.pnl || 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                  </div>
+                  <div style={{ fontSize: F.xs, color: C.muted }}>{t.strategy} · {t.regime}</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
 
 // ─── Accordion Card ───────────────────────────────────────────────────────────
 
@@ -3554,6 +3721,9 @@ export default function Learn() {
         {/* ── Main content ─────────────────────────────── */}
         <div>
 
+      {/* Living case studies — real lessons from the bot, ahead of the static curriculum */}
+      <LiveCaseStudies />
+
       {/* ─────────────────────────────────── */}
       <div id="what-is-this-bot" />
       <div style={{ marginBottom: 8, paddingTop: 8 }}>
@@ -4071,8 +4241,14 @@ export default function Learn() {
 
       <style>{`
         @media (max-width: 900px) {
-          .learn-layout { grid-template-columns: 1fr !important; }
+          /* minmax(0,1fr) — NOT 1fr — so the single column can't expand past the
+             viewport to fit a wide child (tables/diagrams), which was bleeding the
+             whole page's inner grids off-screen on phones. */
+          .learn-layout { grid-template-columns: minmax(0, 1fr) !important; }
           .learn-sidebar { display: none !important; }
+          /* Wide data tables / diagrams scroll inside their own box instead of
+             widening the column. */
+          .learn-layout table, .learn-layout pre { display: block; overflow-x: auto; }
         }
         .sidebar-link:hover {
           background: ${C.surfaceHover} !important;

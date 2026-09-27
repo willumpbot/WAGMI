@@ -71,6 +71,19 @@ LEDGER_COLUMNS = [
     # the END of the schema so existing column positions/readers are
     # unchanged; blank on rows written before this column existed.
     "position_id",
+    # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION, 2026-07-27): numeric
+    # funding-rate / open-interest / premium snapshot captured at position
+    # OPEN (from bot/data/funding_oi_history.jsonl via
+    # core/funding_oi_snapshot.latest_funding_oi, threaded through
+    # Position.entry_reasons). Distinct from the existing signed ``funding``
+    # column, which is realized funding P&L over the hold -- these are the
+    # raw entry-time derivatives readings the funding/OI-confirmation
+    # instruments need. Appended at the END so existing column positions/
+    # readers are unchanged; blank on rows written before these existed or
+    # when the feed was unavailable at entry (fail-neutral).
+    "funding_rate_entry",
+    "open_interest_entry",
+    "premium_entry",
 ]
 
 

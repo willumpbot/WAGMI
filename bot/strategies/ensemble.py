@@ -153,6 +153,24 @@ def _load_paper_trades_side_stats() -> Dict[str, Dict[str, float]]:
     return _cached_ledger_value("paper_trades_side_stats", _build) or {}
 
 
+def _dust_floor_df(df):
+    """Drop dust rows (recorded fees < live_edge.DUST_FEE_FLOOR) when
+    LEARNING_INPUT_FLOOR is on, so the combo/regime vetoes use the SAME
+    real-evidence-only basis as feedback/live_edge's side-mults + breakeven
+    scan + Kelly. Without this, dust-inflated combos (e.g. confidence_scorer+
+    multi_tier_quality: n=16 all / n=2 real, 69% WR, net -$2) pass n>=13 on
+    dust and get vetoed as 'losing' — over-blocking real edge. Missing/
+    unparseable fees count as 0 -> dropped. Fail-open: never break the loader."""
+    try:
+        from feedback.live_edge import DUST_FEE_FLOOR, learning_input_floor_enabled
+        if not learning_input_floor_enabled():
+            return df
+        fees = pd.to_numeric(df.get("fees"), errors="coerce").fillna(0.0)
+        return df[fees >= DUST_FEE_FLOOR]
+    except Exception:
+        return df
+
+
 def _load_regime_strategy_edge() -> Dict[tuple, tuple]:
     """Live (strategy, regime_1h) -> (n, avg_net_pnl) from data/trade_ledger.csv,
     exploding the comma-separated contributing_factors per trade so each
@@ -162,6 +180,7 @@ def _load_regime_strategy_edge() -> Dict[tuple, tuple]:
         path = _os.path.join(_bot_root(), "data", "trade_ledger.csv")
         df = pd.read_csv(path)
         df = _scrub_ledger_df(df)
+        df = _dust_floor_df(df)
         df = df[df["contributing_factors"].notna()]
         df = df[~df["contributing_factors"].isin(["ensemble", "RECONSTRUCTED_FROM_LOG"])]
         stats: Dict[tuple, list] = {}
@@ -184,6 +203,7 @@ def _load_combo_stats() -> Dict[frozenset, tuple]:
         path = _os.path.join(_bot_root(), "data", "trade_ledger.csv")
         df = pd.read_csv(path)
         df = _scrub_ledger_df(df)
+        df = _dust_floor_df(df)
         df = df[df["contributing_factors"].notna()]
         df = df[~df["contributing_factors"].isin(["ensemble", "RECONSTRUCTED_FROM_LOG"])]
         stats: Dict[frozenset, list] = {}

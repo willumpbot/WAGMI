@@ -1724,6 +1724,128 @@ def thesis_accuracy():
         return {"error": str(e)}
 
 
+@app.get("/v1/lessons")
+def lessons(limit: int = Query(24)):
+    """Living course material for the /learn 'Case Studies' strand: the real lessons
+    the bot has learned — validated insights from its journal, graduated hypotheses
+    with their evidence, and the trades that illustrate them. Not hypotheticals."""
+    from collections import Counter
+    out: dict = {"insights": [], "edges": [], "trades": [], "stats": {}}
+
+    # INTEGRITY GATE: the bot's own audits quarantined a lot of early "graduated"
+    # rules (keyword-parsed, inverted actions, n<13, no dollar validation — D1 quarantine
+    # 2026-07-02) and most journal insights are unvalidated. A course must teach only what
+    # actually held up, or it teaches the wrong lessons. So: validated insights only, and
+    # active + non-quarantined + n>=13 rules only. Quality over volume, honestly labelled.
+    MIN_N = 13
+
+    # 1) Insights the bot extracted from its own trading — VALIDATED ONLY.
+    ij = _read_json(DATA / "llm" / "deep_memory" / "insight_journal.json") or {}
+    all_insights = ij.get("insights", []) if isinstance(ij, dict) else []
+    insights = [i for i in all_insights if i.get("validated")]
+    cats = Counter(i.get("category") for i in insights)
+    ranked = sorted(
+        insights,
+        key=lambda i: (float(i.get("confidence") or 0), float(i.get("ts") or 0)),
+        reverse=True,
+    )
+    for i in ranked[:limit]:
+        out["insights"].append({
+            "category": i.get("category"),
+            "insight": (i.get("insight") or "")[:400],
+            "confidence": round(float(i.get("confidence") or 0), 2),
+            "evidence": i.get("evidence"),
+            "source": i.get("source"),
+            "validated": bool(i.get("validated")),
+        })
+
+    # Load closed trades once — everything below is recomputed from them each request.
+    def _pnl(t):
+        try:
+            return float(t.get("pnl") or 0)
+        except Exception:
+            return 0.0
+    try:
+        trades = _read_trades(limit=0)
+    except Exception:
+        trades = []
+    closed = [t for t in trades if t.get("exit") not in (None, 0, "")]
+
+    # 2) LIVE EDGES — recomputed from the actual trades on every request, gated at n>=13.
+    #    Deliberately NOT graduated_rules.json: a graduated rule is a frozen/hardcoded value,
+    #    which is exactly what the bot's LIVING-VALUES principle forbids. A surviving rule is
+    #    a stale snapshot; a live edge updates itself every time the bot trades. So instead of
+    #    "rules that held up" we show the current, self-updating win-rate / expectancy per
+    #    bucket, straight from the trade ledger.
+    from collections import defaultdict
+
+    def _edges(keyfn, kind):
+        groups: dict = defaultdict(list)
+        for t in closed:
+            k = keyfn(t)
+            if k:
+                groups[k].append(t)
+        rows = []
+        for k, g in groups.items():
+            if len(g) < MIN_N:
+                continue
+            wins = sum(1 for t in g if _pnl(t) > 0)
+            tot = sum(_pnl(t) for t in g)
+            rows.append({
+                "label": k, "kind": kind, "n": len(g),
+                "wr": round(100.0 * wins / len(g), 1),
+                "ev": round(tot / len(g), 2),
+                "total_pnl": round(tot, 2),
+            })
+        return rows
+
+    edges = []
+    edges += _edges(
+        lambda t: (f"{t.get('symbol')} {t.get('side')}" if t.get("symbol") and t.get("side") else None),
+        "symbol_side",
+    )
+    edges += _edges(
+        lambda t: (f"{t.get('regime')} regime" if t.get("regime") and t.get("regime") != "unknown" else None),
+        "regime",
+    )
+    # Rank by absolute expectancy (strongest edges, positive OR negative — both are lessons).
+    edges.sort(key=lambda e: (abs(e["ev"]), e["n"]), reverse=True)
+    out["edges"] = edges[:limit]
+
+    # 3) Real trades that illustrate the edges: biggest win, biggest loss, recent.
+    picks: list = []
+    if closed:
+        by_pnl = sorted(closed, key=_pnl)
+        picks = [by_pnl[-1], by_pnl[0]]  # best, worst
+        for t in reversed(closed):
+            if t not in picks:
+                picks.append(t)
+            if len(picks) >= 6:
+                break
+    for t in picks[:6]:
+        out["trades"].append({
+            "symbol": t.get("symbol"),
+            "side": t.get("side"),
+            "pnl": round(_pnl(t), 2),
+            "outcome": t.get("outcome"),
+            "strategy": t.get("strategy"),
+            "regime": t.get("regime"),
+            "confidence": t.get("confidence"),
+        })
+
+    out["stats"] = {
+        "total_trades": len(closed),
+        "insights_validated": len(insights),
+        "insights_total": len(all_insights),
+        "edges_found": len(out["edges"]),
+        "min_n": MIN_N,
+        "by_category": dict(cats.most_common(6)),
+        "provenance": "Edges are recomputed live from every closed trade (n>=13 per bucket), "
+                      "never graduated into a fixed rule. Insights shown are validated only.",
+    }
+    return out
+
+
 if __name__ == "__main__":
     print(f"WAGMI Dashboard API starting on http://localhost:8000")
     print(f"Data dir: {DATA}")

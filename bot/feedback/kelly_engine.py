@@ -23,6 +23,8 @@ import time
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
+from feedback.live_edge import DUST_FEE_FLOOR, learning_input_floor_enabled
+
 logger = logging.getLogger("bot.feedback.kelly_engine")
 
 # ── Constants ────────────────────────────────────────────────
@@ -52,10 +54,17 @@ def _load_ledger_factor_trades(ledger_path: str = LEDGER_PATH) -> Dict[str, List
     Excludes TEST-symbol rows and sim/test entry prices (100, 150, 50000)
     per the house pollution filter. Explodes comma-separated
     contributing_factors so each factor gets its own won/pnl_pct record.
+
+    When LEARNING_INPUT_FLOOR is on (default OFF), dust rows — recorded
+    round-trip fees < live_edge.DUST_FEE_FLOOR, i.e. phantom-sized trades
+    that are non-evidence (56/72 factor-trade inputs were dust) — are
+    excluded too, so a factor's n>=MIN_TRADES_FOR_KELLY prior gate can only
+    be passed by real trades (below it, the neutral KELLY_FLOOR applies).
     """
     trades_by_factor: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     if not os.path.exists(ledger_path):
         return trades_by_factor
+    dust_floor_on = learning_input_floor_enabled()
     try:
         with open(ledger_path, newline="") as f:
             reader = csv.DictReader(f)
@@ -70,6 +79,13 @@ def _load_ledger_factor_trades(ledger_path: str = LEDGER_PATH) -> Dict[str, List
                     continue
                 if "TEST" in symbol or entry_price in _TEST_ENTRY_PRICES:
                     continue
+                if dust_floor_on:
+                    try:
+                        fees = float(row.get("fees") or 0)
+                    except (ValueError, TypeError):
+                        fees = 0.0
+                    if fees < DUST_FEE_FLOOR:
+                        continue
                 if not factors_s or equity <= 0:
                     continue
                 won = net_pnl > 0

@@ -377,6 +377,24 @@ class BacktestEngine:
             data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, needed_tfs)
             all_data[symbol] = data
 
+        # LLM backtest: ensure BTC 1h data is available even when BTC isn't one
+        # of the requested symbols. The Regime agent needs BTC context for every
+        # symbol (TAILWIND edge is BTC-conditioned) and the BTC-context injection
+        # in llm_integration is a no-op for BTC-less runs otherwise. This is a
+        # historical fetch through the SAME fetcher/day-range as every other symbol
+        # — NOT a live/latest pull — and it gets windowed per-candle exactly like
+        # other timeframes (and end_date-trimmed just below), so it stays <=T at
+        # every decision point.
+        if self.llm and "BTC" not in all_data and "BTC" in DEFAULT_SYMBOLS:
+            try:
+                logger.info("Fetching BTC context data for cross-asset agent snapshots "
+                            "(BTC is not itself a backtest symbol in this run)")
+                all_data["BTC"] = self.fetcher.fetch_multi_timeframe(
+                    "BTC", DEFAULT_SYMBOLS["BTC"].coingecko_id, ["1h"]
+                )
+            except Exception as e:
+                logger.warning(f"Could not fetch BTC context data: {e}")
+
         # Trim all candles after end_date (exact replay windows, no lookahead
         # past the requested period).
         if self._end_date is not None:
@@ -1550,6 +1568,11 @@ class BacktestEngine:
             circuit_breaker_active=not self.risk_mgr.can_open_position(
                 self.pos_mgr.get_open_count(), sim_time=sim_dt
             ),
+            # Fix B (PIT edge map): same sim_dt already used for
+            # signal.metadata["replay_sim_ts"] above — the decision bar's
+            # own timestamp, so _build_pit_edge_map only sees trades that
+            # had closed strictly before this bar.
+            decision_ts=sim_dt.timestamp(),
         )
 
         decision = self.llm.evaluate_entry(snapshot_data, signal, "pre_trade_backtest")
@@ -1626,11 +1649,21 @@ class BacktestEngine:
             current_price=current_price,
             open_positions=self.pos_mgr.get_open_positions(),
             equity=self.risk_mgr.equity,
+            decision_ts=sim_dt.timestamp(),
         )
 
         exit_rec = self.llm.evaluate_exit(position_data, market_data)
+        # Fidelity fix: match the coordinator's OWN exit vocab. get_exit_intelligence
+        # returns the raw agent action, which is "full_close" for a full exit (the
+        # agent almost never emits the bare "close" this check previously required),
+        # so the exit agent effectively never closed in backtest. The coordinator
+        # accepts ("full_close","partial_close","close"). We fire on the full-exit
+        # intents ("full_close"/"close") — these drive live's disciplined-exit edge.
+        # "partial_close" is intentionally left a no-op for now (a conservative
+        # under-exit) until a true partial scale-out lands; better to hold than to
+        # over-close and understate a winner.
         if (exit_rec
-                and exit_rec.get("action") == "close"
+                and exit_rec.get("action") in ("full_close", "close")
                 and exit_rec.get("urgency") in ("high", "critical")):
             event = self.pos_mgr.force_close(symbol, current_price, reason="LLM_EXIT")
             if event:

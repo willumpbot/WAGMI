@@ -739,6 +739,19 @@ class DataFetcher:
         if cached is not None:
             return cached
 
+        # CG-404-NEGCACHE (2026-07-31): a coin_id CoinGecko doesn't list (e.g. PURR,
+        # a Hyperliquid-native token that isn't on CoinGecko) returns a PERMANENT
+        # 404. The old loop retried it self.max_retries times every scan cycle and
+        # tripped the rate limiter, delaying the REAL symbols' CoinGecko fetches.
+        # Negative-cache known-dead coins for 6h and never retry a 404 (permanent).
+        _now = time.time()
+        _dead = getattr(self, "_cg_dead_coins", None)
+        if _dead is None:
+            _dead = self._cg_dead_coins = {}
+        _exp = _dead.get(coin_id)
+        if _exp and _exp > _now:
+            return None
+
         url = f"{COINGECKO_BASE}/coins/{coin_id}/market_chart"
         params = {"vs_currency": "usd", "days": days}
 
@@ -754,6 +767,14 @@ class DataFetcher:
                     )
                     time.sleep(wait)
                     continue
+                if resp.status_code == 404:
+                    # Permanent: coin not listed on CoinGecko. Do not retry; skip 6h.
+                    self._cg_dead_coins[coin_id] = _now + 6 * 3600
+                    logger.info(
+                        f"[{coin_id}] CoinGecko 404 (coin not listed) — "
+                        f"negative-cached 6h, no retry"
+                    )
+                    return None
                 resp.raise_for_status()
                 data = resp.json()
                 if "prices" not in data or "total_volumes" not in data:

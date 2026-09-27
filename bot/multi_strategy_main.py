@@ -4204,11 +4204,30 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             _rr_risk = _stop_width * _rr_qty * (pos.leverage or 1)
                             _realized_rr = round(total_pnl / _rr_risk, 3) if _rr_risk > 0 else 0
                             _predicted_ev = pos.entry_reasons.get("ev_per_dollar", "") if pos.entry_reasons else ""
+                            # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION, 2026-07-27):
+                            # source regime_4h + numeric funding/OI from the entry
+                            # snapshot threaded onto entry_reasons at open (see
+                            # _capture_measurement_floor_fields). regime_4h previously
+                            # read a never-populated _tick_regime_cache[f"{symbol}_4h"]
+                            # key and was blank on every row; funding/OI numbers were
+                            # never logged at all. Pure logging; falls back to the old
+                            # tick-cache read and to "" when unavailable. Revert:
+                            # LEDGER_FIELD_COMPLETION=false.
+                            _ledger_completion = os.getenv("LEDGER_FIELD_COMPLETION", "true").lower() in ("1", "true", "yes")
+                            _er_mf = pos.entry_reasons if (pos and isinstance(pos.entry_reasons, dict)) else {}
+                            if _ledger_completion:
+                                _regime_4h_val = _er_mf.get("regime_4h", "") or self._tick_regime_cache.get(f"{symbol}_4h", "")
+                                _funding_rate_entry = "" if _er_mf.get("funding_rate_entry") is None else str(_er_mf.get("funding_rate_entry"))
+                                _open_interest_entry = "" if _er_mf.get("open_interest_entry") is None else str(_er_mf.get("open_interest_entry"))
+                                _premium_entry = "" if _er_mf.get("premium_entry") is None else str(_er_mf.get("premium_entry"))
+                            else:
+                                _regime_4h_val = self._tick_regime_cache.get(f"{symbol}_4h", "")
+                                _funding_rate_entry = _open_interest_entry = _premium_entry = ""
                             self.trade_ledger.record_trade({
                                 "symbol": symbol,
                                 "side": event.side,
                                 "regime_1h": _regime,
-                                "regime_4h": self._tick_regime_cache.get(f"{symbol}_4h", ""),
+                                "regime_4h": _regime_4h_val,
                                 "agreement_level": str(_num_agree),
                                 "contributing_factors": _factors_str,
                                 "confidence_score": str(pos.confidence),
@@ -4241,6 +4260,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 # exactly-once reconcile can match journal
                                 # entries to ledger truth.
                                 "position_id": getattr(pos, "position_id", "") or "",
+                                # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION):
+                                # numeric funding/OI captured at open (blank
+                                # when the feed was unavailable or the flag off).
+                                "funding_rate_entry": _funding_rate_entry,
+                                "open_interest_entry": _open_interest_entry,
+                                "premium_entry": _premium_entry,
                             })
                             # Write-ahead journal (Phase 0.3b): mark this
                             # position's close as fully booked ONLY after the
@@ -5284,7 +5309,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     elif _adx_live > 40:
                         _live_regime = "high_volatility"
                     else:
-                        _live_regime = "consolidation"
+                        # ADX 20-40 is AMBIGUOUS, not true consolidation. This crude
+                        # fallback catch-all (fires only when the primary quant detector
+                        # failed) polluted the regime column -> "consolidation" swallowed
+                        # 68% of real moves, and the edge tables are keyed on it. Emit
+                        # "unknown" (a first-class regime, ensemble.py:527) when
+                        # REGIME_FALLBACK_UNKNOWN=true. Default off = unchanged behavior;
+                        # the log line measures how often this fallback even fires before
+                        # we flip it. (2026-07-31, queue item 2, verified by swarm.)
+                        _rfu = os.getenv("REGIME_FALLBACK_UNKNOWN", "false").strip().lower() in ("1", "true", "yes")
+                        _live_regime = "unknown" if _rfu else "consolidation"
+                        try:
+                            logger.info(
+                                "[REGIME-FALLBACK] %s primary-detect failed, ADX=%.1f (20-40 ambiguous) "
+                                "-> %s (REGIME_FALLBACK_UNKNOWN=%s)", symbol, _adx_live, _live_regime, _rfu)
+                        except Exception:
+                            pass
 
             if _live_regime:
                 self.regime_detector.update(symbol, _live_regime)
@@ -6971,6 +7011,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "setup_key": self._compute_setup_key(signal_result, trade_prof),
         }
 
+        # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION, 2026-07-27): capture the
+        # 4h regime + a numeric funding/OI snapshot onto entry_reasons at OPEN
+        # so the close-time ledger write can log them (regime_4h was reading a
+        # never-populated tick-cache key; funding/OI were never captured as
+        # numbers). Pure logging, no trade-decision effect; fail-neutral --
+        # missing feed leaves nulls and never breaks the open. Revert:
+        # LEDGER_FIELD_COMPLETION=false.
+        self._capture_measurement_floor_fields(entry_reasons, symbol, signal_result.metadata)
+
         # Track portfolio correlation risk for LLM learning feedback
         if self.portfolio_risk and len(open_pos) >= 2:
             try:
@@ -7312,6 +7361,19 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # ""/"no_llm"/None mean the LLM never judged the trade, not that it agreed.
         entry_reasons["llm_agreed"] = candidate.llm_action in ("proceed", "go")
         entry_reasons["llm_notes"] = getattr(candidate, 'llm_notes', '') or ""
+
+        # LLM_PROVENANCE_STAMP (2026-07-30): label which open path produced this
+        # trade so every Position's entry_reasons carries a provenance tag —
+        # alternate open paths (sniper auto-exec, pending-fill, exchange
+        # reconciliation) bypass this stamping block entirely and were leaving
+        # entry_reasons blank/minimal, making the bot's biggest winners
+        # invisible to LLM-edge analysis. Pure metadata; fail-neutral.
+        # Revert: LLM_PROVENANCE_STAMP=false.
+        if os.getenv("LLM_PROVENANCE_STAMP", "true").lower() in ("1", "true", "yes"):
+            try:
+                entry_reasons.setdefault("entry_path", "main")
+            except Exception:
+                pass
 
         # ── LLM size multiplier: apply the meta-brain's sizing adjustment ──
         # In SIZING+ modes, the LLM can scale position size 0.5x-2.0x
@@ -8087,6 +8149,48 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         regime_tag = f"_{rg}" if rg else ""
         return f"{sym}_{side}_{strat_tag}{regime_tag}"
 
+    def _capture_measurement_floor_fields(self, entry_reasons: dict, symbol: str, meta) -> None:
+        """MEASUREMENT-FLOOR (2026-07-27): stamp regime_4h + a numeric
+        funding/OI snapshot onto ``entry_reasons`` at position OPEN so the
+        close-time ledger write can log them.
+
+        LOGGING ONLY -- no trade decision, sizing, or exit reads these keys.
+        Fail-neutral throughout: any error (bad metadata, missing/corrupt
+        funding feed) leaves the field unset/null and NEVER breaks the open.
+        Gated by LEDGER_FIELD_COMPLETION (default on) for a one-switch revert.
+
+        - regime_4h: sourced from the entry signal metadata the ensemble
+          already populated (ensemble.py sets metadata['regime_4h']); this is
+          the value the TAILWIND gate needs and that the ledger's regime_4h
+          column was silently missing (it read a never-populated tick cache).
+        - funding_rate_entry / open_interest_entry / premium_entry: the latest
+          numeric funding/OI reading for this symbol from
+          bot/data/funding_oi_history.jsonl at the moment of open.
+        """
+        import os as _os
+        if _os.getenv("LEDGER_FIELD_COMPLETION", "true").lower() not in ("1", "true", "yes"):
+            return
+        if not isinstance(entry_reasons, dict):
+            return
+        try:
+            _meta = meta if isinstance(meta, dict) else {}
+            _r4h = _meta.get("regime_4h", "")
+            # Do not clobber an explicit regime_4h already present.
+            if _r4h and not entry_reasons.get("regime_4h"):
+                entry_reasons["regime_4h"] = _r4h
+        except Exception:
+            pass
+        try:
+            from core.funding_oi_snapshot import latest_funding_oi
+            _foi = latest_funding_oi(symbol)
+            entry_reasons["funding_rate_entry"] = _foi.get("funding_rate")
+            entry_reasons["open_interest_entry"] = _foi.get("open_interest")
+            entry_reasons["premium_entry"] = _foi.get("premium")
+            if _foi.get("funding_oi_ts"):
+                entry_reasons["funding_oi_ts"] = _foi.get("funding_oi_ts")
+        except Exception:
+            pass
+
     # ══════════════════════════════════════════════════════════════════
     # ── LLM-FIRST ARCHITECTURE: Signal → Safety → LLM → Execute ──
     # ══════════════════════════════════════════════════════════════════
@@ -8498,6 +8602,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # next real decision. See _note_llm_pipeline_health.
         self._note_llm_pipeline_health(_pipeline_failed, symbol, trace_id)
         _exploration_entry = False
+        _probe_blocked_go = False   # set when BLOCKED_GO_PROBE re-opens a blocked entry
         if entry_decision.action == "skip" and _pipeline_failed:
             # Owner call 2026-07-02 (live HYPE-SHORT example; audit #7 conversion half):
             # a pipeline FAILURE is not a considered skip — the brain rendered no
@@ -8699,6 +8804,143 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 return
             # else: fall through to the open path (all downstream safety gates apply)
 
+        # ── ENTRY SELECTIVITY gate (LIVING-VALUE, flag-gated) ──────────────
+        # 2026-07-27 adversarially-verified: the bot LOGS solo / loss-streak /
+        # neg-EV risk-flags then trades anyway. This enforces those flags with
+        # thresholds computed live from its own ledger (n>=13). Gate modes:
+        # ENTRY_SELECTIVITY=off (default; byte-equivalent no-op) / shadow (logs
+        # would-block, proceeds) / true (blocks). EXPLORATION IS EXEMPT (owner
+        # mandate). FAIL-OPEN by construction (any error -> block=False). Runs
+        # only on a genuine "go" (a pipeline-failure skip falls through here with
+        # action=="skip" and qty<=0, and must not be gated/logged).
+        if (entry_decision.action == "go"
+                and os.getenv("ENTRY_SELECTIVITY", "off").strip().lower() != "off"):
+            try:
+                from core import entry_selectivity as _entry_sel
+                _es_num_agree = signal_ctx.get("num_agree")
+                _es_ev = signal_ctx.get("ev_per_dollar")
+                if _es_ev is None:
+                    _es_ev = getattr(entry_decision, "predicted_ev", None)
+                _es_loss_streak = 0
+                try:
+                    _es_cb = getattr(self.risk_mgr, "circuit_breaker", None)
+                    _es_loss_streak = int(getattr(_es_cb, "consecutive_losses", 0) or 0)
+                except (TypeError, ValueError, AttributeError):
+                    _es_loss_streak = 0
+                # sym_d24h: symbol's own 24h % change at entry (for TREND_DIRECTION_GATE).
+                # Computed from the entry data's 1h closes (<=T, no look-ahead), same
+                # formula as snapshot.price_change_24h_pct. None -> the leg no-ops.
+                _es_d24h = None
+                try:
+                    _df1h_es = data.get("1h") if isinstance(data, dict) else None
+                    if _df1h_es is not None and len(_df1h_es) >= 25:
+                        _cl_es = _df1h_es["close"]
+                        _p0_es = float(_cl_es.iloc[-25])
+                        if _p0_es > 0:
+                            _es_d24h = (float(_cl_es.iloc[-1]) - _p0_es) / _p0_es * 100.0
+                except Exception:
+                    _es_d24h = None
+                _es_block, _es_reasons, _es_mode = _entry_sel.evaluate_entry(
+                    num_agree=_es_num_agree,
+                    ev_per_dollar=_es_ev,
+                    loss_streak=_es_loss_streak,
+                    is_exploration=_exploration_entry,
+                    symbol=symbol,
+                    side=raw_signal.side,
+                    regime=(raw_signal.metadata or {}).get("regime_1h"),
+                    sym_d24h=_es_d24h,
+                )
+                # Observability: log EVERY evaluation (pass included) so the gate's
+                # in-vivo behavior is verifiable, not just its blocks. (audit 2026-07-27)
+                logger.info(
+                    f"[{trace_id}][{symbol}] [ENTRY-GATE] eval side={raw_signal.side} "
+                    f"num_agree={_es_num_agree} ev={_es_ev} regime={(raw_signal.metadata or {}).get('regime_1h')} "
+                    f"mode={_es_mode} block={_es_block} reasons={_es_reasons or '[]'}"
+                )
+                # FORWARD-EVIDENCE PROBE (2026-09-12): a blocked entry is the bot's
+                # own ledger saying "this class loses money at full size" — worth
+                # respecting. It is also how the bot went 45 days (2026-07-29 ->
+                # 2026-09-12) blocking 100% of proposed entries, taking zero trades,
+                # and therefore adding zero new evidence to the very ledger the gates
+                # are derived from. BLOCKED_GO_PROBE re-opens that loop at a size
+                # where being wrong is cheap: a small random fraction of blocked
+                # entries go through as EXPLORATION-tagged probes at ~0.1x size.
+                # Every downstream guard (breaker, notional caps, OpsGuard, position
+                # limits) still applies. Default off.
+                if _es_block:
+                    # Log the probe DECISION every time, not just when it fires.
+                    # A valve that silently never opens is indistinguishable from
+                    # one that is working and unlucky — that ambiguity is the whole
+                    # reason the 45-day drought went unnoticed.
+                    try:
+                        _probe_on = _entry_sel.blocked_go_probe_enabled()
+                        _probe_rate = _entry_sel.blocked_go_probe_rate()
+                        _cb_probe = getattr(self.risk_mgr, "circuit_breaker", None)
+                        _probe_cb = bool(getattr(_cb_probe, "tripped", False))
+                        import random as _rnd_probe
+                        _probe_roll = _rnd_probe.random()
+                        _probe_fire = _probe_on and not _probe_cb and _probe_roll < _probe_rate
+                        logger.info(
+                            f"[{trace_id}][{symbol}] [PROBE-CHECK] on={_probe_on} "
+                            f"rate={_probe_rate:.2f} roll={_probe_roll:.3f} "
+                            f"breaker={_probe_cb} fire={_probe_fire}"
+                        )
+                        if _probe_fire:
+                            _exploration_entry = True
+                            _probe_blocked_go = True
+                            _es_block = False
+                            logger.info(
+                                f"[{trace_id}][{symbol}] [ENTRY-GATE] {symbol} "
+                                f"PROBE: taking blocked entry as a tiny "
+                                f"{_entry_sel.blocked_go_probe_size_mult():.2f}x "
+                                f"exploration probe (blocked for {_es_reasons})"
+                            )
+                    except Exception as _probe_e:
+                        # WARNING, not debug: a broken valve must be loud.
+                        logger.warning(
+                            f"[{trace_id}][{symbol}] [PROBE-CHECK] FAILED: {_probe_e!r}"
+                        )
+
+                if _es_block:
+                    logger.info(
+                        f"[{trace_id}][{symbol}] [ENTRY-GATE] {symbol} BLOCKED: "
+                        f"{_es_reasons}"
+                    )
+                    if self.counterfactual:
+                        try:
+                            self.counterfactual.record_veto(
+                                symbol=symbol,
+                                side=raw_signal.side,
+                                entry_price=raw_signal.entry,
+                                sl_price=raw_signal.sl,
+                                tp1_price=raw_signal.tp1,
+                                tp2_price=raw_signal.tp2,
+                                confidence=raw_signal.confidence,
+                                reason=f"ENTRY_SELECTIVITY: {_es_reasons}",
+                            )
+                        except Exception:
+                            pass
+                    self._track_llm_first_outcome(
+                        raw_signal, symbol,
+                        passed=False, hard_rejected=True,
+                        reason=f"ENTRY_SELECTIVITY block: {_es_reasons}",
+                        stage="entry_selectivity",
+                        metadata={"reasons": _es_reasons,
+                                  "num_agree": _es_num_agree,
+                                  "ev_per_dollar": _es_ev,
+                                  "loss_streak": _es_loss_streak},
+                    )
+                    return  # route no trade
+                elif (_es_mode == "shadow" and _es_reasons
+                        and _es_reasons != ["exploration-exempt"]):
+                    logger.info(
+                        f"[{trace_id}][{symbol}] [ENTRY-GATE] {symbol} shadow "
+                        f"WOULD_BLOCK: {_es_reasons}"
+                    )
+            except Exception as _es_e:
+                # FAIL-OPEN: never break the entry path on a gate error.
+                logger.debug(f"[{trace_id}][{symbol}] entry_selectivity error: {_es_e}")
+
         # ── Step 4: Post-LLM safety caps ──
         leverage = max(1.0, min(
             entry_decision.leverage,
@@ -8706,6 +8948,17 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         ))
         qty = entry_decision.position_qty
         side = raw_signal.side
+
+        # A blocked-class probe is sized as a probe, not as a conviction entry.
+        # Applied before every cap below so the caps see the real (small) size.
+        if _probe_blocked_go:
+            _probe_mult = _entry_sel.blocked_go_probe_size_mult()
+            _qty_full = qty
+            qty = qty * _probe_mult
+            logger.info(
+                f"[{trace_id}][{symbol}] PROBE sizing: {_qty_full:.6f} -> {qty:.6f} "
+                f"({_probe_mult:.2f}x)"
+            )
 
         # Validate qty before proceeding
         if qty <= 0 or raw_signal.entry <= 0:
@@ -8829,7 +9082,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         self._track_llm_first_outcome(
             raw_signal, symbol,
             passed=True, hard_rejected=False,
-            reason=("exploration override (LLM skipped)" if _exploration_entry
+            reason=("probe of a gate-blocked class (LLM approved)" if _probe_blocked_go
+                    else "exploration override (LLM skipped)" if _exploration_entry
                     else "LLM approved"),
             stage="llm_execute",
             metadata={
@@ -8889,6 +9143,24 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "rr_tp1": signal_ctx.get("rr_tp1") or 0,
             "ev_per_dollar": signal_ctx.get("ev_per_dollar") or 0,
         }
+
+        # LLM_PROVENANCE_STAMP (2026-07-30): this path already stamps real
+        # llm_action/llm_confidence/llm_agreed above from a genuine LLM verdict —
+        # entry_path just names WHICH open path produced the trade, for symmetry
+        # with the mechanical path. Pure metadata; fail-neutral.
+        # Revert: LLM_PROVENANCE_STAMP=false.
+        if os.getenv("LLM_PROVENANCE_STAMP", "true").lower() in ("1", "true", "yes"):
+            try:
+                entry_reasons.setdefault("entry_path", "llm_first")
+            except Exception:
+                pass
+
+        # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION, 2026-07-27): same
+        # entry-time capture as the mechanical path -- regime_4h (already in
+        # signal_ctx from ensemble metadata) + numeric funding/OI snapshot
+        # onto entry_reasons at OPEN. Pure logging; fail-neutral. Revert:
+        # LEDGER_FIELD_COMPLETION=false.
+        self._capture_measurement_floor_fields(entry_reasons, symbol, signal_ctx)
 
         # ── Execute trade ──
         # 2026-06-01 fix: TradeProfile requires entry_reasons/confidence/volatility_band/
@@ -9025,7 +9297,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             confidence=raw_signal.confidence,
             entry_reasons=entry_reasons,
             trade_profile=trade_prof,
-            notes=(f"EXPLORATION (LLM skipped): {_thesis[:200]}" if _exploration_entry
+            notes=(f"PROBE (blocked class, LLM approved): {_thesis[:200]}" if _probe_blocked_go
+                   else f"EXPLORATION (LLM skipped): {_thesis[:200]}" if _exploration_entry
                    else f"LLM-FIRST: {_thesis[:200]}"),
         )
 

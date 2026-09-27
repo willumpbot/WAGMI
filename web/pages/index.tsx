@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { C, fmtUsd, fmtPct } from '../src/theme';
@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi';
 import type { TradeRecord, LlmMarketView } from '../src/types';
 import AnimatedNumber from '../components/AnimatedNumber';
 import AgentBrainGraphic from '../components/AgentBrainGraphic';
+import NeuralField from '../components/NeuralField';
 import LiveActivityTape from '../components/LiveActivityTape';
 import Shimmer from '../components/Shimmer';
 import Icon from '../components/Icon';
@@ -326,6 +327,29 @@ export default function LandingPage() {
 
   const loading = tradesLoading && !tradesData;
 
+  // Scroll-reveal: sections fade + rise as they enter view (see .reveal in _document).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const els = Array.from(document.querySelectorAll('.reveal'));
+    if (!('IntersectionObserver' in window)) {
+      els.forEach((el) => el.classList.add('in'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { rootMargin: '0px 0px -10% 0px' },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   const trades: TradeRecord[] = ((tradesData?.trades ?? []).map(normalizeTrade)).slice(-6).reverse();
   const equityPoints = equityData?.points ?? [];
 
@@ -489,10 +513,10 @@ export default function LandingPage() {
                   width: 7,
                   height: 7,
                   borderRadius: '50%',
-                  background: C.bull,
+                  background: C.warn,
                 }}
               />
-              <span style={{ fontSize: 11, fontWeight: 600, color: C.bull }}>LIVE</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: C.warn }}>PAPER</span>
             </div>
 
             {/* CTA */}
@@ -521,19 +545,21 @@ export default function LandingPage() {
         <LiveActivityTape />
 
         {/* ── Hero ───────────────────────────────────────────────────────── */}
-        <section
-          style={{
-            maxWidth: 1200,
-            margin: '0 auto',
-            padding: '72px 24px 48px',
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
-            gap: 48,
-            alignItems: 'center',
-          }}
-          className="hero-grid"
-        >
-          <div>
+        <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          {/* ── Living neural field: the 9-agent brain, breathing on live bot state ── */}
+          <div style={{ position: 'absolute', inset: 0, zIndex: 0 }} aria-hidden="true">
+            <NeuralField
+              height={640}
+              regime={(marketView as any)?.regime}
+              equityUp={(summary?.total_pnl ?? 0) >= 0}
+              lastAction={trades[0]?.side}
+            />
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(90deg, rgba(5,5,8,0.95) 0%, rgba(5,5,8,0.72) 42%, rgba(5,5,8,0.18) 74%, rgba(5,5,8,0.5) 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(5,5,8,0.55) 0%, rgba(5,5,8,0) 24%, rgba(5,5,8,0) 66%, rgba(5,5,8,0.92) 100%)' }} />
+          </div>
+          {/* ── Hero content ── */}
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto', padding: '104px 24px 96px', minHeight: 640, display: 'flex', flexDirection: 'column', justifyContent: 'center' }} className="hero-content">
+            <div style={{ maxWidth: 620 }}>
             {/* Live badge */}
             <div
               style={{
@@ -552,7 +578,7 @@ export default function LandingPage() {
                 style={{ width: 6, height: 6, borderRadius: '50%', background: C.bull }}
               />
               <span style={{ fontSize: 12, fontWeight: 600, color: C.bull }}>
-                Trading live on Hyperliquid
+                Live paper trading on Hyperliquid
               </span>
             </div>
 
@@ -626,71 +652,18 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Hero right column — AgentBrainGraphic */}
-          <div className="hero-graphic" style={{ display: 'flex', justifyContent: 'center' }}>
-            <div style={{
-              padding: '20px',
-              background: 'rgba(13,13,20,0.4)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 16,
-              width: '100%',
-              maxWidth: 560,
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: C.muted,
-                textTransform: 'uppercase',
-                letterSpacing: 1.5,
-                marginBottom: 4,
-                fontFamily: 'JetBrains Mono, monospace',
-              }}>
-                The Brain
-              </div>
-              <div style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: C.text,
-                marginBottom: 16,
-              }}>
-                9 specialist agents deliberate every trade.
-              </div>
-              <AgentBrainGraphic width={620} height={260} />
-              <div style={{
-                marginTop: 12,
-                display: 'flex',
-                gap: 12,
-                flexWrap: 'wrap',
-                fontSize: 10,
-                fontFamily: 'JetBrains Mono, monospace',
-                color: C.muted,
-                letterSpacing: 0.5,
-              }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.info }} /> HAIKU
-                </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.brand }} /> SONNET
-                </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.purple }} /> OPUS
-                </span>
-              </div>
-            </div>
           </div>
         </section>
 
         {/* ── Stats Row ──────────────────────────────────────────────────── */}
-        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
+        <section className="reveal" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <StatCard
               label="Equity"
               numericValue={stats.equity}
               formatter={(n) => fmtUsd(n)}
               color={C.text}
-              sub="Live portfolio"
+              sub="Paper portfolio"
               loading={loading || stats.equity == null}
               sparklineValues={equitySpark}
             />
@@ -731,7 +704,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Market Pulse ───────────────────────────────────────────────── */}
-        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 32px' }}>
+        <section className="reveal" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 32px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1.4, fontFamily: 'JetBrains Mono, monospace' }}>
               Market Pulse
@@ -744,7 +717,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Equity Curve ───────────────────────────────────────────────── */}
-        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
+        <section className="reveal" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
           <div
             style={{
               background: '#0d0d14',
@@ -792,7 +765,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Recent Trades + AI Brain ────────────────────────────────────── */}
-        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 56px' }}>
+        <section className="reveal" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 56px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(0,1fr)', gap: 16 }}>
 
             {/* Recent Trades */}
@@ -962,7 +935,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Latest Reasoning ───────────────────────────────────────────── */}
-        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 56px' }}>
+        <section className="reveal" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 56px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 4px', letterSpacing: -0.5 }}>
@@ -980,7 +953,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Proof Strip — live lifetime metrics ───────────────────────── */}
-        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
+        <section className="reveal" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
           <div style={{ marginBottom: 14 }}>
             <div style={{
               fontSize: 11,
@@ -994,7 +967,7 @@ export default function LandingPage() {
               By the numbers
             </div>
             <div style={{ fontSize: 13, color: C.textSub, margin: 0 }}>
-              Not a mockup. Every metric streams from the live bot.
+              Not a mockup. Every number is real — straight from the paper-trading bot, red days and all.
             </div>
           </div>
           <ProofStrip />
@@ -1002,6 +975,7 @@ export default function LandingPage() {
 
         {/* ── How It Works ───────────────────────────────────────────────── */}
         <section
+          className="reveal"
           style={{
             maxWidth: 1200,
             margin: '0 auto',
@@ -1091,6 +1065,7 @@ export default function LandingPage() {
 
         {/* ── Feature Cards ──────────────────────────────────────────────── */}
         <section
+          className="reveal"
           style={{
             maxWidth: 1200,
             margin: '0 auto',

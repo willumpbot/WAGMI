@@ -21,6 +21,7 @@ Design:
 """
 
 import logging
+import os
 import time
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
@@ -271,6 +272,26 @@ def _reconcile_one(
     elif side == "SHORT" and current_price < entry:
         in_profit = True
 
+    # LLM_PROVENANCE_STAMP (2026-07-30): a reconciled position is rebuilt purely
+    # from exchange state at restart -- it never passed through any LLM-consult
+    # path, and entry_reasons was previously left completely empty ({}), making
+    # such trades indistinguishable (to LLM-edge analysis) from a trade whose
+    # logging simply failed. Stamp non-fake provenance only ("no_llm", never
+    # "go"/"proceed" -- no LLM ever judged this trade). Fail-neutral: a
+    # stamping error must never block reconciliation. Revert:
+    # LLM_PROVENANCE_STAMP=false.
+    _recon_entry_reasons = {}
+    if os.getenv("LLM_PROVENANCE_STAMP", "true").lower() in ("1", "true", "yes"):
+        try:
+            _recon_entry_reasons = {
+                "entry_path": "recovered",
+                "llm_action": "no_llm",
+                "llm_confidence": 0.0,
+                "llm_agreed": False,
+            }
+        except Exception:
+            _recon_entry_reasons = {}
+
     # Build the Position object
     pos = Position(
         symbol=symbol,
@@ -293,9 +314,17 @@ def _reconcile_one(
         trailing_distance=estimated_atr * 1.5,
         peak_price=current_price if in_profit else entry,
         open_time=datetime.now(timezone.utc),
+        entry_reasons=_recon_entry_reasons,
     )
 
     # If significantly in profit, assume TP1 was hit and enter TRAILING
+    # RECONCILE-ATRPCT-FIX (2026-07-31): atr_pct was defined ONLY in the sl-is-None
+    # fallback branch above, so a position whose SL/TP was successfully RESTORED
+    # from trades.csv AND is in profit hit a NameError here -> caught upstream ->
+    # the live exchange position was SILENTLY DROPPED from reconciliation (left
+    # untracked/unmanaged). Derive atr_pct from estimated_atr (set in BOTH branches)
+    # so an in-profit reconciled position is tracked instead of orphaned.
+    atr_pct = (estimated_atr / entry) if entry > 0 else 0.025
     profit_pct = abs(current_price - entry) / entry if entry > 0 else 0
     if in_profit and profit_pct > atr_pct * 1.5:
         # Likely past TP1, move to TRAILING with breakeven SL

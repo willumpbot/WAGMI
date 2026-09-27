@@ -4,11 +4,11 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        {/* Inter + JetBrains Mono from Google Fonts */}
+        {/* Bricolage Grotesque (display) + Inter (body) + JetBrains Mono (data) */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
         {/* Favicon — green accent */}
@@ -44,8 +44,45 @@ export default function Document() {
           }
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; cursor: pointer; }
+          /* Display face on every heading — the single biggest lift away from stock-Inter. */
+          h1, h2, h3, .display {
+            font-family: 'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
+            letter-spacing: -0.02em;
+            font-optical-sizing: auto;
+          }
           code, pre, .mono {
             font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+          }
+
+          /* Scroll-reveal: sections fade + rise into view (JS adds .in via IntersectionObserver). */
+          .reveal { opacity: 0; transform: translateY(28px); will-change: opacity, transform;
+            transition: opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1); }
+          .reveal.in { opacity: 1; transform: none; }
+          @media (prefers-reduced-motion: reduce) {
+            .reveal { opacity: 1 !important; transform: none !important; transition: none; }
+          }
+
+          /* ── Mobile responsiveness ──────────────────────────
+             The dashboard is built almost entirely with inline styles, so global
+             classes can't reach it — we override inline grid/width via attribute
+             selectors + !important. On phones every multi-column grid becomes a
+             single stacked column (the site is card-based, so stacking is the
+             natural mobile layout), and nothing is allowed to widen past the
+             viewport. */
+          @media (max-width: 768px) {
+            /* Collapse ALL inline grids (1fr 1fr, repeat(n,1fr), minmax(0,Xfr)…,
+               auto-fit/auto-fill) to one column. Icon+text "auto 1fr" rows stack,
+               which is acceptable on a phone. */
+            [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+            /* Critical: let grid/flex CHILDREN shrink below their content size. Without
+               this, one wide child (a data table or diagram) balloons its 1fr track past
+               the viewport and every sibling grid then renders multi-column and bleeds. */
+            [style*="display:grid"] > *, [style*="display: grid"] > *,
+            [style*="display:flex"] > *, [style*="display: flex"] > * { min-width: 0 !important; }
+            [style*="minWidth"], [style*="min-width"] { min-width: 0 !important; }
+            /* Media + diagrams never exceed the viewport. */
+            img, video, canvas, svg { max-width: 100% !important; height: auto; }
+            table, pre { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
           }
 
           /* ── CSS custom properties ──────────────────────── */

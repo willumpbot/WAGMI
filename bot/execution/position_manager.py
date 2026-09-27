@@ -55,6 +55,25 @@ def _env_bool(name: str, default: bool) -> bool:
         return default
     return val.strip().lower() in ("1", "true", "yes", "on")
 
+
+def _breakeven_ratchet_mode() -> str:
+    """Tri-state gate for the BREAKEVEN-RATCHET (peak-lock) stop feature.
+
+    Returns 'off' | 'shadow' | 'true' from env BREAKEVEN_RATCHET (default off).
+      - off    -> feature is a byte-equivalent no-op (never reads/writes pos.sl)
+      - shadow -> computes + logs what it WOULD ratchet, never mutates pos.sl
+      - true   -> applies the ratchet (tightens pos.sl only, never loosens)
+
+    Mirrors core/fee_guard.py::fee_guard_mode() so the two fee-hurdle features
+    share one vocabulary. Fail-open is the caller's responsibility.
+    """
+    m = (os.environ.get("BREAKEVEN_RATCHET", "false") or "").strip().lower()
+    if m in ("1", "true", "yes", "on"):
+        return "true"
+    if m == "shadow":
+        return "shadow"
+    return "off"
+
 # Mechanical bot instrumentation (TIER 4)
 try:
     from llm.mechanical_bot_instrumentation import get_mechanical_bot_instrumentation
@@ -417,6 +436,30 @@ class PositionManager:
             return 1.0
         return leverage
 
+    def _sl_fill_price(self, pos: 'Position', current_price: float, is_long: bool) -> float:
+        # SL_FILL_FIDELITY_FIX (default off): paper SL currently fills at the
+        # scan-time current_price, which on inter-scan gaps or process-outage
+        # lateness lands far past pos.sl (audit: 48/114 SL fills past-stop --
+        # median 15.8bps but outage cases 200-483% of stop-width = pure fill
+        # artifact ~= $146 = 25% of all SL losses). A real stop-market order
+        # fills at ~stop with BOUNDED slippage. Cap the adverse fill at
+        # SL_MAX_ADVERSE_SLIP_BPS past the stop (default 50bps ~ realistic
+        # liquid-major stop-market slip; keeps genuine small gaps, clips the
+        # outage lateness). Default off preserves current fill-at-scan behavior;
+        # flip only after a reviewed replay (changes booked SL losses).
+        if os.getenv("SL_FILL_FIDELITY_FIX", "false").lower() not in ("1", "true", "yes"):
+            return current_price
+        try:
+            cap_bps = float(os.getenv("SL_MAX_ADVERSE_SLIP_BPS", "50"))
+        except (TypeError, ValueError):
+            cap_bps = 50.0
+        slip = pos.sl * (cap_bps / 10000.0)
+        if is_long:
+            # price fell through the stop; fill no LOWER than sl - slip
+            return max(current_price, pos.sl - slip)
+        # short: price rose through the stop; fill no HIGHER than sl + slip
+        return min(current_price, pos.sl + slip)
+
     def _fee(self, price: float, qty: float, leverage: float = 1.0) -> float:
         # Fee = base notional * taker bps. qty is FULL base-currency exposure
         # (coordinator sizes qty = risk$/stop_width, "do NOT multiply by
@@ -428,6 +471,164 @@ class PositionManager:
         # leverage-multiplier landmine, which would double-count leverage on the
         # cost side under full-exposure (PNL_LEVERAGE_FIX) sizing.
         return price * qty * (self.taker_fee_bps / 10000.0)
+
+    # ────────────────────────────────────────────────────────────────────
+    # BREAKEVEN-RATCHET (peak-lock) — early breakeven stop lock
+    #
+    # WHY (MFE-reconstruction, adversarially verified 2026-07-27): the bot does
+    # NOT strangle winners (captures ~68% of MFE). The leak is that ~93/254
+    # trades cleared the round-trip fee hurdle in profit, then rode all the way
+    # back to a NET LOSS. Once a trade is safely in profit we lock the stop to
+    # entry ± the round-trip fee equivalent so a winner can't become a loser.
+    #
+    # This COMPOSES with (never fights) the existing progressive trailing/
+    # profit-lock: it only ever TIGHTENS pos.sl (moves it protectively) and
+    # never loosens a stop that is already tighter. It runs ONLY in the OPEN
+    # (pre-TP1) state — after TP1 the cushion-BE + trailing curve own the stop
+    # (and may legitimately sit the runner's stop below raw entry), so the
+    # ratchet stays out of their way. It does NOT touch state transitions.
+    # Round-trip fee hurdle = 2 * taker_fee_bps (NOT the slippage-padded
+    # Position.fee_pct, which is ~2x larger); same convention as fee_guard.py.
+    # ────────────────────────────────────────────────────────────────────
+    _RATCHET_K_DEFAULT = 4.0   # arm ~0.36% at 4.5bps taker; deliberately high
+    _RATCHET_K_MIN = 3.0       # live-derived clamp floor (arm ~0.27%)
+    _RATCHET_K_MAX = 5.0       # live-derived clamp cap  (arm ~0.45%)
+
+    def _compute_live_ratchet_k(self) -> float:
+        """LIVING VALUE: derive K so the arm point sits at ~2x the rolling
+        median loser-MFE, then express that as a multiple of the round-trip
+        fee hurdle.
+
+        arm_frac = 2 * median(loser MFE fraction);  K = arm_frac / rt_fee_frac,
+        clamped to [_RATCHET_K_MIN, _RATCHET_K_MAX]. Source ledger is
+        data/logs/exit_closes.jsonl (one row per realized close, carrying
+        mfe_pct + pnl + side; written by _close_position). Losers = pnl<0 with
+        mfe_pct>0. Needs n>=13 or falls back to _RATCHET_K_DEFAULT (never a
+        guessed static arm). Never raises.
+
+        Verifier note: K=2 (arm ~0.21%) scratched too many winners (41/59
+        retraced through breakeven then recovered) — hence the high default
+        and the [3,5] clamp so the arm sits at ~0.4-0.5%, above routine noise.
+        """
+        default_k = self._RATCHET_K_DEFAULT
+        try:
+            rt_frac = 2.0 * self.taker_fee_bps / 10000.0
+            if rt_frac <= 0:
+                return default_k
+            path = os.path.join("data", "logs", "exit_closes.jsonl")
+            if not os.path.exists(path):
+                return default_k
+            mfes: List[float] = []
+            with open(path) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                        pnl = float(row.get("pnl") or 0)
+                        mfe_pct = float(row.get("mfe_pct") or 0)
+                    except (ValueError, TypeError):
+                        continue
+                    if pnl < 0 and mfe_pct > 0:
+                        mfes.append(mfe_pct / 100.0)  # stored as percent -> fraction
+            if len(mfes) < 13:
+                return default_k
+            mfes.sort()
+            n = len(mfes)
+            mid = n // 2
+            median = mfes[mid] if n % 2 else (mfes[mid - 1] + mfes[mid]) / 2.0
+            k = (2.0 * median) / rt_frac
+            return max(self._RATCHET_K_MIN, min(self._RATCHET_K_MAX, k))
+        except Exception as e:
+            logger.debug(f"Live ratchet-K computation failed, default {default_k}: {e}")
+            return default_k
+
+    def _get_ratchet_k(self) -> float:
+        """Resolve the arm multiple K. Env EXIT_RATCHET_K (if a valid number)
+        overrides and is clamped to a wide [1,10] band (lets a backtest sweep
+        K in {2,3,4,5}); otherwise use the live-derived value, cached and
+        refreshed at most daily (same cadence as the setup time-stops)."""
+        env = os.environ.get("EXIT_RATCHET_K")
+        if env is not None:
+            try:
+                return max(1.0, min(10.0, float(env)))
+            except (ValueError, TypeError):
+                pass
+        now = datetime.now(timezone.utc)
+        last = getattr(self, "_ratchet_k_refreshed_at", None)
+        if (getattr(self, "_ratchet_k", None) is None or last is None
+                or (now - last).total_seconds() >= 86400):
+            self._ratchet_k = self._compute_live_ratchet_k()
+            self._ratchet_k_refreshed_at = now
+        return self._ratchet_k
+
+    def _apply_breakeven_ratchet(self, pos: 'Position', current_price: float, is_long: bool) -> None:
+        """Arm + enforce the breakeven peak-lock for one price update.
+
+        Call ONLY in the OPEN state, AFTER MFE (highest/lowest) is updated for
+        this tick and BEFORE the SL-hit check, so a freshly-locked stop is
+        honored on the same tick. Off = immediate no-op. Fail-open: any error
+        is swallowed and leaves pos.sl untouched (a guard bug must never block
+        a real close or crash the update loop).
+        """
+        try:
+            mode = _breakeven_ratchet_mode()
+            if mode == "off":
+                return  # byte-equivalent no-op
+            entry = pos.entry
+            if not entry or entry <= 0:
+                return
+            rt_frac = 2.0 * self.taker_fee_bps / 10000.0
+            if rt_frac <= 0:
+                return
+            k = self._get_ratchet_k()
+            arm_frac = k * rt_frac
+
+            # Favorable excursion (MFE) as a fraction of entry — reuse the
+            # already-maintained peak (highest_price long / lowest_price short),
+            # do NOT spin up a parallel tracker.
+            if is_long:
+                peak = pos.highest_price or entry
+                mfe_frac = (peak - entry) / entry
+                lock_sl = round_price(pos.symbol, entry + entry * rt_frac)
+            else:
+                trough = pos.lowest_price or entry
+                mfe_frac = (entry - trough) / entry
+                lock_sl = round_price(pos.symbol, entry - entry * rt_frac)
+
+            already_armed = getattr(pos, "_ratchet_armed", False)
+            if not (already_armed or mfe_frac >= arm_frac):
+                return  # not yet safely in profit — do nothing
+
+            if not already_armed:
+                pos._ratchet_armed = True
+                pos._ratchet_lock_sl = lock_sl
+                _verb = "WOULD-ARM (shadow)" if mode == "shadow" else "ARMED"
+                logger.info(
+                    f"[{pos.symbol}] [BREAKEVEN-RATCHET] {_verb}: "
+                    f"MFE={mfe_frac * 100:.3f}% >= arm={arm_frac * 100:.3f}% "
+                    f"(K={k:.2f} x rt_fee={rt_frac * 100:.3f}%) -> lock SL={lock_sl:.6g}"
+                )
+            # High-water lock (entry ± fee is constant, so this is stable);
+            # keeping it explicit documents the never-retreat invariant.
+            lock = getattr(pos, "_ratchet_lock_sl", lock_sl)
+            lock = max(lock, lock_sl) if is_long else min(lock, lock_sl)
+            pos._ratchet_lock_sl = lock
+
+            if mode != "true":
+                return  # shadow: compute + log only, never mutate pos.sl
+
+            # APPLY: tighten toward the lock, never loosen a tighter stop
+            # (composes with profit-lock / trailing, which also only tighten).
+            if is_long and pos.sl < lock:
+                pos.sl = lock
+            elif (not is_long) and pos.sl > lock:
+                pos.sl = lock
+        except Exception as e:
+            logger.debug(
+                f"[{getattr(pos, 'symbol', '?')}] breakeven-ratchet skipped (fail-open): {e}"
+            )
 
     def _backup_position(self, pos: 'Position') -> None:
         """Persist position SL/TP to disk for crash recovery."""
@@ -821,6 +1022,19 @@ class PositionManager:
         if current_price < pos.lowest_price:
             pos.lowest_price = current_price
 
+        # 0a-ratchet. BREAKEVEN-RATCHET (peak-lock): once the favorable move
+        # from entry clears K x the round-trip fee hurdle, lock the stop to
+        # entry ± fees so a trade that got safely into profit can't ride back
+        # to a net loss. Off by default (byte-equivalent no-op). Runs only
+        # pre-TP1; only tightens the stop, so it composes with — never fights —
+        # the profit-lock and progressive trailing below. Placed BEFORE the SL
+        # check so a freshly-armed lock is enforced on the same tick. This
+        # ONLY tightens the STOP; it never closes the position and never blocks
+        # a legitimate LLM exit (the Exit Agent close path is independent and
+        # still wins on a loser). Fail-open inside the helper.
+        if pos.state == OPEN:
+            self._apply_breakeven_ratchet(pos, current_price, is_long)
+
         # 0a. PROFIT LOCK: move SL toward breakeven once we're up enough.
         # Never ride a winner back to a loser. We can always re-enter.
         #
@@ -1009,7 +1223,8 @@ class PositionManager:
         sl_hit = (current_price <= pos.sl) if is_long else (current_price >= pos.sl)
         if sl_hit:
             action = "TRAILING_STOP" if pos.state == TRAILING else "SL"
-            event = self._close_position(pos, current_price, action)
+            fill_price = self._sl_fill_price(pos, current_price, is_long)
+            event = self._close_position(pos, fill_price, action)
             events.append(event)
             return events
 
@@ -2287,6 +2502,23 @@ class PositionManager:
 
             # Default: tighten SL to breakeven + fee buffer (SHIP-2026-04-20)
             fee_buffer = pos.entry * (self.taker_fee_bps * 2 / 10000.0 + 0.001)
+            # HOLD_LIMIT_PHANTOM_FIX (default on, Tier-1 integrity): 'alert' is
+            # notify-only, and the BE-tighten runs ONLY when the position is IN PROFIT.
+            # Moving a LOSING position's SL to breakeven puts it on the wrong side of
+            # the current price -> with SL_FILL_FIDELITY_FIX the fill clamp books a
+            # phantom breakeven/profit instead of the real loss (ledger corruption).
+            # Armed because HOLD_LIMIT_ACTION=alert falls through to this branch.
+            if os.getenv("HOLD_LIMIT_PHANTOM_FIX", "true").strip().lower() in ("1", "true", "yes"):
+                _in_profit = (price > pos.entry + fee_buffer) if pos.side == "LONG" \
+                    else (price < pos.entry - fee_buffer)
+                if action == "alert" or not _in_profit:
+                    logger.warning(
+                        f"[HOLD_LIMIT] {symbol} {pos.side} open {age_hours:.1f}h >= "
+                        f"{max_hold_hours:.0f}h — " + (
+                            "ALERT (notify-only, no SL move)" if action == "alert"
+                            else "underwater, SL NOT moved (phantom-fill guard)")
+                    )
+                    return None
             if pos.side == "LONG" and pos.sl < pos.entry + fee_buffer:
                 old_sl = pos.sl
                 pos.sl = pos.entry + fee_buffer
