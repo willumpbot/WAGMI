@@ -72,6 +72,27 @@ class PositionWiringMixin:
             if exit_params:
                 tp1_pct = getattr(exit_params, 'tp1_close_pct', 0.7)
 
+        # LLM_PROVENANCE_STAMP (2026-07-30): a pending order is placed BEFORE
+        # the LLM veto/candidate step runs (multi_strategy_main.py's slippage
+        # check returns early to place the limit order ahead of the LLM
+        # consult), so entry_reasons["llm_action"] is still "" at fill time —
+        # this trade never got a real LLM verdict, but blank-because-never-
+        # consulted looked identical to blank-because-logging-broke. Stamp
+        # provenance without faking approval. Fail-neutral: a stamping error
+        # must never block the fill. Revert: LLM_PROVENANCE_STAMP=false.
+        if os.getenv("LLM_PROVENANCE_STAMP", "true").lower() in ("1", "true", "yes"):
+            try:
+                _er = order.entry_reasons if isinstance(order.entry_reasons, dict) else {}
+                _er.setdefault("entry_path", "pending_fill")
+                if not _er.get("llm_action"):
+                    _er["llm_action"] = "no_llm"
+                _er.setdefault("llm_confidence", 0.0)
+                if "llm_agreed" not in _er:
+                    _er["llm_agreed"] = False
+                order.entry_reasons = _er
+            except Exception:
+                pass
+
         self.pos_mgr.open_position(
             symbol=symbol,
             side=side,
@@ -526,6 +547,27 @@ class PositionWiringMixin:
                 _tp1 = sniper_sig.tp_scalp
                 _tp2 = sniper_sig.tp_swing
 
+            _sniper_entry_reasons = {
+                "sniper_tier": sniper_sig.tier,
+                "auto_executed": True,
+            }
+            # LLM_PROVENANCE_STAMP (2026-07-30): the sniper auto-execute path
+            # bypasses the main LLM-consult block entirely, so entry_reasons was
+            # left with no llm_action at all -- some of the bot's biggest winners
+            # entered here and were invisible to LLM-edge analysis. Stamp
+            # non-fake provenance only ("no_llm", never "go"/"proceed" -- those
+            # imply an LLM agreement this path never sought). Fail-neutral: a
+            # stamping error must never block the open. Revert:
+            # LLM_PROVENANCE_STAMP=false.
+            if os.getenv("LLM_PROVENANCE_STAMP", "true").lower() in ("1", "true", "yes"):
+                try:
+                    _sniper_entry_reasons["entry_path"] = "sniper"
+                    _sniper_entry_reasons.setdefault("llm_action", "no_llm")
+                    _sniper_entry_reasons.setdefault("llm_confidence", 0.0)
+                    _sniper_entry_reasons.setdefault("llm_agreed", False)
+                except Exception:
+                    pass
+
             self.pos_mgr.open_position(
                 symbol=symbol,
                 side="LONG" if side == "BUY" else "SHORT",
@@ -537,10 +579,7 @@ class PositionWiringMixin:
                 leverage=leverage,
                 strategy=f"sniper_{sniper_sig.tier.lower()}",
                 confidence=getattr(sniper_sig, 'confidence', 0),
-                entry_reasons={
-                    "sniper_tier": sniper_sig.tier,
-                    "auto_executed": True,
-                },
+                entry_reasons=_sniper_entry_reasons,
             )
 
             # Place exchange-side SL/TP for crash protection

@@ -409,23 +409,114 @@ class CounterfactualLearner:
         # to ONE pending record but MERGE (union) the veto_rule_ids so EVERY firing
         # rule is credited on resolution — not just whichever site recorded first.
         _did = meta["decision_id"]
-        for _rec in self._pending.values():
-            if _rec.metadata.get("decision_id") == _did and _rec.metadata.get("veto_rule_ids"):
-                _existing = _rec.metadata.get("veto_rule_ids") or []
-                _incoming = meta.get("veto_rule_ids") or []
-                # Union preserving order: existing first, then any new ids.
-                _merged = list(_existing)
-                for _rid in _incoming:
-                    if _rid not in _merged:
-                        _merged.append(_rid)
-                if _merged != _existing:
-                    _rec.metadata["veto_rule_ids"] = _merged
-                    logger.debug(
-                        f"[CF-VETO] De-dup MERGE: {_did} now credits {_merged}"
-                    )
-                else:
-                    logger.debug(f"[CF-VETO] De-dup drop: {_did} already pending")
-                return _rec.record_id
+
+        def _legacy_minute_dedup():
+            for _rec in self._pending.values():
+                if _rec.metadata.get("decision_id") == _did and _rec.metadata.get("veto_rule_ids"):
+                    _existing = _rec.metadata.get("veto_rule_ids") or []
+                    _incoming = meta.get("veto_rule_ids") or []
+                    _merged = list(_existing)
+                    for _rid in _incoming:
+                        if _rid not in _merged:
+                            _merged.append(_rid)
+                    if _merged != _existing:
+                        _rec.metadata["veto_rule_ids"] = _merged
+                        logger.debug(f"[CF-VETO] De-dup MERGE: {_did} now credits {_merged}")
+                    else:
+                        logger.debug(f"[CF-VETO] De-dup drop: {_did} already pending")
+                    return _rec.record_id
+            return None
+
+        # DEDUPE_VETO_RECORDING (2026-07-30): the decision_id match above only
+        # collapses re-logs stamped in the SAME MINUTE. The live scanner re-logs
+        # the same skipped/vetoed setup every scan cycle for as long as the setup
+        # persists (often many minutes), so later re-logs get a NEW decision_id,
+        # slip past the check above, and become a NEW pending record for the SAME
+        # real-world setup. That record later resolves independently and calls
+        # graduated_rules.record_veto_outcome AGAIN, double/triple/N-counting
+        # times_applied/times_correct/pnl_saved/pnl_missed for one real veto.
+        # Widen the match to the canonical setup-identity rule (symbol+side,
+        # entry within 0.4%, timestamp within 3h — same clustering
+        # core.dedupe.dedupe_setups uses) and check BOTH the pending queue and
+        # recently-resolved records. On a match, merge/attach the incoming
+        # rule_ids to the EXISTING record (for audit) and return WITHOUT
+        # creating a new pending record — so there is no new resolution and no
+        # new call to record_veto_outcome. This changes ONLY future record-time
+        # de-dup; it never rebuilds, resets, or recomputes any already-persisted
+        # graduated-rule counter (times_applied/times_correct/pnl_saved/
+        # pnl_missed on disk are left exactly as-is).
+        # Revert: DEDUPE_VETO_RECORDING=false (restores legacy same-minute-only dedup)
+        if os.getenv("DEDUPE_VETO_RECORDING", "true").strip().lower() not in ("0", "false", "no"):
+            try:
+                from core.dedupe import is_same_setup
+                _new_row = {"symbol": symbol, "side": side, "entry_price": entry_price,
+                            "_ts": datetime.now(timezone.utc).timestamp()}
+
+                def _rec_row(_r):
+                    return {"symbol": _r.symbol, "side": _r.side,
+                            "entry_price": _r.entry_price, "_ts": _r.created_at}
+
+                for _rec in self._pending.values():
+                    if _rec.metadata.get("veto_rule_ids") and is_same_setup(
+                            _new_row, _rec_row(_rec), ts_key="_ts"):
+                        _existing = _rec.metadata.get("veto_rule_ids") or []
+                        _merged = list(_existing)
+                        for _rid in (meta.get("veto_rule_ids") or []):
+                            if _rid not in _merged:
+                                _merged.append(_rid)
+                        if _merged != _existing:
+                            _rec.metadata["veto_rule_ids"] = _merged
+                        logger.debug(
+                            f"[CF-VETO] DEDUPE_VETO_RECORDING pending-match: {symbol} {side}"
+                            f"@{entry_price} already pending as {_rec.record_id} "
+                            f"-> merged rule_ids={_merged}"
+                        )
+                        return _rec.record_id
+
+                # Cheap pre-filter (ISO string compare) before checking recently-
+                # resolved records, so a live veto call doesn't have to scan the
+                # full 14-day in-memory resolved list on every call.
+                _cutoff_iso = (datetime.now(timezone.utc) - timedelta(hours=4)).isoformat()
+                for _rec in reversed(self._resolved_recent):
+                    if _rec.created_at < _cutoff_iso:
+                        continue
+                    if not (_rec.metadata or {}).get("veto_rule_ids"):
+                        continue
+                    # DEDUPE_VETO_RECORDING fix (2026-07-31): only a record that was
+                    # actually SCORED (record_veto_outcome fired) may swallow a new
+                    # veto of the same setup. A cf_denominator_only / unscored record
+                    # (hypothetical_pnl_pct is None) resolves instantly WITHOUT
+                    # scoring, so swallowing a later scoreable veto would rob the rule
+                    # of a real outcome (measurement under-count). Skip such records.
+                    if getattr(_rec, "hypothetical_pnl_pct", None) is None or \
+                            (_rec.metadata or {}).get("cf_denominator_only"):
+                        continue
+                    if is_same_setup(_new_row, _rec_row(_rec), ts_key="_ts"):
+                        # Already tracked AND already resolved once for this real
+                        # setup (record_veto_outcome already fired for it). Attach
+                        # the incoming rule_ids for audit only — do NOT re-resolve,
+                        # do NOT call record_veto_outcome again (that is exactly
+                        # the double-count this fix prevents).
+                        _existing = _rec.metadata.get("veto_rule_ids") or []
+                        for _rid in (meta.get("veto_rule_ids") or []):
+                            if _rid not in _existing:
+                                _existing.append(_rid)
+                        _rec.metadata["veto_rule_ids"] = _existing
+                        logger.debug(
+                            f"[CF-VETO] DEDUPE_VETO_RECORDING resolved-match: {symbol} {side}"
+                            f"@{entry_price} already resolved as {_rec.record_id} "
+                            f"-> skip re-record (no outcome re-count)"
+                        )
+                        return _rec.record_id
+            except Exception as e:
+                logger.warning(f"[DEDUPE_VETO_RECORDING] widened dedup failed, falling back to legacy: {e}")
+                _legacy_id = _legacy_minute_dedup()
+                if _legacy_id:
+                    return _legacy_id
+        else:
+            _legacy_id = _legacy_minute_dedup()
+            if _legacy_id:
+                return _legacy_id
 
         rec = CounterfactualRecord(
             symbol=symbol, side=side, entry_price=entry_price,
@@ -707,6 +798,34 @@ class CounterfactualLearner:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).isoformat()
         recent = [r for r in self._resolved_recent
                   if r.created_at >= cutoff and self._is_scored(r)]
+
+        # DEDUPE_CF_AGGREGATION (2026-07-30): the live scanner re-logs the SAME
+        # skipped/vetoed setup every scan cycle (~10x-33x dup rows per real
+        # setup), so counting/summing raw `recent` inflates every stat below
+        # (n, win/loss counts, total_hypothetical_pnl, problem_filters) by that
+        # factor. Collapse to one row per real setup BEFORE any count/sum/rate
+        # logic. Fail-neutral: dedupe errors fall back to the raw list.
+        # Revert: DEDUPE_CF_AGGREGATION=false
+        if os.getenv("DEDUPE_CF_AGGREGATION", "true").strip().lower() not in ("0", "false", "no"):
+            _n_raw = len(recent)
+            try:
+                from core.dedupe import dedupe_setups
+                _wrapped = [
+                    {"symbol": r.symbol, "side": r.side, "entry_price": r.entry_price,
+                     "created_at": r.created_at, "_rec": r}
+                    for r in recent
+                ]
+                recent = [w["_rec"] for w in
+                          dedupe_setups(_wrapped, entry_key="entry_price", ts_key="created_at")]
+                if _n_raw != len(recent):
+                    logger.info(
+                        f"[DEDUPE_CF_AGGREGATION] missed-opp stats ({lookback_days}d): "
+                        f"{_n_raw} raw resolved rows -> {len(recent)} distinct setups"
+                    )
+            except Exception as e:
+                logger.warning(f"[DEDUPE_CF_AGGREGATION] dedupe failed, using raw rows: {e}")
+                recent = [r for r in self._resolved_recent
+                          if r.created_at >= cutoff and self._is_scored(r)]
 
         if not recent:
             return {"total_skips": 0, "sufficient_data": False}

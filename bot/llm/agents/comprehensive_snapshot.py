@@ -682,6 +682,31 @@ def _load_recent_skip_stats(symbol: Optional[str] = None) -> Dict[str, Any]:
             for line in f:
                 try: rows.append(_json.loads(line))
                 except Exception: pass
+
+        # DEDUPE_CF_AGGREGATION (2026-07-30): counterfactual_pending.jsonl is
+        # re-logged ~10x per real setup by the live scanner every scan cycle,
+        # and the pending queue can span >24h (unresolved records persist up
+        # to MAX_TRACKING_BARS/CF_MAX_TRACKING_HOURS), so raw-row-count both
+        # inflates n AND mislabels multi-day data as "today". Restrict to the
+        # last 24h (by created_at) and collapse to one row per real setup
+        # BEFORE counting. Fail-neutral: any error falls back to raw rows.
+        # Revert: DEDUPE_CF_AGGREGATION=false
+        if os.getenv("DEDUPE_CF_AGGREGATION", "true").strip().lower() not in ("0", "false", "no"):
+            _n_raw = len(rows)
+            try:
+                from core.dedupe import dedupe_setups, _parse_ts
+                _now = time.time()
+                _rows_24h = [r for r in rows
+                             if (_parse_ts(r.get("created_at")) or 0) >= _now - 86400]
+                rows = dedupe_setups(_rows_24h, entry_key="entry_price", ts_key="created_at")
+                if _n_raw != len(rows):
+                    logger.debug(
+                        f"[DEDUPE_CF_AGGREGATION] skip stats: {_n_raw} raw pending rows -> "
+                        f"{len(rows)} distinct setups (last 24h)"
+                    )
+            except Exception as e:
+                logger.warning(f"[DEDUPE_CF_AGGREGATION] skip-stats dedupe failed, using raw rows: {e}")
+
         total = len(rows)
         sym_count = Counter(r.get("symbol", "?") for r in rows)
         side_count = Counter(r.get("side", "?") for r in rows)

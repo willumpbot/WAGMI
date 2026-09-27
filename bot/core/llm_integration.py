@@ -1270,40 +1270,58 @@ class LLMIntegrationMixin:
                                         if not _exit_pos or _exit_pos.qty <= 0:
                                             logger.debug(f"[EXIT-AGENT] {symbol} no open position to close.")
                                         else:
-                                            _ex_side = "SELL" if _exit_pos.side == "LONG" else "BUY"
-                                            _reason = f"LLM_EXIT_{urgency.upper()}"
-                                            _close_result = _oe.close_position(
-                                                symbol, _ex_side, _exit_pos.qty, _price,
-                                                reason=_reason,
-                                            )
-                                            if _close_result and getattr(_close_result, "filled", False):
-                                                _fc = _pm.force_close(symbol, _price, _reason)
-                                                if _fc:
-                                                    _fc.metadata["_exchange_submitted"] = True
-                                                    _lock = getattr(self, '_pending_exit_lock', None)
-                                                    if not hasattr(self, '_pending_exit_events'):
-                                                        self._pending_exit_events = []
-                                                    if _lock is not None:
-                                                        with _lock:
+                                            # Fee-aware exit guard (EXIT_FEE_GUARD, default off; shadow=log-only).
+                                            # Avoids paying round-trip fees to close a ~flat low-conviction position.
+                                            _fg_block = False
+                                            try:
+                                                from core.fee_guard import fee_guard_should_block
+                                                _fg_tf = getattr(_pm, 'taker_fee_bps', 4.5)
+                                                _fg_block, _fg_mode, _fg_det = fee_guard_should_block(
+                                                    taker_fee_bps=_fg_tf, entry=_exit_pos.entry, current_price=_price,
+                                                    side=_exit_pos.side, urgency=urgency, is_discretionary=True)
+                                                if _fg_mode != 'off':
+                                                    logger.warning(f"[EXIT-FEE-GUARD] {symbol} {_fg_mode} {_fg_det}")
+                                            except Exception:
+                                                _fg_block = False
+                                            if _fg_block:
+                                                logger.warning(
+                                                    f"[EXIT-FEE-GUARD] {symbol} HELD near-flat {urgency} exit "
+                                                    f"(fee-drag guard) - not closing; SL/TP/critical exits still active")
+                                            else:
+                                                _ex_side = "SELL" if _exit_pos.side == "LONG" else "BUY"
+                                                _reason = f"LLM_EXIT_{urgency.upper()}"
+                                                _close_result = _oe.close_position(
+                                                    symbol, _ex_side, _exit_pos.qty, _price,
+                                                    reason=_reason,
+                                                )
+                                                if _close_result and getattr(_close_result, "filled", False):
+                                                    _fc = _pm.force_close(symbol, _price, _reason)
+                                                    if _fc:
+                                                        _fc.metadata["_exchange_submitted"] = True
+                                                        _lock = getattr(self, '_pending_exit_lock', None)
+                                                        if not hasattr(self, '_pending_exit_events'):
+                                                            self._pending_exit_events = []
+                                                        if _lock is not None:
+                                                            with _lock:
+                                                                self._pending_exit_events.append(_fc)
+                                                        else:
                                                             self._pending_exit_events.append(_fc)
+                                                        logger.warning(
+                                                            f"[EXIT-AGENT] {symbol} FORCE-CLOSED by LLM "
+                                                            f"(urgency={urgency}): {reason[:60]}"
+                                                        )
                                                     else:
-                                                        self._pending_exit_events.append(_fc)
-                                                    logger.warning(
-                                                        f"[EXIT-AGENT] {symbol} FORCE-CLOSED by LLM "
-                                                        f"(urgency={urgency}): {reason[:60]}"
-                                                    )
+                                                        logger.critical(
+                                                            f"[{symbol}] {_reason} exchange order filled but "
+                                                            f"force_close() returned no event — position may "
+                                                            f"be closed on-exchange without being booked. "
+                                                            f"Reconciliation will handle."
+                                                        )
                                                 else:
                                                     logger.critical(
-                                                        f"[{symbol}] {_reason} exchange order filled but "
-                                                        f"force_close() returned no event — position may "
-                                                        f"be closed on-exchange without being booked. "
-                                                        f"Reconciliation will handle."
+                                                        f"[{symbol}] {_reason} CLOSE FAILED — position still "
+                                                        f"open. Reconciliation will handle."
                                                     )
-                                            else:
-                                                logger.critical(
-                                                    f"[{symbol}] {_reason} CLOSE FAILED — position still "
-                                                    f"open. Reconciliation will handle."
-                                                )
                                 except Exception as _ex:
                                     logger.debug(f"[EXIT-AGENT] force_close error for {symbol}: {_ex}")
                         else:

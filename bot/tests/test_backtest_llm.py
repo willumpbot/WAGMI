@@ -416,21 +416,13 @@ class TestExitEvaluation:
         )
         llm._coordinator = mock_coord
 
-        # First call (counter==1) evaluates immediately (Bug 9 fix)
-        result = llm.evaluate_exit({"symbol": "BTC"})
-        assert result is not None
-        assert mock_coord.get_exit_intelligence.call_count == 1
-
-        # Calls 2-5 should be throttled
-        for _ in range(4):
+        # Fidelity fix: _EXIT_EVAL_INTERVAL is now 1 (evaluate EVERY bar, matching
+        # live's continuous exit monitoring). The old 6-bar throttle was the
+        # blind-window bug, so every call should now evaluate — no throttling.
+        for i in range(1, 6):
             result = llm.evaluate_exit({"symbol": "BTC"})
-            assert result is None
-        assert mock_coord.get_exit_intelligence.call_count == 1  # Still 1
-
-        # 6th call should go through (counter==6, 6%6==0)
-        result = llm.evaluate_exit({"symbol": "BTC"})
-        assert result == {"action": "hold"}
-        assert mock_coord.get_exit_intelligence.call_count == 2
+            assert result == {"action": "hold"}
+            assert mock_coord.get_exit_intelligence.call_count == i
 
     def test_clear_exit_counter(self):
         from backtest.llm_integration import BacktestLLMIntegration
@@ -1258,10 +1250,11 @@ class TestBug9ExitThrottle:
         llm.evaluate_exit({"symbol": "BTC"})
         mock_coord.get_exit_intelligence.reset_mock()
 
-        # Second call should be throttled
+        # Second call ALSO evaluates now (interval=1, faithful every-bar cadence —
+        # the old "throttle the 2nd candle" behavior was the blind-window bug).
         result = llm.evaluate_exit({"symbol": "BTC"})
-        assert result is None
-        mock_coord.get_exit_intelligence.assert_not_called()
+        assert result == {"action": "hold"}
+        mock_coord.get_exit_intelligence.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -1478,3 +1471,627 @@ class TestBug2ExitAgentData:
         assert position_data["hold_time_s"] == 3600.0  # 1 hour
         assert "Strong breakout thesis" in position_data["thesis"]
         assert position_data["setup_type"] == "breakout"
+
+
+# ---------------------------------------------------------------------------
+# 32. Snapshot starvation fixes: OHLCV arrays, BTC context, confluence, trace
+# ---------------------------------------------------------------------------
+
+class TestSnapshotStarvationFixes:
+    """Verify the 3 snapshot-starvation gaps are closed leak-free, plus trace
+    capture. See bot/backtest/llm_integration.py build_backtest_snapshot() and
+    _log_decision()/_log_skipped_decision() for the fixes under test."""
+
+    @staticmethod
+    def _make_1h_df(n=60, start="2026-01-01", start_price=50000.0, step=10.0):
+        import pandas as pd
+        import numpy as np
+        times = pd.date_range(start, periods=n, freq="1h")
+        closes = start_price + np.arange(n) * step
+        return pd.DataFrame({
+            "time": times,
+            "open": closes,
+            "high": closes + 5,
+            "low": closes - 5,
+            "close": closes,
+            "volume": np.full(n, 500.0),
+        })
+
+    def test_ohlcv_1h_injected_and_no_look_ahead(self):
+        """GAP 1: ohlcv_1h must be populated, and must contain NO bar at/after
+        the decision timestamp (direct look-ahead guard)."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        df_1h = self._make_1h_df(n=60)
+
+        # Simulate the engine's windowing: decision is being made "at" candle 55,
+        # so windowed_data only contains candles strictly before it (engine.py's
+        # cutoff = searchsorted(current_time, side="left")).
+        decision_candle_time = df_1h["time"].iloc[55]
+        windowed_1h = df_1h[df_1h["time"] < decision_candle_time].copy()
+
+        mock_signal = MagicMock()
+        mock_signal.strategy = "regime_trend"
+        mock_signal.side = "BUY"
+        mock_signal.confidence = 75.0
+        mock_signal.metadata = {}
+
+        snapshot = llm.build_backtest_snapshot(
+            symbol="BTC",
+            windowed_data={"1h": windowed_1h},
+            signal=mock_signal,
+            current_price=float(df_1h["close"].iloc[55]),
+            open_positions={},
+            equity=10000.0,
+        )
+
+        assert "ohlcv_1h" in snapshot
+        ohlcv = snapshot["ohlcv_1h"]
+        assert len(ohlcv) > 0
+        decision_ts_ms = int(decision_candle_time.timestamp() * 1000)
+        # Look-ahead guard: no injected candle may be at or after the decision bar
+        assert all(row[0] < decision_ts_ms for row in ohlcv), (
+            "Look-ahead detected: ohlcv_1h contains a bar at/after the decision timestamp"
+        )
+
+    def test_ohlcv_omitted_when_insufficient_history(self):
+        """Guard: thin history (<30 candles) must omit the key, not crash."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        df_1h = self._make_1h_df(n=10)  # below the 30-candle minimum
+
+        snapshot = llm.build_backtest_snapshot(
+            symbol="BTC",
+            windowed_data={"1h": df_1h},
+            signal=None,
+            current_price=50000.0,
+            open_positions={},
+            equity=10000.0,
+        )
+        assert "ohlcv_1h" not in snapshot
+
+    def test_btc_context_populated_for_non_btc_symbol(self):
+        """GAP 2: non-BTC symbols must get real btc/b1h/b24h from the windowed
+        BTC series the engine threads in via data['_btc_1h'], not hardcoded 0."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        eth_df = self._make_1h_df(n=60, start_price=3000.0, step=1.0)
+        btc_df = self._make_1h_df(n=60, start_price=50000.0, step=100.0)  # rising BTC
+
+        snapshot = llm.build_backtest_snapshot(
+            symbol="ETH",
+            windowed_data={"1h": eth_df, "_btc_1h": btc_df},
+            signal=None,
+            current_price=float(eth_df["close"].iloc[-1]),
+            open_positions={},
+            equity=10000.0,
+        )
+
+        g = snapshot["g"]
+        assert g["btc"] > 0  # no longer hardcoded to 0 for non-BTC symbols
+        assert g["b1h"] != 0.0  # BTC was trending up in the fixture
+        assert g["b24h"] != 0.0
+
+    def test_btc_context_falls_back_when_btc_data_absent(self):
+        """Guard: if _btc_1h isn't available, fall back to existing 0.0 defaults
+        rather than crash."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        eth_df = self._make_1h_df(n=60, start_price=3000.0, step=1.0)
+
+        snapshot = llm.build_backtest_snapshot(
+            symbol="ETH",
+            windowed_data={"1h": eth_df},  # no "_btc_1h" key
+            signal=None,
+            current_price=float(eth_df["close"].iloc[-1]),
+            open_positions={},
+            equity=10000.0,
+        )
+        g = snapshot["g"]
+        assert g["btc"] == 0
+        assert g["b1h"] == 0.0
+        assert g["b24h"] == 0.0
+
+    def test_confluence_metadata_copied_into_sg(self):
+        """GAP 3: signal.metadata (num_agree, strategies_agree, flags) must be
+        copied into the sg entry, not silently dropped."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        df_1h = self._make_1h_df(n=60)
+
+        mock_signal = MagicMock()
+        mock_signal.strategy = "regime_trend"
+        mock_signal.side = "BUY"
+        mock_signal.confidence = 80.0
+        mock_signal.metadata = {
+            "num_agree": 3,
+            "strategies_agree": ["regime_trend", "probability_engine", "vmc_cipher"],
+            "signal_flags": ["strong_confluence"],
+            "chop_score": 0.2,
+        }
+
+        snapshot = llm.build_backtest_snapshot(
+            symbol="BTC",
+            windowed_data={"1h": df_1h},
+            signal=mock_signal,
+            current_price=float(df_1h["close"].iloc[-1]),
+            open_positions={},
+            equity=10000.0,
+        )
+
+        sig = snapshot["m"][0]["sg"][0]
+        assert sig["flags"] == ["strong_confluence"]
+        assert sig["meta"]["num_agree"] == 3
+        assert sig["meta"]["strategies_agree"] == ["regime_trend", "probability_engine", "vmc_cipher"]
+
+    def test_confluence_metadata_absent_signal_metadata_does_not_crash(self):
+        """Guard: a signal whose .metadata isn't a dict (e.g. MagicMock default)
+        must not crash snapshot building."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        df_1h = self._make_1h_df(n=60)
+
+        mock_signal = MagicMock()
+        mock_signal.strategy = "regime_trend"
+        mock_signal.side = "BUY"
+        mock_signal.confidence = 80.0
+        # mock_signal.metadata is left as a MagicMock (not a dict) on purpose
+
+        snapshot = llm.build_backtest_snapshot(
+            symbol="BTC",
+            windowed_data={"1h": df_1h},
+            signal=mock_signal,
+            current_price=float(df_1h["close"].iloc[-1]),
+            open_positions={},
+            equity=10000.0,
+        )
+        sig = snapshot["m"][0]["sg"][0]
+        assert "meta" not in sig
+
+    def test_log_decision_captures_full_snapshot_and_raw_text(self):
+        """GAP 4 (trace capture): the logged decision must include the full
+        input snapshot and each agent's raw_text."""
+        from backtest.llm_integration import BacktestLLMIntegration
+        from llm.decision_types import LLMDecision, StrategyWeights
+        from llm.agents.base import AgentOutput, AgentRole
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        mock_coord = MagicMock()
+        mock_coord.get_last_pipeline_detail.return_value = {
+            "regime": {"data": {"rg": "trend"}, "model": "haiku", "ok": True,
+                       "input_tokens": 100, "output_tokens": 50, "latency_ms": 200, "error": None},
+        }
+        mock_coord.last_pipeline_results = {
+            AgentRole.REGIME: AgentOutput(
+                role=AgentRole.REGIME,
+                data={"rg": "trend"},
+                raw_text='{"rg": "trend"}',
+                model_used="haiku",
+            ),
+        }
+        llm._coordinator = mock_coord
+
+        decision = LLMDecision(
+            action="proceed", confidence=0.8, regime="trend",
+            strategy_weights=StrategyWeights(), memory_update=None,
+            notes="test",
+        )
+        full_snapshot = {"m": [{"s": "BTC"}], "ohlcv_1h": [[1, 2, 3, 4, 5, 6]]}
+        llm._log_decision(decision, full_snapshot, 0.005, "test_trigger")
+
+        entry = llm.decisions[0]
+        assert entry["snapshot"] == full_snapshot
+        assert entry["agents"]["regime"]["raw_text"] == '{"rg": "trend"}'
+
+    def test_log_skipped_decision_captures_snapshot(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        mock_coord = MagicMock()
+        mock_coord.get_trading_decision.return_value = None
+        mock_coord.get_stats.return_value = {
+            "total_calls": 4, "total_input_tokens": 100, "total_output_tokens": 50
+        }
+        mock_coord.get_last_pipeline_detail.return_value = None
+        mock_coord.last_pipeline_results = {}
+        llm._coordinator = mock_coord
+
+        full_snapshot = {"m": [{"s": "BTC"}], "ohlcv_1h": [[1, 2, 3, 4, 5, 6]]}
+        llm.evaluate_entry(full_snapshot, MagicMock(confidence=90), "pre_trade_backtest")
+
+        assert llm.decisions[0]["snapshot"] == full_snapshot
+
+    def test_engine_windowing_never_includes_decision_bar(self):
+        """End-to-end look-ahead guard on the engine's own windowing logic
+        (the source of leak-freedom this whole fix depends on): the searchsorted
+        cutoff used in bot/backtest/engine.py must exclude the decision candle
+        and everything after it, for arbitrary indices."""
+        import pandas as pd
+        import numpy as np
+
+        df = self._make_1h_df(n=100)
+        _MAX_WINDOW_LOOKBACK = 500
+
+        for i in [40, 70, 99]:
+            current_time = df["time"].iloc[i]
+            cutoff = int(df["time"].searchsorted(current_time, side="left"))
+            start_w = max(0, cutoff - _MAX_WINDOW_LOOKBACK)
+            windowed = df.iloc[start_w:cutoff]
+            assert windowed.empty or windowed["time"].max() < current_time
+
+
+# ---------------------------------------------------------------------------
+# 12. Fix A: replay entry-event filter alignment to live
+# ---------------------------------------------------------------------------
+
+class TestReplayEntryEventFilterFixA:
+    """FIX A: the ensemble stamps signal.strategy="ensemble" on every signal
+    (including solo, num_agree==1 ones) — strategies/ensemble.py's merge
+    always constructs the merged Signal with strategy="ensemble" regardless
+    of how many underlying strategies fired. The old whitelist check
+    compared signal.strategy (always "ensemble") against
+    {regime_trend,bollinger_squeeze,vmc_cipher,mean_reversion} and NEVER
+    matched, silently dropping every solo signal. The fix matches
+    metadata["strategies_agree"][0] (the actual originating strategy)
+    instead, and lowers REPLAY_SOLO_CONF_MIN's default from 75 to 0 to
+    mirror live (which dispatches every non-None solo signal)."""
+
+    def _make_signal(self, strategy="ensemble", strategies_agree=None,
+                      num_agree=1, confidence=10.0, side="SELL"):
+        sig = MagicMock()
+        sig.strategy = strategy
+        sig.side = side
+        sig.confidence = confidence
+        sig.metadata = {
+            "num_agree": num_agree,
+            "strategies_agree": strategies_agree if strategies_agree is not None else [],
+        }
+        return sig
+
+    def test_solo_ensemble_stamped_signal_matches_whitelist_via_strategies_agree(self):
+        """The exact bug: signal.strategy is always "ensemble", but the
+        underlying strategy that actually fired (regime_trend, whitelisted)
+        is in metadata["strategies_agree"]. Must now be recognized as an
+        entry event."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        sig = self._make_signal(
+            strategy="ensemble",
+            strategies_agree=["regime_trend"],
+            num_agree=1,
+            confidence=1.0,  # weak — only passes because conf floor default is now 0
+        )
+        assert llm._replay_is_entry_event(sig) is True
+
+    def test_solo_signal_strategy_field_alone_never_matches_whitelist(self):
+        """Regression guard for the ORIGINAL bug: if strategies_agree were
+        absent and we fell back to comparing "ensemble" against the
+        whitelist directly, it would never match — pin that the fallback
+        path (no metadata) uses signal.strategy, not a silently-always-true
+        shortcut."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        sig = MagicMock()
+        sig.strategy = "ensemble"
+        sig.side = "SELL"
+        sig.confidence = 90.0
+        sig.metadata = {"num_agree": 1, "strategies_agree": []}
+        # "ensemble" itself is not in the default whitelist -> not an entry event
+        assert llm._replay_is_entry_event(sig) is False
+
+    def test_solo_non_whitelisted_strategy_still_rejected(self):
+        """A solo signal from a strategy NOT in the whitelist (e.g.
+        confidence_scorer) must still be rejected — the whitelist mechanism
+        itself is unchanged by this fix, only the field it matches against."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        sig = self._make_signal(strategies_agree=["confidence_scorer"], confidence=99.0)
+        assert llm._replay_is_entry_event(sig) is False
+
+    def test_multi_agree_always_entry_event_regardless_of_whitelist(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        sig = self._make_signal(
+            strategies_agree=["confidence_scorer", "monte_carlo_zones"],
+            num_agree=2, confidence=1.0,
+        )
+        assert llm._replay_is_entry_event(sig) is True
+
+    def test_default_solo_conf_min_is_zero(self):
+        """was 75 (invented, exists nowhere in live); live's dispatcher has
+        no confidence floor for solo signals (ROUTER_SOLO_CONF_ENFORCE
+        defaults false) — default now mirrors that."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        assert llm._replay_solo_conf == 0.0
+
+    def test_solo_conf_min_still_env_tunable(self, monkeypatch):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        monkeypatch.setenv("REPLAY_SOLO_CONF_MIN", "50")
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        assert llm._replay_solo_conf == 50.0
+        sig = self._make_signal(strategies_agree=["regime_trend"], confidence=10.0)
+        assert llm._replay_is_entry_event(sig) is False
+        sig2 = self._make_signal(strategies_agree=["regime_trend"], confidence=60.0)
+        assert llm._replay_is_entry_event(sig2) is True
+
+    def test_default_cooldown_is_ten_minutes_not_four_hours(self):
+        """was hardcoded 4h; live's LLM-first dispatcher cooldown is 10min."""
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        assert llm._replay_cooldown_s == pytest.approx(0.167 * 3600.0)
+        assert llm._replay_cooldown_s == pytest.approx(601.2, abs=1.0)
+
+    def test_cooldown_still_env_tunable(self, monkeypatch):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        monkeypatch.setenv("REPLAY_COOLDOWN_H", "2")
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        assert llm._replay_cooldown_s == pytest.approx(7200.0)
+
+
+# ---------------------------------------------------------------------------
+# 13. Fix B: point-in-time edge map (g.edge / g.confl_wr / g.stperf)
+# ---------------------------------------------------------------------------
+
+class TestPITEdgeMapLeakSafety:
+    """FIX B: g.edge/g.confl_wr/g.stperf reconstructed from data/trade_ledger.csv
+    (+ data/trades.csv for the strategy breakdown), using ONLY rows whose close
+    timestamp is strictly before the decision bar's cutoff_ts. This is the
+    decisive, highest-scrutiny fix — every test here exists to prove the
+    reconstruction cannot see its own future."""
+
+    _LEDGER_HEADERS = [
+        "trade_id", "timestamp", "symbol", "side", "regime_1h", "regime_4h",
+        "agreement_level", "contributing_factors", "confidence_score",
+        "kelly_weight_applied", "compound_size_multiplier", "leverage",
+        "hold_hours", "exit_type", "entry_price", "snapshot_entry",
+        "exit_price", "gross_pnl", "fees", "funding", "net_pnl",
+        "running_equity", "session_dd_pct", "ab_gate_hash", "predicted_ev",
+        "realized_rr", "win", "epoch_id", "position_id",
+        "funding_rate_entry", "open_interest_entry", "premium_entry",
+    ]
+    _TRADES_HEADERS = [
+        "timestamp", "symbol", "side", "entry", "exit", "tp1_hit", "tp2_hit",
+        "sl_hit", "trailing_hit", "early_exit", "pnl", "fees",
+        "ml_samples_at_entry", "ml_samples_at_exit", "ml_conf_at_entry",
+        "ml_conf_at_exit", "state_path", "outcome", "leverage", "confidence",
+        "strategy", "entry_reasons", "entry_type", "primary_driver",
+        "regime", "volatility_band", "exit_type",
+    ]
+
+    def _write_ledger(self, path, rows):
+        import csv
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=self._LEDGER_HEADERS, restval="")
+            w.writeheader()
+            for r in rows:
+                w.writerow(r)
+
+    def _write_trades(self, path, rows):
+        import csv
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=self._TRADES_HEADERS, restval="")
+            w.writeheader()
+            for r in rows:
+                w.writerow(r)
+
+    def _ledger_row(self, ts, symbol="SOL", side="SHORT", regime="consolidation",
+                     agreement=2, win=1, net_pnl=50.0):
+        return {
+            "trade_id": "x", "timestamp": str(ts), "symbol": symbol, "side": side,
+            "regime_1h": regime, "agreement_level": str(agreement),
+            "win": str(win), "net_pnl": str(net_pnl),
+        }
+
+    def _trades_row(self, iso_ts, strategies, outcome="CLEAN_WIN", pnl=10.0):
+        import json as _json
+        return {
+            "timestamp": iso_ts, "symbol": "SOL", "side": "SHORT",
+            "outcome": outcome, "pnl": str(pnl),
+            "entry_reasons": _json.dumps({"strategies_agree": strategies}),
+        }
+
+    def _mk_llm(self, tmp_path):
+        from backtest.llm_integration import BacktestLLMIntegration
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        llm._pit_ledger_path = str(tmp_path / "trade_ledger.csv")
+        llm._pit_trades_path = str(tmp_path / "trades.csv")
+        return llm
+
+    def test_edge_map_excludes_trades_closing_at_or_after_cutoff(self, tmp_path):
+        """The core leak-safety proof: a trade closing AT the cutoff and one
+        closing AFTER it must both be excluded, even though there are enough
+        BEFORE-cutoff trades to clear the n>=5 threshold on their own."""
+        cutoff = 1_000_000.0
+        # 5 trades strictly before cutoff, all wins (n>=5 threshold met)
+        before = [self._ledger_row(cutoff - (i + 1) * 10, win=1, net_pnl=20.0) for i in range(5)]
+        # 1 trade exactly AT cutoff, 1 trade AFTER cutoff — both losses, both
+        # would flip the win rate from 100% to 71% (5/7) if leaked in.
+        at_cutoff = self._ledger_row(cutoff, win=0, net_pnl=-500.0)
+        after_cutoff = self._ledger_row(cutoff + 10, win=0, net_pnl=-500.0)
+
+        self._write_ledger(tmp_path / "trade_ledger.csv", before + [at_cutoff, after_cutoff])
+        llm = self._mk_llm(tmp_path)
+
+        pit = llm._build_pit_edge_map(cutoff)
+        key = "SOL_SHORT_consolidation"
+        assert key in pit["edge"]
+        assert pit["edge"][key]["n"] == 5, "leaked a trade closing at/after cutoff into n"
+        assert pit["edge"][key]["wr"] == 100, "leaked a losing trade at/after cutoff into wr"
+        assert pit["edge"][key]["pnl"] == pytest.approx(100.0), "leaked pnl from at/after-cutoff trades"
+
+    def test_pit_ledger_rows_all_strictly_before_cutoff(self, tmp_path):
+        """Direct proof on the raw loader: every row surviving the
+        cutoff_ts filter used inside _build_pit_edge_map has ts < cutoff_ts,
+        for a mixed batch of before/at/after timestamps."""
+        cutoff = 500_000.0
+        rows = (
+            [self._ledger_row(cutoff - 100), self._ledger_row(cutoff - 1),
+             self._ledger_row(cutoff), self._ledger_row(cutoff + 1),
+             self._ledger_row(cutoff + 5000)]
+        )
+        self._write_ledger(tmp_path / "trade_ledger.csv", rows)
+        llm = self._mk_llm(tmp_path)
+
+        all_rows = llm._load_pit_ledger_rows()
+        assert len(all_rows) == 5  # loader itself does no filtering
+
+        filtered = [r for r in all_rows if r["ts"] < cutoff]
+        assert len(filtered) == 2
+        assert all(r["ts"] < cutoff for r in filtered)
+
+    def test_below_threshold_group_omitted(self, tmp_path):
+        """n<5 groups must not appear in g.edge at all (matches live's
+        setup_edge_map n>=5 filter)."""
+        cutoff = 1_000_000.0
+        rows = [self._ledger_row(cutoff - 10 * (i + 1)) for i in range(4)]  # only 4
+        self._write_ledger(tmp_path / "trade_ledger.csv", rows)
+        llm = self._mk_llm(tmp_path)
+
+        pit = llm._build_pit_edge_map(cutoff)
+        assert "edge" not in pit or "SOL_SHORT_consolidation" not in pit.get("edge", {})
+
+    def test_confl_wr_grouped_by_agreement_level(self, tmp_path):
+        cutoff = 1_000_000.0
+        rows = (
+            [self._ledger_row(cutoff - 10 * (i + 1), agreement=2, win=1) for i in range(3)]
+            + [self._ledger_row(cutoff - 200 - 10 * (i + 1), agreement=1, win=0) for i in range(3)]
+        )
+        self._write_ledger(tmp_path / "trade_ledger.csv", rows)
+        llm = self._mk_llm(tmp_path)
+
+        pit = llm._build_pit_edge_map(cutoff)
+        assert pit["confl_wr"]["2"]["wr"] == 100
+        assert pit["confl_wr"]["2"]["n"] == 3
+        assert pit["confl_wr"]["1"]["wr"] == 0
+        assert pit["confl_wr"]["1"]["n"] == 3
+
+    def test_stperf_from_trades_csv_excludes_post_cutoff_and_respects_threshold(self, tmp_path):
+        cutoff_dt = datetime(2026, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+        cutoff = cutoff_dt.timestamp()
+
+        def _iso(minutes_offset):
+            from datetime import timedelta
+            return (cutoff_dt + timedelta(minutes=minutes_offset)).isoformat()
+
+        rows = [
+            self._trades_row(_iso(-30), ["regime_trend"], outcome="CLEAN_WIN"),
+            self._trades_row(_iso(-20), ["regime_trend"], outcome="CLEAN_WIN"),
+            self._trades_row(_iso(-10), ["regime_trend"], outcome="CLEAN_LOSS"),
+            # AFTER cutoff — must not count toward stperf even though it
+            # would flip regime_trend's win rate if leaked in.
+            self._trades_row(_iso(+10), ["regime_trend"], outcome="CLEAN_LOSS"),
+            # Below n>=3 threshold on its own -> must be omitted
+            self._trades_row(_iso(-5), ["bollinger_squeeze"], outcome="CLEAN_WIN"),
+        ]
+        self._write_trades(tmp_path / "trades.csv", rows)
+        # ledger can be empty/absent — stperf only depends on trades.csv
+        llm = self._mk_llm(tmp_path)
+
+        pit = llm._build_pit_edge_map(cutoff)
+        assert pit["stperf"]["regime_trend"]["n"] == 3
+        assert pit["stperf"]["regime_trend"]["wr"] == 67  # 2/3 wins, round()
+        assert "bollinger_squeeze" not in pit["stperf"]
+
+    def test_empty_files_return_empty_map_no_crash(self, tmp_path):
+        llm = self._mk_llm(tmp_path)  # neither file exists
+        pit = llm._build_pit_edge_map(1_000_000.0)
+        assert pit == {}
+
+    def test_pit_edge_map_flag_defaults_off_outside_replay_mode(self, monkeypatch):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        monkeypatch.delenv("REPLAY_MODE", raising=False)
+        monkeypatch.delenv("REPLAY_PIT_EDGE_MAP", raising=False)
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        assert llm._pit_edge_map_on is False
+
+    def test_pit_edge_map_flag_defaults_on_inside_replay_mode(self, monkeypatch):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        monkeypatch.setenv("REPLAY_MODE", "1")
+        monkeypatch.delenv("REPLAY_PIT_EDGE_MAP", raising=False)
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        assert llm._pit_edge_map_on is True
+
+    def test_pit_edge_map_flag_explicitly_overridable(self, monkeypatch):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        monkeypatch.setenv("REPLAY_MODE", "1")
+        monkeypatch.setenv("REPLAY_PIT_EDGE_MAP", "false")
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        assert llm._pit_edge_map_on is False
+
+    def test_build_backtest_snapshot_injects_edge_map_when_decision_ts_given(self, tmp_path):
+        """Wiring test: build_backtest_snapshot must surface g.edge when
+        given a decision_ts and enough point-in-time history, and must NOT
+        when decision_ts is omitted (default None = old behavior, byte
+        compatible)."""
+        from backtest.llm_integration import BacktestLLMIntegration
+        import pandas as pd
+        import numpy as np
+
+        cutoff = 1_000_000.0
+        rows = [self._ledger_row(cutoff - 10 * (i + 1), symbol="SOL", side="SHORT",
+                                  regime="consolidation", win=1, net_pnl=20.0)
+                for i in range(5)]
+        self._write_ledger(tmp_path / "trade_ledger.csv", rows)
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        llm._pit_edge_map_on = True
+        llm._pit_ledger_path = str(tmp_path / "trade_ledger.csv")
+        llm._pit_trades_path = str(tmp_path / "trades.csv")
+
+        times = pd.date_range("2026-01-01", periods=60, freq="1h")
+        df_1h = pd.DataFrame({
+            "time": times, "open": np.linspace(1, 2, 60), "high": np.linspace(1, 2, 60),
+            "low": np.linspace(1, 2, 60), "close": np.linspace(1, 2, 60),
+            "volume": np.full(60, 500.0),
+        })
+        sig = MagicMock()
+        sig.strategy = "ensemble"
+        sig.side = "SHORT"
+        sig.confidence = 40.0
+        sig.metadata = {}
+
+        snap_with_ts = llm.build_backtest_snapshot(
+            symbol="SOL", windowed_data={"1h": df_1h}, signal=sig,
+            current_price=1.5, open_positions={}, equity=10000.0,
+            decision_ts=cutoff,
+        )
+        assert "edge" in snap_with_ts["g"]
+        assert "SOL_SHORT_consolidation" in snap_with_ts["g"]["edge"]
+
+        snap_without_ts = llm.build_backtest_snapshot(
+            symbol="SOL", windowed_data={"1h": df_1h}, signal=sig,
+            current_price=1.5, open_positions={}, equity=10000.0,
+        )
+        assert "edge" not in snap_without_ts["g"]
+
+    def test_ledger_rows_cached_after_first_load(self, tmp_path):
+        """Perf/consistency: the ledger is parsed once and cached, not
+        re-read from disk on every decision within a run."""
+        cutoff = 1_000_000.0
+        rows = [self._ledger_row(cutoff - 10 * (i + 1)) for i in range(5)]
+        self._write_ledger(tmp_path / "trade_ledger.csv", rows)
+        llm = self._mk_llm(tmp_path)
+
+        first = llm._load_pit_ledger_rows()
+        # Mutate the file on disk; cached result must NOT reflect the change.
+        self._write_ledger(tmp_path / "trade_ledger.csv", rows + [self._ledger_row(cutoff - 1)])
+        second = llm._load_pit_ledger_rows()
+        assert len(first) == len(second) == 5

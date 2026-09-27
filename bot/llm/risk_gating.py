@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 from llm.decision_types import LLMDecision, Regime
+from llm import living_conf_floor
 
 logger = logging.getLogger("bot.llm.risk_gate")
 
@@ -68,14 +69,24 @@ def gate_decision(decision: LLMDecision, risk: RiskContext) -> GatedResult:
     if action == "flat":
         return GatedResult(allowed=True, decision=decision, reason="flat_passthrough")
 
+    # Every non-flat decision that reaches the gate is evidence of where the
+    # ensemble's confidence scale currently sits (see llm/living_conf_floor.py).
+    # Recorded before any rejection so the distribution is not survivor-biased.
+    living_conf_floor.record(decision.confidence, action)
+
     # Rule 1: Circuit breaker
     if risk.circuit_breaker_active:
         return _reject("circuit_breaker_active", decision)
 
-    # Rule 2: Confidence floor
-    if decision.confidence < 0.6:
+    # Rule 2: Confidence floor — LIVING VALUE when LIVING_CONF_FLOOR is on
+    # (a percentile of the confidences the ensemble actually emits), else the
+    # legacy hardcoded 0.60. The 0.60 constant silently became an absolute wall
+    # once the DEFABRICATE_* flags removed confidence inflation: zero trades
+    # 2026-07-29 -> 2026-09-12 against a scale that now tops out near 0.55.
+    conf_floor = living_conf_floor.base_floor(0.60)
+    if decision.confidence < conf_floor:
         return _reject(
-            f"confidence_too_low ({decision.confidence:.2f} < 0.60)",
+            f"confidence_too_low ({decision.confidence:.2f} < {conf_floor:.2f})",
             decision,
         )
 
@@ -103,9 +114,10 @@ def gate_decision(decision: LLMDecision, risk: RiskContext) -> GatedResult:
     # Rule 6: Panic regime requires high confidence
     # Lowered from 0.80 to 0.70 — panic regime has big moves, 0.80 was blocking
     # legitimate crash/bounce trades where edge is real but certainty is moderate
-    if decision.regime == Regime.PANIC.value and decision.confidence < 0.70:
+    panic_floor = living_conf_floor.scaled(0.70)
+    if decision.regime == Regime.PANIC.value and decision.confidence < panic_floor:
         return _reject(
-            f"panic_regime_low_conf ({decision.confidence:.2f} < 0.70)",
+            f"panic_regime_low_conf ({decision.confidence:.2f} < {panic_floor:.2f})",
             decision,
         )
 
@@ -120,9 +132,11 @@ def gate_decision(decision: LLMDecision, risk: RiskContext) -> GatedResult:
     # Rule 9: Consecutive losses streak
     # Lowered from 0.75 to 0.68 — after losses, the bot needs to recover.
     # 0.75 was too strict, blocking legitimate recovery trades with real edge.
-    if risk.consecutive_losses > 4 and decision.confidence < 0.68:
+    streak_floor = living_conf_floor.scaled(0.68)
+    if risk.consecutive_losses > 4 and decision.confidence < streak_floor:
         return _reject(
-            f"loss_streak ({risk.consecutive_losses} losses, conf {decision.confidence:.2f} < 0.68)",
+            f"loss_streak ({risk.consecutive_losses} losses, "
+            f"conf {decision.confidence:.2f} < {streak_floor:.2f})",
             decision,
         )
 
@@ -139,9 +153,10 @@ def gate_decision(decision: LLMDecision, risk: RiskContext) -> GatedResult:
     # Lowered from 0.70 to 0.65 — legitimate reversals (BTC structure shift,
     # regime transition) often come at 0.65-0.70 confidence. Blocking them
     # means missing directional edge during transitions.
-    if action == "flip" and decision.confidence < 0.65:
+    flip_floor = living_conf_floor.scaled(0.65)
+    if action == "flip" and decision.confidence < flip_floor:
         return _reject(
-            f"flip_confidence_too_low ({decision.confidence:.2f} < 0.65)",
+            f"flip_confidence_too_low ({decision.confidence:.2f} < {flip_floor:.2f})",
             decision,
         )
 

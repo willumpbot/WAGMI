@@ -4274,9 +4274,33 @@ class AgentCoordinator:
             _remaining_pct = max(0.0, 500.0 - _exposure_pct)  # OpsGuard MAX_SINGLE_POSITION_PCT
             _sm = snapshot.get("signal_metadata", {}) or {}
             _sw_pct = float(_sm.get("stop_width_pct", 0) or 0)
-            if _sw_pct > 0:
-                # max_risk_pct such that resulting notional <= remaining capacity
-                _max_risk_pct = (_remaining_pct / 100.0) * (_sw_pct / 100.0)
+            # SIZING_CONSTRAINT_UNITS_FIX (default OFF, shadow-first). BUG (commit
+            # 5c919848, 2026-06-03): stop_width_pct is already a FRACTION (stop/entry,
+            # e.g. 0.0207), but the ceiling divided by 100 AGAIN -> 100x too small
+            # (0.1% not 10%) = the ~$278 size collapse (the Risk Agent obeys the
+            # ceiling verbatim). Fix corrects the units, caps at MAX_RISK_PCT_CEILING
+            # (default 0.02 = conservative restore, ~13x current), and attaches a
+            # default ceiling when stop_width_pct is MISSING (the current unbounded
+            # hole -> June $79k / 215%-of-equity trades). Default OFF = byte-equivalent
+            # live behavior + logs old-vs-new; flip to true to restore real sizing.
+            _units_fix = os.getenv("SIZING_CONSTRAINT_UNITS_FIX", "false").strip().lower() in ("1", "true", "yes")
+            _ceiling_cap = float(os.getenv("MAX_RISK_PCT_CEILING", "0.02"))
+            if _sw_pct > 0 or _units_fix:
+                _buggy = (_remaining_pct / 100.0) * (_sw_pct / 100.0) if _sw_pct > 0 else 0.0
+                if _sw_pct > 0:
+                    _sw_frac = _sw_pct if _sw_pct <= 1.0 else _sw_pct / 100.0
+                    _fixed = min((_remaining_pct / 100.0) * _sw_frac, _ceiling_cap)
+                else:
+                    _fixed = _ceiling_cap  # missing stop_width_pct: cap, not unbounded
+                _max_risk_pct = _fixed if _units_fix else _buggy
+                try:
+                    logger.info(
+                        "[SIZING-CONSTRAINT] stop_frac=%.4f remaining=%.0f%% "
+                        "ceiling_buggy=%.5f ceiling_fixed=%.5f cap=%.3f applied=%.5f(%s)",
+                        _sw_pct, _remaining_pct, _buggy, _fixed, _ceiling_cap,
+                        _max_risk_pct, "FIXED" if _units_fix else "buggy")
+                except Exception:
+                    pass
                 risk_data["sizing_constraint"] = {
                     "current_notional_pct": round(_exposure_pct, 1),
                     "remaining_capacity_pct": round(_remaining_pct, 1),
@@ -4284,7 +4308,7 @@ class AgentCoordinator:
                     "max_risk_pct": round(_max_risk_pct, 4),
                     "note": (
                         f"risk_pct ceiling={_max_risk_pct:.3f} "
-                        f"(stop={_sw_pct:.2f}%, {_exposure_pct:.0f}% notional already deployed, "
+                        f"(stop_frac={_sw_pct:.4f}, {_exposure_pct:.0f}% notional deployed, "
                         f"{_remaining_pct:.0f}% cap remaining)"
                     ),
                 }
@@ -4819,8 +4843,18 @@ class AgentCoordinator:
         resolved_path = _Path("data/llm/counterfactual_resolved.jsonl")
         if not resolved_path.exists():
             return
-        n = 0
-        net_pnl_pct = 0.0
+        # CRITIC_RESTORE_DEDUPE (2026-07-30): the scanner re-logs the SAME shadow
+        # veto every scan cycle while the setup resolves (~4x per setup — verified:
+        # 416 raw rows -> ~103 distinct setups). Summing raw rows inflated n and
+        # net_pnl_pct ~4x and MANUFACTURED a false "RESTORE CANDIDATE" (state file
+        # read n=407 / -103.7% when the deduped truth is n~103 / ~+0.7% = NOT a
+        # restore case — the vetoes would NOT have saved money). Collapse by
+        # symbol+side+entry+-0.4%+created_at+-3h (same rule as
+        # tools/resolve_missed_trades.py), keeping the earliest row per cluster.
+        # Journal-only instrument (no auto-action), so this is a pure correctness
+        # fix. Revert: CRITIC_RESTORE_DEDUPE=false.
+        _dedupe = os.getenv("CRITIC_RESTORE_DEDUPE", "true").lower() in ("1", "true", "yes")
+        _recs = []
         try:
             with open(resolved_path, "r", encoding="utf-8", errors="replace") as f:
                 for line in f:
@@ -4832,36 +4866,90 @@ class AgentCoordinator:
                         continue
                     if not str(rec.get("skip_reason", "")).startswith("CRITIC_SHADOW_VETO"):
                         continue
-                    pnl = rec.get("hypothetical_pnl_pct")
-                    if pnl is None:
+                    if rec.get("hypothetical_pnl_pct") is None:
                         continue
-                    n += 1
-                    net_pnl_pct += float(pnl)
+                    _recs.append(rec)
         except Exception as e:
             logger.debug(f"[SHADOW-CRITIC-RESTORE] scan error: {e}")
             return
+
+        def _cts(r):
+            v = r.get("created_at") or r.get("resolved_at")
+            if not v:
+                return 0.0
+            try:
+                return _dt.fromisoformat(str(v).replace("Z", "+00:00")).timestamp()
+            except Exception:
+                return 0.0
+
+        if _dedupe:
+            _clusters = []
+            _kept = []
+            for r in sorted(_recs, key=_cts):
+                _sym = str(r.get("symbol", "")).upper()
+                _side = str(r.get("side", "")).upper()
+                try:
+                    _ep = float(r.get("entry_price"))
+                except (TypeError, ValueError):
+                    _kept.append(r)
+                    continue
+                _ts = _cts(r)
+                _dup = False
+                for c in _clusters:
+                    if (c["s"] == _sym and c["d"] == _side
+                            and _ts - c["t"] <= 3 * 3600
+                            and c["e"] > 0 and abs(_ep - c["e"]) / c["e"] <= 0.004):
+                        _dup = True
+                        break
+                if not _dup:
+                    _clusters.append({"s": _sym, "d": _side, "e": _ep, "t": _ts})
+                    _kept.append(r)
+            _recs = _kept
+
+        n = len(_recs)
+        net_pnl_pct = sum(float(r.get("hypothetical_pnl_pct", 0.0) or 0.0) for r in _recs)
+        _mean_per_veto = (net_pnl_pct / n) if n else 0.0
+        # CRITIC_RESTORE_MARGIN_PCT (2026-07-30): the old criterion (sum < 0) was a
+        # knife-edge on a near-zero, noisy sum — even after dedup the deduped net is
+        # ~ -0.08%/veto (below the ~0.09% round-trip fee), i.e. the vetoes would have
+        # saved essentially nothing, yet sum<0 still fired "RESTORE CANDIDATE".
+        # Require a MATERIAL average would-be loss per veto (default 0.5%, ~5x the
+        # fee) before recommending restore, so noise can't manufacture a false alarm.
+        # The rigorous flip decision (significance, outlier-removal, apples-to-apples
+        # vs approved-traded) lives in the weekly meta-audit swarm, not this crude
+        # sum. Revert: CRITIC_RESTORE_MARGIN_PCT=0.
+        _restore_margin = 0.0
+        try:
+            _restore_margin = float(os.getenv("CRITIC_RESTORE_MARGIN_PCT", "0.5"))
+        except (TypeError, ValueError):
+            _restore_margin = 0.5
+        _is_restore = bool(n >= 13 and _mean_per_veto <= -_restore_margin)
         state = {
             "checked_at": _dt.now(_tz.utc).isoformat(),
             "n_resolved": n,
             "net_hypothetical_pnl_pct": round(net_pnl_pct, 3),
-            "dollar_positive": bool(n >= 13 and net_pnl_pct < 0),
+            "mean_per_veto_pct": round(_mean_per_veto, 4),
+            "restore_margin_pct": _restore_margin,
+            "dollar_positive": _is_restore,
         }
-        if n >= 13 and net_pnl_pct < 0:
+        if _is_restore:
             state["recommendation"] = (
-                "RESTORE CANDIDATE: Critic shadow would-vetoes are net "
-                "dollar-positive at n>=13 — journal for owner/meta-audit; "
-                "set CRITIC_ENFORCE=true only after adversarial re-check."
+                "RESTORE CANDIDATE: Critic shadow would-vetoes are materially net "
+                f"dollar-positive at n>=13 (mean {_mean_per_veto:+.3f}%/veto <= "
+                f"-{_restore_margin}%) — journal for owner/meta-audit; set "
+                "CRITIC_ENFORCE=true only after adversarial re-check."
             )
             logger.warning(
                 f"[SHADOW-CRITIC-RESTORE] restore recommendation: n={n} "
-                f"net_would_veto_pnl={net_pnl_pct:+.2f}% (vetoed setups lost "
-                f"→ vetoes would have saved). Journaled to "
+                f"net={net_pnl_pct:+.2f}% mean={_mean_per_veto:+.3f}%/veto (vetoed "
+                f"setups lost materially → vetoes would have saved). Journaled to "
                 f"data/llm/critic_shadow_state.json for the weekly meta-audit."
             )
         else:
             logger.info(
                 f"[SHADOW-CRITIC-RESTORE] no restore case yet: n={n} "
-                f"net_would_veto_pnl={net_pnl_pct:+.2f}% (need n>=13 and net<0)"
+                f"net={net_pnl_pct:+.2f}% mean={_mean_per_veto:+.3f}%/veto "
+                f"(need n>=13 and mean<=-{_restore_margin}%/veto)"
             )
         try:
             with open("data/llm/critic_shadow_state.json", "w", encoding="utf-8") as f:

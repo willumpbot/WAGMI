@@ -269,6 +269,8 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
     if ctx.trade_ledger is None:
         return
 
+    import os as _os
+
     entry = ev.entry or 0.0
     original_sl = ev.original_sl
     stop_width = abs(entry - original_sl) if original_sl else 0.0
@@ -296,11 +298,32 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
     running_equity = "" if ev.equity_after is None else str(round(ev.equity_after, 2))
     session_dd_pct = "" if ev.session_dd_pct is None else str(ev.session_dd_pct)
 
+    # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION, 2026-07-27): regime_4h +
+    # numeric funding/OI are captured onto entry_reasons at OPEN
+    # (multi_strategy_main._capture_measurement_floor_fields) and ride through
+    # on ev.entry_reasons, so this extracted path can log them once wired --
+    # no live tick-cache read needed. Fail-neutral: blank when absent or flag
+    # off. Revert: LEDGER_FIELD_COMPLETION=false.
+    _mf_on = _os.getenv("LEDGER_FIELD_COMPLETION", "true").lower() in ("1", "true", "yes")
+    _regime_4h_val = (entry_reasons.get("regime_4h", "") or "") if _mf_on else ""
+    _funding_rate_entry = (
+        "" if not _mf_on or entry_reasons.get("funding_rate_entry") is None
+        else str(entry_reasons.get("funding_rate_entry"))
+    )
+    _open_interest_entry = (
+        "" if not _mf_on or entry_reasons.get("open_interest_entry") is None
+        else str(entry_reasons.get("open_interest_entry"))
+    )
+    _premium_entry = (
+        "" if not _mf_on or entry_reasons.get("premium_entry") is None
+        else str(entry_reasons.get("premium_entry"))
+    )
+
     row = {
         "symbol": ev.symbol,
         "side": ev.side,
         "regime_1h": ev.regime or "unknown",
-        "regime_4h": "",  # FIELD-GAP: live tick_regime_cache, not on TradeClosed
+        "regime_4h": _regime_4h_val,  # entry-snapshot (was FIELD-GAP: live tick cache)
         "agreement_level": str(entry_reasons.get("num_agree", 1)),
         "contributing_factors": ",".join(_contributing_factors(ev)),
         "confidence_score": str(ev.confidence),
@@ -322,6 +345,10 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
         "realized_rr": str(realized_rr),
         "win": "1" if total_pnl > 0 else "0",
         "position_id": ev.position_id,
+        # MEASUREMENT-FLOOR: numeric funding/OI captured at open.
+        "funding_rate_entry": _funding_rate_entry,
+        "open_interest_entry": _open_interest_entry,
+        "premium_entry": _premium_entry,
     }
 
     ctx.trade_ledger.record_trade(row, source=ctx.source, position_id=ev.position_id)
