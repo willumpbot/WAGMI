@@ -22,7 +22,11 @@ STATE = os.path.join(BOT, "data", "health_alert_state.json")
 HB = os.path.join(BOT, "data", "heartbeat.json")
 
 # Tight patterns only — '429'/'oauth' loose-match timestamps.
-_ERR_PATTERNS = re.compile(r"Too Many Requests|429 Client Error|invalid_api_key|authentication_error|Traceback")
+# COLLECTOR-STALE added 2026-09-12: the funding/OI and market-depth collectors
+# write data that CANNOT be backfilled — a silent stall loses that window
+# forever. One stalled 15h on 2026-09-09 and nothing reported it, because a
+# stalled collector is not an exception and matched none of the patterns here.
+_ERR_PATTERNS = re.compile(r"Too Many Requests|429 Client Error|invalid_api_key|authentication_error|Traceback|COLLECTOR-STALE")
 
 
 def _hb():

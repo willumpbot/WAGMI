@@ -12,8 +12,112 @@ sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure'
 
 import ccxt
 
-SYMBOLS = ["BTC/USDC:USDC", "ETH/USDC:USDC", "SOL/USDC:USDC", "HYPE/USDC:USDC", "XRP/USDC:USDC"]
-SHORT_NAMES = {s: s.split("/")[0] for s in SYMBOLS}
+# Original 5 majors — unchanged, always collected (superset, never removed).
+BASE_SYMBOLS = ["BTC", "ETH", "SOL", "HYPE", "XRP"]
+
+# Owner's meme-coin watchlist (co-pilot universe, HL-listed perps; see
+# data/longtail/universe.json). Config constant — tune the list here.
+# NOTE ccxt uppercases HL's "k"-prefixed thousand-denomination tickers
+# (kPEPE -> KPEPE/USDC:USDC market symbol); _display_name() below restores the
+# lowercase-k form used elsewhere (universe.json, tools/copilot/whats_moving.py)
+# for the "symbol" field written to funding_oi_history.jsonl.
+MEME_WATCHLIST = ["POPCAT", "WIF", "FARTCOIN", "PENGU", "kPEPE", "kBONK", "kSHIB", "PURR"]
+# POPCAT 24h volume is thin (~$270K, verified live) — collected anyway per owner:
+# thin-book funding/OI history is itself a risk instrument (how much can he exit).
+# PURR added 2026-08-06: it's one of the owner's actively-eyed HL perps (verified
+# live in HL meta universe) but had ZERO forward funding/OI/flow tracking - a gap
+# in his own arena. Additive; the running collector picks it up on next reload so
+# the live bot is untouched. Now his call on PURR can be resolved against real data.
+
+# Small rotating slice of current market movers, pulled from
+# tools/copilot/whats_moving.py's own state file, so a trending meme OUTSIDE the
+# fixed watchlist above still gets captured. Best-effort / fail-soft only:
+# whats_moving.py has no guaranteed collection cadence, so a missing/stale state
+# file just yields zero rotating symbols this refresh — never a crash, never
+# fewer than BASE_SYMBOLS + MEME_WATCHLIST.
+ROTATING_TOP_N = 10
+ROTATING_REFRESH_S = 3600  # re-pull movers hourly, not every 15-min tick
+ROTATING_MAX_AGE_HOURS = 6.0
+MOVING_STATE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "copilot", "moving_state.json")
+
+_K_DENOM = {"kpepe", "kbonk", "kshib"}  # HL 1000x-denominated memes
+
+
+def _ccxt_symbol(short_name):
+    return f"{short_name.upper()}/USDC:USDC"
+
+
+def _display_name(short_name):
+    """Restore HL's lowercase-k convention (kPEPE, not ccxt's KPEPE) to match
+    data/longtail/universe.json / whats_moving.py output."""
+    if short_name.lower() in _K_DENOM:
+        return "k" + short_name[1:]
+    return short_name
+
+
+def _static_symbol_names():
+    seen, out = set(), []
+    for s in BASE_SYMBOLS + MEME_WATCHLIST:
+        key = s.upper()
+        if key not in seen:
+            seen.add(key)
+            out.append(s)
+    return out
+
+
+def _load_rotating_movers(exclude_upper):
+    """Best-effort top-N by recent volume from whats_moving.py's state file.
+    Fail-soft: any problem (missing file, bad json, stale data) returns []
+    and never raises — this is a breadth nice-to-have, not load-bearing."""
+    try:
+        with open(MOVING_STATE_PATH, "r", encoding="utf-8") as f:
+            state = json.load(f)
+        history = state.get("history") or {}
+        now = datetime.now(timezone.utc)
+        fresh = []
+        for sym, rec in history.items():
+            if not isinstance(rec, dict) or sym.upper() in exclude_upper:
+                continue
+            last_ts = rec.get("last_ts")
+            try:
+                age_h = (now - datetime.fromisoformat(last_ts)).total_seconds() / 3600.0
+            except (TypeError, ValueError):
+                continue
+            if age_h > ROTATING_MAX_AGE_HOURS:
+                continue
+            fresh.append((sym, rec.get("last_vol_usd") or 0.0))
+        fresh.sort(key=lambda x: x[1], reverse=True)
+        return [s for s, _ in fresh[:ROTATING_TOP_N]]
+    except Exception:
+        return []
+
+
+def resolve_symbols(ex, include_rotating=True):
+    """Build the ccxt-symbol list + short-name map. Static majors+memes are
+    always included (strict superset of the original 5); rotating movers are
+    validated against ex.symbols when ex is available and dropped silently if
+    unknown/unlisted — a bad mover name never breaks collection."""
+    names = _static_symbol_names()
+    if include_rotating:
+        names += _load_rotating_movers({n.upper() for n in names})
+    symbols, short = [], {}
+    for n in names:
+        csym = _ccxt_symbol(n)
+        if csym in short:
+            continue
+        if ex is not None and csym not in ex.symbols:
+            continue
+        symbols.append(csym)
+        short[csym] = _display_name(n)
+    return symbols, short
+
+
+# Initial (pre-exchange-validation) list: static majors+memes only, so module
+# import / early logging has something sane before the first collect_tick()
+# refresh validates + adds rotating movers against the live market list.
+SYMBOLS, SHORT_NAMES = resolve_symbols(None, include_rotating=False)
+_last_symbol_refresh_ts = 0.0
+
 DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "funding_oi_history.jsonl")
 INTERVAL = 15 * 60  # 15 minutes
 EXTREME_FUNDING = 0.0001  # |rate| > 0.01%/hr flagged
@@ -32,6 +136,17 @@ def init_exchange():
 
 def collect_tick(ex):
     """Fetch funding, OI, price for tracked symbols. Returns list of records."""
+    global SYMBOLS, SHORT_NAMES, _last_symbol_refresh_ts
+    now_ts = time.time()
+    if now_ts - _last_symbol_refresh_ts > ROTATING_REFRESH_S:
+        try:
+            new_symbols, new_short = resolve_symbols(ex, include_rotating=True)
+            if new_symbols:
+                SYMBOLS, SHORT_NAMES = new_symbols, new_short
+        except Exception as e:
+            print(f"[WARN] symbol refresh failed, keeping existing list: {e}")
+        _last_symbol_refresh_ts = now_ts
+
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
     records = []
     for sym in SYMBOLS:
@@ -91,7 +206,7 @@ def hourly_summary(history):
     print(f"{'='*60}")
 
     # Group last ~4 ticks (1 hour) by symbol
-    recent = history[-16:]  # last 4 ticks * 4 symbols
+    recent = history[-(4 * max(len(SYMBOLS), 1)):]  # last 4 ticks * current symbol count
     by_sym = {}
     for r in recent:
         by_sym.setdefault(r["symbol"], []).append(r)

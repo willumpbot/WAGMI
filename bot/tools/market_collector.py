@@ -1,7 +1,11 @@
 """
 ISOLATED market-data expansion collector (RQ28, coordination/RESEARCH_AGENDA.md).
 
-Collects per symbol (BTC, ETH, SOL, HYPE, XRP), one run per invocation:
+Collects per symbol, one run per invocation. Symbol set = BASE_SYMBOLS (the
+original 5 majors: BTC, ETH, SOL, HYPE, XRP) + MEME_WATCHLIST (owner's
+co-pilot meme universe: POPCAT, WIF, FARTCOIN, PENGU, kPEPE, kBONK, kSHIB) +
+a small rotating slice of tools/copilot/whats_moving.py's current top movers
+(see build_symbol_list() below). Per symbol:
   1. Hyperliquid L2 book snapshot -> derived microstructure metrics only
      (spread, mid, depth within 0.1%/0.5%/1% of mid per side, imbalance).
   2. Hyperliquid recent-trades aggregate (buy/sell volume, largest trade, count).
@@ -28,8 +32,89 @@ from datetime import datetime, timezone
 
 import requests
 
-SYMBOLS = ["BTC", "ETH", "SOL", "HYPE", "XRP"]
-BINANCE_MAP = {"BTC": "BTCUSDT", "ETH": "ETHUSDT", "SOL": "SOLUSDT", "XRP": "XRPUSDT"}  # HYPE not on Binance
+BASE_SYMBOLS = ["BTC", "ETH", "SOL", "HYPE", "XRP"]  # original 5 majors — unchanged, always collected
+
+# Owner's meme-coin watchlist (co-pilot universe, HL-listed perps; see
+# data/longtail/universe.json). Config constant — tune the list here. These are
+# HL's own coin names (lowercase-k for the 1000x-denominated memes: kPEPE,
+# kBONK, kSHIB), used as-is for the HL-native L2/trades calls below.
+MEME_WATCHLIST = ["POPCAT", "WIF", "FARTCOIN", "PENGU", "kPEPE", "kBONK", "kSHIB"]
+# POPCAT 24h volume is thin (~$270K, verified live) — collected anyway per owner:
+# thin-book depth history is itself a risk instrument (how much can he exit).
+
+# Small rotating slice of current market movers, pulled from
+# tools/copilot/whats_moving.py's own state file, so a trending meme OUTSIDE the
+# fixed watchlist above still gets captured. Best-effort / fail-soft: this
+# process runs fresh (--once) every scheduled invocation, so a missing/stale
+# state file just yields zero rotating symbols that run — never fewer than
+# BASE_SYMBOLS + MEME_WATCHLIST, never a crash.
+ROTATING_TOP_N = 10
+ROTATING_MAX_AGE_HOURS = 6.0
+MOVING_STATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "copilot", "moving_state.json")
+
+
+def _load_rotating_movers(exclude_upper):
+    """Best-effort top-N by recent volume from whats_moving.py's state file.
+    Fail-soft: any problem (missing file, bad json, stale data) returns []
+    and never raises — this is a breadth nice-to-have, not load-bearing."""
+    try:
+        with open(MOVING_STATE_PATH, "r", encoding="utf-8") as f:
+            state = json.load(f)
+        history = state.get("history") or {}
+        now = datetime.now(timezone.utc)
+        fresh = []
+        for sym, rec in history.items():
+            if not isinstance(rec, dict) or sym.upper() in exclude_upper:
+                continue
+            last_ts = rec.get("last_ts")
+            try:
+                age_h = (now - datetime.fromisoformat(last_ts)).total_seconds() / 3600.0
+            except (TypeError, ValueError):
+                continue
+            if age_h > ROTATING_MAX_AGE_HOURS:
+                continue
+            fresh.append((sym, rec.get("last_vol_usd") or 0.0))
+        fresh.sort(key=lambda x: x[1], reverse=True)
+        return [s for s, _ in fresh[:ROTATING_TOP_N]]
+    except Exception:
+        return []
+
+
+def build_symbol_list():
+    """Static majors+memes (strict superset of the original 5) plus a fresh
+    rotating-mover slice each --once run."""
+    seen, out = set(), []
+    for s in BASE_SYMBOLS + MEME_WATCHLIST:
+        key = s.upper()
+        if key not in seen:
+            seen.add(key)
+            out.append(s)
+    for s in _load_rotating_movers(seen):
+        key = s.upper()
+        if key not in seen:
+            seen.add(key)
+            out.append(s)
+    return out
+
+
+SYMBOLS = build_symbol_list()
+
+# HL "k"-denominated memes (1000x nominal price) trade on Binance/OKX under
+# their real ticker without the k-multiplier prefix (e.g. kPEPE's futures
+# context is Binance "1000PEPEUSDT" / OKX "PEPE-USDT-SWAP", not "kPEPE...").
+# Maps HL coin name -> real-ticker root used for OKX instId construction.
+OKX_ROOT_OVERRIDE = {"kPEPE": "PEPE", "kBONK": "BONK", "kSHIB": "SHIB"}
+
+BINANCE_MAP = {
+    "BTC": "BTCUSDT", "ETH": "ETHUSDT", "SOL": "SOLUSDT", "XRP": "XRPUSDT",  # HYPE not on Binance
+    # Best-effort meme mappings — unverified on this geo-blocked host (see
+    # _BINANCE_GEO_BLOCKED below); a wrong/missing symbol just raises and the
+    # OKX fallback (verified working for all of these, see collect_okx_context)
+    # takes over, so an incorrect guess here is never fatal.
+    "WIF": "WIFUSDT", "FARTCOIN": "FARTCOINUSDT", "PENGU": "1000PENGUUSDT",
+    "kPEPE": "1000PEPEUSDT", "kBONK": "1000BONKUSDT", "kSHIB": "1000SHIBUSDT",
+    # POPCAT: no known Binance futures listing — OKX-only, handled via fallback.
+}
 
 HL_INFO_URL = "https://api.hyperliquid.xyz/info"
 BINANCE_FAPI = "https://fapi.binance.com"
@@ -164,7 +249,7 @@ def collect_taker_volume_15m(coin):
     stays honest.
     """
     rows = _get_okx("/api/v5/rubik/stat/taker-volume",
-                    {"ccy": coin, "instType": "CONTRACTS", "period": "5m"})
+                    {"ccy": OKX_ROOT_OVERRIDE.get(coin, coin), "instType": "CONTRACTS", "period": "5m"})
     if not rows or len(rows) < 3:
         raise ValueError(f"okx taker-volume: {len(rows or [])} rows < 3")
     window = rows[:3]  # newest-first; newest row may be an in-progress bucket
@@ -234,7 +319,8 @@ def collect_binance_context(coin):
 
 def collect_okx_context(coin):
     """OKX public fallback — same three metrics, free, no key. Covers HYPE too."""
-    swap = f"{coin}-USDT-SWAP"
+    root = OKX_ROOT_OVERRIDE.get(coin, coin)  # kPEPE/kBONK/kSHIB -> PEPE/BONK/SHIB
+    swap = f"{root}-USDT-SWAP"
     out = {"source": "okx", "mark_price": None, "index_price": None,
            "funding_rate": None, "basis_bps": None,
            "long_short_account_ratio": None, "long_short_account_ratio_ts": None,
@@ -246,7 +332,7 @@ def collect_okx_context(coin):
         print(f"[WARN] {coin} okx funding: {e}")
     try:
         mk = _get_okx("/api/v5/public/mark-price", {"instId": swap})
-        ix = _get_okx("/api/v5/market/index-tickers", {"instId": f"{coin}-USDT"})
+        ix = _get_okx("/api/v5/market/index-tickers", {"instId": f"{root}-USDT"})
         if mk and ix:
             out["mark_price"] = float(mk[0]["markPx"])
             out["index_price"] = float(ix[0]["idxPx"])
@@ -254,7 +340,7 @@ def collect_okx_context(coin):
     except Exception as e:
         print(f"[WARN] {coin} okx mark/index: {e}")
     try:
-        ls = _get_okx("/api/v5/rubik/stat/contracts/long-short-account-ratio", {"ccy": coin, "period": "5m"})
+        ls = _get_okx("/api/v5/rubik/stat/contracts/long-short-account-ratio", {"ccy": root, "period": "5m"})
         out["long_short_account_ratio"] = float(ls[0][1]) if ls else None
         # TABLE_B collector fix #2: OKX row ts (source time, not poll time)
         out["long_short_account_ratio_ts"] = int(ls[0][0]) if ls else None
@@ -262,7 +348,7 @@ def collect_okx_context(coin):
         print(f"[WARN] {coin} okx longShortRatio: {e}")
     try:
         # rubik taker-volume rows: [ts, sellVol, buyVol]
-        tk = _get_okx("/api/v5/rubik/stat/taker-volume", {"ccy": coin, "instType": "CONTRACTS", "period": "5m"})
+        tk = _get_okx("/api/v5/rubik/stat/taker-volume", {"ccy": root, "instType": "CONTRACTS", "period": "5m"})
         if tk and float(tk[0][1]) > 0:
             out["taker_buy_sell_ratio"] = round(float(tk[0][2]) / float(tk[0][1]), 4)
     except Exception as e:

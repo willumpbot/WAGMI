@@ -480,6 +480,23 @@ def main() -> int:
     (run_dir / "isolation_before.json").write_text(
         json.dumps(before), encoding="utf-8")
 
+    # PIT edge-map seed: freeze a READ-ONLY copy of the LIVE ledger/trades so the
+    # backtest can reconstruct the point-in-time edge map from the real history
+    # live actually had. _build_pit_edge_map filters to `row_close_ts < decision_ts`
+    # per decision, so this frozen full-history snapshot stays leak-safe. Frozen
+    # here (not read live) to avoid a concurrent-write race with the live bot.
+    pit_dir = run_dir / "pit_seed"
+    pit_dir.mkdir(exist_ok=True)
+    pit_ledger = pit_dir / "trade_ledger.csv"
+    pit_trades = pit_dir / "trades.csv"
+    for _src, _dst in (("data/trade_ledger.csv", pit_ledger),
+                       ("data/trades.csv", pit_trades)):
+        try:
+            if os.path.exists(_src):
+                shutil.copy2(_src, _dst)
+        except OSError as _e:
+            print(f"[HARNESS] PIT seed copy failed for {_src}: {_e}")
+
     env = dict(os.environ)
     env.update({
         "REPLAY_MODE": "1",
@@ -492,6 +509,10 @@ def main() -> int:
         "REPLAY_BUDGET_USD": str(args.budget),
         "REPLAY_MAX_LLM_CALLS": str(args.max_llm_calls),
         "REPLAY_LLM_SLEEP_S": str(args.sleep),
+        # Point the backtest's PIT edge-map reader at the frozen live-history seed
+        # (absolute paths; the sandbox's own data tree is empty by design).
+        "WAGMI_PIT_LEDGER": str(pit_ledger.resolve()),
+        "WAGMI_PIT_TRADES": str(pit_trades.resolve()),
         "PYTHONUNBUFFERED": "1",
         "PYTHONPATH": str(sandbox),
         # Keep the sandbox off the API-billing path even if .env has a key

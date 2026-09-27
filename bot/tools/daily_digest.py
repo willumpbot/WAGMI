@@ -17,6 +17,7 @@ Register:  Task Scheduler WAGMI-DailyDigest (daily ~20:00 UTC).
 Revert:    schtasks /delete /tn WAGMI-DailyDigest /f   (and delete this file).
 """
 import os
+import sys
 import csv
 import json
 import datetime
@@ -100,10 +101,49 @@ def _load_env_from_file():
                     continue
                 k, v = line.split("=", 1)
                 k = k.strip()
-                if k.startswith(("TELEGRAM_", "DISCORD_")) and not os.getenv(k):
+                if k.startswith(("TELEGRAM_", "DISCORD_", "WAGMI_DISCORD_")) and not os.getenv(k):
                     os.environ[k] = v.strip().strip('"').strip("'")
     except Exception:
         pass
+
+
+PROBE_PROGRAM_START = "2026-09-12"    # the day BLOCKED_GO_PROBE went live
+PROBE_TARGET_N = 30                   # the house n>=30 forward-evidence gate
+
+
+def _probe_progress():
+    """One line: how far the forward-evidence program has actually got.
+
+    This is THE number. Not rows collected — the box already writes ~100k
+    rows/week of funding, depth and events. Those measure the market. Only a
+    CLOSED TRADE measures whether this bot has an edge, and until 2026-09-12 the
+    gates had frozen that stream at zero for 45 days. n>=30 probes is the point
+    at which the blocked classes can be re-judged on evidence rather than on a
+    2026-07 ledger. Everything else in this digest is plumbing; this is score.
+    """
+    try:
+        n = wins = 0
+        pnl = 0.0
+        with open(os.path.join(BOT_DIR, "data", "trades.csv")) as fh:
+            for r in csv.DictReader(fh):
+                ts = str(r.get("timestamp") or "")
+                if ts[:10] < PROBE_PROGRAM_START:
+                    continue
+                if str(r.get("entry_type") or "").upper() != "EXPLORATION":
+                    continue
+                n += 1
+                try:
+                    p = float(r.get("pnl") or 0)
+                except (TypeError, ValueError):
+                    p = 0.0
+                pnl += p
+                wins += 1 if p > 0 else 0
+        if n == 0:
+            return f"0 of {PROBE_TARGET_N} probes - none closed yet"
+        return (f"{n} of {PROBE_TARGET_N} probes closed  "
+                f"({wins}W/{n - wins}L, ${pnl:+.2f})")
+    except OSError:
+        return "unavailable"
 
 
 def _write_report(msg, now):
@@ -121,16 +161,40 @@ def _write_report(msg, now):
         return False
 
 
+def _webhook():
+    """The first webhook that is an actual URL.
+
+    BUG (found 2026-09-12): this read only DISCORD_WEBHOOK, which .env sets to the
+    literal placeholder "..." — non-empty, so the "not configured" guard passed and
+    every send POSTed to the string "...", failed, and returned False. The real,
+    working hook is WAGMI_DISCORD_WEBHOOK. Net effect: the daily digest — the
+    owner's designated "being away doesn't mean being blind" tripwire — delivered
+    to nobody for months while its scheduled task reported success (0x0).
+    Placeholders are now rejected by shape, not by emptiness.
+    """
+    for key in ("WAGMI_DISCORD_WEBHOOK", "DISCORD_WEBHOOK"):
+        hook = (os.getenv(key) or "").strip()
+        if hook.startswith("http"):
+            return hook
+    return ""
+
+
 def send_discord(msg):
-    hook = os.getenv("DISCORD_WEBHOOK", "")
+    hook = _webhook()
     if not hook:
         _load_env_from_file()
-        hook = os.getenv("DISCORD_WEBHOOK", "")
+        hook = _webhook()
     if not hook:
         return False
     try:
         data = json.dumps({"content": msg[:1900]}).encode("utf-8")
-        req = urllib.request.Request(hook, data=data, headers={"Content-Type": "application/json"})
+        # User-Agent is REQUIRED: Discord's edge 403s urllib's default
+        # "Python-urllib/3.x". tools/discord_notify.py has always sent one;
+        # this path did not, so even a correct webhook failed (2026-09-12).
+        req = urllib.request.Request(
+            hook, data=data,
+            headers={"Content-Type": "application/json", "User-Agent": "WAGMI-bot"},
+        )
         urllib.request.urlopen(req, timeout=15)
         return True
     except Exception as e:
@@ -218,9 +282,16 @@ def main():
         f"LLM calls today: {costs.get('today_calls', '?')} (${costs.get('today_spend', 0):.3f} tracked;"
         f" CLI/subscription usage undercounted)",
         f"Collectors: depth {fmt_age(depth_age)}, funding {fmt_age(fund_age)}",
+        f"Forward evidence: {_probe_progress()}",
         f"Open positions ({len(plines)}): {', '.join(plines) if plines else 'none'}",
     ]
     msg = "\n".join(lines)
+    # --no-send: print the digest and push nothing. Used by the Discord `status`
+    # command, which replies with this stdout in-channel — pushing as well would
+    # post the same text twice.
+    if "--no-send" in sys.argv[1:]:
+        print(msg)
+        return
     written = _write_report(msg, now)
     tg = send_telegram(msg)
     dc = send_discord(msg)
