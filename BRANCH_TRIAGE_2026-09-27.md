@@ -1,0 +1,130 @@
+# Stale-branch triage — 2026-09-27
+
+12 branches and 15 worktrees, all frozen ≤2026-07-28. Triaged against the
+post-salvage `desktop-overdrive-2026-05-30` HEAD. Most are recoverable or already
+recovered; one holds work that matters.
+
+## Verdict table
+
+| branch | status | action |
+|---|---|---|
+| `claude/close-path-routing` | **already merged** | safe to delete |
+| `claude/measurement-integrity` | **already merged** | safe to delete |
+| `claude/breakeven-ratchet` | **already merged** (0 diff) | safe to delete |
+| `claude/measurement-floor` | **already merged** (0 diff) | safe to delete |
+| `claude/learning-input-floor` | **superseded** — `LEARNING_INPUT_FLOOR` is already in the tree (5 files) and now committed | safe to delete |
+| `claude/pnl-leverage-fix` | **superseded** — `_pnl_lev` is already in the tree (3 files) and now committed | safe to delete |
+| `claude/exit-discipline` | **unrecovered**: `CONF_BAND_SIDE_MULT`, `MFE_RATCHET` — neither in tree | see below |
+| `claude/profitability` | **unrecovered and valuable** | see below |
+| `claude/site-live-20260724` | +599 commits, but ~all automated data/report noise; the one real commit is `29f44287 fix(web): unblock deploy + snapshot-first data feed` | cherry-pick that one commit |
+
+So of nine branches, six are dead weight and the work was never actually lost.
+Two hold real unrecovered code. Nothing needs a 599-commit merge.
+
+## The one that matters: `claude/profitability` (3d9d328b)
+
+Three flag-gated fixes, none of which are in the tree
+(`LLM_FIRST_QTY_DIV_LEVERAGE`, `FEE_CLEARANCE_GATE*` all return 0 files):
+
+1. **A sizing inconsistency in the LLM-first path** — see below, this is the
+   important one.
+2. `llm/fee_clearance_gate.py` — skip entries whose realistic MFE cannot clear
+   the fee floor. Three such trades cost −$19 in the branch's test run. This aims
+   straight at the project's established #1 leak (fee drag ≈ 13% of the risk
+   budget per trade).
+3. `MFE_RATCHET` v2, profile-aware so the TREND right-tail survives. v1 was
+   refuted for live flip (it strangled the June convexity runners); v2 claims to
+   fix exactly that. Still shelf-worthy, not a tonight decision.
+
+The commit message also names the **largest unbuilt lever in the project**:
+maker-vs-taker fees. Switching to limit orders cut fees 3x ($27.82 → $9.27) and
+flipped that run from −$10 to **+$8.51**. It was never built.
+
+## Live finding: the LLM-first sizing path disagrees with every other path
+
+Not asserted as a proven bug — flagged as a verified *inconsistency* that needs
+ledger confirmation before anyone acts on it. But it is in the running code.
+
+Three modules size a position as `risk / (stop × leverage)`:
+
+- `bot/execution/risk.py:746` — `qty = risk_amount / (effective_stop * leverage)`
+- `bot/execution/risk.py:783` — `qty = risk_usd / (effective_stop * effective_leverage)`
+- `bot/execution/leverage.py:514` — `qty = risk_usd / (stop_width * effective_leverage)`
+
+The LLM-first path does not:
+
+- `bot/llm/agents/coordinator.py:2012` — `position_qty = risk_dollars / stop_width`
+
+And booking then multiplies by leverage anyway:
+
+- `bot/multi_strategy_main.py:7595` — `position_size_usd = qty * entry * lev_decision.leverage`
+
+If that reading holds, the LLM-first path — the primary trading path — risks
+`risk_pct × leverage` in realized dollar terms, while the other paths hold
+`risk_pct` constant. The comment above line 2012 says the old bug was
+*multiplying* by leverage and was removed; the branch's claim is that removing
+the multiply was only half the fix, because downstream notional still scales by
+leverage.
+
+The July leverage migration de-leveraged the **ledgers and derived state**. It is
+not clear it touched this **sizing** path. That is the thing to verify.
+
+The branch's fix is strictly risk-*reducing* by construction (leverage is bounded
+to [1.0, 20.0], so dividing can only shrink qty), and it ships default-OFF behind
+`LLM_FIRST_QTY_DIV_LEVERAGE`.
+
+### I tested it against the ledger. It cannot be settled there — and the test found something worse.
+
+If sizing were over-risking by leverage, realized stop losses as a share of
+equity would *scale* with leverage. Across 119 SL closes they do not — medians
+sit between 0.011% and 0.094% with no monotonic pattern. But that test is
+inconclusive, for three reasons: 79 of 119 SL closes are at leverage 1.0, where
+dividing by leverage is a no-op; only 6 SL closes exist post-migration; and the
+loss magnitudes are so small that the leverage term is swamped.
+
+That last point is the finding. **Median realized risk per stopped-out trade:**
+
+| window | n closes | median abs net_pnl | median risk, % of equity |
+|---|---|---|---|
+| Jun 01–30 | 132 | $4.59 | 0.42% |
+| Jul 01–26 | 122 | $0.64 | **0.008%** |
+| Jul 26–Aug 31 | 20 | $1.26 | 0.12% |
+| Sep 01–27 | 13 | $0.16 | **0.015%** |
+
+Intended risk is on the order of 1–2.5% of equity per trade. The bot is
+currently risking about **one hundredth of that**, and the median trade now
+resolves for **sixteen cents**.
+
+This is the July "size collapse" finding, still unfixed two months later, and
+worse now than when it was identified. It subsumes almost everything else:
+at $0.16 a trade, no gate, exit rule, or edge discovery can move dollars, and
+round-trip fees dominate every outcome. It also means **`LLM_FIRST_QTY_DIV_LEVERAGE`
+must not be landed as-is** — it divides qty further, and qty is already ~100x
+too small. Fix the collapse first; revisit the leverage consistency question
+afterwards, when position sizes are large enough for it to matter.
+
+## Why I didn't just cherry-pick tonight
+
+All five candidate commits touch files that just received two months of
+uncommitted changes (`kelly_engine.py`, `live_edge.py`, `position_manager.py`,
+`coordinator.py`), so every one of them conflicts. Resolving those conflicts
+means editing the working tree **the live bot is running out of**, while it is
+running and unattended, on a box with ~0.4GB free RAM. Wrong time. They are
+small, well-labelled, and all default-OFF, so they will land cleanly in a
+dedicated worktree when someone is watching.
+
+## Recommended order (revised after the ledger test)
+
+1. **Find why position sizing collapsed ~100x and fix it.** Everything else is
+   noise until a trade can move more than a few cents. This is one diagnostic
+   session: trace `risk_dollars` and `stop_width` from config through
+   `coordinator.py:2012` for a live signal and find where the magnitude goes.
+2. Build the maker-vs-taker fee change. Biggest *measured* lever, never built —
+   and it matters more, not less, when trades are small, since fees are a fixed
+   drag.
+3. Cherry-pick `29f44287` to unbreak the site deploy.
+4. Land `fee_clearance_gate` shadow-on (measures, changes nothing).
+5. Delete the six dead branches.
+6. **Do not** land `LLM_FIRST_QTY_DIV_LEVERAGE` until item 1 is resolved — it
+   shrinks an already-collapsed size.
+7. Leave `MFE_RATCHET` shelved until the exit engine is deliberately reopened.
