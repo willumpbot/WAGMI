@@ -16,6 +16,7 @@ import json
 import subprocess
 import time
 import html
+from datetime import datetime, timezone
 from pathlib import Path
 
 BOT = Path(r"C:\Users\vince\WAGMI\bot")
@@ -239,6 +240,28 @@ def get_mem():
         return {}
 
 
+def get_attention():
+    """Cached market-attention snapshot written by tools/copilot/attention_snapshot.py.
+
+    This page rebuilds every minute, so it must never fetch anything itself - the
+    snapshot job runs on its own slower schedule and leaves this file behind. A
+    missing or stale file degrades to "not available" rather than an empty table,
+    because a blank market section reads as "nothing to see", which is a lie.
+    """
+    d = read_json(BOT / "data" / "copilot" / "attention.json", None)
+    if not isinstance(d, dict) or not d.get("rows"):
+        return None
+    age = None
+    try:
+        ts = datetime.strptime(d["generated_utc"], "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc)
+        age = (datetime.now(timezone.utc) - ts).total_seconds()
+    except Exception:
+        pass
+    d["_age"] = age
+    return d
+
+
 def human_age(s):
     if s is None:
         return "unknown"
@@ -386,6 +409,55 @@ def build():
             p.append("<li><b>%s</b><span>%s</span></li>" % (e(title), e(detail)))
         p.append("</ul>")
     p.append("</div>")
+
+    # ── market attention ─────────────────────────────────────────────
+    # Deliberately FIRST content section. Everything else on this page answers
+    # "is the machine healthy"; this answers "is anything worth looking at",
+    # which is the question that actually costs money when nobody asks it.
+    # Measurement only - where price sits in its 90d window. Never a prediction.
+    attn = get_attention()
+    p.append("<h2>Worth a look</h2>")
+    if attn is None:
+        p.append("<p class='note'>%s</p>" % e(
+            "Market snapshot not available yet. It is written by a separate job "
+            "(tools/copilot/attention_snapshot.py); nothing is wrong with the bot."))
+    else:
+        edge = [r for r in attn["rows"] if r.get("zone") != "mid-range"]
+        lo = [r for r in edge if (r.get("range_pos") or 50) <= attn.get("low_edge_pct", 15)]
+        hi = [r for r in edge if (r.get("range_pos") or 50) >= attn.get("high_edge_pct", 85)]
+        if not edge:
+            headline = ("Nothing is at a range extreme. Every coin tracked is "
+                        "mid-range in its 90-day window.")
+        else:
+            bits = []
+            if lo:
+                bits.append("%d at the BOTTOM of its 90-day range (%s)"
+                            % (len(lo), ", ".join(r["symbol"] for r in lo)))
+            if hi:
+                bits.append("%d at the TOP of its 90-day range (%s)"
+                            % (len(hi), ", ".join(r["symbol"] for r in hi)))
+            headline = "; ".join(bits) + "."
+        p.append("<p class='note'>%s</p>" % e(headline))
+        p.append("<div class='stats'>")
+        for r in attn["rows"]:
+            rp = r.get("range_pos")
+            val = ("%.0f%%" % rp) if rp is not None else "unknown"
+            px = r.get("price")
+            # Adaptive precision: a meme at $0.0044 must not render as "$0.00".
+            if px:
+                dp = 2 if px >= 100 else 4 if px >= 1 else 6 if px >= 0.01 else 8
+                sub = " &middot; $" + format(px, ",.%df" % dp).rstrip("0").rstrip(".")
+            else:
+                sub = ""
+            p.append("<div class='stat'><div class='k'>%s%s</div>"
+                     "<div class='v'>%s</div></div>"
+                     % (e(r["symbol"]), sub, e(val)))
+        p.append("</div>")
+        p.append("<p class='note'>%s</p>" % e(
+            "Numbers are position in the 90-day range: 0%% = range low, 100%% = "
+            "range high. This is a MEASUREMENT of where price sits, not a "
+            "prediction - nothing here says which way anything goes. "
+            "Snapshot age: %s." % human_age(attn.get("_age"))))
 
     # ── the bot ──────────────────────────────────────────────────────
     p.append("<h2>Your bot</h2>")

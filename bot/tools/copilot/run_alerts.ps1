@@ -62,3 +62,14 @@ try {
 # (POPCAT's real HL cap), so no false leverage-SUICIDAL fires. Per-coin leverage guidance lives
 # in the human-facing range-aware brief (copilot.py --lev-range 3-15), not in the alerts.
 & $py "tools\copilot\copilot_alerts.py" --equity 5000 --leverage 3 2>&1 | Out-File -Append -Encoding utf8 "data\copilot\alerts.log"
+
+# --- MARKET-ATTENTION SNAPSHOT (added 2026-09-27) ------------------------------
+# Writes data\copilot\attention.json, which tools\dashboard.py renders as its
+# first section ("Worth a look"). The dashboard rebuilds every MINUTE, so it can
+# never fetch this itself - it reads the cached file this leaves behind.
+# Piggybacked on this already-scheduled 2h task for the same reason the liq
+# collector is: registering a new task needs elevation this setup lacked. A 2h
+# refresh is ample for a 90-day range metric, which moves slowly.
+# Read-only w.r.t. the live bot. Failure is non-fatal: the snapshot job leaves
+# any previous file in place rather than publishing an empty one.
+& $py "tools\copilot\attention_snapshot.py" 2>&1 | Out-File -Append -Encoding utf8 "data\copilot\alerts.log"
