@@ -95,36 +95,74 @@ Intended risk is on the order of 1–2.5% of equity per trade. The bot is
 currently risking about **one hundredth of that**, and the median trade now
 resolves for **sixteen cents**.
 
-### Narrowed: `stop_width_pct` is arriving as zero on every sizing decision
+### Where the sizing trace actually got to (one wrong turn, corrected)
 
 The July root-cause fix (`SIZING_CONSTRAINT_UNITS_FIX`) **is still enabled** and
 working as written. `.env` has it `true` with `MAX_RISK_PCT_CEILING=0.005` — the
-deliberate 0.5% safety cap, lowered from the 0.02 it shipped at. But realized
-risk is 0.015%, which is **33x below even that cap**, so the cap is not what is
-binding.
+deliberate 0.5% safety cap, lowered from the 0.02 it shipped at.
 
-Every recent sizing decision in `logs/bot_20260918.log` looks like this:
+I first thought the defect was `stop_width_pct` arriving as zero, because the
+most recent `[SIZING-CONSTRAINT]` log lines all read `stop_frac=0.0000`.
+**That was wrong, and it is worth recording why.** Across the logs, 1,087 of
+those lines exist and only 756 have `stop_frac=0.0000` — 331 carry real values
+(0.03–0.04, i.e. 3–4% stops). I had sampled the tail and generalised.
+
+More importantly, the zero does not change the outcome. The ceiling is
+`min((remaining/100) × stop_frac, cap)`. With a real `stop_frac=0.03` and
+`remaining=500%`, that is `min(5.0 × 0.03, 0.005) = min(0.15, 0.005) = 0.005`.
+**The 0.005 cap binds either way.** So `stop_frac=0` is cosmetic here, not
+causal — worth tidying, but not the size collapse.
+
+### Resolved: September's tiny size is BY DESIGN, not a defect
+
+Following the trace to the end dissolves it. The coordinator proposes healthy
+size — recent logs show `risk=3.0% qty=1089.59`. Those lines fire every scan
+though, and only 13 trades closed in 15 days, so proposals are not executions.
+
+The executed trades are **deliberate probes**. From `.env`:
 
 ```
-[SIZING-CONSTRAINT] stop_frac=0.0000 remaining=500% ceiling_buggy=0.00000
-                    ceiling_fixed=0.00500 cap=0.005 applied=0.00500(FIXED)
+BLOCKED_GO_PROBE=true
+BLOCKED_GO_PROBE_RATE=0.5        # half of gate-BLOCKED entries are re-opened
+BLOCKED_GO_PROBE_SIZE_MULT=0.1   # ...at one tenth size
+EXPLORATION_RISK_MULT=0.1
+EXPLORATION_RISK_PCT=0.004       # 0.4% base for exploration entries
 ```
 
-`stop_frac=0.0000` on every single one. The signal's `stop_width_pct` is
-arriving as zero, so the real ceiling never computes and the fix falls back to
-its default cap on *every* trade. That fallback path was built for the rare
-"snapshot missing stop_width_pct" case flagged in July as an unbounded hole; it
-is now the normal path.
+and `multi_strategy_main.py:8957` — `qty = qty * _probe_mult`. The probe
+program went live **2026-09-12** (`tools/daily_digest.py:110`,
+`PROBE_PROGRAM_START`) — the exact date trading resumed and the exact cutoff my
+ledger query used.
 
-That is the thread to pull. It is a data/plumbing defect upstream of sizing, not
-a sizing-math bug — `stop_width_pct` should be `stop/entry` and is instead 0.
+So: 0.4% exploration risk × 0.1 probe multiplier ≈ 0.04%, against an observed
+median of 0.015% (the rest is stops not travelling full width). Consistent.
 
-(Note: the logs also show `risk=3.0%` recurring alongside a 0.5% cap, so there
-are at least two different "risk" quantities in play. Worth resolving which one
-governs, but I did not trace it.)
+**The bot is trading at probe size because that is what the drought fix does.**
+It is buying forward information about gate-blocked entries, not trying to make
+money on them. $0.16 a trade is the intended price of that information.
 
-This is the July "size collapse" finding, still unfixed two months later, and
-worse now than when it was identified. It subsumes almost everything else:
+The July size collapse was a real bug and it *was* fixed
+(`SIZING_CONSTRAINT_UNITS_FIX`). September is a different thing wearing the
+same numbers.
+
+### What the real question turned out to be
+
+Not "why is size collapsed" but: **the entry gate still blocks essentially every
+real entry, and it is blocking correctly on the evidence it has.** The only
+trades happening are the half of blocked entries re-opened as tenth-size probes.
+That is the co-pilot program working as designed — manufacturing forward
+evidence because the historical corpus is exhausted.
+
+So the honest read on "why isn't it making money": it is not sized down by a
+bug, it is *deliberately not betting* while it accumulates the evidence needed
+to know whether any entry edge exists. Changing that is a strategy decision,
+not a bug fix. The lever, if you want dollars sooner, is
+`BLOCKED_GO_PROBE_RATE` / `SIZE_MULT` — and raising those means betting real
+money on entries the gate's own evidence says lose.
+
+**I got this wrong twice before landing here** (first blaming `stop_width_pct=0`,
+then an imagined dead code path). Both were over-reads of partial evidence;
+recording them so the pattern is visible. It subsumes almost everything else:
 at $0.16 a trade, no gate, exit rule, or edge discovery can move dollars, and
 round-trip fees dominate every outcome. It also means **`LLM_FIRST_QTY_DIV_LEVERAGE`
 must not be landed as-is** — it divides qty further, and qty is already ~100x
@@ -143,10 +181,10 @@ dedicated worktree when someone is watching.
 
 ## Recommended order (revised after the ledger test)
 
-1. **Find why position sizing collapsed ~100x and fix it.** Everything else is
-   noise until a trade can move more than a few cents. This is one diagnostic
-   session: trace `risk_dollars` and `stop_width` from config through
-   `coordinator.py:2012` for a live signal and find where the magnitude goes.
+1. **Nothing to fix on sizing — it resolved to intended probe behaviour.** The
+   open decision instead: leave probes at 0.1x and keep buying evidence, or
+   raise `BLOCKED_GO_PROBE_RATE` / `SIZE_MULT` to bet real money sooner. That is
+   yours, not a bug fix. Revisit when the probe ledger clears n≥30.
 2. Build the maker-vs-taker fee change. Biggest *measured* lever, never built —
    and it matters more, not less, when trades are small, since fees are a fixed
    drag.
