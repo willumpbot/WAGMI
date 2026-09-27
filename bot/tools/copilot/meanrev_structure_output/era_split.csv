@@ -1,0 +1,136 @@
+coin,asset_class,horizon,era_status,pre_acf1,pre_ou_b,pre_n,post_acf1,post_ou_b,post_n,sign_stable
+AAVE,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+AAVE,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+AAVE,alt,1d,OK,0.011204715463536536,-0.003707831324372312,219.0,-0.05865441838712791,-0.04141231587481113,180.0,False
+AAVE,alt,3d,OK,-0.1393150128549039,-0.010764423273289518,73.0,-0.1096747038544057,-0.10222764272060429,59.0,True
+AAVE,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+ADA,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+ADA,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+ADA,alt,1d,OK,0.07267344270454457,0.00164427949839999,219.0,0.030788477366296488,-0.013530640018789007,180.0,True
+ADA,alt,3d,OK,-0.1284623330631088,0.0005556650408381098,73.0,-0.17878697165832563,-0.041441558877517055,59.0,True
+ADA,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+APT,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+APT,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+APT,alt,1d,OK,0.08293269842095398,0.0011867788701023885,219.0,-0.02531146629904064,-0.017589877573448365,180.0,False
+APT,alt,3d,OK,-0.06493016895336169,0.001433638744178427,73.0,-0.16554851627217973,-0.032083019965057906,59.0,True
+APT,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+ARB,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+ARB,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+ARB,alt,1d,OK,0.025507480774373682,-0.00028169800873991497,219.0,0.04205940543483589,-0.027985249210622253,180.0,True
+ARB,alt,3d,OK,-0.17794794706840858,0.0036512978823503802,73.0,0.0069835522397079354,-0.07208034406423416,59.0,False
+ARB,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+AVAX,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+AVAX,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+AVAX,alt,1d,OK,0.019299143104817472,-0.0022266988537609444,219.0,-0.09716712975588969,-0.017886126450640607,180.0,False
+AVAX,alt,3d,OK,-0.10763119629702923,-0.004452625316478657,73.0,-0.2703837937498182,-0.03615211661593333,59.0,True
+AVAX,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+BCH,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+BCH,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+BCH,alt,1d,OK,-0.09359556395841426,-0.09841463212026612,219.0,-0.10742393496935632,-0.0023520870839346354,180.0,True
+BCH,alt,3d,OK,-0.2829378396514403,-0.25894822543970725,73.0,0.19918918623619986,-0.0017655882707901303,59.0,False
+BCH,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+CRV,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+CRV,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+CRV,alt,1d,OK,0.07270111807136996,-0.004531024191693655,219.0,-0.13334890698644244,-0.11006216647997205,180.0,False
+CRV,alt,3d,OK,-0.11243118870344081,-0.0172182873601292,73.0,-0.24985862068602002,-0.3118251931412032,59.0,True
+CRV,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+FARTCOIN,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+FARTCOIN,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+FARTCOIN,alt,1d,OK,0.036281370106862554,-0.008681377373988162,219.0,-0.04571055398379395,-0.043383014304234906,180.0,False
+FARTCOIN,alt,3d,OK,-0.14301538156689586,-0.03127297040953814,73.0,-0.17489160116777835,-0.12144716082872027,59.0,True
+FARTCOIN,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+LDO,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+LDO,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+LDO,alt,1d,OK,0.07899732694385031,-0.006034784158414911,219.0,-0.05437378053029681,-0.05760879667504219,180.0,False
+LDO,alt,3d,OK,-0.11159780937493956,-0.02193090020984307,73.0,-0.049039119357052956,-0.11956111706213848,59.0,True
+LDO,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+LINK,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+LINK,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+LINK,alt,1d,OK,-0.0020181140702298633,-0.00918671334693626,219.0,-0.08007046594884693,-0.07370248596080557,180.0,True
+LINK,alt,3d,OK,-0.16097789900648224,-0.02794950847802303,73.0,-0.36236958021827836,-0.212790992619032,59.0,True
+LINK,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+LTC,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+LTC,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+LTC,alt,1d,OK,0.007948992232064373,-0.00902155877648749,219.0,-0.08547833485882389,-0.027982798884622594,180.0,False
+LTC,alt,3d,OK,-0.1477319607451642,-0.021634041882656815,73.0,-0.2826558577987924,-0.061790083331527114,59.0,True
+LTC,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+ONDO,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+ONDO,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+ONDO,alt,1d,OK,0.039221105476181184,0.0044131880907528395,219.0,-0.0566909567965548,-0.034943323066177014,180.0,False
+ONDO,alt,3d,OK,-0.15159280717822338,0.011900796788458515,73.0,-0.1935327564895834,-0.0984039380472538,59.0,True
+ONDO,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+PAXG,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+PAXG,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+PAXG,alt,1d,OK,0.0465490604024219,-0.0029700178496155053,219.0,-0.061269003402229495,-0.012467245335264176,180.0,False
+PAXG,alt,3d,OK,0.10242156344037592,-0.007544684612967539,73.0,-0.08453681269263691,-0.02644248852761128,59.0,False
+PAXG,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+PENGU,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+PENGU,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+PENGU,alt,1d,OK,0.10261364147360758,-0.00726622408991561,219.0,-0.0822707578740606,-0.04143291429199403,180.0,False
+PENGU,alt,3d,OK,-0.03282027455895099,-0.01369004239679125,73.0,-0.19992357343386122,-0.12529456686164567,59.0,True
+PENGU,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+PUMP,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+PUMP,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+PUMP,alt,1d,OK,0.060353678958660006,-0.02809411187206342,205.0,-0.00889287316159084,-0.09558307705235734,180.0,False
+PUMP,alt,3d,OK,0.05504520008041243,-0.10623521935283475,68.0,-0.14422561065573702,-0.1883992672153789,59.0,False
+PUMP,alt,5d,"INSUFFICIENT (pre=42, post=36)",,,,,,,
+SUI,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+SUI,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+SUI,alt,1d,OK,0.06946691911914792,0.0004969947969069657,219.0,-0.06724705456001602,-0.036209543965318836,180.0,False
+SUI,alt,3d,OK,-0.1454933568722155,-0.001589881767781511,73.0,-0.18400386969625762,-0.08022467879837222,59.0,True
+SUI,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+TAO,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+TAO,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+TAO,alt,1d,OK,0.10705275253643037,-0.01869832166506173,219.0,0.0822529368349448,-0.029159849137538583,180.0,True
+TAO,alt,3d,OK,-0.26036779944727956,-0.07860479795133829,73.0,-0.057245580263400035,-0.1207558284981366,59.0,True
+TAO,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+TRX,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+TRX,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+TRX,alt,1d,OK,-0.083466439559059,-0.024363343778195816,219.0,-0.011749769559294075,-0.019212515813132217,180.0,True
+TRX,alt,3d,OK,-0.03159660947710171,-0.05560126142797487,73.0,0.09324006177777124,-0.0739374468735431,59.0,False
+TRX,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+UNI,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+UNI,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+UNI,alt,1d,OK,0.0252032117489063,-0.010131207279802887,219.0,-0.0492710498079184,-0.05159377495672053,180.0,False
+UNI,alt,3d,OK,-0.10204573000409162,-0.03396510585556518,73.0,-0.0722999562077698,-0.11222686767967724,59.0,True
+UNI,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+WLD,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+WLD,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+WLD,alt,1d,OK,0.04904421184809242,-0.008964622971377179,219.0,-0.13035009922637386,-0.037846195436565574,180.0,False
+WLD,alt,3d,OK,-0.08852889437768931,-0.022099263437911774,73.0,0.046770894222349466,-0.07262570639495902,59.0,False
+WLD,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+XPL,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+XPL,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+XPL,alt,1d,OK,-0.04344210015354626,-0.006022092467076003,162.0,-0.0773278984651758,-0.10475190929248171,180.0,True
+XPL,alt,3d,OK,-0.18536702168761116,-0.018553145664391885,54.0,-0.09075215897674117,-0.2907070434999704,59.0,True
+XPL,alt,5d,"INSUFFICIENT (pre=33, post=36)",,,,,,,
+ZEC,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+ZEC,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+ZEC,alt,1d,OK,0.10184194730131355,-0.00482566122329998,219.0,0.11272837468639867,-0.01864007319292786,180.0,True
+ZEC,alt,3d,OK,0.07577160519865553,-0.016408249192927896,73.0,-0.20895497605727625,-0.08851708171010127,59.0,False
+ZEC,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+kBONK,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+kBONK,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+kBONK,alt,1d,OK,0.03545275203168741,-0.004513182785647047,219.0,-0.04596718679936821,-0.0016526329554993908,180.0,False
+kBONK,alt,3d,OK,-0.08406016984327234,-0.01566682472434057,73.0,-0.2747964784318708,0.00842745056062128,59.0,True
+kBONK,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+kPEPE,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+kPEPE,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+kPEPE,alt,1d,OK,0.07848514516437377,-0.005806899320062527,219.0,-0.19514587304113157,-0.03609649391880345,180.0,False
+kPEPE,alt,3d,OK,-0.08051301520417378,-0.02171978822088944,73.0,-0.250656993628506,-0.09497138025063862,59.0,True
+kPEPE,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+kSHIB,alt,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+kSHIB,alt,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+kSHIB,alt,1d,OK,0.04372702435493956,-0.006205241356603791,219.0,-0.03620346552598423,-0.027765485832006803,180.0,False
+kSHIB,alt,3d,OK,-0.12982396840134725,-0.019804054716455195,73.0,-0.32150382328999433,-0.08002647753442323,59.0,True
+kSHIB,alt,5d,"INSUFFICIENT (pre=44, post=37)",,,,,,,
+BTC,major,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+BTC,major,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+BTC,major,1d,OK,0.10728181474777626,-0.023897053450951843,44.0,-0.08486871409825486,-0.04394346979118431,162.0,False
+BTC,major,3d,"INSUFFICIENT (pre=15, post=55)",,,,,,,
+BTC,major,5d,"INSUFFICIENT (pre=9, post=33)",,,,,,,
+SOL,major,1h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+SOL,major,4h,"SKIPPED (hourly data window ~2026-01-12 onward, too short before 2026-02-01 cutoff for a fair pre/post split)",,,,,,,
+SOL,major,1d,OK,0.0049575320596337265,-0.023679203255688886,44.0,0.03873343242092517,-0.07726422789379896,162.0,True
+SOL,major,3d,"INSUFFICIENT (pre=15, post=55)",,,,,,,
+SOL,major,5d,"INSUFFICIENT (pre=9, post=33)",,,,,,,
