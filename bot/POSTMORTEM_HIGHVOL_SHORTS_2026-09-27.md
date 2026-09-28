@@ -4,20 +4,42 @@
 "it should've been a long and our setup knew that." Checked against
 `data/trade_ledger.csv` (287 closes). Small-file, read-only.
 
-## The owner's instinct, tested
+## The owner's instinct, tested — the setup KNEW, and was overridden
 
-**CORRECTION (added after the join-gap investigation).** My first pass claimed the
-NEAR decision was "internally conflicted (confidence_scorer SELL vs
-multi_tier_quality LONG)." That was wrong — I read a `decisions.jsonl` record that
-was a portfolio-wide *trigger* log, not this trade's entry decision. The actual
-NEAR entry decision lives in `agent_performance.jsonl` (pipeline `915b5357-057`,
-21s before open) and shows the pipeline **agreed** to short: trade=go,
-risk=size0.3/override=reduce, critic=approve. So at the per-trade level the setup
-did **not** "know it should be a long" — every agent signed off on the short.
+This claim went through two wrong versions before the tracer got it right; both are
+left visible because the iteration is the point.
+- v1 (wrong): "internally conflicted, confidence_scorer SELL vs multi_tier LONG" —
+  I'd read a portfolio-wide *trigger* record from the wrong file (`decisions.jsonl`).
+- v2 (under-corrected): "the pipeline unanimously agreed go/approve" — too generous.
 
-The owner's instinct is therefore supported by the **aggregate regime pattern
-below, not by this specific decision.** That distinction matters: the fix is a
-regime-level guard, not "the bot ignored a signal it had."
+**v3 (traced, accurate).** The full agent chain for pipeline `915b5357-057`
+(`lineage_trace.py --trade-id f50c94986b5e`) shows the setup **explicitly flagged
+this as a bad trade and was overridden:**
+
+- **quant: SKIP / FLAT** (conf 0.1) — *"NEAR_SELL=0% historical, consolidation=17%
+  regime WR vs 53% trending. Knowledge base explicit rule: avoid single-signal
+  SHORTs in consolidation. EV negative... Stacking low-edge trade on a loss streak
+  = portfolio destruction. FLAT."*
+- **trade: go** (conf **0.35**) — *"No explicit graduated-rule veto or hard safety
+  block, EV not < −2.0, so **overdrive default is go**. Confidence cut hard for
+  4h/1h regime misalignment, redundant confluence, adverse BTC trend, poor
+  consolidation WR, and known overconfidence bias."*
+- **risk: size 0.3 / override reduce** — but still **leverage 3.0**.
+- **critic: approve** — *"Vacc=0% (my vetoes are destroying value)... so no fresh
+  counter-thesis adds value here."* The critic had **self-disabled**.
+
+So the owner is right: the setup knew. The quant agent named the exact reasons not
+to trade, and the trade agent cut confidence to 0.35 for the regime misalignment.
+It opened anyway because **three override paths lined up**: (1) an "overdrive
+default is go" rule that fires unless something *hard*-blocks; (2) the quant SKIP
+is shadow-only / not wired to enforce (a known issue — "Quant shadow no
+parser/counterfactual"); (3) the critic default-approves because its own veto
+accuracy is 0%. Not a bad signal — a governance gap.
+
+This is the highest-value thing the tracer surfaced, and it's a mechanism fix, not
+just a regime guard: **a hard-cut confidence (0.35) plus an explicit quant SKIP
+should not resolve to a 3x-leverage entry.** The aggregate regime pattern below is
+the same lesson at the population level.
 
 ## What the ledger says
 
