@@ -6,10 +6,18 @@
 
 ## The owner's instinct, tested
 
-The traced decision showed the pipeline was **internally conflicted** on NEAR:
-`confidence_scorer` read SELL while `multi_tier_quality` read LONG (from the
-decision `notes`: "sd table shows SELL bias... while sg shows LONG"). It resolved
-SHORT and lost. So there genuinely *was* a LONG signal the setup overrode.
+**CORRECTION (added after the join-gap investigation).** My first pass claimed the
+NEAR decision was "internally conflicted (confidence_scorer SELL vs
+multi_tier_quality LONG)." That was wrong — I read a `decisions.jsonl` record that
+was a portfolio-wide *trigger* log, not this trade's entry decision. The actual
+NEAR entry decision lives in `agent_performance.jsonl` (pipeline `915b5357-057`,
+21s before open) and shows the pipeline **agreed** to short: trade=go,
+risk=size0.3/override=reduce, critic=approve. So at the per-trade level the setup
+did **not** "know it should be a long" — every agent signed off on the short.
+
+The owner's instinct is therefore supported by the **aggregate regime pattern
+below, not by this specific decision.** That distinction matters: the fix is a
+regime-level guard, not "the bot ignored a signal it had."
 
 ## What the ledger says
 
@@ -64,6 +72,7 @@ NEAR alone: SHORT n=7 −$89.66 (14% WR) vs LONG n=2 +$1.13 (50% WR).
 ## Why this matters for the lineage work
 
 This is the exact shape the decision-lineage tracer should surface automatically:
-a trade taken against an internal signal, into a regime where that side loses. If
-the tracer had flagged "you are shorting into 4h high-vol, where this side is 9%
-WR" at decision time, it's a legible, actionable warning — not hindsight.
+a trade taken into a regime where that side loses — *even with all agents in
+agreement* (which is what makes it dangerous; nothing internal objected). If the
+tracer had flagged "you are shorting into 4h high-vol, where this side is 9% WR"
+at decision time, it's a legible, actionable warning — not hindsight.
