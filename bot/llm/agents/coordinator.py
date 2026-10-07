@@ -90,6 +90,8 @@ _MODEL_ALIAS = {
     "claude-opus-4-20250115": "opus",
     "claude-opus-3-5-20241022": "opus",
     "claude-opus": "opus",
+    "claude-opus-5-5": "opus",
+    "claude-sonnet-5-5": "sonnet",
 }
 
 _CLI_JSON_SUFFIX = (
@@ -153,7 +155,7 @@ def _call_llm_via_cli(
         user_prompt=json_guard + snapshot_json,
         system_prompt=full_system,
         model=cli_model,
-        max_budget_usd=1.00,
+        max_budget_usd=float(os.getenv("CLI_MAX_BUDGET_USD", "5.00")),
         timeout=max(timeout, 300),
         allow_tools=False,
     )

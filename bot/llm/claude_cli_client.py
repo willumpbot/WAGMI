@@ -145,6 +145,11 @@ def call_agent(
            "--no-session-persistence",
            "--dangerously-skip-permissions"]
 
+    # Thinking depth for subscription-routed calls (low|medium|high|xhigh|max); unset = CLI default.
+    _effort = os.getenv("CLI_EFFORT", "").strip()
+    if _effort:
+        cmd.extend(["--effort", _effort])
+
     if json_schema:
         cmd.extend(["--json-schema", json.dumps(json_schema)])
     if not allow_tools:
