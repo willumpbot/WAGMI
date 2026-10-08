@@ -5,7 +5,7 @@ moment. resolve() walks Hyperliquid 5-minute candles from the plan's creation:
   - market plans fill at the logged price immediately; limit plans fill the first time price touches the entry,
     and expire unfilled after `entry_window_h` (default 24h)
   - after the fill: stop or target, whichever is touched first; if one candle touches both, the STOP is
-    assumed (conservative); otherwise closed at the candle close after `max_hold_h` (default 48h, the tested setup)
+    assumed (conservative); otherwise closed at the candle close after `max_hold_h` (default 48h: a grading window, not a recommendation)
   - result in R (1R = entry-to-stop distance), net of 0.09% round-trip taker fees, plus best/worst excursion
 Writes data/hivemind/plans.json (every plan with status + the track record by setup and side).
 """
@@ -79,11 +79,12 @@ REVIEW_SYSTEM = """You are the WAGMI trading bot's desk, giving the owner a SECO
 for themselves (a discretionary swing trader on Hyperliquid perps). You get the plan and every hivemind voice for
 the coin. Be honest and specific; you are graded forward against real prices, and so is the owner.
 Known facts from forward grading: no single voice or AI agent has proven directional skill; move SIZE is
-forecastable (risk block: stop ~2x expected move, target 0.5R, 48h; safe leverage); stops inside one expected daily
-move lost ~0.4R/trade; the 50-day average holds from above more than chance; the 20-day low breaks MORE than chance.
+forecastable; safe leverage = liquidation beyond the 99th-percentile 1-day adverse move /1.5; stops TIGHTER than the
+bot's current ones lost 0.13-0.20R/trade, while wider stops only save fees (no edge); no target size or time limit
+tested better than another; the 50-day average holds from above more than chance; the 20-day low breaks MORE.
 Judge: is the stop survivable (vs expected move and liquidation clusters), is the target reachable, is leverage safe,
-does the evidence conflict with the direction. Your own stop/target must follow the tested geometry unless a level
-clearly argues otherwise. Write for a visual learner: lead with one plain sentence.
+does the evidence conflict with the direction. Suggest your own stop outside a normal day's move and a target at a
+real level; do not claim any target size is proven. Write for a visual learner: lead with one plain sentence.
 Output ONLY JSON:
 {"verdict": "take|adjust|skip", "agrees_with_direction": true|false|null, "confidence": 1-5,
  "summary": "<=200 chars, one plain sentence first",
