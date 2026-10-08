@@ -321,7 +321,15 @@ class ExitEngine:
                 "new_sl": decision.new_sl,
                 "new_tp": decision.new_tp,
             }
-            with open(_EXIT_LOG_FILE, "a") as f:
+            _log_file = _EXIT_LOG_FILE
+            if getattr(position, "strategy", "") == "owner_plan":
+                # OWNER_PLAN_EXEC: owner-plan exit decisions stay out of the bot's
+                # exit-decision corpus (graded/learned from); kept beside the plan instead.
+                from core.owner_plan_exec import HM_DIR as _HM_DIR
+                os.makedirs(_HM_DIR, exist_ok=True)
+                _log_file = os.path.join(str(_HM_DIR), "owner_exit_decisions.jsonl")
+                entry["owner_plan_id"] = (getattr(position, "entry_reasons", None) or {}).get("owner_plan_id")
+            with open(_log_file, "a") as f:
                 f.write(json.dumps(entry) + "\n")
         except Exception as e:
             logger.debug(f"Failed to log exit decision: {e}")

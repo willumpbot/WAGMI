@@ -84,6 +84,17 @@ except ImportError:
 logger = logging.getLogger("bot.execution.positions")
 
 
+def _is_owner(pos) -> bool:
+    """OWNER_PLAN_EXEC: owner-plan positions (strategy=="owner_plan") are paper-managed by the
+    bot's exit logic but must never feed bot learning/stats/telemetry/cooldowns. Inert for every
+    bot-opened position (their strategy is never "owner_plan")."""
+    return getattr(pos, "strategy", "") == "owner_plan"
+
+
+class _OwnerSkip(Exception):
+    """Internal: short-circuits a guarded try-block for owner-plan positions."""
+
+
 def _get_tel():
     """Lazy import to avoid circular dependency."""
     try:
@@ -213,7 +224,11 @@ class Position:
 
     def _transition(self, target: str, reason: str = "") -> str:
         """Transition to a new state, updating state_path."""
-        new = transition(self.symbol, self.state, target, reason)
+        if self.strategy == "owner_plan":
+            # OWNER_PLAN_EXEC: keep owner positions out of state_transitions.csv analytics
+            new = transition(self.symbol, self.state, target, reason, log=False)
+        else:
+            new = transition(self.symbol, self.state, target, reason)
         if new != self.state:
             self.state = new
             self.state_path.append(new)
@@ -935,11 +950,13 @@ class PositionManager:
                 "confidence": confidence,
             },
         )
-        self.trade_log.append(event)
+        _owner = _is_owner(pos)
+        if not _owner:
+            self.trade_log.append(event)
 
         # ── TIER 4: Mechanical Bot Instrumentation (Position Opening Hook) ──
         # Record position opening with all context
-        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE:
+        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE and not _owner:
             try:
                 instr = get_mechanical_bot_instrumentation()
                 instr.on_position_opened(
@@ -970,7 +987,7 @@ class PositionManager:
 
         # Log TRADE_OPENED event
         try:
-            tel = _get_tel()
+            tel = _get_tel() if not _owner else None
             if tel is not None:
                 tel.log(
                     "TRADE_OPENED",
@@ -1393,7 +1410,7 @@ class PositionManager:
             pos._tel_update_counter = _update_counter
             if _update_counter % 60 == 0:
                 try:
-                    tel = _get_tel()
+                    tel = _get_tel() if not _is_owner(pos) else None
                     if tel is not None:
                         if is_long:
                             _unrealized = (current_price - pos.entry) * pos.qty * self._pnl_lev(pos.leverage)
@@ -1845,7 +1862,8 @@ class PositionManager:
         pos._transition(TRAILING, "trailing activated")
 
         # ── TIER 4: Mechanical Bot Instrumentation (State Change Hook: TP1_HIT) ──
-        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE:
+        _owner = _is_owner(pos)
+        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE and not _owner:
             try:
                 instr = get_mechanical_bot_instrumentation()
                 instr.on_position_state_change(
@@ -1903,11 +1921,12 @@ class PositionManager:
                 "hold_time_s": time_to_tp1_s,
             },
         )
-        self.trade_log.append(event)
+        if not _owner:
+            self.trade_log.append(event)
 
         # Log TP_HIT event
         try:
-            tel = _get_tel()
+            tel = _get_tel() if not _owner else None
             if tel is not None:
                 _hold_s = ((getattr(self, '_sim_now', None) or datetime.now(timezone.utc)) - pos.open_time).total_seconds()
                 tel.log(
@@ -2138,8 +2157,11 @@ class PositionManager:
         # State -> CLOSED
         pos._transition(CLOSED, f"{action} @ {price}")
         # Record close time and win/loss for cooldown enforcement
-        self._last_close_time[pos.symbol] = pos.close_time
-        self._last_close_won[pos.symbol] = pos.realized_pnl > 0
+        # (OWNER_PLAN_EXEC: an owner-plan close never arms the bot's loss cooldown)
+        _owner = _is_owner(pos)
+        if not _owner:
+            self._last_close_time[pos.symbol] = pos.close_time
+            self._last_close_won[pos.symbol] = pos.realized_pnl > 0
 
         # Record outcome for momentum tracker (win/loss streak sizing).
         # Gated on self.is_live: only the real live/paper trading engine's
@@ -2150,7 +2172,7 @@ class PositionManager:
         # next REAL trade's size via get_after_loss_multiplier() or fake a
         # win/streak on a symbol. (momentum_tracker.record_outcome() also
         # independently filters TEST/SIM-named symbols as defense in depth.)
-        if self.is_live:
+        if self.is_live and not _owner:
             try:
                 from execution.momentum_tracker import get_momentum_tracker
                 get_momentum_tracker().record_outcome(pos.symbol, pos.realized_pnl > 0)
@@ -2158,7 +2180,10 @@ class PositionManager:
                 pass
 
         # Neuroplasticity: strengthen/weaken setup edges, detect surprises
+        # (OWNER_PLAN_EXEC: owner-plan closes never feed setup edges)
         try:
+            if _owner:
+                raise _OwnerSkip()
             from llm.neuroplasticity import run_neuroplasticity_cycle
             _er = pos.entry_reasons or {}
             run_neuroplasticity_cycle({
@@ -2178,7 +2203,7 @@ class PositionManager:
             pass
 
         # ── TIER 4: Mechanical Bot Instrumentation (Position Closing Hook) ──
-        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE:
+        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE and not _owner:
             try:
                 instr = get_mechanical_bot_instrumentation()
                 instr.on_position_closed(
@@ -2285,17 +2310,19 @@ class PositionManager:
             }
             # Skip the real-file write under pytest so synthetic test closes never pollute
             # production exit_closes.jsonl (decision_id stamping above still happens for tests).
-            if not os.getenv("PYTEST_CURRENT_TEST"):
+            # OWNER_PLAN_EXEC: owner-plan closes never enter the bot's exit-regret corpus.
+            if not os.getenv("PYTEST_CURRENT_TEST") and not _owner:
                 with open(os.path.join(_regret_dir, "exit_closes.jsonl"), "a") as _rf:
                     _rf.write(json.dumps(_regret_row) + "\n")
         except Exception as _regret_err:
             logger.debug(f"[EXIT-REGRET] stamp failed (non-fatal): {_regret_err}")
 
-        self.trade_log.append(event)
+        if not _owner:
+            self.trade_log.append(event)
 
         # Log structured trade event (SL_HIT, TP_HIT, or TRADE_CLOSED)
         try:
-            tel = _get_tel()
+            tel = _get_tel() if not _owner else None
             if tel is not None:
                 _hold_s = (pos.close_time - pos.open_time).total_seconds()
                 # Map action to event type
@@ -2442,7 +2469,8 @@ class PositionManager:
                 "funding_share": funding_share,
             },
         )
-        self.trade_log.append(event)
+        if not _is_owner(pos):
+            self.trade_log.append(event)
         return event
 
     # Profile-specific max hold hours: prevents stale positions from lingering
@@ -2573,7 +2601,7 @@ class PositionManager:
     def get_total_unrealized_pnl(self, prices: Dict[str, float]) -> float:
         total = 0.0
         for symbol, pos in self.positions.items():
-            if pos.state == CLOSED or symbol not in prices:
+            if pos.state == CLOSED or symbol not in prices or _is_owner(pos):
                 continue
             price = prices[symbol]
             if pos.side == "LONG":

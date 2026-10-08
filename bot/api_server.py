@@ -52,6 +52,20 @@ def _read_json(path: Path) -> Any:
         return {}
 
 
+def _bot_positions(state: Any) -> dict:
+    """position_state.json positions minus OWNER_PLAN_EXEC owner-plan paper positions
+    (strategy=="owner_plan"), which are the owner's trades and never count in bot stats."""
+    positions = (state or {}).get("positions", {}) or {}
+    return {s: p for s, p in positions.items()
+            if not (isinstance(p, dict) and p.get("strategy") == "owner_plan")}
+
+
+def _owner_positions(state: Any) -> dict:
+    positions = (state or {}).get("positions", {}) or {}
+    return {s: p for s, p in positions.items()
+            if isinstance(p, dict) and p.get("strategy") == "owner_plan"}
+
+
 def _read_jsonl(path: Path, limit: int = 200) -> list[dict]:
     out: list[dict] = []
     try:
@@ -352,7 +366,7 @@ def llm_feed(limit: int = Query(200)):
 def positions():
     state = _read_json(DATA / "position_state.json")
     pos_list = []
-    for sym, pos in state.get("positions", {}).items():
+    for sym, pos in _bot_positions(state).items():
         pos_list.append({
             "symbol": sym,
             "side": pos.get("side", ""),
@@ -366,6 +380,11 @@ def positions():
             "realized_pnl": pos.get("realized_pnl", 0),
             "open_time": pos.get("open_time", ""),
         })
+    _own = _owner_positions(state)
+    if _own:
+        # Shown separately so the owner's paper positions never mix into bot counts.
+        return {"positions": pos_list, "count": len(pos_list),
+                "owner_plan_positions": [dict(p, symbol=s) for s, p in _own.items()]}
     return {"positions": pos_list, "count": len(pos_list)}
 
 
@@ -453,7 +472,7 @@ def summary():
     total = len(trades)
     wins = sum(1 for t in trades if t["pnl"] > 0)
     total_pnl = sum(t["pnl"] for t in trades)
-    n_pos = len(pos_state.get("positions", {}))
+    n_pos = len(_bot_positions(pos_state))
 
     # Today's PnL
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -778,7 +797,7 @@ def portfolio_allocation():
     corr = _read_json(DATA / "portfolio_risk" / "correlation_cache.json")
 
     equity = _safe_float(equity_state.get("equity"), 0.0)
-    positions = pos_state.get("positions", {}) or {}
+    positions = _bot_positions(pos_state)
 
     by_symbol: dict[str, dict[str, Any]] = {}
     total_notional = 0.0

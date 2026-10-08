@@ -1207,6 +1207,9 @@ class LLMIntegrationMixin:
                         "leverage": pos.leverage,
                         "confidence": pos.confidence,
                     }
+                    if getattr(pos, 'strategy', '') == "owner_plan":
+                        # OWNER_PLAN_EXEC: coordinator skips perf-tracker / exit-feedback learning
+                        pos_data["owner_trade"] = True
                     market_data = {
                         "regime": self._tick_regime_cache.get(symbol, "unknown"),
                         "btc_price": self._last_prices.get("BTC", 0),

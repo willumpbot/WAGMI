@@ -71,10 +71,12 @@ def transition(
     current_state: str,
     target_state: str,
     reason: str = "",
+    log: bool = True,
 ) -> str:
     """
     Attempt a state transition. Returns the new state.
     If the transition is invalid, logs a warning and returns the current state.
+    log=False skips the state_transitions.csv analytics row (OWNER_PLAN_EXEC owner positions).
     """
     if not is_valid_transition(current_state, target_state):
         logger.warning(
@@ -83,6 +85,7 @@ def transition(
         )
         return current_state
 
-    log_transition(symbol, current_state, target_state, reason)
+    if log:
+        log_transition(symbol, current_state, target_state, reason)
     logger.info(f"[{symbol}] State: {current_state} -> {target_state} ({reason})")
     return target_state

@@ -162,6 +162,9 @@ class PositionWiringMixin:
         # Build position dicts compatible with rotation manager
         positions_dict = {}
         for sym, pos in open_pos.items():
+            # OWNER_PLAN_EXEC: never rotate the owner's paper position into a bot signal.
+            if getattr(pos, "strategy", "") == "owner_plan":
+                continue
             positions_dict[sym] = {
                 "symbol": sym,
                 "side": pos.side,
@@ -181,7 +184,7 @@ class PositionWiringMixin:
             if c["symbol"] not in open_pos
         ]
 
-        if not candidates:
+        if not candidates or not positions_dict:
             return
 
         # Get current prices
@@ -792,6 +795,9 @@ class PositionWiringMixin:
                                 "time_stop_age_h": getattr(pos, '_time_stop_age_h', None),
                                 "early_exit_review_requested": getattr(pos, '_early_exit_review_requested', False),
                             }
+                            if getattr(pos, 'strategy', '') == "owner_plan":
+                                # OWNER_PLAN_EXEC: coordinator skips perf-tracker / exit-feedback learning
+                                pos_data["owner_trade"] = True
                             # Pull thesis from position notes if available
                             notes = getattr(pos, 'notes', '') or ''
                             if 'THESIS:' in notes:

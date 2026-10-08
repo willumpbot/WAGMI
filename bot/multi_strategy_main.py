@@ -52,6 +52,7 @@ from strategies.probability_engine import ProbabilityEngineStrategy
 from strategies.mean_reversion import MeanReversionStrategy
 from strategies.ensemble import EnsembleStrategy
 from execution.position_manager import PositionManager
+from core import owner_plan_exec as _owner_plan_exec
 from execution.leverage import LeverageManager
 from execution.risk import RiskManager, CircuitBreaker
 from execution.trade_logger import TradeLogger
@@ -2191,6 +2192,18 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             self.stop_event.wait(interval)
         logger.info("[HEARTBEAT-DAEMON] Stopped")
 
+    def _drain_owner_orders(self, trace_id: str = ""):
+        """OWNER_PLAN_EXEC: open/queue/reject the owner's saved plans (see core/owner_plan_exec.py).
+
+        Never raises into the tick. Skips the bot's own entry gates (can_open_position /
+        circuit breaker) by design — these are the owner's paper trades, booked separately —
+        but honours the kill switch, Telegram pause and exchange degradation.
+        """
+        try:
+            _owner_plan_exec.drain(self, trace_id)
+        except Exception as e:
+            logger.warning(f"[{trace_id}] owner-plan drain error: {e}", exc_info=True)
+
     def _tick_once(self):
         """One iteration of the main loop."""
         trace_id = uuid.uuid4().hex[:8]
@@ -2333,6 +2346,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 except Exception as e:
                     logger.error(f"[{trace_id}][{symbol}] Error: {e}", exc_info=True)
                     self.health_monitor.record_error()
+
+        # ── OWNER_PLAN_EXEC: paper-trade the owner's saved plans (default OFF) ──
+        if _owner_plan_exec.enabled():
+            self._drain_owner_orders(trace_id)
 
         # ── Pending limit order fills ──
         # Check if any pending orders should fill at current prices
@@ -3594,7 +3611,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         # Pre-close trigger: predict if any open position is about to close
         open_pos = self.pos_mgr.get_open_positions()
-        if symbol in open_pos:
+        if symbol in open_pos and not _owner_plan_exec.is_owner_position(open_pos[symbol]):
             pos = open_pos[symbol]
             pre_close = self._llm_triggers.check_pre_close(
                 symbol=symbol,
@@ -3824,6 +3841,23 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     )
                     continue  # Skip P&L update — position is still open on exchange
 
+            # OWNER_PLAN_EXEC: an owner-plan position (strategy=="owner_plan") is
+            # paper-managed by the bot's exit logic but must NEVER touch the bot's
+            # books or learning. Divert every leg (TP1 / partial / final) into
+            # data/hivemind/owner_fills.jsonl and skip the rest of this block:
+            # equity, circuit breaker, DB log_trade, weights, regime feedback,
+            # tuner, graduated rules, IC/Kelly, trade_ledger, trade DNA, deep
+            # memory, trades.csv, agent perf, cooldowns, alerts, shadow close.
+            # Position cleanup happens after this loop, so nothing needed is skipped.
+            # Keyed off the TAG (not the flag) so a recovered owner position stays
+            # excluded even if OWNER_PLAN_EXEC is later switched off.
+            if _owner_plan_exec.is_owner_event(event):
+                try:
+                    _owner_plan_exec.record_owner_close(event, _captured_pos, self.pos_mgr)
+                except Exception as _own_err:
+                    logger.warning(f"[{trace_id}][{symbol}] owner-plan fill record failed: {_own_err}")
+                continue
+
             _eq_funding = 0.0
             if os.getenv("EQUITY_DEDUCT_FUNDING", "false").lower() in ("1", "true", "yes"):
                 # 2026-07-14 funding_asymmetric fix: equity previously NEVER saw
@@ -3845,6 +3879,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             _open_realized_pnl = sum(
                 p.realized_pnl for p in self.pos_mgr.positions.values()
                 if getattr(p, "state", None) != "CLOSED"
+                and getattr(p, "strategy", "") != _owner_plan_exec.OWNER_STRATEGY
             )
             self.risk_mgr.update_equity(
                 event.pnl - event.fee - _eq_funding,
