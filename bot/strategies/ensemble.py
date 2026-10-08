@@ -2220,6 +2220,42 @@ class EnsembleStrategy:
 
         return merged
 
+    _IC_DROP_LOG_EVERY_S = 900
+
+    def _log_ic_muted_drop(self, symbol: str, signals: List[Signal]) -> None:
+        """Make the zero-weight tie visible instead of silent.
+
+        When every firing strategy has weight 0 (IC tracker marks it inverted),
+        both sides sum to 0 and the vote returns None with no trace. In Oct 2026
+        all five regularly-firing strategies were IC-muted, so ~99.8% of
+        strategy maps ended here and signal volume collapsed unnoticed (the same
+        silent-gate shape as the Sep 2026 drought). Logged as SIGNAL_FILTERED,
+        once per symbol/side per 15 min, so the counterfactual tooling can
+        price what these drops would have done. Measurement only.
+        """
+        try:
+            best = max(signals, key=lambda s: s.confidence)
+            key = (symbol, best.side)
+            last = getattr(self, "_ic_drop_last", {})
+            now = _time.time()
+            if now - last.get(key, 0) < self._IC_DROP_LOG_EVERY_S:
+                return
+            last[key] = now
+            self._ic_drop_last = last
+            names = sorted({s.strategy for s in signals})
+            logger.info(f"[{symbol}] [ENSEMBLE] dropped {best.side}: every firing strategy is "
+                        f"IC-muted (weight 0): {names}")
+            from core.signal_pipeline import _get_tel
+            tel = _get_tel()
+            if tel is not None:
+                tel.log("SIGNAL_FILTERED", symbol, side=best.side, strategy=",".join(names),
+                        confidence=best.confidence, entry=best.entry, sl=getattr(best, "sl", 0.0),
+                        tp1=getattr(best, "tp1", 0.0), num_agree=len(signals),
+                        reason="[ensemble:ic_muted] every firing strategy weighted 0 by IC tracker",
+                        regime=(best.metadata or {}).get("regime", ""))
+        except Exception as e:
+            logger.debug(f"[{symbol}] ic-muted drop log failed: {e}")
+
     def _weighted_veto(self, symbol: str, signals: List[Signal],
                        effective_min_votes: int = 0,
                        llm_first_raw: bool = False) -> Optional[Signal]:
@@ -2443,6 +2479,8 @@ class EnsembleStrategy:
             chosen, opposition = sell_signals, buy_signals
             chosen_strength, oppose_strength = sell_strength, buy_strength
         else:
+            if signals and buy_strength == 0 and sell_strength == 0:
+                self._log_ic_muted_drop(symbol, signals)
             return None  # tied or empty
 
         merged = self._merge_signals(symbol, chosen, llm_first_raw=llm_first_raw)
