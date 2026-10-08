@@ -1,0 +1,37 @@
+{
+ "claim1": {
+  "pooled": 0.1187,
+  "week_mean": 0.0733,
+  "t": 1.407,
+  "ci": [
+   -0.0392,
+   0.1858
+  ],
+  "weeks_positive": 9,
+  "weeks": 14,
+  "survives": false
+ },
+ "claim2": {
+  "sym (direction-free)": {
+   "pooled": 0.0367,
+   "week_mean": -0.0312,
+   "t": -0.786,
+   "ci": [
+    -0.1168,
+    0.0544
+   ],
+   "survives": false
+  },
+  "real returns": {
+   "pooled": 0.0429,
+   "week_mean": -0.0103,
+   "t": -0.181,
+   "ci": [
+    -0.1328,
+    0.1122
+   ],
+   "survives": false
+  }
+ },
+ "deterministic_fee_saving_R": 0.0636
+}

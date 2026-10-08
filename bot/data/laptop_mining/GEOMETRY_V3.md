@@ -149,6 +149,52 @@ is a smaller, duller, and much more trustworthy reason, and it does not need any
 
 ---
 
+# ⚠️ THE RECOMMENDATION BELOW WAS CUT DOWN BY A RED TEAM — read this first
+
+_Red team `wp73ppfxp`, verdict PARTLY_CONFIRMED / high confidence. Both fatal findings verified by me
+in `verify_v3.py` / `verify_v3.json` before acceptance._
+
+**What survived:** the mechanism, the v2 reversal, the decomposition, the synthetic control, "tighter
+is harmful", and "target-only at ×1 is null". All reproduce.
+
+**What did not:** the headline number and half the decision card.
+
+| claim | published | equal-weighted week mean | week t | CI95 | weeks + |
+|---|---|---|---|---|---|
+| ×2/0.5R vs default | **+0.1187R** | **+0.0733R** | +1.41 | **[−0.0392, +0.1858]** | 9/14 |
+| target 1.5R→0.5R at ×2 (sym) | +0.0367R | **−0.0312R** | −0.79 | [−0.1168, +0.0544] | 6/14 |
+| target 1.5R→0.5R at ×2 (real) | +0.0429R | **−0.0103R** | −0.18 | [−0.1328, +0.1122] | 7/14 |
+
+1. **The recommended cell fails week-level clustering — the exact standard this document enforces
+   against the 48h drift claim.** I killed that claim for being week-clustered t = −1.02 with a CI
+   containing zero, then recommended a live change off a cell that is week-clustered t = +1.41 with a
+   CI containing zero. The pooled mean was **62% larger** than the equal-weighted week mean; with only
+   14 blocks the percentile bootstrap used in `geometry_v3.py` is anti-conservative.
+2. **The target half was never tested at the recommended stop width.** Finding 2 below tests
+   target-only changes at ×1 and finds them null — but the card recommends the target change at ×2,
+   where it is **negative** week-weighted. And the fee saving is *identical* across tp 0.5/1.0/1.5 at
+   a given stop (0.0636R in all three), so the target half **cannot inherit any of the fee argument.**
+
+## The surviving recommendation: widen the stop, nothing else
+
+**Stop ×1 → ×2, worth +0.0636R per trade, on deterministic fee arithmetic.**
+
+```
+fee_R = 2 × 9bps / (m × base)
+  stop ×1 : 0.1272 R per trade
+  stop ×2 : 0.0636 R per trade
+  saving  : +0.0636 R      <- arithmetic; no significance test applies
+```
+
+This is not a statistical claim, so clustering does not bite it. It requires position size to halve
+so dollar risk is unchanged — at a fixed \$100 risk per trade, \$12.72 of fees becomes \$6.36.
+
+**Withdrawn:** the +0.1187R headline, and the `target 1.5R → 0.5R` change. **Everything below this
+line is the original write-up, kept for the working — read its "Recommendation" section as superseded
+by this block.**
+
+---
+
 # RESULT — `geometry_v3.py`, all 24 cells, synthetic control passed
 
 _Run 2026-10-08. 15,663 signals, 14 ISO weeks, 71 days. Data: `geometry_v3.json`._
