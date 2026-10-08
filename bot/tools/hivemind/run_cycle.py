@@ -33,6 +33,11 @@ def main():
             log("chief: " + ", ".join(f"{s} {c.get('lean')}{c.get('conviction')}" for s, c in out.get("coins", {}).items()))
         chief.resolve()
         chief.resolve(chief.OWNER_CALLS, chief.OWNER_CARD)
+        try:
+            import geometry_shadow
+            geometry_shadow.main()
+        except Exception as e:
+            log(f"geometry shadow failed: {e}")
         desk.build()
         desk.build_terminal()
         log("cycle ok" + (" (+chief)" if "--chief" in sys.argv else ""))
