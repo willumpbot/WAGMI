@@ -1,0 +1,85 @@
+{
+ "har_source": "fitted on 10 Hyperliquid majors (VOLATILITY.md)",
+ "pools_used": 23,
+ "rows": 3586,
+ "min_days": 60,
+ "mean_pred_pct": 3.0532,
+ "mean_actual_pct": 2.8831,
+ "mean_ratio": 0.917,
+ "median_ratio": 0.5894,
+ "correlation": 0.2324,
+ "correction_factor": 0.9443,
+ "calibration_by_decile": [
+  {
+   "decile": 1,
+   "n": 358,
+   "pred": 0.1714,
+   "actual": 0.0701,
+   "ratio": 0.409
+  },
+  {
+   "decile": 2,
+   "n": 359,
+   "pred": 1.112,
+   "actual": 1.2577,
+   "ratio": 1.131
+  },
+  {
+   "decile": 3,
+   "n": 358,
+   "pred": 1.8562,
+   "actual": 1.7402,
+   "ratio": 0.938
+  },
+  {
+   "decile": 4,
+   "n": 359,
+   "pred": 2.1798,
+   "actual": 2.1162,
+   "ratio": 0.971
+  },
+  {
+   "decile": 5,
+   "n": 359,
+   "pred": 2.5238,
+   "actual": 2.8139,
+   "ratio": 1.115
+  },
+  {
+   "decile": 6,
+   "n": 358,
+   "pred": 2.8742,
+   "actual": 2.8071,
+   "ratio": 0.977
+  },
+  {
+   "decile": 7,
+   "n": 359,
+   "pred": 3.1759,
+   "actual": 2.8412,
+   "ratio": 0.895
+  },
+  {
+   "decile": 8,
+   "n": 358,
+   "pred": 3.6203,
+   "actual": 3.2742,
+   "ratio": 0.904
+  },
+  {
+   "decile": 9,
+   "n": 359,
+   "pred": 4.4137,
+   "actual": 3.9676,
+   "ratio": 0.899
+  },
+  {
+   "decile": 10,
+   "n": 359,
+   "pred": 8.5946,
+   "actual": 7.933,
+   "ratio": 0.923
+  }
+ ],
+ "survivorship_note": "pools are sampled from GeckoTerminal's CURRENT listings across 4 networks and 5 pages each, deliberately including low-liquidity pools. Tokens that rugged hard enough to be delisted cannot be sampled, and those are the most volatile ones, so the measured under-prediction is a LOWER bound."
+}

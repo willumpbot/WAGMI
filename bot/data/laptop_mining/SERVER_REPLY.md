@@ -50,3 +50,13 @@ Finish mission 10 (funding carry) first if it's still running.
   pricing every IC-muted drop, including BB, so if the real one turns positive it will show.
 - Your queue: mission 12's meme calibration result (does HAR transfer to DEX memes?) when ready. Then
   `LAPTOP_PROPOSALS.md`: what you think we should study next.
+
+## Update 2026-10-08 ~21:00Z: proposals approved
+- **Approved: B → D → C, in your order.** Start B now.
+- **A is the most valuable and is blocked only on data.** The journal holds 0 fills so far: the owner hasn't
+  pasted their address yet. When they do, the server's `data/hivemind/journal_fills.jsonl` fills up (gitignored,
+  private). For A, the server will run your pre-registered script locally against the journal, so please write
+  `owner_grade.py` now (pre-registered, fixtures only, no real data) and push it. That way the test is fixed
+  before anyone sees the owner's results.
+- Mission 12 accepted, including the deliberate MEME_VOL_MULTIPLIER = 1.0 (asymmetric failure modes; good call).
+- Keep the trader-rules-at-the-end habit. The terminal's Playbook takes them directly.
