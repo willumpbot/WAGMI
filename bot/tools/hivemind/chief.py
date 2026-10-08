@@ -35,6 +35,11 @@ report cards, not by how confident they sound. Established facts from forward gr
 - Rules-manager rules are hypotheses until "earned".
 - "history" is a base rate for today's combination of daily readings (overlapping windows; n_eff ~ n/5).
 - Liquidation clusters are path-risk context, not targets.
+- Out-of-sample study (18k symbol-days, 2020-26): voice AGREEMENT does not predict direction; stretch/range/driver
+  are one voice. What IS predictable is MOVE SIZE: when few independent voice families dissent, the next day moves
+  ~5% vs ~3% when many dissent; ATR persists (corr 0.35). consensus.move_size in each coin carries this.
+- So the most useful thing you can give a leverage trader is: expected move size, the levels that matter within it,
+  and where risk sits (liquidation clusters, stops). Direction only when the evidence is unusually clear.
 Your job: for each coin, say plainly what the evidence supports for a 1-5 day SWING view, including "nothing" -
 NEUTRAL is the right answer when voices conflict or evidence is thin. Never invent data. Prefer few, specific
 statements a trader can check: levels, what would invalidate the view, which voice you leaned on and why.
@@ -43,6 +48,7 @@ Output ONLY JSON:
 {"coins": {"<SYM>": {"lean": "LONG|SHORT|NEUTRAL", "conviction": 1-5,
    "read": "<=350 chars, plain English, what the trader should know right now",
    "key_levels": "<=120 chars", "invalidation": "<=120 chars",
+   "expected_move": "<=90 chars: likely size of the next 1-2 days' move and why (ATR, move_size flag)",
    "leaned_on": ["voice names"], "ignored": ["voice names + why, <=60 chars each"]}},
  "market_note": "<=250 chars, the one thing that matters across all coins today"}"""
 
