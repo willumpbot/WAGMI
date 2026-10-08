@@ -277,6 +277,13 @@ def voice_positioning(sym):
     return {"series": hourly[-170:], "liqs": liqs[-25:]}
 
 
+def voice_vol(sym):
+    import basemap
+    import volforecast
+    df = basemap._closed(basemap._daily(sym))
+    return volforecast.forecast(df["c"].tolist()[-40:])
+
+
 def voice_history(sym, market):
     import basemap
     return basemap.lookup(sym, market)
@@ -317,7 +324,7 @@ def assemble():
         st = {"symbol": sym, "updated": _now_iso()}
         for name, fn in (("market", lambda: voice_market(client, sym)), ("context", lambda: voice_context(sym)), ("agents", lambda: voice_agents(sym, scorecard)),
                          ("bot", lambda: voice_bot(sym)), ("owner", lambda: voice_owner(sym)),
-                         ("chart", lambda: voice_chart(sym)), ("positioning", lambda: voice_positioning(sym)), ("tf4h", lambda: __import__("tf4h").live(sym))):
+                         ("chart", lambda: voice_chart(sym)), ("positioning", lambda: voice_positioning(sym)), ("vol", lambda: voice_vol(sym)), ("tf4h", lambda: __import__("tf4h").live(sym))):
             try:
                 st[name] = fn()
             except Exception as e:

@@ -19,7 +19,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 try:
-    from fastapi import FastAPI, Query
+    from fastapi import FastAPI, Header, Query
+    from fastapi.responses import JSONResponse
     from fastapi.middleware.cors import CORSMiddleware
     import uvicorn
 except ImportError:
@@ -102,6 +103,56 @@ def _read_trades(limit: int = 50) -> list[dict]:
 @app.get("/health")
 def health():
     return {"ok": True, "ts": time.time()}
+
+
+# ─── Owner calls (from the WAGMI Terminal) ───────────────────────────────────
+# The terminal is a local file; the API may also be reachable through the site
+# tunnel, so writes require a secret only that local file carries
+# (data/hivemind/owner_token.txt, embedded into terminal.html at build time).
+
+_OWNER_CALLS = Path(__file__).resolve().parent / "data" / "hivemind" / "owner_calls.jsonl"
+_OWNER_TOKEN = Path(__file__).resolve().parent / "data" / "hivemind" / "owner_token.txt"
+
+
+def _owner_token_ok(token: Optional[str]) -> bool:
+    try:
+        want = _OWNER_TOKEN.read_text(encoding="utf-8").strip()
+    except OSError:
+        return False
+    return bool(token) and len(want) >= 32 and token == want
+
+
+@app.post("/v1/owner_call")
+def owner_call(payload: dict, x_owner_token: Optional[str] = Header(default=None)):
+    if not _owner_token_ok(x_owner_token):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    coin = str(payload.get("coin", ""))[:20]
+    lean = str(payload.get("lean", "")).upper()
+    if not coin or lean not in ("LONG", "SHORT", "NEUTRAL"):
+        return JSONResponse({"ok": False, "error": "coin and lean (LONG/SHORT/NEUTRAL) required"}, status_code=400)
+    try:
+        price = float(payload.get("price"))
+    except (TypeError, ValueError):
+        return JSONResponse({"ok": False, "error": "price required"}, status_code=400)
+    row = {"ts": time.time(), "symbol": coin, "lean": lean, "price": price,
+           "conviction": max(1, min(5, int(payload.get("conviction") or 3))),
+           "horizon": str(payload.get("horizon") or "swing")[:20],
+           "reason": str(payload.get("reason") or "")[:300], "source": "owner-terminal"}
+    _OWNER_CALLS.parent.mkdir(parents=True, exist_ok=True)
+    with open(_OWNER_CALLS, "a", encoding="utf-8") as f:
+        f.write(json.dumps(row) + "\n")
+    return {"ok": True, "call": row}
+
+
+@app.get("/v1/owner_calls")
+def owner_calls(x_owner_token: Optional[str] = Header(default=None)):
+    if not _owner_token_ok(x_owner_token):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    try:
+        rows = [json.loads(l) for l in _OWNER_CALLS.read_text(encoding="utf-8").splitlines() if l.strip()]
+    except OSError:
+        rows = []
+    return {"ok": True, "calls": rows[-200:]}
 
 
 # ─── Trade History ───────────────────────────────────────────────────────────

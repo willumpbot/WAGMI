@@ -1,0 +1,216 @@
+{
+ "y1_har_plus_consensus": {
+  "n": 4887,
+  "corr": 0.2615,
+  "r2": 0.0516,
+  "qlike": 0.508,
+  "mean_bias": 0.2273,
+  "label": "HAR + consensus count"
+ },
+ "y1_consensus_coef": -0.0649,
+ "y1_naive": {
+  "n": 4884,
+  "corr": 0.1662,
+  "r2": -0.6677,
+  "qlike": 4.1202,
+  "mean_bias": -0.0007,
+  "label": "naive persistence"
+ },
+ "y1_har": {
+  "n": 4887,
+  "corr": 0.2456,
+  "r2": 0.0424,
+  "qlike": 0.5126,
+  "mean_bias": 0.235,
+  "label": "HAR-RV (log, 1/5/22d)"
+ },
+ "y1_beta": [
+  -0.3921,
+  0.0521,
+  0.2143,
+  0.5201
+ ],
+ "y1_smearing": 1.7389,
+ "y1_calibration_test": [
+  {
+   "decile": 1,
+   "n": 489,
+   "pred": 1.5548,
+   "actual": 1.631,
+   "ratio": 1.049
+  },
+  {
+   "decile": 2,
+   "n": 489,
+   "pred": 2.0129,
+   "actual": 1.8695,
+   "ratio": 0.929
+  },
+  {
+   "decile": 3,
+   "n": 489,
+   "pred": 2.3309,
+   "actual": 2.2367,
+   "ratio": 0.96
+  },
+  {
+   "decile": 4,
+   "n": 489,
+   "pred": 2.6237,
+   "actual": 2.7564,
+   "ratio": 1.051
+  },
+  {
+   "decile": 5,
+   "n": 489,
+   "pred": 2.8696,
+   "actual": 2.7852,
+   "ratio": 0.971
+  },
+  {
+   "decile": 6,
+   "n": 489,
+   "pred": 3.1296,
+   "actual": 3.1865,
+   "ratio": 1.018
+  },
+  {
+   "decile": 7,
+   "n": 489,
+   "pred": 3.3962,
+   "actual": 3.2376,
+   "ratio": 0.953
+  },
+  {
+   "decile": 8,
+   "n": 489,
+   "pred": 3.6884,
+   "actual": 3.4474,
+   "ratio": 0.935
+  },
+  {
+   "decile": 9,
+   "n": 489,
+   "pred": 4.0837,
+   "actual": 3.2942,
+   "ratio": 0.807
+  },
+  {
+   "decile": 10,
+   "n": 489,
+   "pred": 5.1086,
+   "actual": 3.9902,
+   "ratio": 0.781
+  }
+ ],
+ "y1_decile_spread_x": 2.45,
+ "y5_har_plus_consensus": {
+  "n": 4890,
+  "corr": 0.3753,
+  "r2": 0.0872,
+  "qlike": 0.148,
+  "mean_bias": 0.3915,
+  "label": "HAR + consensus count"
+ },
+ "y5_consensus_coef": -0.0634,
+ "y5_naive": {
+  "n": 4890,
+  "corr": 0.2733,
+  "r2": -0.4538,
+  "qlike": 0.2806,
+  "mean_bias": 0.0132,
+  "label": "naive persistence"
+ },
+ "y5_har": {
+  "n": 4890,
+  "corr": 0.3571,
+  "r2": 0.0737,
+  "qlike": 0.1502,
+  "mean_bias": 0.3976,
+  "label": "HAR-RV (log, 1/5/22d)"
+ },
+ "y5_beta": [
+  0.3871,
+  0.0269,
+  0.1939,
+  0.431
+ ],
+ "y5_smearing": 1.1835,
+ "y5_calibration_test": [
+  {
+   "decile": 1,
+   "n": 489,
+   "pred": 2.2293,
+   "actual": 2.1609,
+   "ratio": 0.969
+  },
+  {
+   "decile": 2,
+   "n": 489,
+   "pred": 2.7514,
+   "actual": 2.3241,
+   "ratio": 0.845
+  },
+  {
+   "decile": 3,
+   "n": 489,
+   "pred": 3.1065,
+   "actual": 2.8907,
+   "ratio": 0.931
+  },
+  {
+   "decile": 4,
+   "n": 489,
+   "pred": 3.4283,
+   "actual": 3.3525,
+   "ratio": 0.978
+  },
+  {
+   "decile": 5,
+   "n": 489,
+   "pred": 3.692,
+   "actual": 3.4695,
+   "ratio": 0.94
+  },
+  {
+   "decile": 6,
+   "n": 489,
+   "pred": 3.9574,
+   "actual": 3.7059,
+   "ratio": 0.936
+  },
+  {
+   "decile": 7,
+   "n": 489,
+   "pred": 4.2324,
+   "actual": 3.9303,
+   "ratio": 0.929
+  },
+  {
+   "decile": 8,
+   "n": 489,
+   "pred": 4.5355,
+   "actual": 4.3202,
+   "ratio": 0.953
+  },
+  {
+   "decile": 9,
+   "n": 489,
+   "pred": 4.9279,
+   "actual": 4.1772,
+   "ratio": 0.848
+  },
+  {
+   "decile": 10,
+   "n": 489,
+   "pred": 5.9264,
+   "actual": 4.48,
+   "ratio": 0.756
+  }
+ ],
+ "y5_decile_spread_x": 2.07,
+ "verdict": [
+  "y1: HAR BEATS naive persistence (QLIKE 0.5126 vs 4.1202, corr 0.246 vs 0.166)",
+  "y5: HAR BEATS naive persistence (QLIKE 0.1502 vs 0.2806, corr 0.357 vs 0.273)"
+ ]
+}
