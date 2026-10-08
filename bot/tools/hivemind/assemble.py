@@ -283,7 +283,7 @@ def assemble():
         st = {"symbol": sym, "updated": _now_iso()}
         for name, fn in (("market", lambda: voice_market(client, sym)), ("context", lambda: voice_context(sym)), ("agents", lambda: voice_agents(sym, scorecard)),
                          ("bot", lambda: voice_bot(sym)), ("owner", lambda: voice_owner(sym)),
-                         ("chart", lambda: voice_chart(sym))):
+                         ("chart", lambda: voice_chart(sym)), ("tf4h", lambda: __import__("tf4h").live(sym))):
             try:
                 st[name] = fn()
             except Exception as e:

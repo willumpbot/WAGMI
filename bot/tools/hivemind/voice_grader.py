@@ -47,7 +47,7 @@ def _trust(mean, ci, n_eff):
         return "earned"
     if ci and ci[1] < 0:
         return "backwards"
-    if mean is not None and mean > 0:
+    if mean is not None and mean > FEE:   # must at least clear one round of trading costs
         return "promising"
     return "unproven"
 
@@ -161,8 +161,23 @@ def live_grades():
     return out
 
 
+def tf4h_grades():
+    import tf4h
+    out = {}
+    for k, v in tf4h.history().items():
+        out[k] = {"source": "history", "n": v["n"], "n_eff": v["n_eff"], "mean_bps_5d": v["mean_bps_1d"],
+                  "ci95": v["ci95"], "horizon": "1d",
+                  "trust": _trust(v["mean_bps_1d"], v["ci95"], v["n_eff"]),
+                  "note": f"closed 4h bars since {v['since']}, next-1-day vs drift, before fees"}
+    return out
+
+
 def main():
     hist = history_grades()
+    try:
+        hist.update(tf4h_grades())
+    except Exception as e:
+        print("4h grading failed:", e)
     live = live_grades()
     voices = {}
     for k in set(hist) | {k for k in live if not k.startswith("_")}:

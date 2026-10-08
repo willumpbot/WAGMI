@@ -4,7 +4,7 @@ from visuals import e
 TRUST_WORD = {"earned": "earned", "promising": "promising", "unproven": "unproven", "context": "context only",
               "backwards": "backwards"}
 
-ORDER = ["structure", "stretch", "driver", "momentum_7d", "rsi", "history_5d", "range", "funding", "oi",
+ORDER = ["structure", "stretch", "driver", "structure_4h", "stretch_4h", "driver_4h", "momentum_7d", "rsi", "history_5d", "range", "funding", "oi",
          "liq_skew", "book", "btc", "weather", "copilot", "strategies", "trade_agent", "rules", "chief", "bot_position"]
 
 

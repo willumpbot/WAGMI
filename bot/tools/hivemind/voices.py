@@ -21,6 +21,7 @@ WEIGHT = {"earned": 1.0, "promising": 0.5, "unproven": 0.25, "context": 0.0, "ba
 
 # family = voices that are near-copies; the laptop's voice_families.json (mission 5) will refine this.
 FAMILY = {"structure": "trend", "stretch": "trend", "driver": "trend", "momentum_7d": "trend",
+          "structure_4h": "trend-4h", "stretch_4h": "trend-4h", "driver_4h": "trend-4h",
           "rsi": "stretch", "range": "stretch", "history_5d": "base-rate",
           "funding": "positioning", "oi": "positioning", "liq_skew": "positioning",
           "book": "microstructure", "btc": "market", "weather": "market",
@@ -95,6 +96,13 @@ def compute(sym, st, shared, chief):
     if di:
         add("driver", "Who's driving", 1 if di["plus"] > di["minus"] else -1,
             f"buyers {di['plus']} vs sellers {di['minus']}", "unproven")
+    f4 = st.get("tf4h") or {}
+    if f4:
+        add("structure_4h", "4h structure", f4["structure_4h"],
+            "4h 20-bar avg " + ("above" if f4["structure_4h"] > 0 else "below") + " 50-bar avg", "unproven")
+        add("stretch_4h", "4h price vs avg", f4["stretch_4h"],
+            "above its 4h 20-bar avg" if f4["stretch_4h"] > 0 else "below its 4h 20-bar avg", "unproven")
+        add("driver_4h", "4h who's driving", f4["driver_4h"], f"buyers {f4['pdi']:.0f} vs sellers {f4['mdi']:.0f}", "unproven")
     r7 = m.get("ret_7d_pct")
     if r7 is not None:
         add("momentum_7d", "7-day momentum", 1 if r7 > 5 else -1 if r7 < -5 else 0, f"{r7:+.1f}% over 7 days", "unproven")
@@ -215,6 +223,13 @@ INFO = {
                 "pullback. Above it inside a downtrend = a bounce."),
     "driver": ("+DI vs -DI: over the last ~2 weeks, were the big daily pushes mostly UP (buyers) or DOWN (sellers)?",
                "Faster than structure. When it flips against the structure, the trend is being tested."),
+    "structure_4h": ("Same as daily structure but on 4-hour candles: is the 20-bar average above the 50-bar average?",
+                     "Shows the trend of the last week or so. When it disagrees with the daily, the short-term move "
+                     "is against the bigger trend. Historically ~no edge on its own; use it for timing."),
+    "stretch_4h": ("Is price above or below its 4-hour 20-bar average?", "Fast. Flips often. Below it inside a daily "
+                   "uptrend = a short-term dip."),
+    "driver_4h": ("+DI vs -DI on 4-hour candles: who has pushed harder over the last ~2 days.",
+                  "The quickest read of who's in control right now. Historically ~no edge alone."),
     "momentum_7d": ("Price change over the last 7 days. Above +5% reads bullish, below -5% bearish.",
                     "Crypto has historically tended to keep moving the way it just moved (momentum), but that edge has "
                     "faded since 2024."),
