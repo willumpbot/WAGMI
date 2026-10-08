@@ -1,0 +1,376 @@
+{
+ "fetched": 1791490910.4395363,
+ "pairs": [
+  {
+   "spot_token": "PURR",
+   "perp": "PURR",
+   "pair": "PURR/USDC",
+   "index": 0,
+   "szDecimals": 0,
+   "spot_24h_vol": 2415468,
+   "spot_mid": 0.115185,
+   "perp_max_leverage": 3,
+   "depth": {
+    "mid": 0.115175,
+    "bid_0p5": 2803,
+    "ask_0p5": 926,
+    "bid_1p0": 16563,
+    "ask_1p0": 926,
+    "spread_bps": 6
+   }
+  },
+  {
+   "spot_token": "STABLE",
+   "perp": "STABLE",
+   "pair": "@258",
+   "index": 258,
+   "szDecimals": 2,
+   "spot_24h_vol": 414148,
+   "spot_mid": 0.024719,
+   "perp_max_leverage": 3,
+   "depth": {
+    "mid": 0.026104,
+    "bid_0p5": 1689,
+    "ask_0p5": 1704,
+    "bid_1p0": 4277,
+    "ask_1p0": 4340,
+    "spread_bps": 90
+   }
+  },
+  {
+   "spot_token": "UZEC",
+   "perp": "ZEC",
+   "pair": "@272",
+   "index": 272,
+   "szDecimals": 4,
+   "spot_24h_vol": 92461,
+   "spot_mid": 0.017582,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 1170.0,
+    "bid_0p5": 115583,
+    "ask_0p5": 181608,
+    "bid_1p0": 115583,
+    "ask_1p0": 181608,
+    "spread_bps": 2
+   }
+  },
+  {
+   "spot_token": "PUMP",
+   "perp": "PUMP",
+   "pair": "@20",
+   "index": 20,
+   "szDecimals": 0,
+   "spot_24h_vol": 830,
+   "spot_mid": 9.357e-05,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 9.4e-05,
+    "bid_0p5": 39,
+    "ask_0p5": 47,
+    "bid_1p0": 62,
+    "ask_1p0": 70,
+    "spread_bps": 30
+   }
+  },
+  {
+   "spot_token": "AZTEC",
+   "perp": "AZTEC",
+   "pair": "@285",
+   "index": 285,
+   "szDecimals": 0,
+   "spot_24h_vol": 711,
+   "spot_mid": 772.03,
+   "perp_max_leverage": 3,
+   "depth": {
+    "mid": 0.014429,
+    "bid_0p5": 220,
+    "ask_0p5": 20,
+    "bid_1p0": 879,
+    "ask_1p0": 690,
+    "spread_bps": 10
+   }
+  },
+  {
+   "spot_token": "UMON",
+   "perp": "MON",
+   "pair": "@243",
+   "index": 243,
+   "szDecimals": 1,
+   "spot_24h_vol": 284,
+   "spot_mid": 0.035509,
+   "perp_max_leverage": 5,
+   "depth": {
+    "mid": 0.024719,
+    "bid_0p5": 15345,
+    "ask_0p5": 11286,
+    "bid_1p0": 46468,
+    "ask_1p0": 11286,
+    "spread_bps": 6
+   }
+  },
+  {
+   "spot_token": "UAVAX",
+   "perp": "AVAX",
+   "pair": "@306",
+   "index": 306,
+   "szDecimals": 3,
+   "spot_24h_vol": 284,
+   "spot_mid": 504.71,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 10.1755,
+    "bid_0p5": 201,
+    "ask_0p5": 649,
+    "bid_1p0": 13320,
+    "ask_1p0": 4257,
+    "spread_bps": 19
+   }
+  },
+  {
+   "spot_token": "UENA",
+   "perp": "ENA",
+   "pair": "@206",
+   "index": 206,
+   "szDecimals": 1,
+   "spot_24h_vol": 22,
+   "spot_mid": 1.3e-05,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 0.20588,
+    "bid_0p5": 5912,
+    "ask_0p5": 26587,
+    "bid_1p0": 5912,
+    "ask_1p0": 26587,
+    "spread_bps": 6
+   }
+  },
+  {
+   "spot_token": "TRUMP",
+   "perp": "TRUMP",
+   "pair": "@9",
+   "index": 9,
+   "szDecimals": 2,
+   "spot_24h_vol": 0,
+   "spot_mid": 0.001074,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 0.001074,
+    "bid_0p5": 0,
+    "ask_0p5": 0,
+    "bid_1p0": 0,
+    "ask_1p0": 0,
+    "spread_bps": 11605
+   }
+  },
+  {
+   "spot_token": "HYPE",
+   "perp": "HYPE",
+   "pair": "@107",
+   "index": 107,
+   "szDecimals": 2,
+   "spot_24h_vol": 0,
+   "spot_mid": 0.081882,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 84.3615,
+    "bid_0p5": 82693,
+    "ask_0p5": 206505,
+    "bid_1p0": 82693,
+    "ask_1p0": 206505,
+    "spread_bps": 0
+   }
+  },
+  {
+   "spot_token": "BERA",
+   "perp": "BERA",
+   "pair": "@117",
+   "index": 117,
+   "szDecimals": 1,
+   "spot_24h_vol": 0,
+   "spot_mid": 0.040812,
+   "perp_max_leverage": 5,
+   "depth": {
+    "mid": 0.000985,
+    "bid_0p5": 0,
+    "ask_0p5": 0,
+    "bid_1p0": 0,
+    "ask_1p0": 0,
+    "spread_bps": 8201
+   }
+  },
+  {
+   "spot_token": "MON",
+   "perp": "MON",
+   "pair": "@129",
+   "index": 129,
+   "szDecimals": 2,
+   "spot_24h_vol": 0,
+   "spot_mid": 0.0152,
+   "perp_max_leverage": 5,
+   "depth": {
+    "mid": 0.0037,
+    "bid_0p5": 0,
+    "ask_0p5": 0,
+    "bid_1p0": 0,
+    "ask_1p0": 0,
+    "spread_bps": 16816
+   }
+  },
+  {
+   "spot_token": "UBTC",
+   "perp": "BTC",
+   "pair": "@142",
+   "index": 142,
+   "szDecimals": 5,
+   "spot_24h_vol": 0,
+   "spot_mid": 6e-05,
+   "perp_max_leverage": 40,
+   "depth": {
+    "mid": 81724.5,
+    "bid_0p5": 418805,
+    "ask_0p5": 631271,
+    "bid_1p0": 418805,
+    "ask_1p0": 631271,
+    "spread_bps": 0
+   }
+  },
+  {
+   "spot_token": "UETH",
+   "perp": "ETH",
+   "pair": "@151",
+   "index": 151,
+   "szDecimals": 4,
+   "spot_24h_vol": 0,
+   "spot_mid": 0.000284,
+   "perp_max_leverage": 25,
+   "depth": {
+    "mid": 2464.75,
+    "bid_0p5": 490365,
+    "ask_0p5": 356875,
+    "bid_1p0": 490365,
+    "ask_1p0": 356875,
+    "spread_bps": 0
+   }
+  },
+  {
+   "spot_token": "USOL",
+   "perp": "SOL",
+   "pair": "@156",
+   "index": 156,
+   "szDecimals": 3,
+   "spot_24h_vol": 0,
+   "spot_mid": 1.440325,
+   "perp_max_leverage": 20,
+   "depth": {
+    "mid": 109.205,
+    "bid_0p5": 340259,
+    "ask_0p5": 292080,
+    "bid_1p0": 340259,
+    "ask_1p0": 292080,
+    "spread_bps": 1
+   }
+  },
+  {
+   "spot_token": "UFART",
+   "perp": "FARTCOIN",
+   "pair": "@162",
+   "index": 162,
+   "szDecimals": 1,
+   "spot_24h_vol": 0,
+   "spot_mid": 1.2e-05,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 0.152295,
+    "bid_0p5": 16565,
+    "ask_0p5": 28851,
+    "bid_1p0": 25755,
+    "ask_1p0": 28851,
+    "spread_bps": 6
+   }
+  },
+  {
+   "spot_token": "UPUMP",
+   "perp": "PUMP",
+   "pair": "@188",
+   "index": 188,
+   "szDecimals": 0,
+   "spot_24h_vol": 0,
+   "spot_mid": 0.10775,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 0.005642,
+    "bid_0p5": 29107,
+    "ask_0p5": 36010,
+    "bid_1p0": 29107,
+    "ask_1p0": 36010,
+    "spread_bps": 2
+   }
+  },
+  {
+   "spot_token": "UXPL",
+   "perp": "XPL",
+   "pair": "@210",
+   "index": 210,
+   "szDecimals": 1,
+   "spot_24h_vol": 0,
+   "spot_mid": null,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 0.084208,
+    "bid_0p5": 1914,
+    "ask_0p5": 3656,
+    "bid_1p0": 1914,
+    "ask_1p0": 3656,
+    "spread_bps": 3
+   }
+  },
+  {
+   "spot_token": "UWLD",
+   "perp": "WLD",
+   "pair": "@224",
+   "index": 224,
+   "szDecimals": 1,
+   "spot_24h_vol": 0,
+   "spot_mid": null,
+   "perp_max_leverage": 10,
+   "depth": null
+  },
+  {
+   "spot_token": "UPHL",
+   "perp": "HYPE",
+   "pair": "@231",
+   "index": 231,
+   "szDecimals": 2,
+   "spot_24h_vol": 0,
+   "spot_mid": 0.750005,
+   "perp_max_leverage": 10,
+   "depth": {
+    "mid": 2.7e-05,
+    "bid_0p5": 0,
+    "ask_0p5": 0,
+    "bid_1p0": 0,
+    "ask_1p0": 0,
+    "spread_bps": 7170
+   }
+  },
+  {
+   "spot_token": "UVIRT",
+   "perp": "VIRTUAL",
+   "pair": "@290",
+   "index": 290,
+   "szDecimals": 1,
+   "spot_24h_vol": 0,
+   "spot_mid": 1.1e-07,
+   "perp_max_leverage": 5,
+   "depth": {
+    "mid": 0.702505,
+    "bid_0p5": 34043,
+    "ask_0p5": 12421,
+    "bid_1p0": 66148,
+    "ask_1p0": 44677,
+    "spread_bps": 42
+   }
+  }
+ ]
+}

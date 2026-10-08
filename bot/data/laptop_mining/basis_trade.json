@@ -1,0 +1,249 @@
+{
+ "fee_bps_cycle": 23.0,
+ "entry_p80": 0.05046,
+ "exit_median": 0.03,
+ "max_hold": 30,
+ "split_day": "2026-01-12",
+ "screen": {
+  "AVAX": {
+   "verdict": "reject",
+   "days": 133,
+   "basis_mean_pct": 0.0837,
+   "basis_sd_pct": 0.8211,
+   "funding_mean_pct": 0.01378,
+   "capacity_0p5_usd": 201,
+   "slip_bps_5k": 1253.28,
+   "dropped_bad_prints": 22
+  },
+  "AZTEC": {
+   "verdict": "missing data"
+  },
+  "BERA": {
+   "verdict": "missing data"
+  },
+  "BTC": {
+   "verdict": "use",
+   "days": 601,
+   "basis_mean_pct": -0.0073,
+   "basis_sd_pct": 0.0625,
+   "funding_mean_pct": 0.02129,
+   "capacity_0p5_usd": 418805,
+   "slip_bps_5k": 0.6,
+   "dropped_bad_prints": 11
+  },
+  "ENA": {
+   "verdict": "reject",
+   "days": 298,
+   "basis_mean_pct": 0.1032,
+   "basis_sd_pct": 0.5486,
+   "funding_mean_pct": 0.01529,
+   "capacity_0p5_usd": 5912,
+   "slip_bps_5k": 45.29,
+   "dropped_bad_prints": 20
+  },
+  "ETH": {
+   "verdict": "use",
+   "days": 560,
+   "basis_mean_pct": -0.0099,
+   "basis_sd_pct": 0.0667,
+   "funding_mean_pct": 0.02038,
+   "capacity_0p5_usd": 356875,
+   "slip_bps_5k": 0.7,
+   "dropped_bad_prints": 1
+  },
+  "FARTCOIN": {
+   "verdict": "missing data"
+  },
+  "HYPE": {
+   "verdict": "use",
+   "days": 672,
+   "basis_mean_pct": 0.0294,
+   "basis_sd_pct": 0.1011,
+   "funding_mean_pct": 0.05614,
+   "capacity_0p5_usd": 82693,
+   "slip_bps_5k": 3.02,
+   "dropped_bad_prints": 0
+  },
+  "MON": {
+   "verdict": "missing data"
+  },
+  "PUMP": {
+   "verdict": "too few clean days",
+   "days": 0,
+   "dropped_bad_prints": 455
+  },
+  "PURR": {
+   "verdict": "missing data"
+  },
+  "SOL": {
+   "verdict": "use",
+   "days": 516,
+   "basis_mean_pct": -0.0131,
+   "basis_sd_pct": 0.0815,
+   "funding_mean_pct": 0.00905,
+   "capacity_0p5_usd": 292080,
+   "slip_bps_5k": 1.36,
+   "dropped_bad_prints": 0
+  },
+  "STABLE": {
+   "verdict": "missing data"
+  },
+  "TRUMP": {
+   "verdict": "missing data"
+  },
+  "VIRTUAL": {
+   "verdict": "missing data"
+  },
+  "XPL": {
+   "verdict": "missing data"
+  },
+  "ZEC": {
+   "verdict": "use",
+   "days": 213,
+   "basis_mean_pct": -0.0005,
+   "basis_sd_pct": 0.2116,
+   "funding_mean_pct": 0.02117,
+   "capacity_0p5_usd": 115583,
+   "slip_bps_5k": 3.16,
+   "dropped_bad_prints": 0
+  }
+ },
+ "clips": {
+  "1000|train": {
+   "n_cycles": 42,
+   "mean_hold_days": 8.64,
+   "funding_pct": 0.76692,
+   "dbasis_pct": -0.03928,
+   "cost_pct": 0.23888,
+   "net_per_cycle_pct": 0.56732,
+   "ci": [
+    0.21376,
+    1.06727
+   ],
+   "annualised_on_2x_capital_pct": 11.98,
+   "worst_cycle_pct": -0.4007,
+   "pct_cycles_negative": 38.1,
+   "significant": true
+  },
+  "1000|test": {
+   "n_cycles": 15,
+   "mean_hold_days": 4.87,
+   "funding_pct": 0.24195,
+   "dbasis_pct": -0.07466,
+   "cost_pct": 0.25101,
+   "net_per_cycle_pct": 0.0656,
+   "ci": [
+    -0.06123,
+    0.22742
+   ],
+   "annualised_on_2x_capital_pct": 2.46,
+   "worst_cycle_pct": -0.2601,
+   "pct_cycles_negative": 46.7,
+   "significant": false
+  },
+  "1000|basis_wipe_pct": 5.3,
+  "5000|train": {
+   "n_cycles": 42,
+   "mean_hold_days": 8.64,
+   "funding_pct": 0.76692,
+   "dbasis_pct": -0.03928,
+   "cost_pct": 0.26867,
+   "net_per_cycle_pct": 0.53753,
+   "ci": [
+    0.19266,
+    1.01607
+   ],
+   "annualised_on_2x_capital_pct": 11.35,
+   "worst_cycle_pct": -0.4103,
+   "pct_cycles_negative": 40.5,
+   "significant": true
+  },
+  "5000|test": {
+   "n_cycles": 15,
+   "mean_hold_days": 4.87,
+   "funding_pct": 0.24195,
+   "dbasis_pct": -0.07466,
+   "cost_pct": 0.28973,
+   "net_per_cycle_pct": 0.02688,
+   "ci": [
+    -0.09565,
+    0.17965
+   ],
+   "annualised_on_2x_capital_pct": 1.01,
+   "worst_cycle_pct": -0.3085,
+   "pct_cycles_negative": 46.7,
+   "significant": false
+  },
+  "5000|basis_wipe_pct": 5.3,
+  "25000|train": {
+   "n_cycles": 42,
+   "mean_hold_days": 8.64,
+   "funding_pct": 0.76692,
+   "dbasis_pct": -0.03928,
+   "cost_pct": 0.41762,
+   "net_per_cycle_pct": 0.38858,
+   "ci": [
+    0.03885,
+    0.84499
+   ],
+   "annualised_on_2x_capital_pct": 8.21,
+   "worst_cycle_pct": -0.4737,
+   "pct_cycles_negative": 52.4,
+   "significant": true
+  },
+  "25000|test": {
+   "n_cycles": 15,
+   "mean_hold_days": 4.87,
+   "funding_pct": 0.24195,
+   "dbasis_pct": -0.07466,
+   "cost_pct": 0.48333,
+   "net_per_cycle_pct": -0.16672,
+   "ci": [
+    -0.29372,
+    -0.00135
+   ],
+   "annualised_on_2x_capital_pct": -6.25,
+   "worst_cycle_pct": -0.5504,
+   "pct_cycles_negative": 93.3,
+   "significant": true
+  },
+  "25000|basis_wipe_pct": 5.3
+ },
+ "coins": {
+  "BTC": {
+   "n_cycles": 9,
+   "net_per_cycle_pct": 0.06068,
+   "mean_hold_days": 5.56,
+   "worst_cycle_pct": -0.4103,
+   "capacity_usd": 418805
+  },
+  "ETH": {
+   "n_cycles": 6,
+   "net_per_cycle_pct": 0.23789,
+   "mean_hold_days": 7.0,
+   "worst_cycle_pct": -0.2117,
+   "capacity_usd": 490365
+  },
+  "HYPE": {
+   "n_cycles": 27,
+   "net_per_cycle_pct": 0.73499,
+   "mean_hold_days": 9.89,
+   "worst_cycle_pct": -0.3085,
+   "capacity_usd": 82693
+  },
+  "SOL": {
+   "n_cycles": 7,
+   "net_per_cycle_pct": 0.07889,
+   "mean_hold_days": 5.43,
+   "worst_cycle_pct": -0.2436,
+   "capacity_usd": 340259
+  },
+  "ZEC": {
+   "n_cycles": 8,
+   "net_per_cycle_pct": 0.07615,
+   "mean_hold_days": 4.88,
+   "worst_cycle_pct": -0.2156,
+   "capacity_usd": 115583
+  }
+ }
+}
