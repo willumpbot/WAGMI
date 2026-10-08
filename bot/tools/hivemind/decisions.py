@@ -35,7 +35,7 @@ def build():
         "ready_when": "the live gain's whole range is above zero with 60+ signals",
         "ready": ready_g,
         "note": ("This removes a loss; it does not create a profit edge. Already built and tested, switched off, on branch "
-                 "claude/adaptive-stops (ADAPTIVE_STOPS=true): saying yes = merge, set the flag, restart when flat."),
+                 "claude/adaptive-stops (ADAPTIVE_STOPS=true, with TIME_STOP_HOURS 8 -> 48): saying yes = merge, set both, restart when flat."),
     })
     sc = _load(BOT / "data" / "agent_grades" / "live" / "live_scorecard.json", {}) or {}
     d = sc.get("ic_muted_drops") or {}
