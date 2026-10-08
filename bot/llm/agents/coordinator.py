@@ -2527,8 +2527,13 @@ class AgentCoordinator:
         exit_input = self._build_exit_input(position_data, market_data)
         out = self._call_agent(AgentRole.EXIT, exit_input, model_for_trigger)
         self.last_exit_output = out
+        # OWNER_PLAN_EXEC: the exit agent manages the owner's paper position, but
+        # that run must not feed agent grading or exit-learning.
+        _owner_trade = bool(position_data.get("owner_trade"))
 
         try:
+            if _owner_trade:
+                raise RuntimeError("owner_trade: skip performance tracker")
             from llm.agents.performance_tracker import get_performance_tracker
             import uuid as _uuid
             get_performance_tracker().record_pipeline_run(
@@ -2551,7 +2556,7 @@ class AgentCoordinator:
             )
 
             # Feed exit reasoning to learning systems when closing
-            if action in ("full_close", "partial_close", "close"):
+            if action in ("full_close", "partial_close", "close") and not _owner_trade:
                 try:
                     from llm.agents.learning_integration import process_exit_feedback
                     process_exit_feedback(out.data, position_data)

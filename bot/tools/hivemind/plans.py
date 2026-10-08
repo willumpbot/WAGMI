@@ -144,6 +144,62 @@ def _reviews():
     return out
 
 
+EXEC_STATE = HM / "owner_orders_state.json"   # bot paper-execution state (core/owner_plan_exec.py)
+EXEC_FILLS = HM / "owner_fills.jsonl"         # bot paper-execution legs: open / partial / final
+
+
+def _exec_results(last_px=None):
+    """What the bot made of each plan when it paper-traded it (OWNER_PLAN_EXEC). {plan_id: exec_result}.
+
+    status: queued|open|closed|blocked|rejected|stale|expired|cancelled. r is net of the bot's real
+    fees on the bot's own fill; for an open position it includes the unrealized part at `last_px`.
+    """
+    try:
+        st = json.loads(EXEC_STATE.read_text(encoding="utf-8")).get("plans") or {}
+    except (OSError, ValueError):
+        st = {}
+    fills = {}
+    try:
+        for l in EXEC_FILLS.read_text(encoding="utf-8").splitlines():
+            if l.strip():
+                try:
+                    r = json.loads(l)
+                except ValueError:
+                    continue
+                if r.get("plan_id"):
+                    fills.setdefault(r["plan_id"], []).append(r)
+    except OSError:
+        pass
+    out = {}
+    for pid in set(st) | set(fills):
+        rec = st.get(pid) or {}
+        legs = fills.get(pid, [])
+        closes = [f for f in legs if f.get("kind") in ("partial", "final")]
+        final = next((f for f in reversed(closes) if f.get("kind") == "final"), None)
+        opened = next((f for f in legs if f.get("kind") == "open"), None)
+        status = "closed" if final else rec.get("status") or ("open" if opened else "queued")
+        realized = round(sum(float(f.get("pnl") or 0) for f in closes), 4)
+        risk = float((opened or {}).get("risk_usd") or rec.get("risk_usd") or 0)
+        er = {"status": status, "reason": rec.get("reason", ""), "fill_price": rec.get("fill_price") or (opened or {}).get("entry"),
+              "fills": [{k: f.get(k) for k in ("kind", "exit", "qty", "pnl", "r", "reason", "ts")} for f in closes],
+              "pnl_usd": None, "r": None}
+        if final:
+            er["pnl_usd"] = final.get("total_pnl", realized)
+            er["r"] = final.get("total_r")
+        elif status == "open" and opened:
+            unreal = 0.0
+            px = (last_px or {}).get(pid)
+            if px:
+                sg = 1 if opened.get("side") == "LONG" else -1
+                left = float(opened.get("qty") or 0) - sum(float(f.get("qty") or 0) for f in closes)
+                unreal = (px - float(opened["entry"])) * sg * max(left, 0.0) * float(opened.get("pnl_lev") or 1.0)
+            er["pnl_usd"] = round(realized + unreal, 4)
+            er["r"] = round((realized + unreal) / risk, 3) if risk > 0 else None
+            er["live"] = True
+        out[pid] = er
+    return out
+
+
 def cancel(pid):
     with open(PLANS, "a", encoding="utf-8") as f:
         f.write(json.dumps({"kind": "cancel", "id": str(pid)[:20], "ts": time.time()}) + "\n")
@@ -220,6 +276,17 @@ def _stats(rows):
     if both:
         out["mine_vs_bot_levels"] = {"n": len(both), "mine_avg_r": round(sum(x["result"]["r"] for x in both) / len(both), 3),
                                      "bot_avg_r": round(sum(x["bot_result"]["r"] for x in both) / len(both), 3)}
+    # Plan as written vs the SAME plan managed by the bot's exit logic (OWNER_PLAN_EXEC paper fills).
+    ex = [x for x in done if (x.get("exec_result") or {}).get("status") == "closed"
+          and (x.get("exec_result") or {}).get("r") is not None]
+    if ex:
+        pr = [x["result"]["r"] for x in ex]
+        br = [x["exec_result"]["r"] for x in ex]
+        out["by_exec"] = {"n": len(ex), "plan_avg_r": round(sum(pr) / len(ex), 3), "bot_avg_r": round(sum(br) / len(ex), 3),
+                          "plan_total_r": round(sum(pr), 2), "bot_total_r": round(sum(br), 2),
+                          "bot_better": sum(b > p for p, b in zip(pr, br))}
+    else:
+        out["by_exec"] = {"n": 0}
     for k, fn in (("with chief", lambda x: (x.get("context") or {}).get("chief_lean") == x["side"]),
                   ("against / no chief", lambda x: (x.get("context") or {}).get("chief_lean") != x["side"])):
         out["by_chief"][k] = agg([x for x in done if fn(x)])
@@ -237,6 +304,7 @@ def resolve(write=True):
     now = time.time()
     reviews = _reviews()
     plans = []
+    last_px = {}
     for pl in (r for r in rows if r.get("kind") == "plan"):
         old = (prev.get(pl["id"]) or {}).get("result") or {}
         if old.get("status") in ("won", "lost", "timed out", "expired"):
@@ -247,6 +315,8 @@ def resolve(write=True):
             try:
                 bars = hl.candles(pl["coin"], "5m", pl["ts"] * 1000 - 300000, ttl=50)
                 res = _walk(pl, bars or [], now)
+                if bars:
+                    last_px[pl["id"]] = float(bars[-1]["c"])
             except Exception as e:
                 res = dict(old or {"status": "waiting"}, error=str(e)[:120])
             if pl["id"] in cancelled and res.get("status") == "waiting":
@@ -260,6 +330,9 @@ def resolve(write=True):
             except Exception:
                 pass
         plans.append(dict(pl, result=res, review=(reviews.get(pl["id"]) or None), bot_result=bot_res or None))
+    execs = _exec_results(last_px)
+    for p in plans:
+        p["exec_result"] = execs.get(p["id"])
     out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "plans": plans, "stats": _stats(plans),
            "setups": SETUPS}
     if write:
