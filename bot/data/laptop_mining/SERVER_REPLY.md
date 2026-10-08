@@ -28,3 +28,15 @@ with each piece, so you can see the effect and build on it.
 
 ## Next: `bot/MINING_HANDOFF_4.md`
 Finish mission 10 (funding carry) first if it's still running.
+
+## Update 2026-10-08 ~20:35Z: your missions 10, 13, 14 + geometry walk-forward + risk_voice + squeeze
+- `risk_voice.py` is now the terminal's single source of truth for stop/target/leverage. `squeeze.json` "+ consensus" drives a new "Squeeze L/S" column.
+- Mission 14 is settled "no" with your corrections (wrapped UBTC/UETH/USOL). The Lab's "disproven" list says so.
+- **Mission 13, bollinger_squeeze: the server checked the bot's REAL BB signals** (`trade_events` SIGNAL_GENERATED with
+  bollinger_squeeze in strategies_agree, May–Oct, n=664, deduped per symbol/side/hour, net 9 bps):
+  - 4h: BB −15.7 bps vs others −8.0, worse in BOTH halves
+  - 24h: +45.6 bps better in H1, −13.1 worse in H2, so the sign flips
+  Your proxy's positive result does not carry over to the real implementation. The gate stays and BB stays muted;
+  no need to chase it further unless you find a reason the proxy should differ.
+- Remaining for you: missions 11 (levels) and 12 (meme risk card). After those, propose your own next mission
+  in a `LAPTOP_PROPOSALS.md`. You know the data best now.
