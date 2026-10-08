@@ -1,0 +1,327 @@
+{
+ "capital_mult": 2.0,
+ "holds": [
+  3,
+  7,
+  14,
+  30
+ ],
+ "assets": [
+  "HYPE"
+ ],
+ "split_day": "2026-01-12",
+ "grid": {
+  "fee0.0|3d": {
+   "net_pct": 0.07466,
+   "annualised_pct": 4.54,
+   "ci": [
+    0.06174,
+    0.08831
+   ],
+   "significant": true
+  },
+  "fee0.0|7d": {
+   "net_pct": 0.17372,
+   "annualised_pct": 4.53,
+   "ci": [
+    0.14557,
+    0.20235
+   ],
+   "significant": true
+  },
+  "fee0.0|14d": {
+   "net_pct": 0.3466,
+   "annualised_pct": 4.52,
+   "ci": [
+    0.29417,
+    0.40167
+   ],
+   "significant": true
+  },
+  "fee0.0|30d": {
+   "net_pct": 0.73085,
+   "annualised_pct": 4.45,
+   "ci": [
+    0.61016,
+    0.86134
+   ],
+   "significant": true
+  },
+  "fee0.05|3d": {
+   "net_pct": 0.02466,
+   "annualised_pct": 1.5,
+   "ci": [
+    0.01112,
+    0.038
+   ],
+   "significant": true
+  },
+  "fee0.05|7d": {
+   "net_pct": 0.12372,
+   "annualised_pct": 3.23,
+   "ci": [
+    0.09633,
+    0.15219
+   ],
+   "significant": true
+  },
+  "fee0.05|14d": {
+   "net_pct": 0.2966,
+   "annualised_pct": 3.87,
+   "ci": [
+    0.2389,
+    0.35259
+   ],
+   "significant": true
+  },
+  "fee0.05|30d": {
+   "net_pct": 0.68085,
+   "annualised_pct": 4.14,
+   "ci": [
+    0.56058,
+    0.79273
+   ],
+   "significant": true
+  },
+  "fee0.1|3d": {
+   "net_pct": -0.02534,
+   "annualised_pct": -1.54,
+   "ci": [
+    -0.03914,
+    -0.01221
+   ],
+   "significant": true
+  },
+  "fee0.1|7d": {
+   "net_pct": 0.07372,
+   "annualised_pct": 1.92,
+   "ci": [
+    0.04651,
+    0.10418
+   ],
+   "significant": true
+  },
+  "fee0.1|14d": {
+   "net_pct": 0.2466,
+   "annualised_pct": 3.21,
+   "ci": [
+    0.18929,
+    0.30352
+   ],
+   "significant": true
+  },
+  "fee0.1|30d": {
+   "net_pct": 0.63085,
+   "annualised_pct": 3.84,
+   "ci": [
+    0.50447,
+    0.74892
+   ],
+   "significant": true
+  },
+  "fee0.15|3d": {
+   "net_pct": -0.07534,
+   "annualised_pct": -4.58,
+   "ci": [
+    -0.08858,
+    -0.06214
+   ],
+   "significant": true
+  },
+  "fee0.15|7d": {
+   "net_pct": 0.02372,
+   "annualised_pct": 0.62,
+   "ci": [
+    -0.00397,
+    0.05214
+   ],
+   "significant": false
+  },
+  "fee0.15|14d": {
+   "net_pct": 0.1966,
+   "annualised_pct": 2.56,
+   "ci": [
+    0.13617,
+    0.25325
+   ],
+   "significant": true
+  },
+  "fee0.15|30d": {
+   "net_pct": 0.58085,
+   "annualised_pct": 3.53,
+   "ci": [
+    0.45023,
+    0.70586
+   ],
+   "significant": true
+  },
+  "fee0.2|3d": {
+   "net_pct": -0.12534,
+   "annualised_pct": -7.63,
+   "ci": [
+    -0.13835,
+    -0.11167
+   ],
+   "significant": true
+  },
+  "fee0.2|7d": {
+   "net_pct": -0.02628,
+   "annualised_pct": -0.69,
+   "ci": [
+    -0.05459,
+    0.00224
+   ],
+   "significant": false
+  },
+  "fee0.2|14d": {
+   "net_pct": 0.1466,
+   "annualised_pct": 1.91,
+   "ci": [
+    0.09097,
+    0.20672
+   ],
+   "significant": true
+  },
+  "fee0.2|30d": {
+   "net_pct": 0.53085,
+   "annualised_pct": 3.23,
+   "ci": [
+    0.40963,
+    0.64435
+   ],
+   "significant": true
+  },
+  "fee0.26|3d": {
+   "net_pct": -0.18534,
+   "annualised_pct": -11.28,
+   "ci": [
+    -0.19781,
+    -0.17134
+   ],
+   "significant": true
+  },
+  "fee0.26|7d": {
+   "net_pct": -0.08628,
+   "annualised_pct": -2.25,
+   "ci": [
+    -0.11493,
+    -0.05838
+   ],
+   "significant": true
+  },
+  "fee0.26|14d": {
+   "net_pct": 0.0866,
+   "annualised_pct": 1.13,
+   "ci": [
+    0.02785,
+    0.14346
+   ],
+   "significant": true
+  },
+  "fee0.26|30d": {
+   "net_pct": 0.47085,
+   "annualised_pct": 2.86,
+   "ci": [
+    0.34169,
+    0.59861
+   ],
+   "significant": true
+  },
+  "fee0.35|3d": {
+   "net_pct": -0.27534,
+   "annualised_pct": -16.75,
+   "ci": [
+    -0.28797,
+    -0.26191
+   ],
+   "significant": true
+  },
+  "fee0.35|7d": {
+   "net_pct": -0.17628,
+   "annualised_pct": -4.6,
+   "ci": [
+    -0.20407,
+    -0.14571
+   ],
+   "significant": true
+  },
+  "fee0.35|14d": {
+   "net_pct": -0.0034,
+   "annualised_pct": -0.04,
+   "ci": [
+    -0.06055,
+    0.05384
+   ],
+   "significant": false
+  },
+  "fee0.35|30d": {
+   "net_pct": 0.38085,
+   "annualised_pct": 2.32,
+   "ci": [
+    0.25783,
+    0.50831
+   ],
+   "significant": true
+  },
+  "fee0.5|3d": {
+   "net_pct": -0.42534,
+   "annualised_pct": -25.88,
+   "ci": [
+    -0.43828,
+    -0.41261
+   ],
+   "significant": true
+  },
+  "fee0.5|7d": {
+   "net_pct": -0.32628,
+   "annualised_pct": -8.51,
+   "ci": [
+    -0.35269,
+    -0.29674
+   ],
+   "significant": true
+  },
+  "fee0.5|14d": {
+   "net_pct": -0.1534,
+   "annualised_pct": -2.0,
+   "ci": [
+    -0.20955,
+    -0.09507
+   ],
+   "significant": true
+  },
+  "fee0.5|30d": {
+   "net_pct": 0.23085,
+   "annualised_pct": 1.4,
+   "ci": [
+    0.09961,
+    0.35121
+   ],
+   "significant": true
+  }
+ },
+ "breakeven": {
+  "3d": {
+   "gross_pct": 0.07466,
+   "breakeven_bps": 7.47,
+   "annualised_at_15bps": -4.58
+  },
+  "7d": {
+   "gross_pct": 0.17372,
+   "breakeven_bps": 17.37,
+   "annualised_at_15bps": 0.62
+  },
+  "14d": {
+   "gross_pct": 0.3466,
+   "breakeven_bps": 34.66,
+   "annualised_at_15bps": 2.56
+  },
+  "30d": {
+   "gross_pct": 0.73085,
+   "breakeven_bps": 73.08,
+   "annualised_at_15bps": 3.53
+  }
+ },
+ "verdict": "fee0.0|3d -> 4.54% annualised",
+ "conclusion": "maker execution does not rescue the trade"
+}
