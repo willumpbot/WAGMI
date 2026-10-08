@@ -105,10 +105,15 @@ def run_chief():
     return out
 
 
-def resolve():
-    if not CALLS.exists():
+OWNER_CALLS = HM / "owner_calls.jsonl"
+OWNER_CARD = HM / "owner_scorecard.json"
+
+
+def resolve(calls=None, card_path=None):
+    calls, card_path = calls or CALLS, card_path or CARD
+    if not calls.exists():
         return {}
-    rows = [json.loads(l) for l in CALLS.read_text(encoding="utf-8").splitlines() if l.strip()]
+    rows = [json.loads(l) for l in calls.read_text(encoding="utf-8").splitlines() if l.strip()]
     now = time.time()
     changed = False
     for r in rows:
@@ -124,9 +129,9 @@ def resolve():
                 r[k] = round((p / r["price"] - 1) * 100, 3)
                 changed = True
     if changed:
-        tmp = CALLS.with_suffix(".tmp")
+        tmp = calls.with_suffix(".tmp")
         tmp.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
-        os.replace(tmp, CALLS)
+        os.replace(tmp, calls)
     card = {"updated": datetime.now(timezone.utc).isoformat(timespec="minutes"), "horizons": {}}
     for hz in HORIZONS:
         k = "ret_" + hz
@@ -146,7 +151,7 @@ def resolve():
                 for cv in range(1, 6) if any(r.get("conviction") == cv for r in dirn)},
         }
     card["verdict"] = ("collecting" if card["horizons"]["5d"]["n_directional"] < 30 else "graded")
-    CARD.write_text(json.dumps(card, indent=1), encoding="utf-8")
+    card_path.write_text(json.dumps(card, indent=1), encoding="utf-8")
     return card
 
 

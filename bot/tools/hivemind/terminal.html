@@ -118,6 +118,16 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         <div id="lw" style="width:100%;height:360px;display:none"></div><svg id="chart"></svg>
         <div class="readout num" id="readout">Hover the chart for prices. <kbd>↑</kbd><kbd>↓</kbd> switch coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe</div>
       </div>
+      <div class="box"><h3>My call on <span id="mc_sym" style="color:var(--ink)"></span> <span class="sp"></span><span class="mut" id="mc_card" style="text-transform:none;letter-spacing:0"></span></h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="seg" id="mc_lean"><button data-v="LONG">&#9650; LONG</button><button data-v="SHORT">&#9660; SHORT</button><button data-v="NEUTRAL">&#9679; NEUTRAL</button></span>
+          <span class="mut" style="font-size:11px">conviction</span><span class="seg" id="mc_conv"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3" class="on">3</button><button data-v="4">4</button><button data-v="5">5</button></span>
+          <input id="mc_reason" placeholder="why, in a few words" style="flex:1;min-width:160px;background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:4px 6px">
+          <button id="mc_send" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:5px 12px;cursor:pointer">Log call</button>
+        </div>
+        <div id="mc_msg" class="mut" style="font-size:11.5px;margin-top:5px">Logged with the live price and graded at 1 and 5 days, the same way as the chief and every voice.</div>
+        <div id="mc_list" style="margin-top:6px;font-size:12px"></div>
+      </div>
       <div class="box"><h3>Chief analyst <span class="sp"></span><span id="dchief"></span></h3><div class="read" id="dread"></div></div>
       <div class="box"><h3>Next 5 days when it looked like this <span class="sp"></span><span class="mut" id="hn" style="text-transform:none;letter-spacing:0"></span></h3><div id="dhist"></div></div>
     </div>
@@ -371,7 +381,7 @@ function renderDetail(){
   const c = chief(sel);
   $("dchief").innerHTML = c.lean ? `<span class="pill ${c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt"}">${c.lean} · ${c.conviction}/5</span>` : "";
   $("dread").innerHTML = c.read ? `${esc(c.read)}<div class="mut" style="margin-top:6px"><b>Levels:</b> ${esc(c.key_levels)}<br><b>View changes if:</b> ${esc(c.invalidation)}${c.expected_move?`<br><b>Expected move:</b> ${esc(c.expected_move)}`:""}</div><div class="dim" style="margin-top:4px;font-size:11px">${esc(DATA.chief.ts||"")} · track record: ${esc(DATA.chiefCard)}</div>` : "<span class='mut'>No read yet.</span>";
-  drawChart(); levels(); voices(); hist(); calc(); book(); positioning();
+  drawChart(); levels(); voices(); hist(); calc(); book(); positioning(); myCalls();
 }
 
 function topbar(){
@@ -493,6 +503,31 @@ function checkAlerts(mids){
       try { if (Notification.permission==="granted") new Notification(`${x.c} crossed ${fmt(x.p)}`, {body:`now ${fmt(v)}`}); } catch(e) {} } }
   if (changed) saveAlerts(a);
 }
+let MC = {lean: null, conv: 3};
+async function myCalls(){
+  $("mc_sym").textContent = sel;
+  const h = (DATA.ownerCard && DATA.ownerCard.horizons) || {}; const h5 = h["5d"] || {}, h1 = h["1d"] || {};
+  $("mc_card").textContent = h5.n_calls ? `track record: ${h5.n_directional} directional calls graded at 5d, right ${(h5.directional_hit*100).toFixed(0)}%` : (h1.n_calls ? `${h1.n_calls} graded at 1d` : "no graded calls yet");
+  try {
+    const r = await fetch("http://127.0.0.1:8000/v1/owner_calls", {headers: {"X-Owner-Token": DATA.ownerToken}});
+    const j = await r.json(); const rows = (j.calls || []).slice(-6).reverse();
+    $("mc_list").innerHTML = rows.map(x => {
+      const now = live[x.symbol]; const mv = now ? (now/x.price-1)*100 : null; const sg = x.lean==="LONG" ? 1 : x.lean==="SHORT" ? -1 : 0;
+      return `<div class="num" style="display:grid;grid-template-columns:90px 50px 80px 1fr 70px;gap:6px"><span class="mut">${new Date(x.ts*1000).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span><b>${x.symbol}</b><span class="${sg>0?"up":sg<0?"dn":"mut"}">${x.lean} ${x.conviction}</span><span class="mut" style="overflow:hidden;text-overflow:ellipsis">${esc(x.reason)}</span><span class="${sg*(mv||0)>=0?"up":"dn"}" title="move since the call, in the call's direction">${mv!=null&&sg?pct(sg*mv,2):""}</span></div>`;
+    }).join("");
+  } catch(e) { $("mc_list").innerHTML = "<span class='mut'>Local API not reachable (it runs on this PC as WAGMI-API).</span>"; }
+}
+async function sendCall(){
+  if (!MC.lean) { $("mc_msg").textContent = "Pick LONG, SHORT or NEUTRAL first."; return; }
+  const body = {coin: sel, lean: MC.lean, conviction: MC.conv, reason: $("mc_reason").value, price: px(sel)};
+  try {
+    const r = await fetch("http://127.0.0.1:8000/v1/owner_call", {method: "POST", headers: {"Content-Type": "application/json", "X-Owner-Token": DATA.ownerToken}, body: JSON.stringify(body)});
+    const j = await r.json(); if (!j.ok) throw new Error(j.error);
+    $("mc_msg").textContent = `Logged: ${sel} ${MC.lean} (conviction ${MC.conv}) at ${fmt(px(sel))}. Graded in 1 and 5 days.`;
+    $("mc_reason").value = ""; MC.lean = null;
+    document.querySelectorAll("#mc_lean button").forEach(b => b.classList.remove("on")); myCalls();
+  } catch(e) { $("mc_msg").textContent = "Could not log it: " + e.message; }
+}
 async function poll(){
   try {
     const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"allMids"}'});
@@ -504,7 +539,7 @@ async function poll(){
   } catch(e) { $("livedot").style.background = "var(--bad)"; }
 }
 
-document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{tf=b.dataset.tf;document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b));drawChart()});
+document.querySelectorAll(".seg button[data-tf]").forEach(b=>b.onclick=()=>{tf=b.dataset.tf;document.querySelectorAll(".seg button[data-tf]").forEach(x=>x.classList.toggle("on",x===b));drawChart()});
 ["c_acct","c_risk","c_side","c_lev"].forEach(id=>$(id).oninput=calc);
 ["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;calc()});
 $("c_side").onchange=()=>{delete $("c_stop").dataset.touched;calc()};
@@ -512,6 +547,9 @@ $("al_add").onclick = () => { const p = +$("al_px").value; if (!p) return; const
   const a = alerts(); a.push({c: sel, p, dir: p >= now ? 1 : -1}); saveAlerts(a); $("al_px").value = "";
   try { if (window.Notification && Notification.permission === "default") Notification.requestPermission(); } catch(e) {} };
 renderAlerts();
+document.querySelectorAll("#mc_lean button").forEach(b => b.onclick = () => { MC.lean = b.dataset.v; document.querySelectorAll("#mc_lean button").forEach(x => x.classList.toggle("on", x === b)); });
+document.querySelectorAll("#mc_conv button").forEach(b => b.onclick = () => { MC.conv = +b.dataset.v; document.querySelectorAll("#mc_conv button").forEach(x => x.classList.toggle("on", x === b)); });
+$("mc_send").onclick = sendCall;
 $("search").addEventListener("change", ev=>adhoc(ev.target.value));
 $("search").addEventListener("keydown", ev=>{ if (ev.key==="Enter") adhoc(ev.target.value); });
 document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!=="INPUT"){ ev.preventDefault(); $("search").focus(); return; }

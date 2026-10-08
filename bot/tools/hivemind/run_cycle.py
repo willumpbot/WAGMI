@@ -32,6 +32,7 @@ def main():
             out = chief.run_chief()
             log("chief: " + ", ".join(f"{s} {c.get('lean')}{c.get('conviction')}" for s, c in out.get("coins", {}).items()))
         chief.resolve()
+        chief.resolve(chief.OWNER_CALLS, chief.OWNER_CARD)
         desk.build()
         desk.build_terminal()
         log("cycle ok" + (" (+chief)" if "--chief" in sys.argv else ""))

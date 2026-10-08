@@ -223,7 +223,12 @@ def build_terminal():
     card_txt = (f"{card_.get('n_calls', 0)} calls graded at 5d"
                 + (f", directional right {card_['directional_hit'] * 100:.0f}%" if card_.get("directional_hit") is not None
                    else ", still collecting"))
-    data = {"state": allst, "chief": chief, "chiefCard": card_txt, "info": vz.INFO}
+    try:
+        token = (HM / "owner_token.txt").read_text(encoding="utf-8").strip()
+    except OSError:
+        token = ""
+    data = {"state": allst, "chief": chief, "chiefCard": card_txt, "info": vz.INFO, "ownerToken": token,
+            "ownerCard": _load(HM / "owner_scorecard.json", {}) or {}}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")
     page = tpl.replace("__DATA__", json.dumps(data, default=str).replace("</", "<\\/"))
     tmp = TERMINAL_OUT.with_suffix(".tmp")
