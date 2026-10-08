@@ -144,6 +144,30 @@ def owner_call(payload: dict, x_owner_token: Optional[str] = Header(default=None
     return {"ok": True, "call": row}
 
 
+_MEMECARD_CACHE: dict = {}
+
+
+@app.get("/v1/memecard")
+def memecard_lookup(q: str = Query(..., min_length=2, max_length=80)):
+    """Risk card for a DEX token (laptop mission 12, bot/data/laptop_mining/memecard.py): liquidity, volume,
+    age, realised vol, drawdown, slippage and a 2%-slippage position cap. Free public data; no direction."""
+    key = q.strip()
+    hit = _MEMECARD_CACHE.get(key)
+    if hit and time.time() - hit[0] < 300:
+        return hit[1]
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "laptop_memecard", Path(__file__).resolve().parent / "data" / "laptop_mining" / "memecard.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    try:
+        out = mod.card(key)
+    except Exception as e:
+        out = {"ok": False, "query": key, "error": f"{type(e).__name__}: {e}"[:200]}
+    _MEMECARD_CACHE[key] = (time.time(), out)
+    return out
+
+
 _OWNER_ADDR = Path(__file__).resolve().parent / "data" / "hivemind" / "owner_address.txt"
 
 

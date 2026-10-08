@@ -315,7 +315,7 @@ def voice_risk(sym, vol, price, disagree=None):
         m = ((_SQUEEZE.get(side) or {}).get("models") or {}).get("+ consensus")
         if m and f1 and disagree is not None:
             c = m["coef"]
-            z = c[0] + c[1] * math.log(f1 + 1e-8) + c[2] * disagree
+            z = c[0] + c[1] * math.log(f1 + 1e-8) + c[2] * disagree   # disagree already on the 0-6 scale
             sq = round(100 / (1 + math.exp(-z)), 1)
         out[side] = {"stop_pct": r.get("stop_pct"), "target_pct": r.get("target_pct"),
                      "max_leverage": r.get("max_leverage"), "worst_case_1d_pct": r.get("worst_case_1d_pct"),
@@ -394,8 +394,11 @@ def assemble():
             st["consensus"] = vz.consensus(st["voices"])
             st["contradictions"] = vz.contradictions(st["voices"])
             try:
-                st["risk"] = voice_risk(sym, st.get("vol"), (st.get("market") or {}).get("price"),
-                                        (st.get("consensus") or {}).get("dissent_families"))
+                cs_ = st.get("consensus") or {}
+                n_f = (cs_.get("bull_families") or 0) + (cs_.get("bear_families") or 0)
+                # LAPTOP_REPLY_2.md: the squeeze model was fitted on 6 families; rescale our count to that range
+                dis6 = (cs_.get("dissent_families") or 0) / n_f * 6.0 if n_f else None
+                st["risk"] = voice_risk(sym, st.get("vol"), (st.get("market") or {}).get("price"), dis6)
             except Exception as e:
                 st["risk"] = {"error": f"{type(e).__name__}: {e}"[:200]}
             _log_voices(sym, st)

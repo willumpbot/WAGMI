@@ -115,7 +115,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
 <body>
 <div class="top">
   <span class="brand">WAGMI TERMINAL</span>
-  <input id="search" list="universe" placeholder="Any HL coin…  /" autocomplete="off" style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font:inherit;padding:4px 8px;width:170px">
+  <input id="search" list="universe" placeholder="HL coin or token address…  /" autocomplete="off" style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font:inherit;padding:4px 8px;width:170px">
   <datalist id="universe"></datalist>
   <span class="tk num"><span class="dotlive" id="livedot"></span><span class="k">UTC</span><span id="clock"></span></span>
   <span class="tk"><span class="k">Weather</span><b id="weather"></b></span>
@@ -137,6 +137,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         <div id="lw" style="width:100%;height:360px;display:none"></div><svg id="chart"></svg>
         <div class="readout num" id="readout">Hover the chart for prices. <kbd>↑</kbd><kbd>↓</kbd> switch coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe</div>
       </div>
+      <div class="box" id="memebox" style="display:none"><h3>Token risk card <span id="mm_q" style="color:var(--ink);text-transform:none;letter-spacing:0"></span><span class="sp"></span><a href="#" id="mm_x" style="color:var(--soft)">close</a></h3><div id="mm_body"></div></div>
       <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
       <div class="box"><h3>My trading journal <span class="sp"></span><span class="mut" id="jr_note" style="text-transform:none;letter-spacing:0"></span></h3><div id="jr"></div></div>
       <div class="box"><h3>My call on <span id="mc_sym" style="color:var(--ink)"></span> <span class="sp"></span><span class="mut" id="mc_card" style="text-transform:none;letter-spacing:0"></span></h3>
@@ -470,10 +471,37 @@ async function loadUniverse(){
     const rows = meta.universe.map((u,i)=>({n:u.name, v:+((ctx[i]||{}).dayNtlVlm||0), d:u.isDelisted})).filter(x=>!x.d).sort((a,b)=>b.v-a.v);
     $("universe").innerHTML = rows.map(x=>`<option value="${x.n}">`).join(""); window.UNIVERSE = new Set(rows.map(x=>x.n)); } catch(e) {}
 }
+async function memeCard(q){
+  $("memebox").style.display = ""; $("mm_q").textContent = q; $("mm_body").innerHTML = "<span class='mut'>Looking up on DexScreener…</span>";
+  $("memebox").scrollIntoView({behavior:"smooth", block:"start"});
+  try {
+    const r = await fetch("http://127.0.0.1:8000/v1/memecard?q=" + encodeURIComponent(q)); const c = await r.json();
+    if (!c.ok) { $("mm_body").innerHTML = `<span class="warn">${esc(c.error || "Not found on DexScreener.")}</span>`; return; }
+    const h = c.history || {}, sl = c.slippage_pct || {}, flags = c.risk_flags || [];
+    const isTicker = !/^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/.test(q);
+    $("mm_body").innerHTML = `<div style="font-size:15px;font-weight:700">${esc(c.name)} <span class="mut" style="font-size:12px">${esc(c.chain)} · ${esc(c.dex)} · <a href="${esc(c.url)}" target="_blank" style="color:var(--accent)">chart</a></span></div>
+      ${isTicker ? `<div class="warn" style="margin:4px 0">Ticker search is unsafe: tickers aren't unique and imposters are common. Paste the CONTRACT ADDRESS to be sure. Matched: ${esc(c.address)}</div>` : ""}
+      ${flags.length ? `<div class="warn" style="margin:4px 0">⚠ ${flags.map(esc).join(" · ")}</div>` : ""}
+      <div class="out num" style="margin-top:6px">
+        <div>Price</div><div>$${esc(c.price_usd)} <span class="${(c.price_change||{}).h24>=0?"up":"dn"}">${pct((c.price_change||{}).h24)} 24h</span></div>
+        <div>Liquidity / 24h volume</div><div>${usd(c.liquidity_usd||0)} / ${usd(c.volume_24h_usd||0)}</div>
+        <div>Pair age</div><div>${(c.pair_age_days||0).toFixed(0)} days</div>
+        <div>Market cap</div><div>${c.market_cap?usd(c.market_cap):"–"}</div>
+        <div>Typical daily move</div><div>±${(c.expected_move_1d_pct??h.daily_vol_pct??0).toFixed(1)}%</div>
+        <div>Suggested stop distance</div><div>${c.suggested_stop_pct!=null?c.suggested_stop_pct.toFixed(1)+"%":"–"}</div>
+        <div>Down from all-time high</div><div class="dn">${h.drawdown_from_ath_pct!=null?h.drawdown_from_ath_pct.toFixed(0)+"%":"–"}</div>
+        <div>Slippage $100 / $500 / $2k</div><div>${["$100","$500","$2000"].map(k=>sl[k]!=null?sl[k].toFixed(2)+"%":"–").join(" / ")}</div>
+        <div><b style="color:var(--ink)">Max position (≤2% slippage)</b></div><div><b style="color:var(--ink)">${c.position_cap_usd_for_2pct_slip?usd(c.position_cap_usd_for_2pct_slip):"–"}</b></div>
+      </div>
+      <div class="mut" style="font-size:11px;margin-top:6px">${(c.notes||[]).map(esc).join(" ")}</div>
+      ${(c.other_pairs||[]).length ? `<details style="font-size:11.5px;margin-top:4px"><summary class="mut">Other matches (${c.other_pairs.length})</summary>${c.other_pairs.map(o=>`<div class="num">${esc(o.symbol)} · ${esc(o.chain)} · liq ${usd(o.liquidity_usd||0)} · vol ${usd(o.volume_24h_usd||0)} ${o.why?`<span class="warn">${esc(o.why)}</span>`:""}</div>`).join("")}</details>` : ""}`;
+  } catch(e) { $("mm_body").innerHTML = "<span class='warn'>Local API not reachable (WAGMI-API runs on this PC).</span>"; }
+}
 async function adhoc(sym){
   sym = sym.trim(); if (!sym) return;
+  if (/^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/.test(sym)) { memeCard(sym); return; }
   const match = window.UNIVERSE ? [...window.UNIVERSE].find(x=>x.toUpperCase()===sym.toUpperCase()) : sym;
-  if (!match) { $("search").style.borderColor = "var(--bad)"; return; }
+  if (!match) { $("search").style.borderColor = ""; memeCard(sym); return; }
   $("search").style.borderColor = "";
   sym = match;
   if (!DATA.state.coins[sym] && !ADHOC[sym]) {
@@ -728,6 +756,7 @@ renderAlerts();
 document.querySelectorAll("#mc_lean button").forEach(b => b.onclick = () => { MC.lean = b.dataset.v; document.querySelectorAll("#mc_lean button").forEach(x => x.classList.toggle("on", x === b)); });
 document.querySelectorAll("#mc_conv button").forEach(b => b.onclick = () => { MC.conv = +b.dataset.v; document.querySelectorAll("#mc_conv button").forEach(x => x.classList.toggle("on", x === b)); });
 $("mc_send").onclick = sendCall;
+$("mm_x").onclick = ev => { ev.preventDefault(); $("memebox").style.display = "none"; };
 $("search").addEventListener("change", ev=>adhoc(ev.target.value));
 $("search").addEventListener("keydown", ev=>{ if (ev.key==="Enter") adhoc(ev.target.value); });
 document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!=="INPUT"){ ev.preventDefault(); $("search").focus(); return; }
