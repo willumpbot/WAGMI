@@ -247,6 +247,36 @@ def voice_chart(sym):
     return out
 
 
+def voice_positioning(sym):
+    """Last 7 days of funding and open interest (hourly samples from our collector) and the latest liquidations."""
+    cut = time.time() - 7 * 86400
+    fo = []
+    for r in _tail_jsonl(DATA / "funding_oi_history.jsonl", 4_000_000):
+        if r.get("symbol") != sym:
+            continue
+        try:
+            t = datetime.fromisoformat(r["timestamp"].replace("Z", "+00:00"))
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
+            t = t.timestamp()
+        except Exception:
+            continue
+        if t >= cut:
+            fo.append((t, r.get("funding_rate"), r.get("open_interest")))
+    fo.sort()
+    hourly, last_h = [], None
+    for t, f, oi in fo:
+        h = int(t // 3600)
+        if h != last_h:
+            hourly.append([int(t), f, oi])
+            last_h = h
+    liqs = []
+    for r in _tail_jsonl(DATA / "copilot" / "liquidations" / "liq_events.jsonl", 3_000_000):
+        if r.get("symbol") == sym:
+            liqs.append({k: r.get(k) for k in ("ts_utc", "side", "price", "notional_usd", "venue")})
+    return {"series": hourly[-170:], "liqs": liqs[-25:]}
+
+
 def voice_history(sym, market):
     import basemap
     return basemap.lookup(sym, market)
@@ -287,7 +317,7 @@ def assemble():
         st = {"symbol": sym, "updated": _now_iso()}
         for name, fn in (("market", lambda: voice_market(client, sym)), ("context", lambda: voice_context(sym)), ("agents", lambda: voice_agents(sym, scorecard)),
                          ("bot", lambda: voice_bot(sym)), ("owner", lambda: voice_owner(sym)),
-                         ("chart", lambda: voice_chart(sym)), ("tf4h", lambda: __import__("tf4h").live(sym))):
+                         ("chart", lambda: voice_chart(sym)), ("positioning", lambda: voice_positioning(sym)), ("tf4h", lambda: __import__("tf4h").live(sym))):
             try:
                 st[name] = fn()
             except Exception as e:

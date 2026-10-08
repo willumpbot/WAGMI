@@ -118,6 +118,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     </div>
     <div class="col">
       <div class="box"><h3>Levels <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">distance · in typical days</span></h3><table class="lv num" id="levels"></table></div>
+      <div class="box"><h3>Positioning, last 7 days</h3><div id="posn"></div></div>
       <div class="box"><h3>Order book <span class="sp"></span><span class="mut num" id="obspread" style="text-transform:none;letter-spacing:0"></span></h3><div id="ob" class="num"></div></div>
       <div class="box"><h3>My Hyperliquid account <span class="sp"></span><span class="mut" id="acctnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="acct"></div></div>
       <div class="box"><h3>Position calculator</h3>
@@ -362,7 +363,7 @@ function renderDetail(){
   const c = chief(sel);
   $("dchief").innerHTML = c.lean ? `<span class="pill ${c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt"}">${c.lean} · ${c.conviction}/5</span>` : "";
   $("dread").innerHTML = c.read ? `${esc(c.read)}<div class="mut" style="margin-top:6px"><b>Levels:</b> ${esc(c.key_levels)}<br><b>View changes if:</b> ${esc(c.invalidation)}${c.expected_move?`<br><b>Expected move:</b> ${esc(c.expected_move)}`:""}</div><div class="dim" style="margin-top:4px;font-size:11px">${esc(DATA.chief.ts||"")} · track record: ${esc(DATA.chiefCard)}</div>` : "<span class='mut'>No read yet.</span>";
-  drawChart(); levels(); voices(); hist(); calc(); book();
+  drawChart(); levels(); voices(); hist(); calc(); book(); positioning();
 }
 
 function topbar(){
@@ -406,6 +407,31 @@ async function adhoc(sym){
     SYMS.push(sym);
   }
   sel = sym; renderBoard(); renderDetail();
+}
+function spark(vals, w, h, kind){
+  const v = vals.filter(x => x != null && !isNaN(x)); if (v.length < 2) return "<span class='mut'>not enough data yet</span>";
+  const lo = Math.min(...v, kind==="bars"?0:Infinity), hi = Math.max(...v, kind==="bars"?0:-Infinity), rg = (hi-lo)||1;
+  const X = i => i/(vals.length-1)*w, Y = x => h - (x-lo)/rg*h;
+  if (kind === "bars") { const bw = Math.max(1, w/vals.length - 1);
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none"><line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>${vals.map((x,i)=>x==null?"":`<rect x="${X(i)-bw/2}" y="${Math.min(Y(x),Y(0))}" width="${bw}" height="${Math.max(1,Math.abs(Y(x)-Y(0)))}" fill="${x>0?"var(--neg)":"var(--pos)"}" opacity=".8"/>`).join("")}</svg>`; }
+  const pts = vals.map((x,i)=>x==null?null:`${X(i).toFixed(1)},${Y(x).toFixed(1)}`).filter(Boolean).join(" ");
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="1.5"/></svg>`;
+}
+function positioning(){
+  const P = C(sel).positioning || {}, S = P.series || [];
+  const f = S.map(r=>r[1]), oi = S.map(r=>r[2]);
+  const fl = f.filter(x=>x!=null), ol = oi.filter(x=>x!=null);
+  const fNow = fl.length ? fl[fl.length-1] : null, oiChg = ol.length > 1 ? (ol[ol.length-1]/ol[0]-1)*100 : null;
+  const liqs = (P.liqs || []).slice().reverse();
+  const ago = t => { const m = (Date.now() - Date.parse(t))/60000; return m < 60 ? Math.round(m)+"m" : m < 1440 ? (m/60).toFixed(0)+"h" : (m/1440).toFixed(0)+"d"; };
+  const longL = liqs.filter(x=>x.side==="long").reduce((a,x)=>a+(+x.notional_usd||0),0), shortL = liqs.filter(x=>x.side==="short").reduce((a,x)=>a+(+x.notional_usd||0),0);
+  $("posn").innerHTML = S.length < 2 ? "<span class='mut'>Collector has little history for this coin yet.</span>" : `
+    <div class="mut" style="font-size:11px">Funding per hour <span title="Red = longs pay shorts (crowded long). Blue = shorts pay longs.">(red = longs paying)</span>: now <b class="num" style="color:var(--ink)">${fNow!=null?(fNow*100).toFixed(4)+"%":"–"}</b> <span class="num">(${fNow!=null?(fNow*24*365*100).toFixed(1)+"%/yr":""})</span></div>
+    ${spark(f, 300, 34, "bars")}
+    <div class="mut" style="font-size:11px;margin-top:6px">Open interest: <b class="num" style="color:var(--ink)">${ol.length?usd(ol[ol.length-1]):"–"}</b> <span class="num ${oiChg>0?"up":"dn"}">${oiChg!=null?pct(oiChg)+" this week":""}</span> <span title="Rising OI = new leverage entering; falling = positions closing.">(leverage in the market)</span></div>
+    ${spark(oi, 300, 34, "line")}`;
+  $("posn").innerHTML += liqs.length ? `<div class="mut" style="font-size:11px;margin-top:8px">Recent liquidations <span title="Long liquidated = forced SELL. Short liquidated = forced BUY.">(last ${liqs.length}: longs ${usd(longL)} · shorts ${usd(shortL)})</span></div>
+    <div style="max-height:120px;overflow:auto;font-size:11.5px">${liqs.map(x=>`<div class="num" style="display:grid;grid-template-columns:40px 1fr 1fr 1fr;gap:6px"><span class="mut">${ago(x.ts_utc)}</span><span class="${x.side==="long"?"dn":"up"}">${x.side==="long"?"long rekt":"short rekt"}</span><span style="text-align:right">${fmt(+x.price)}</span><span style="text-align:right">${usd(+x.notional_usd)}</span></div>`).join("")}</div>` : `<div class="mut" style="font-size:11px;margin-top:8px">No liquidations recorded on this coin yet (collector added ETH/HYPE/XRP/NEAR today).</div>`;
 }
 async function book(){
   if (!sel) return;
