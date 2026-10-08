@@ -19,6 +19,7 @@ BOT = Path(__file__).resolve().parents[2]
 HM = BOT / "data" / "hivemind"
 PLANS = HM / "owner_plans.jsonl"       # append-only: creations and cancels
 OUT = HM / "plans.json"
+REVIEWS = HM / "owner_plan_reviews.jsonl"   # the bot's AI second opinion on each plan
 FEE_RT = 0.0009
 SETUPS = ["50d pullback", "breakout", "breakdown", "range fade", "liq magnet", "trend continuation", "other"]
 
@@ -72,6 +73,75 @@ def create(p):
     with open(PLANS, "a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")
     return row
+
+
+REVIEW_SYSTEM = """You are the WAGMI trading bot's desk, giving the owner a SECOND OPINION on a trade plan they wrote
+for themselves (a discretionary swing trader on Hyperliquid perps). You get the plan and every hivemind voice for
+the coin. Be honest and specific; you are graded forward against real prices, and so is the owner.
+Known facts from forward grading: no single voice or AI agent has proven directional skill; move SIZE is
+forecastable (risk block: stop ~2x expected move, target 0.5R, 48h; safe leverage); stops inside one expected daily
+move lost ~0.4R/trade; the 50-day average holds from above more than chance; the 20-day low breaks MORE than chance.
+Judge: is the stop survivable (vs expected move and liquidation clusters), is the target reachable, is leverage safe,
+does the evidence conflict with the direction. Your own stop/target must follow the tested geometry unless a level
+clearly argues otherwise. Write for a visual learner: lead with one plain sentence.
+Output ONLY JSON:
+{"verdict": "take|adjust|skip", "agrees_with_direction": true|false|null, "confidence": 1-5,
+ "summary": "<=200 chars, one plain sentence first",
+ "bot_stop": <number>, "bot_target": <number>,
+ "risks": ["<=90 chars each, max 3"], "would_change_mind": "<=120 chars"}"""
+
+
+def review(plan):
+    """Ask the bot's AI (Opus via the CLI subscription) for a second opinion; appends to REVIEWS. Slow (~1 min)."""
+    import os
+    import sys
+    sys.path.insert(0, str(BOT))
+    from llm.claude_cli_client import call_agent
+    try:
+        st = json.loads((HM / "state" / "_all.json").read_text(encoding="utf-8"))
+        coin = (st.get("coins") or {}).get(plan["coin"]) or {}
+        coin = {k: v for k, v in coin.items() if k != "deep"}
+        shared = st.get("shared")
+    except Exception:
+        coin, shared = {}, None
+    keep = ("coin", "side", "entry", "stop", "target", "entry_type", "leverage", "setup", "reason", "price_at_plan")
+    prompt = json.dumps({"plan": {k: plan.get(k) for k in keep}, "hivemind": coin, "market": shared}, default=str)[:40000]
+    row = {"id": plan["id"], "ts": time.time()}
+    try:
+        resp = call_agent(user_prompt=prompt, system_prompt=REVIEW_SYSTEM, model="opus",
+                          max_budget_usd=float(os.getenv("CLI_MAX_BUDGET_USD", "5.00")), timeout=300, allow_tools=False)
+        if not resp.ok:
+            raise RuntimeError(resp.error)
+        raw = (getattr(resp, "text", None) or getattr(resp, "content", "")).strip()
+        rv = json.loads(raw[raw.find("{"): raw.rfind("}") + 1])
+        sg = 1 if plan["side"] == "LONG" else -1
+        for k in ("bot_stop", "bot_target"):
+            try:
+                rv[k] = float(rv[k])
+            except (KeyError, TypeError, ValueError):
+                rv[k] = None
+        if rv["bot_stop"] is not None and sg * (plan["entry"] - rv["bot_stop"]) <= 0:
+            rv["bot_stop"] = None
+        if rv["bot_target"] is not None and sg * (rv["bot_target"] - plan["entry"]) <= 0:
+            rv["bot_target"] = None
+        row["review"] = rv
+    except Exception as e:
+        row["error"] = f"{type(e).__name__}: {e}"[:200]
+    with open(REVIEWS, "a", encoding="utf-8") as f:
+        f.write(json.dumps(row) + chr(10))
+    return row
+
+
+def _reviews():
+    out = {}
+    try:
+        for l in REVIEWS.read_text(encoding="utf-8").splitlines():
+            if l.strip():
+                r = json.loads(l)
+                out[r["id"]] = r
+    except OSError:
+        pass
+    return out
 
 
 def cancel(pid):
@@ -141,6 +211,15 @@ def _stats(rows):
         out["by_setup"][k] = agg([x for x in done if x["setup"] == k])
     for k in ("LONG", "SHORT"):
         out["by_side"][k] = agg([x for x in done if x["side"] == k])
+    rv = lambda x: ((x.get("review") or {}).get("review") or {})
+    for k, fn in (("bot said take", lambda x: rv(x).get("verdict") == "take"),
+                  ("bot said adjust", lambda x: rv(x).get("verdict") == "adjust"),
+                  ("bot said skip", lambda x: rv(x).get("verdict") == "skip")):
+        out.setdefault("by_review", {})[k] = agg([x for x in done if fn(x)])
+    both = [x for x in done if "r" in (x.get("bot_result") or {})]
+    if both:
+        out["mine_vs_bot_levels"] = {"n": len(both), "mine_avg_r": round(sum(x["result"]["r"] for x in both) / len(both), 3),
+                                     "bot_avg_r": round(sum(x["bot_result"]["r"] for x in both) / len(both), 3)}
     for k, fn in (("with chief", lambda x: (x.get("context") or {}).get("chief_lean") == x["side"]),
                   ("against / no chief", lambda x: (x.get("context") or {}).get("chief_lean") != x["side"])):
         out["by_chief"][k] = agg([x for x in done if fn(x)])
@@ -156,6 +235,7 @@ def resolve(write=True):
     except Exception:
         prev = {}
     now = time.time()
+    reviews = _reviews()
     plans = []
     for pl in (r for r in rows if r.get("kind") == "plan"):
         old = (prev.get(pl["id"]) or {}).get("result") or {}
@@ -171,7 +251,15 @@ def resolve(write=True):
                 res = dict(old or {"status": "waiting"}, error=str(e)[:120])
             if pl["id"] in cancelled and res.get("status") == "waiting":
                 res = {"status": "cancelled"}
-        plans.append(dict(pl, result=res))
+        rv = (reviews.get(pl["id"]) or {}).get("review")
+        bot_res = (prev.get(pl["id"]) or {}).get("bot_result") or {}
+        if rv and rv.get("bot_stop") and rv.get("bot_target") and res.get("status") not in ("waiting", "expired", "cancelled") and bot_res.get("status") not in ("won", "lost", "timed out"):
+            try:
+                alt = dict(pl, stop=rv["bot_stop"], target=rv["bot_target"])
+                bot_res = _walk(alt, hl.candles(pl["coin"], "5m", pl["ts"] * 1000 - 300000, ttl=50) or [], now)
+            except Exception:
+                pass
+        plans.append(dict(pl, result=res, review=(reviews.get(pl["id"]) or None), bot_result=bot_res or None))
     out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "plans": plans, "stats": _stats(plans),
            "setups": SETUPS}
     if write:

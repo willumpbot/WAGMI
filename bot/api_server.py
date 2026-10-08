@@ -231,9 +231,16 @@ def owner_plan(payload: dict, x_owner_token: Optional[str] = Header(default=None
     if not _owner_token_ok(x_owner_token):
         return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     try:
-        row = _plans_mod().create(payload)
+        mod = _plans_mod()
+        row = mod.create(payload)
     except ValueError as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+    import threading
+
+    def _review():
+        mod.review(row)
+        _PLANS_CACHE[1] = None
+    threading.Thread(target=_review, daemon=True).start()   # the bot's AI second opinion arrives ~1 min later
     return {"ok": True, "plan": row}
 
 
