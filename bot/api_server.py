@@ -144,6 +144,25 @@ def owner_call(payload: dict, x_owner_token: Optional[str] = Header(default=None
     return {"ok": True, "call": row}
 
 
+_OWNER_ADDR = Path(__file__).resolve().parent / "data" / "hivemind" / "owner_address.txt"
+
+
+@app.post("/v1/owner_address")
+def owner_address_set(payload: dict, x_owner_token: Optional[str] = Header(default=None)):
+    """The owner's PUBLIC Hyperliquid address, so tools/hivemind/journal.py can journal their real fills."""
+    if not _owner_token_ok(x_owner_token):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    addr = str(payload.get("address", "")).strip()
+    if addr == "":
+        _OWNER_ADDR.unlink(missing_ok=True)
+        return {"ok": True, "address": None}
+    if not (addr.startswith("0x") and len(addr) == 42 and all(c in "0123456789abcdefABCDEF" for c in addr[2:])):
+        return JSONResponse({"ok": False, "error": "not a 0x address"}, status_code=400)
+    _OWNER_ADDR.parent.mkdir(parents=True, exist_ok=True)
+    _OWNER_ADDR.write_text(addr, encoding="utf-8")
+    return {"ok": True, "address": addr}
+
+
 @app.get("/v1/owner_calls")
 def owner_calls(x_owner_token: Optional[str] = Header(default=None)):
     if not _owner_token_ok(x_owner_token):

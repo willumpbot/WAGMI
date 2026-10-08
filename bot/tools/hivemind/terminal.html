@@ -137,6 +137,8 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         <div id="lw" style="width:100%;height:360px;display:none"></div><svg id="chart"></svg>
         <div class="readout num" id="readout">Hover the chart for prices. <kbd>↑</kbd><kbd>↓</kbd> switch coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe</div>
       </div>
+      <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
+      <div class="box"><h3>My trading journal <span class="sp"></span><span class="mut" id="jr_note" style="text-transform:none;letter-spacing:0"></span></h3><div id="jr"></div></div>
       <div class="box"><h3>My call on <span id="mc_sym" style="color:var(--ink)"></span> <span class="sp"></span><span class="mut" id="mc_card" style="text-transform:none;letter-spacing:0"></span></h3>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <span class="seg" id="mc_lean"><button data-v="LONG">&#9650; LONG</button><button data-v="SHORT">&#9660; SHORT</button><button data-v="NEUTRAL">&#9679; NEUTRAL</button></span>
@@ -446,7 +448,7 @@ function renderDetail(){
   const c = chief(sel);
   $("dchief").innerHTML = c.lean ? `<span class="pill ${c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt"}">${c.lean} · ${c.conviction}/5</span>` : "";
   $("dread").innerHTML = c.read ? `${esc(c.read)}<div class="mut" style="margin-top:6px"><b>Levels:</b> ${esc(c.key_levels)}<br><b>View changes if:</b> ${esc(c.invalidation)}${c.expected_move?`<br><b>Expected move:</b> ${esc(c.expected_move)}`:""}${c.if_you_trade?`<br><b>If you trade it:</b> ${esc(c.if_you_trade)}`:""}</div><div class="dim" style="margin-top:4px;font-size:11px">${esc(DATA.chief.ts||"")} · track record: ${esc(DATA.chiefCard)}</div>` : "<span class='mut'>No read yet.</span>";
-  drawChart(); levels(); voices(); hist(); calc(); book(); positioning(); myCalls(); playbook();
+  drawChart(); levels(); voices(); hist(); calc(); book(); positioning(); myCalls(); playbook(); myPosWarn();
 }
 
 function topbar(){
@@ -540,11 +542,14 @@ function getAddr(){ try { return localStorage.getItem("hl_addr") || ""; } catch(
 async function account(){
   const a = getAddr();
   if (!a) { $("acct").innerHTML = `<div class="mut" style="font-size:12px;margin-bottom:6px">Paste your PUBLIC wallet address (0x…) to see your live positions here. Read-only: it can only view, never trade. Never paste a private key.</div><input id="addrin" placeholder="0x…" style="background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:4px 6px;width:100%">`;
-    $("addrin").onchange = ev => { const v = ev.target.value.trim(); if (/^0x[0-9a-fA-F]{40}$/.test(v)) { try { localStorage.setItem("hl_addr", v); } catch(e) {} account(); } else ev.target.style.borderColor = "var(--bad)"; };
+    $("addrin").onchange = ev => { const v = ev.target.value.trim(); if (/^0x[0-9a-fA-F]{40}$/.test(v)) { try { localStorage.setItem("hl_addr", v); } catch(e) {}
+        fetch("http://127.0.0.1:8000/v1/owner_address", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken}, body: JSON.stringify({address: v})}).catch(()=>{});
+        account(); } else ev.target.style.borderColor = "var(--bad)"; };
     $("acctnote").textContent = ""; return; }
   try {
     const st = await hlPost({type:"clearinghouseState", user: a});
     const ms = st.marginSummary || {}, ps = (st.assetPositions||[]).map(x=>x.position);
+    window.MYPOS = {}; for (const q of ps) window.MYPOS[q.coin] = q; myPosWarn();
     $("acctnote").innerHTML = `${a.slice(0,6)}…${a.slice(-4)} <a href="#" id="forget" style="color:var(--soft)">forget</a>`;
     $("acct").innerHTML = `<div class="out" style="margin:0 0 6px"><div>Account value</div><div class="num">$${(+ms.accountValue||0).toLocaleString(undefined,{maximumFractionDigits:2})}</div><div>Margin used</div><div class="num">$${(+ms.totalMarginUsed||0).toLocaleString(undefined,{maximumFractionDigits:2})}</div></div>`
       + (ps.length ? `<table class="pos num"><tr><th>Coin</th><th>Size</th><th>Entry</th><th>Liq</th><th>uPnL</th></tr>${ps.map(p=>`<tr style="cursor:pointer" data-c="${p.coin}"><td><b>${p.coin}</b> <span class="${+p.szi>0?"up":"dn"}">${+p.szi>0?"L":"S"} ${(p.leverage||{}).value||""}x</span></td><td>${Math.abs(+p.szi)}</td><td>${fmt(+p.entryPx)}</td><td>${p.liquidationPx?fmt(+p.liquidationPx):"–"}</td><td class="${+p.unrealizedPnl>=0?"up":"dn"}">${(+p.unrealizedPnl).toFixed(2)}</td></tr>`).join("")}</table>` : `<div class="mut">No open positions.</div>`);
@@ -670,6 +675,37 @@ function nearLevels(){
   $("near").innerHTML = out.length ? `<span class="mut" style="align-self:center">Near a level (within ½ expected daily move):</span>` + out.slice(0,10).map(x=>`<span class="mv" data-c="${x.s}" title="${x.name} at ${fmt(x.v)}, ${pct(x.d,2)} away = ${x.m.toFixed(2)} expected daily moves"><b>${x.s}</b>${x.name} <span class="num ${x.d>=0?"up":"dn"}">${pct(x.d,1)}</span>${x.st?` <span class="${x.st.cls}" style="font-size:10.5px">${x.st.cls==="up"?"✔ holds":x.st.cls==="dn"?"✖ often breaks":"• no edge"}</span>`:""}</span>`).join("") : `<span class="mut">No board coin is within half an expected daily move of a key level right now.</span>`;
   document.querySelectorAll("#near .mv").forEach(el=>el.onclick=()=>{ sel = el.dataset.c; renderBoard(); renderDetail(); });
 }
+function myPosWarn(){
+  const q = (window.MYPOS || {})[sel];
+  if (!q) { $("posbox").style.display = "none"; return; }
+  $("posbox").style.display = ""; $("pb_sym").textContent = sel;
+  const p = px(sel), long = +q.szi > 0, lev = (q.leverage||{}).value, liq = q.liquidationPx ? +q.liquidationPx : null, e = +q.entryPx;
+  const x = safeLev(sel), safe = x ? (long ? x.long : x.short) : null;
+  const rk = ((C(sel).risk||{})[long?"long":"short"]) || {};
+  const w = [];
+  if (safe && lev > safe) w.push(`Leverage ${lev}x is above the safe ${safe.toFixed(1)}x for ${sel}'s current volatility.`);
+  if (liq && p) { const dist = Math.abs(liq/p-1)*100; const worst = rk.worst_case_1d_pct;
+    if (worst && dist < worst) w.push(`Liquidation is ${dist.toFixed(1)}% away, inside a 1-in-100 bad day (${worst.toFixed(1)}%).`); }
+  if (rk.stop_pct && p) { const sp = long ? e*(1-rk.stop_pct/100) : e*(1+rk.stop_pct/100);
+    w.push(`Tested stop for this entry: ${fmt(sp)} (2x expected move), target ${fmt(long ? e*(1+rk.target_pct/100) : e*(1-rk.target_pct/100))}, 48h time limit.`); }
+  $("pb_body").innerHTML = `<div class="out num" style="margin:0"><div>Side / size</div><div class="${long?"up":"dn"}">${long?"LONG":"SHORT"} ${Math.abs(+q.szi)} @ ${fmt(e)} · ${lev}x</div><div>Unrealised</div><div class="${+q.unrealizedPnl>=0?"up":"dn"}">$${(+q.unrealizedPnl).toFixed(2)} (${(+q.returnOnEquity*100).toFixed(1)}% on margin)</div><div>Liquidation</div><div>${liq?fmt(liq):"–"}</div></div>`
+    + w.map((t,i)=>`<div class="${i < w.length-1 || !rk.stop_pct ? "warn" : "mut"}" style="font-size:12px;margin-top:4px">${esc(t)}</div>`).join("");
+  if (window.LW && LW.cs) { try { (LW.myLines||[]).forEach(l=>LW.cs.removePriceLine(l)); LW.myLines = [
+      LW.cs.createPriceLine({price: e, color: cssv("--good"), lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: "MY entry"}),
+      ...(liq ? [LW.cs.createPriceLine({price: liq, color: cssv("--bad"), lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: "MY liq"})] : [])]; } catch(err) {} }
+}
+function journalBox(){
+  const J = DATA.journal || {};
+  if (!J.enabled) { $("jr").innerHTML = `<div class="mut" style="font-size:12px">Paste your public address in the account panel. From then on every trade you make on Hyperliquid is journaled automatically, with what the hivemind said at the moment you traded, and graded.</div>`; $("jr_note").textContent = ""; return; }
+  const S = J.stats || {}; $("jr_note").textContent = `${J.address} · ${J.fills} fills · updated ${J.updated?J.updated.slice(11,16):""}Z`;
+  let h = S.n ? `<div class="out num" style="margin:0 0 6px"><div>Closed trades</div><div>${S.n}</div><div>Win rate</div><div>${(S.win_rate*100).toFixed(0)}%</div><div>Net P&L (after fees)</div><div class="${S.net_pnl>=0?"up":"dn"}">$${S.net_pnl.toFixed(2)}</div></div>` : `<div class="mut">No closed trades in the journal yet.</div>`;
+  const names = {with_structure: "Trend", chief_agreed: "Chief", range_zone: "Where in range", hold: "Hold time", side: "Side"};
+  for (const [k, g] of Object.entries(S.by || {})) { const e = Object.entries(g); if (!e.length) continue;
+    h += `<div style="font-size:11.5px;margin-top:4px"><b>${names[k]||k}:</b> ${e.map(([b,v])=>`<span class="${v.net>=0?"up":"dn"}" title="${v.n} trades, ${(v.win_rate*100).toFixed(0)}% won">${b} ${v.net>=0?"+":""}$${v.net.toFixed(0)} (${v.n})</span>`).join(" · ")}</div>`; }
+  const T = (J.trades || []).slice(-6).reverse();
+  if (T.length) h += `<div style="margin-top:6px">${T.map(t=>`<div class="num" style="display:grid;grid-template-columns:90px 60px 60px 1fr 80px;gap:6px;font-size:11.5px"><span class="mut">${(t.open||"").slice(5,16).replace("T"," ")}</span><b>${t.coin}</b><span class="${t.side==="LONG"?"up":"dn"}">${t.side}</span><span class="mut">${t.status==="open"?"open":(t.hold_h+"h")}${(t.context||{}).chief_lean?" · chief "+t.context.chief_lean:""}</span><span class="${t.net_pnl>=0?"up":"dn"}" style="text-align:right">${t.status==="open"?"":"$"+t.net_pnl.toFixed(2)}</span></div>`).join("")}</div>`;
+  $("jr").innerHTML = h;
+}
 async function poll(){
   try {
     const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"allMids"}'});
@@ -702,7 +738,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   if (ev.key==="d"||ev.key==="D") document.querySelector('.seg button[data-tf="1d"]').click();
   if (ev.key==="4") document.querySelector('.seg button[data-tf="4h"]').click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderBoard(); renderDetail(); lab(); decisionsStrip(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+topbar(); renderBoard(); renderDetail(); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);

@@ -259,6 +259,7 @@ def build_terminal():
     data = {"state": allst, "chief": chief, "chiefCard": card_txt, "info": vz.INFO, "ownerToken": token,
             "ownerCard": _load(HM / "owner_scorecard.json", {}) or {}, "lab": lab_data(),
             "decisions": _load(HM / "decisions.json", []) or [],
+            "journal": _load(HM / "journal.json", {}) or {},
             "levelStats": ((_load(BOT / "data" / "laptop_mining" / "levels.json", {}) or {}).get("levels") or {}),
             "safeLev": ((_load(BOT / "data" / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table") or {})}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")

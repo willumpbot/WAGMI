@@ -39,6 +39,11 @@ def main():
         except Exception as e:
             log(f"geometry shadow failed: {e}")
         try:
+            import journal
+            journal.main()
+        except Exception as e:
+            log(f"journal failed: {e}")
+        try:
             import decisions
             decisions.build()
         except Exception as e:
