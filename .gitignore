@@ -98,3 +98,7 @@ _system_cleanup_*/
 # entire separate codebase copy). The `!bot/data/**/*.py` negation above would
 # otherwise drag ~11.4k of its .py files into the repo. Runtime fixture, not source.
 bot/data/replay/
+
+# built hivemind pages (terminal.html embeds the local owner-call token)
+/terminal.html
+/desk.html
