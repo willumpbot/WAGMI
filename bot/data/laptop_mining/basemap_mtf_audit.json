@@ -1,0 +1,62 @@
+{
+ "panel_rows": 8028,
+ "states_observed": 144,
+ "states_testable_both_halves": 19,
+ "min_n_per_half": 30,
+ "return_repeat_pct": 36.8,
+ "vol_repeat_pct": 47.4,
+ "null_return_pct": {
+  "mean": 46.8,
+  "ci": [
+   31.8,
+   60.1
+  ]
+ },
+ "null_vol_pct": {
+  "mean": 55.1,
+  "ci": [
+   42.1,
+   68.2
+  ]
+ },
+ "return_beats_null": false,
+ "vol_beats_null": false,
+ "granularity": {
+  "daily only (4 fields)": {
+   "states": 22,
+   "testable": 11,
+   "ret_repeat_pct": 72.7,
+   "null_ret_pct": 44.5,
+   "vol_repeat_pct": 63.6,
+   "null_vol_pct": 60.3,
+   "beats_null": true
+  },
+  "daily + 4h structure (5)": {
+   "states": 42,
+   "testable": 14,
+   "ret_repeat_pct": 50.0,
+   "null_ret_pct": 48.2,
+   "vol_repeat_pct": 64.3,
+   "null_vol_pct": 58.9,
+   "beats_null": false
+  },
+  "daily + full 4h (7)": {
+   "states": 144,
+   "testable": 19,
+   "ret_repeat_pct": 36.8,
+   "null_ret_pct": 46.6,
+   "vol_repeat_pct": 47.4,
+   "null_vol_pct": 54.5,
+   "beats_null": false
+  },
+  "structure+driver only (2)": {
+   "states": 4,
+   "testable": 4,
+   "ret_repeat_pct": 75.0,
+   "null_ret_pct": 35.0,
+   "vol_repeat_pct": 75.0,
+   "null_vol_pct": 68.3,
+   "beats_null": false
+  }
+ }
+}

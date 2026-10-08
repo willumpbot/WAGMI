@@ -23,3 +23,5 @@ Curated by the overseer (Claude). External evidence, each item with its source a
   - The bot's stop×1/TP 1.5R scores -0.43R per setup.
   - Wider stops remove the loss (OOS paired diff +0.54R, CI [+0.30, +0.80]; all four majors significant), but this converges to ~0R. It is loss elimination, not alpha.
   - The 18-filter gate stack has NEGATIVE value: passed signals returned -12.1 bps vs -8.9 for rejected.
+- 2026-10-08, laptop mission 6: the daily base map's states REPEAT across halves (72.7% vs 44.5% shuffled null), so it is a valid base rate.
+  Adding 4h fragments it to chance (50% / 37% vs ~47% null). Do not cite 4h-combined base rates.
