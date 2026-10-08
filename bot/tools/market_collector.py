@@ -32,7 +32,7 @@ from datetime import datetime, timezone
 
 import requests
 
-BASE_SYMBOLS = ["BTC", "ETH", "SOL", "HYPE", "XRP"]  # original 5 majors — unchanged, always collected
+BASE_SYMBOLS = ["BTC", "ETH", "SOL", "HYPE", "XRP", "NEAR"]  # the bot's traded set; NEAR added 2026-10-08 (was traded but never collected)
 
 # Owner's meme-coin watchlist (co-pilot universe, HL-listed perps; see
 # data/longtail/universe.json). Config constant — tune the list here. These are

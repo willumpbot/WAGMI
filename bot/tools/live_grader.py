@@ -119,6 +119,21 @@ def ingest(state, pending):
     lines, state["ev_off"] = _tail(DATA / "trade_events.jsonl", state.get("ev_off", 0))
     sigs = state.setdefault("signals", [])
     for ln in lines:
+        if "ic_muted" in ln and "SIGNAL_FILTERED" in ln:
+            try:
+                r = json.loads(ln)
+                if r.get("symbol") in SYMS and r.get("entry"):
+                    side = "LONG" if r.get("side") in ("BUY", "LONG") else "SHORT"
+                    t = _iso(r["timestamp"])
+                    pending.setdefault("dropped", []).append({
+                        "kind": "dropped", "gate": "ic_muted", "ts": t, "sym": r["symbol"], "prop_side": side,
+                        "strategies": r.get("strategy"), "sig": [t, r["symbol"], side, r.get("entry"), r.get("sl"),
+                                                                 r.get("tp1"), r.get("num_agree"), r.get("confidence"),
+                                                                 r.get("regime")],
+                        "feat": decision_context(r["symbol"], side, t)})
+            except Exception:
+                pass
+            continue
         if "SIGNAL_GENERATED" not in ln:
             continue
         try:
@@ -194,7 +209,95 @@ def ingest(state, pending):
                "sig": sg}
         for role, x in m.items():
             row[role] = {"dec": x["dec"], "conf": x["conf"], "model": x["model"], "fallback": x["fallback"]}
+        if row["prop_side"]:
+            try:
+                row["feat"] = decision_context(sym, row["prop_side"], t0)
+            except Exception:
+                pass
         ready.append(row)
+
+
+# ── decision-time context (data/data_waves/DATA_WAVES.md) ────────────
+
+def _tail_rows(path, max_bytes, parse):
+    out = []
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - max_bytes))
+            f.readline()
+            for raw in f:
+                try:
+                    r = parse(json.loads(raw))
+                    if r:
+                        out.append(r)
+                except Exception:
+                    continue
+    except OSError:
+        pass
+    return out
+
+
+_CTX_CACHE = {}
+
+
+def _context_sources():
+    """Recent depth and funding rows per traded symbol: {sym: [(ts, value), ...]}."""
+    if _CTX_CACHE:
+        return _CTX_CACHE
+    depth = collections.defaultdict(list)
+    for sym, ts, v in _tail_rows(DATA / "market_depth_history.jsonl", 6_000_000, lambda r: (
+            (r["symbol"], _iso(r["ts"]), r["l2"]["imbalance_1pct"]) if r.get("symbol") in SYMS else None)):
+        depth[sym].append((ts, v))
+    fund = collections.defaultdict(list)
+    for sym, ts, v in _tail_rows(DATA / "funding_oi_history.jsonl", 3_000_000, lambda r: (
+            (r["symbol"], _iso(r["timestamp"]), r["funding_rate"]) if r.get("symbol") in SYMS
+            and r.get("funding_rate") is not None else None)):
+        fund[sym].append((ts, v))
+    _CTX_CACHE.update({"depth": depth, "fund": fund})
+    return _CTX_CACHE
+
+
+def _asof(series, t0, max_age):
+    best = None
+    for ts, v in series:
+        if ts <= t0 and t0 - ts <= max_age and (best is None or ts > best[0]):
+            best = (ts, v)
+    return None if best is None else best[1]
+
+
+def decision_context(sym, side, t0):
+    """Bucketed features known AT decision time t0 (as-of joins, no lookahead)."""
+    sgn = 1 if side == "LONG" else -1
+    h = datetime.fromtimestamp(t0, timezone.utc).hour
+    ctx = {"session": "asia" if h < 8 else "eu" if h < 13 else "us" if h < 20 else "late"}
+    src = _context_sources()
+    imb = _asof(src["depth"].get(sym, []), t0, 3600)
+    if imb is not None:
+        a = sgn * float(imb)
+        ctx["book"] = "supports" if a > 0.1 else "against" if a < -0.1 else "balanced"
+    f = _asof(src["fund"].get(sym, []), t0, 7200)
+    if f is not None:
+        f = float(f)
+        pays = (side == "LONG" and f > 1.3125e-5) or (side == "SHORT" and f < 0)
+        paid = (side == "LONG" and f < 0) or (side == "SHORT" and f > 1.3125e-5)
+        ctx["funding"] = "side_pays" if pays else "side_paid" if paid else "neutral"
+    return ctx
+
+
+def btc_trend_context(side, t0):
+    """BTC 4h move relative to side, from closed 5m bars ending at/before t0."""
+    try:
+        bars = candles("BTC", t0 - 5 * 3600)
+    except Exception:
+        return None
+    done = [b for b in bars if b[0] + BAR <= t0]
+    then = [b for b in done if b[0] + BAR <= t0 - 4 * 3600]
+    if not done or not then:
+        return None
+    ret = done[-1][4] / then[-1][4] - 1
+    a = ret if side == "LONG" else -ret
+    return "with" if a > 0.005 else "against" if a < -0.005 else "flat"
 
 
 # ── pricing ───────────────────────────────────────────────────────────
@@ -255,6 +358,8 @@ def resolve(pending):
     now = time.time()
     due_pipes = [r for r in pending.get("ready", []) if now - r["ts"] >= RESOLVE_AFTER]
     due_exits = [r for r in pending.get("exits", []) if now - r["ts"] >= RESOLVE_AFTER]
+    due_drops = [r for r in pending.get("dropped", []) if now - r["ts"] >= RESOLVE_AFTER]
+    due_pipes = due_pipes + due_drops
     if not due_pipes and not due_exits:
         return 0
     done = 0
@@ -265,12 +370,16 @@ def resolve(pending):
             except Exception as e:
                 _log(f"price fetch failed {r['sym']}: {e}")
                 continue   # stays pending; retried next run
-            pending["ready"].remove(r)
+            (pending["dropped"] if r.get("kind") == "dropped" else pending["ready"]).remove(r)
             if f is None:
                 continue
             fw, path = f
             sg = r.pop("sig", None)
             row = {**r, **fw}
+            if row.get("prop_side"):
+                bt = btc_trend_context(row["prop_side"], row["ts"])
+                if bt:
+                    row.setdefault("feat", {})["btc4h"] = bt
             if sg:
                 row["sltp"] = sltp(path, sg[2], sg[4], sg[5])
                 row["sig_agree"], row["sig_conf"] = sg[6], sg[7]
@@ -407,6 +516,9 @@ def build_scorecard():
     xv = lambda r: _sgn(r["pos_side"]) * r["r4h"]
     exit_ = _diff([xv(r) for r in X if r["dec"] == "hold"], [xv(r) for r in X if r["dec"] == "full_close"])
 
+    D = [r for r in rows if r["kind"] == "dropped" and r.get("r4h") is not None]
+    D = _dedupe(D, lambda r: (r["sym"], r["prop_side"], hour(r)))
+    dropped = _summ([_sgn(r["prop_side"]) * r["r4h"] - FEE for r in D])
     base = _dedupe(pipes, lambda r: (r["sym"], r["prop_side"], hour(r)))
     hist = _load(HIST, {})
 
@@ -438,6 +550,8 @@ def build_scorecard():
                  .isoformat(timespec="seconds"),
         "resolved_rows": len(rows),
         "baseline_take_every_signal": _summ([r["e"] for r in base]),
+        "ic_muted_drops": {**dropped, "question": "Signals the IC gate silently dropped: what would taking them have made? "
+                           "Negative = the gate is right to drop them."},
         "agents": agents,
         "models_seen": dict(collections.Counter(
             (r.get("trade") or {}).get("model") for r in pipes if r.get("trade"))),

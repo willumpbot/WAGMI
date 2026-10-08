@@ -13,7 +13,7 @@ sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure'
 import ccxt
 
 # Original 5 majors — unchanged, always collected (superset, never removed).
-BASE_SYMBOLS = ["BTC", "ETH", "SOL", "HYPE", "XRP"]
+BASE_SYMBOLS = ["BTC", "ETH", "SOL", "HYPE", "XRP", "NEAR"]  # NEAR added 2026-10-08: traded but never collected
 
 # Owner's meme-coin watchlist (co-pilot universe, HL-listed perps; see
 # data/longtail/universe.json). Config constant — tune the list here.
