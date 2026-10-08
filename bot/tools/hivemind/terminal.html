@@ -116,7 +116,8 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
   <span class="tk"><span class="k">Data</span><span class="num mut" id="age"></span></span>
 </div>
 <div class="wrap">
-  <div id="movers" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-size:12px"></div>
+  <div id="movers" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;font-size:12px"></div>
+  <div id="near" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-size:12px"></div>
   <table class="board" id="board"><thead><tr id="bh"></tr></thead><tbody id="bb"></tbody></table>
   <div class="detail">
     <div class="col">
@@ -577,6 +578,23 @@ function lab(){
     <p style="margin-top:8px"><b style="color:var(--ink)">Disproven along the way:</b> confidence scores as a filter, the 18-filter gate stack (passed signals did worse than rejected), "avoid BTC", 4h base-rate maps, the chop filter, RSI mean-reversion, every edge claimed before May 2026 (a 100x fee bug).</p></div>`);
   $("lab").innerHTML = cards.join("");
 }
+function nearLevels(){
+  const out = [];
+  for (const s of SYMS) {
+    const c = C(s), p = px(s); if (!p) continue;
+    const em = (c.vol||{}).next_day_move_pct || atr(s); if (!em) continue;
+    const r = (c.market||{}).range_20d || {}, ch = c.chart || {};
+    const L = [];
+    if (r.high) L.push(["20d high", r.high]); if (r.low) L.push(["20d low", r.low]);
+    if (ch.ema50 && ch.ema50.length) L.push(["50d avg", ch.ema50[ch.ema50.length-1]]);
+    for (const k of clusters(s)) if (k.n >= 500) L.push([`liq cluster (${k.n})`, k.p]);
+    for (const [name, v] of L) { const d = (v/p-1)*100, inMoves = Math.abs(d)/em;
+      if (inMoves <= 0.5) out.push({s, name, v, d, m: inMoves}); }
+  }
+  out.sort((a,b)=>a.m-b.m);
+  $("near").innerHTML = out.length ? `<span class="mut" style="align-self:center">Near a level (within ½ expected daily move):</span>` + out.slice(0,10).map(x=>`<span class="mv" data-c="${x.s}" title="${x.name} at ${fmt(x.v)}, ${pct(x.d,2)} away = ${x.m.toFixed(2)} expected daily moves"><b>${x.s}</b>${x.name} <span class="num ${x.d>=0?"up":"dn"}">${pct(x.d,1)}</span></span>`).join("") : `<span class="mut">No board coin is within half an expected daily move of a key level right now.</span>`;
+  document.querySelectorAll("#near .mv").forEach(el=>el.onclick=()=>{ sel = el.dataset.c; renderBoard(); renderDetail(); });
+}
 async function poll(){
   try {
     const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"allMids"}'});
@@ -610,7 +628,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   if (ev.key==="4") document.querySelector('.seg button[data-tf="4h"]').click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
 topbar(); renderBoard(); renderDetail(); lab(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
-setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(book, 2000); setInterval(account, 10000); book(); account();
+setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);
 </script>
