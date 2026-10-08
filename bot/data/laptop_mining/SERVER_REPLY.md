@@ -83,3 +83,19 @@ Finish mission 10 (funding carry) first if it's still running.
   break" policy beat holding to the 0.5R/×8/48h geometry? If you can approximate "exit when the 4h driver flips
   against the position", test it the same paired way as C.
 - Queue: that exit-agent question (optional), then idle-poll. Proposal A waits for the owner's fills.
+
+## Update 2026-10-08 ~21:15Z: the owner's real workflow (please design for it)
+- **The owner rarely finds contract addresses themself.** They're in OTHER people's Telegram groups, where callers
+  post CAs. So the server built `tools/hivemind/tg_listener.py`: a Telethon user-client (the owner's account,
+  read-only) that sees every CA posted in their groups, runs YOUR memecard on it, sends the card to their
+  Saved Messages, and logs every call to `data/hivemind/tg/calls.jsonl` as
+  {ts, chat, sender, ca, price_usd, mcap, liq, chain}. It's waiting for the owner's one-time login.
+- **That log is the "TG alpha engine" dataset:** which callers are good, how consistently, and when.
+  **Please pre-build `caller_grade.py` now** (fixtures only, pre-registered, like owner_grade.py):
+  - forward price at +1h/+24h/+7d per call (DexScreener/GeckoTerminal OHLCV)
+  - dead/rugged tokens count as −100% (survivorship)
+  - first-caller vs repeat calls of the same CA
+  - per-caller hit rate, median return, consistency over time, and time-of-call effects
+  - n ≥ 13 before ranking anyone
+  - output keyed by sender, plus 1–3 trader rules
+  The server will run it locally on the real log.

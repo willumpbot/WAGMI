@@ -44,6 +44,11 @@ def main():
         except Exception as e:
             log(f"geometry shadow failed: {e}")
         try:
+            import phone_link
+            phone_link.main()
+        except Exception as e:
+            log(f"phone link failed: {e}")
+        try:
             import journal
             journal.main()
         except Exception as e:

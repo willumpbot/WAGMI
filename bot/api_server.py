@@ -144,6 +144,20 @@ def owner_call(payload: dict, x_owner_token: Optional[str] = Header(default=None
     return {"ok": True, "call": row}
 
 
+@app.get("/t")
+def terminal_page(k: str = Query("", max_length=100)):
+    """The WAGMI Terminal for the owner's phone, served through the site tunnel. Requires the owner key in
+    the URL (?k=...), the same secret the local terminal embeds; without it the page does not exist."""
+    from fastapi.responses import HTMLResponse
+    if not _owner_token_ok(k):
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    page = Path(__file__).resolve().parent.parent / "terminal.html"
+    try:
+        return HTMLResponse(page.read_text(encoding="utf-8"), headers={"Cache-Control": "no-store"})
+    except OSError:
+        return JSONResponse({"detail": "terminal not built yet"}, status_code=503)
+
+
 _MEMECARD_CACHE: dict = {}
 
 
