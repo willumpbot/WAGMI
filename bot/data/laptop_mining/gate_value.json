@@ -1,0 +1,15 @@
+{
+ "source": "C:/Users/vince/WAGMI PROJECT/WAGMI/bot/data/logs/signal_outcomes_regime_backfilled.jsonl",
+ "graded": 83432,
+ "skipped": {},
+ "span": [
+  "2026-03-29",
+  "2026-04-28"
+ ],
+ "all_4h": -11.41,
+ "passed_4h": -12.08,
+ "rejected_4h": -8.89,
+ "passed_minus_rejected_4h": -3.19,
+ "n_passed": 65784,
+ "n_rejected": 17648
+}

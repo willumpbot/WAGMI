@@ -1,0 +1,105 @@
+{
+ "source": "C:/Users/vince/WAGMI PROJECT/WAGMI/bot/data/logs/signal_outcomes_regime_backfilled.jsonl",
+ "graded": 83432,
+ "span": [
+  "2026-03-29",
+  "2026-04-28"
+ ],
+ "cutoff": "2026-04-15",
+ "flagged_minus_unflagged": {
+  "full span|1h": {
+   "diff": -2.12,
+   "ci": [
+    -8.94,
+    4.48
+   ],
+   "n_flagged": 12725,
+   "n_clean": 70707,
+   "significant": false
+  },
+  "full span|4h": {
+   "diff": -26.16,
+   "ci": [
+    -52.19,
+    -2.85
+   ],
+   "n_flagged": 12725,
+   "n_clean": 70707,
+   "significant": true
+  },
+  "full span|12h": {
+   "diff": -40.77,
+   "ci": [
+    -93.36,
+    7.26
+   ],
+   "n_flagged": 12725,
+   "n_clean": 70707,
+   "significant": false
+  },
+  "train <2026-04-15|1h": {
+   "diff": -6.11,
+   "ci": [
+    -19.58,
+    6.82
+   ],
+   "n_flagged": 3448,
+   "n_clean": 38701,
+   "significant": false
+  },
+  "train <2026-04-15|4h": {
+   "diff": 7.35,
+   "ci": [
+    -15.67,
+    30.48
+   ],
+   "n_flagged": 3448,
+   "n_clean": 38701,
+   "significant": false
+  },
+  "train <2026-04-15|12h": {
+   "diff": -6.55,
+   "ci": [
+    -55.74,
+    35.21
+   ],
+   "n_flagged": 3448,
+   "n_clean": 38701,
+   "significant": false
+  },
+  "test >=2026-04-15|1h": {
+   "diff": 2.47,
+   "ci": [
+    -4.98,
+    9.97
+   ],
+   "n_flagged": 9277,
+   "n_clean": 32006,
+   "significant": false
+  },
+  "test >=2026-04-15|4h": {
+   "diff": -35.83,
+   "ci": [
+    -88.29,
+    1.17
+   ],
+   "n_flagged": 9277,
+   "n_clean": 32006,
+   "significant": false
+  },
+  "test >=2026-04-15|12h": {
+   "diff": -65.15,
+   "ci": [
+    -149.8,
+    14.09
+   ],
+   "n_flagged": 9277,
+   "n_clean": 32006,
+   "significant": false
+  }
+ },
+ "book_as_traded_4h": -12.08,
+ "book_if_blocked_4h": -7.16,
+ "improvement_bps": 4.92,
+ "volume_removed_pct": 18.8
+}
