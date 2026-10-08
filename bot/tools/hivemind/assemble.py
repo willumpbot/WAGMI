@@ -220,12 +220,8 @@ def voice_chart(sym):
     """Last ~70 daily candles (incl. today's forming one) + EMA20/50 for the desk chart."""
     import basemap
     df = basemap._daily(sym).tail(140).reset_index(drop=True)
-    import json as _j, urllib.request as _u
-    body = _j.dumps({"type": "candleSnapshot", "req": {"coin": sym, "interval": "1d",
-                     "startTime": int((time.time() - 3 * 86400) * 1000), "endTime": int(time.time() * 1000)}}).encode()
-    req = _u.Request("https://api.hyperliquid.xyz/info", data=body, headers={"Content-Type": "application/json"})
-    with _u.urlopen(req, timeout=20) as r:
-        recent = _j.loads(r.read())
+    import hl
+    recent = hl.candles(sym, "1d", (int(time.time() // 86400) - 120) * 86_400_000)
     bars = {int(b["t"]): [float(b["o"]), float(b["h"]), float(b["l"]), float(b["c"])] for b in recent}
     rows = {int(t): [o_, h, l, c] for t, o_, h, l, c in zip(df["t"], df["o"], df["h"], df["l"], df["c"])}
     rows.update(bars)
@@ -241,11 +237,7 @@ def voice_chart(sym):
     keep = 90
     out = {"t": ts[-keep:], "ohlc": [rows[t] for t in ts[-keep:]],
            "ema20": [round(x, 6) for x in e20[-keep:]], "ema50": [round(x, 6) for x in e50[-keep:]]}
-    body = _j.dumps({"type": "candleSnapshot", "req": {"coin": sym, "interval": "4h",
-                     "startTime": int((time.time() - 45 * 86400) * 1000), "endTime": int(time.time() * 1000)}}).encode()
-    req = _u.Request("https://api.hyperliquid.xyz/info", data=body, headers={"Content-Type": "application/json"})
-    with _u.urlopen(req, timeout=20) as r:
-        b4 = _j.loads(r.read())
+    b4 = hl.candles(sym, "4h", (int(time.time() // 86400) - 45) * 86_400_000)
     c4 = [float(b["c"]) for b in b4]
     f20, f50 = ema(c4, 20), ema(c4, 50)
     k4 = 150

@@ -183,11 +183,17 @@ LOG_PATH = os.path.join(OUT_DIR, "collector.log")
 # ---------------------------------------------------------------------------
 # Watchlist + venue symbol map (see module docstring for how this was verified)
 # ---------------------------------------------------------------------------
-WATCHLIST = ["BTC", "SOL", "POPCAT", "WIF", "FARTCOIN", "PENGU", "kPEPE", "kBONK", "kSHIB"]
+WATCHLIST = ["BTC", "ETH", "SOL", "HYPE", "XRP", "NEAR", "POPCAT", "WIF", "FARTCOIN", "PENGU", "kPEPE", "kBONK", "kSHIB"]
 
 SYMBOL_MAP: Dict[str, Dict[str, Optional[str]]] = {
     "BTC":      {"binance": "BTCUSDT",      "bybit": "BTCUSDT"},
     "SOL":      {"binance": "SOLUSDT",      "bybit": "SOLUSDT"},
+    # 2026-10-08: the bot's other four traded coins (were never collected; the hivemind's
+    # liquidation-cluster voice was blank for them). HYPE: Bybit only, to be safe.
+    "ETH":      {"binance": "ETHUSDT",      "bybit": "ETHUSDT"},
+    "HYPE":     {"binance": None,           "bybit": "HYPEUSDT"},
+    "XRP":      {"binance": "XRPUSDT",      "bybit": "XRPUSDT"},
+    "NEAR":     {"binance": "NEARUSDT",     "bybit": "NEARUSDT"},
     "POPCAT":   {"binance": None,           "bybit": "POPCATUSDT"},
     "WIF":      {"binance": "WIFUSDT",      "bybit": "WIFUSDT"},
     "FARTCOIN": {"binance": None,           "bybit": "FARTCOINUSDT"},

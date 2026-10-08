@@ -18,11 +18,8 @@ SYMS = ["BTC", "ETH", "SOL", "HYPE", "XRP", "NEAR"]
 
 
 def _fetch(sym, start_ms):
-    body = json.dumps({"type": "candleSnapshot", "req": {"coin": sym, "interval": "4h", "startTime": start_ms,
-                                                          "endTime": int(time.time() * 1000)}}).encode()
-    req = urllib.request.Request("https://api.hyperliquid.xyz/info", data=body, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        raw = json.loads(r.read())
+    import hl
+    raw = hl.candles(sym, "4h", start_ms)
     return pd.DataFrame([{"t": int(b["t"]), "h": float(b["h"]), "l": float(b["l"]), "c": float(b["c"])}
                          for b in raw]).sort_values("t").reset_index(drop=True)
 
@@ -50,7 +47,7 @@ def feats(df):
 
 
 def live(sym):
-    df = _fetch(sym, int((time.time() - 40 * 86400) * 1000))
+    df = _fetch(sym, (int(time.time() // 86400) - 45) * 86_400_000)
     f = feats(df).iloc[-1]
     return {"structure_4h": int(f["structure_4h"]), "stretch_4h": int(f["stretch_4h"]),
             "driver_4h": int(f["driver_4h"]), "pdi": round(float(f["pdi"]) * 100, 0), "mdi": round(float(f["mdi"]) * 100, 0)}
