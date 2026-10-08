@@ -1,0 +1,186 @@
+{
+ "max_hold_h": 48,
+ "entry_window_h": 24,
+ "symbols": 11,
+ "plans_per_symbol": 400,
+ "cells": {
+  "0.005|0.5": {
+   "resolved": 8800,
+   "ambiguous": 101,
+   "ambiguous_share_pct": 1.148,
+   "stop_only": 2977,
+   "target_only": 5722,
+   "timed_out": 0,
+   "limit_filled": 8219,
+   "fill_candle_contaminated": 4267,
+   "fill_contamination_pct": 51.92
+  },
+  "0.005|1.0": {
+   "resolved": 8800,
+   "ambiguous": 28,
+   "ambiguous_share_pct": 0.318,
+   "stop_only": 4386,
+   "target_only": 4386,
+   "timed_out": 0,
+   "limit_filled": 8219,
+   "fill_candle_contaminated": 1480,
+   "fill_contamination_pct": 18.01
+  },
+  "0.005|2.0": {
+   "resolved": 8800,
+   "ambiguous": 5,
+   "ambiguous_share_pct": 0.057,
+   "stop_only": 5861,
+   "target_only": 2934,
+   "timed_out": 0,
+   "limit_filled": 8219,
+   "fill_candle_contaminated": 692,
+   "fill_contamination_pct": 8.42
+  },
+  "0.005|3.0": {
+   "resolved": 8792,
+   "ambiguous": 3,
+   "ambiguous_share_pct": 0.034,
+   "stop_only": 6605,
+   "target_only": 2184,
+   "timed_out": 8,
+   "limit_filled": 8219,
+   "fill_candle_contaminated": 605,
+   "fill_contamination_pct": 7.36
+  },
+  "0.01|0.5": {
+   "resolved": 8800,
+   "ambiguous": 5,
+   "ambiguous_share_pct": 0.057,
+   "stop_only": 2934,
+   "target_only": 5861,
+   "timed_out": 0,
+   "limit_filled": 7662,
+   "fill_candle_contaminated": 1956,
+   "fill_contamination_pct": 25.53
+  },
+  "0.01|1.0": {
+   "resolved": 8798,
+   "ambiguous": 2,
+   "ambiguous_share_pct": 0.023,
+   "stop_only": 4398,
+   "target_only": 4398,
+   "timed_out": 2,
+   "limit_filled": 7662,
+   "fill_candle_contaminated": 382,
+   "fill_contamination_pct": 4.99
+  },
+  "0.01|2.0": {
+   "resolved": 8687,
+   "ambiguous": 1,
+   "ambiguous_share_pct": 0.012,
+   "stop_only": 5812,
+   "target_only": 2874,
+   "timed_out": 113,
+   "limit_filled": 7662,
+   "fill_candle_contaminated": 189,
+   "fill_contamination_pct": 2.47
+  },
+  "0.01|3.0": {
+   "resolved": 8402,
+   "ambiguous": 1,
+   "ambiguous_share_pct": 0.012,
+   "stop_only": 6468,
+   "target_only": 1933,
+   "timed_out": 398,
+   "limit_filled": 7662,
+   "fill_candle_contaminated": 179,
+   "fill_contamination_pct": 2.34
+  },
+  "0.02|0.5": {
+   "resolved": 8687,
+   "ambiguous": 1,
+   "ambiguous_share_pct": 0.012,
+   "stop_only": 2874,
+   "target_only": 5812,
+   "timed_out": 113,
+   "limit_filled": 6522,
+   "fill_candle_contaminated": 531,
+   "fill_contamination_pct": 8.14
+  },
+  "0.02|1.0": {
+   "resolved": 8366,
+   "ambiguous": 0,
+   "ambiguous_share_pct": 0.0,
+   "stop_only": 4183,
+   "target_only": 4183,
+   "timed_out": 434,
+   "limit_filled": 6522,
+   "fill_candle_contaminated": 73,
+   "fill_contamination_pct": 1.12
+  },
+  "0.02|2.0": {
+   "resolved": 7536,
+   "ambiguous": 0,
+   "ambiguous_share_pct": 0.0,
+   "stop_only": 5339,
+   "target_only": 2197,
+   "timed_out": 1264,
+   "limit_filled": 6522,
+   "fill_candle_contaminated": 55,
+   "fill_contamination_pct": 0.84
+  },
+  "0.02|3.0": {
+   "resolved": 6871,
+   "ambiguous": 0,
+   "ambiguous_share_pct": 0.0,
+   "stop_only": 5719,
+   "target_only": 1152,
+   "timed_out": 1929,
+   "limit_filled": 6522,
+   "fill_candle_contaminated": 54,
+   "fill_contamination_pct": 0.83
+  },
+  "0.03|0.5": {
+   "resolved": 8180,
+   "ambiguous": 0,
+   "ambiguous_share_pct": 0.0,
+   "stop_only": 2525,
+   "target_only": 5655,
+   "timed_out": 620,
+   "limit_filled": 5533,
+   "fill_candle_contaminated": 199,
+   "fill_contamination_pct": 3.6
+  },
+  "0.03|1.0": {
+   "resolved": 7262,
+   "ambiguous": 0,
+   "ambiguous_share_pct": 0.0,
+   "stop_only": 3631,
+   "target_only": 3631,
+   "timed_out": 1538,
+   "limit_filled": 5533,
+   "fill_candle_contaminated": 32,
+   "fill_contamination_pct": 0.58
+  },
+  "0.03|2.0": {
+   "resolved": 5852,
+   "ambiguous": 0,
+   "ambiguous_share_pct": 0.0,
+   "stop_only": 4395,
+   "target_only": 1457,
+   "timed_out": 2948,
+   "limit_filled": 5533,
+   "fill_candle_contaminated": 27,
+   "fill_contamination_pct": 0.49
+  },
+  "0.03|3.0": {
+   "resolved": 5178,
+   "ambiguous": 0,
+   "ambiguous_share_pct": 0.0,
+   "stop_only": 4554,
+   "target_only": 624,
+   "timed_out": 3622,
+   "limit_filled": 5533,
+   "fill_candle_contaminated": 27,
+   "fill_contamination_pct": 0.49
+  }
+ },
+ "overall_ambiguous_share_pct": 0.115,
+ "overall_fill_contamination_pct": 9.618
+}
