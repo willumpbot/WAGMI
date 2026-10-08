@@ -778,9 +778,17 @@ def build():
                 detail = "%d vs %d cases so far" % (a.get("nA", 0), a.get("nB", 0))
             if a.get("historical_diff_bps") is not None:
                 detail += "; before the upgrade: %+.2f%%" % (a["historical_diff_bps"] / 100)
-            p.append("<div class='r'><div class='h'>%s agent: %s</div><div class='t'>%s %s</div></div>" % (
-                e(name.capitalize()), e(words.get(a.get("verdict"), a.get("verdict"))),
+            p.append("<div class='r'><div class='h'>%s%s: %s</div><div class='t'>%s %s</div></div>" % (
+                e(name.capitalize()), "" if " " in name else " agent", e(words.get(a.get("verdict"), a.get("verdict"))),
                 e(a.get("question", "")), e(detail)))
+        dr = sc.get("ic_muted_drops") or {}
+        p.append("<div class='r'><div class='h'>Silenced-strategy gate: %s</div><div class='t'>%s %s</div></div>" % (
+            e("still collecting" if dr.get("n", 0) < 30 else ("right to drop them" if dr.get("mean_bps", 0) < 0
+                                                              else "dropping signals that would have made money")),
+            e("All five strategies that fire most are currently muted for a backwards track record, so most "
+              "signals are dropped before the AI sees them. This checks whether that's right."),
+            e("%d dropped signals graded%s." % (dr.get("n", 0), "" if not dr.get("n") else
+                                               ", average %+.2f%% each if taken" % (dr["mean_bps"] / 100)))))
         p.append("</div>")
 
     # ── rules manager (tools/rules_manager.py) ───────────────────────
