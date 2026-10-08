@@ -1,0 +1,2575 @@
+[
+ {
+  "silo": "wagmi-archive",
+  "file": "project_backtest_optimization_2026_03_22.md",
+  "date": "2026-03-22",
+  "type": "project",
+  "desc": "$460 PF=1.81 to $700 PF=3.30 (avg). Chart DNA per asset, HTF trend gate, LLM quant intelligence, 40K counterfactual resolved. HYPE BUY 88.6% WR edge found. 1744 tests.",
+  "bytes": 1212,
+  "pos": 2,
+  "neg": 1,
+  "claim_lines": [
+   "Final state: avg $700 PF=3.30, 61 trades, 39% WR (from $460 PF=1.81)",
+   "| 30d | $171 | 4.03 | 20.1% |",
+   "| 60d | $560 | 4.62 | 33.7% |"
+  ],
+  "neg_lines": [
+   "8. Vol sizing tested but reverted (over-fitting with other filters)."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_paper_trading_session_2026_03_23.md",
+  "date": "2026-03-23",
+  "type": "project",
+  "desc": "15+ hour paper trading session with overwatch. Adaptive system shipped, 7 bugs fixed, 931 lines of learnings. Full docs in bot/data/PAPER_TRADING_LEARNINGS.md",
+  "bytes": 2077,
+  "pos": 4,
+  "neg": 1,
+  "claim_lines": [
+   "2. **Consolidation is actually the BEST regime** \u2014 47% WR, +$4k/30d, PF=2.1",
+   "5. **Marginal EV consensus signals are profitable** \u2014 50%+ hit rate when EV > -0.01 with 3+ agree",
+   "6. **EV gate is 100% correct on strongly negative, 0% correct on marginal** \u2014 clean separation"
+  ],
+  "neg_lines": [
+   "1. **lead_lag strategy was BROKEN in live trading** \u2014 missing `_btc_1h` data injection. Fixed."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_quant_mindset.md",
+  "date": "2026-03-24",
+  "type": "feedback",
+  "desc": "User wants quant-grade systematic analysis of missed trades, edge quantification, and alpha discovery",
+  "bytes": 1033,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "User wants the system treated as a quant alpha engine, not just a trading bot.",
+   "Why:** The user sees the bot as a systematic edge-finding machine. Every rejection is data. Every missed trade is calibration evidence. The goal is to measure, learn, and adapt \u2014 not just execute.",
+   "How to apply:"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_manual_sniper_system.md",
+  "date": "2026-03-24",
+  "type": "project",
+  "desc": "Manual copy-trade system for $50/day target with 5-20x leverage scalps, built 2026-03-24",
+  "bytes": 1218,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "SNIPER: 85%+ conf & 3 agree, or 90%+ & 2 agree \u2192 15-20x lev, 2% risk",
+   "PREMIUM: 80%+ conf & 3 agree \u2192 8-10x lev, 1.5% risk",
+   "STANDARD: 72%+ conf & 2 agree \u2192 5x lev, 1% risk"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_two_layer_system.md",
+  "date": "2026-03-24",
+  "type": "project",
+  "desc": "Bot (quant core, low risk) + Sniper signals (high risk manual trades). User plans to self-fund bot, use sniper for aggressive growth, possibly monetize later.",
+  "bytes": 1309,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "## System Design (2026-03-25)",
+   "Layer 1 \u2014 Quant Bot**: $10K+ paper (then funded), 2-5x leverage, conservative sizing, systematic edge. Target: consistent low-risk returns. This is the \"money machine.\"",
+   "Layer 2 \u2014 Sniper Signals**: Reads bot's best signals, reformats for 7-25x manual scalps on $100-$1K accounts. Has virtual simulator ($100) tracking every signal. Telegram alerts with entry/SL/TP/leverage."
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_execution_quality.md",
+  "date": "2026-03-25",
+  "type": "feedback",
+  "desc": "User believes the system calls moves correctly but executes poorly \u2014 sizing and scaling are the bottleneck, not signal generation",
+  "bytes": 1184,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "Why:** Paper trading showed multiple correct directional calls (HYPE BUY dips, SOL moves) that either weren't taken or were sized too conservatively. The signal generation works; the conversion to PnL doesn't.",
+   "User's mental model: two layers working together \u2014 quant bot (conservative base) + sniper (aggressive manual) \u2014 and eventually the LLM agents make both layers smarter"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_signal_flow_fix_2026_03_25.md",
+  "date": "2026-03-25",
+  "type": "project",
+  "desc": "Solo-signal fix resolved sniper starvation. HYPE_BUY validated at 94% WR (49 trades) against real OHLCV. Signal routing was the bottleneck, not market or signal quality.",
+  "bytes": 1195,
+  "pos": 1,
+  "neg": 1,
+  "claim_lines": [
+   "HYPE_BUY validated at 94% WR on 49 real trades (12h time stop, 1h OHLCV from Hyperliquid)",
+   "Broad 30-day backtest shows 53% with simple filter, 56% blind \u2014 bot's strategy pipeline is the real edge",
+   "SOL_SELL underperformed in replay (0% WR on only 2 trades) \u2014 needs more data"
+  ],
+  "neg_lines": [
+   "Signal flow was broken: ensemble needed 2+ strategy agreement, but choppy markets only produce 1-agree signals. Sniper was starved."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_overnight_session_2026_03_26.md",
+  "date": "2026-03-26",
+  "type": "project",
+  "desc": "Crash recovery \u2192 full quant alpha machine. Major bugs fixed, 9 agents deployed, new strategies/brain built, bot running autonomously.",
+  "bytes": 2902,
+  "pos": 5,
+  "neg": 3,
+  "claim_lines": [
+   "5. **vmc_cipher**: Disabled (0% WR on 42 trials)",
+   "7. **BTC_BUY tier bug**: Signals passing setup gate (70-80% conf) got killed as STANDARD. Fixed to PREMIUM.",
+   "COMBO SIGNAL**: BTC RSI<20 + HYPE alpha>0.5% = 100% WR at 3-6h (3 events, avg +4.04%)"
+  ],
+  "neg_lines": [
+   "6. **Strategy weight bug**: Zero-trial strategies got max trust (0.50). Fixed to 0.30 default. multi_tier_quality seeded with 0/3 loss record (weight 0.20).",
+   "7. **BTC_BUY tier bug**: Signals passing setup gate (70-80% conf) got killed as STANDARD. Fixed to PREMIUM."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_overnight_session_2026_03_27.md",
+  "date": "2026-03-27",
+  "type": "project",
+  "desc": "Kelly leverage, micro-sniper, strategy overlap fix, R:R geometry fix \u2014 first 2-agree consensus signal achieved",
+  "bytes": 1792,
+  "pos": 6,
+  "neg": 1,
+  "claim_lines": [
+   "1. **Kelly-scaled leverage deployed**: 5x Half-Kelly at 85%/3-agree. Monte Carlo proved optimal growth + 0.1% ruin at 5x.",
+   "2. **Micro-sniper system built**: 15-25x leverage at 1% risk. 28 new tests. MICRO_SNIPER_ENABLED=true.",
+   "SOL SELL +1.83% (TP 2.5% away, 8 red candles)"
+  ],
+  "neg_lines": [
+   "6. **367 perfect signals were killed by broken SL bug** (SL=entry in consolidation regime). Now fixed."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_x_growth_system.md",
+  "date": "2026-03-28",
+  "type": "project",
+  "desc": "Social module built for X growth \u2014 bot/social/ directory with content engine, analytics, voice trainer, CLI",
+  "bytes": 964,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Key algo facts: bookmarks=20x likes, replies=27x, links in main tweet=-50% reach"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_kelly_leverage.md",
+  "date": "2026-03-29",
+  "type": "feedback",
+  "desc": "Bot was running at 25% of Kelly-optimal leverage, causing TP1 to be unreachable. User confirmed entries were good but leverage too low.",
+  "bytes": 862,
+  "pos": 0,
+  "neg": 1,
+  "claim_lines": [
+   "Bot called moves correctly but failed to profit because leverage was 1.5-3x when Kelly says 10-15x.",
+   "Why:** Stop-width caps (2-5x) were overriding Kelly-calculated leverage (10-15x). The caps were set from one bad trade but double-counted risk that Kelly already controls. User manually scalped a perfect BTC SHORT the bot predicte",
+   "How to apply:** Never cap leverage below Kelly recommendation unless it's a liquidation safety issue. Kelly sizing + risk_per_trade already control dollar risk. The leverage just determines how quickly TP is reachable. Higher leve"
+  ],
+  "neg_lines": [
+   "Bot called moves correctly but failed to profit because leverage was 1.5-3x when Kelly says 10-15x."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_dual_wallet_build_2026_03_29.md",
+  "date": "2026-03-29",
+  "type": "project",
+  "desc": "Full dual wallet system (A=conservative, B=aggressive) implemented with 68 tests. Bot running paper mode collecting data.",
+  "bytes": 2065,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "| Risk/trade | 0.35% | 0.8% |"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_week1_complete_2026_03_29.md",
+  "date": "2026-03-29",
+  "type": "project",
+  "desc": "5-day build from crash to full quant alpha system. 2,313 tests. Dual wallet architecture planned.",
+  "bytes": 3012,
+  "pos": 1,
+  "neg": 1,
+  "claim_lines": [
+   "8. Micro-sniper system (15-25x at 1% risk)",
+   "20. Adaptive asymmetric stops (SELL tight 1.2%, BUY wide 2.0%)",
+   "21. TIERED R EXITS (33% at +0.5R, +1R, +2R) \u2014 flips Kelly from -32% to +6%"
+  ],
+  "neg_lines": [
+   "10. Strategy weight bug fix (zero-trial max trust)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_no_gates_until_100_trades.md",
+  "date": "2026-03-30",
+  "type": "feedback",
+  "desc": "User wants all safety gates disabled until 100+ trades of data collected. Gates should activate gradually based on data volume.",
+  "bytes": 1012,
+  "pos": 0,
+  "neg": 1,
+  "claim_lines": [
+   "Don't activate EV gates, regime floors, WP floors, min_votes > 1, or toxic setup skips until we have 100+ trades of data. The system has too many layers of safety that compound to block EVERY signal.",
+   "Why:** Spent an entire overnight session (8+ hours) getting zero trades because of stacked gates: ensemble EV check \u2192 regime floor \u2192 QuantBrain WP floor \u2192 toxic setup skip \u2192 regime-aware min_votes override. Each individually seems",
+   "How to apply:** When building or reviewing signal pipeline, check if trade count < 100. If so, all gates should be bypassed. Only activate gates gradually as data proves which ones add value. The current approach of starting with "
+  ],
+  "neg_lines": [
+   "How to apply:** When building or reviewing signal pipeline, check if trade count < 100. If so, all gates should be bypassed. Only activate gates gradually as data proves which ones add value. The current approach of starting with "
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_execution_overhaul_2026_03_30.md",
+  "date": "2026-03-30",
+  "type": "project",
+  "desc": "Major execution bottleneck fixes - multiplicative sizing, sniper leverage cap, LLM pipeline offline diagnosis, ensemble widening, quant rules",
+  "bytes": 1978,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "risk_per_trade raised from 0.5% to 1.5% (for small accounts)",
+   "Added risk_mult floor of 0.12 (multiplicative chain can never go below 12%)",
+   "Ensemble chop floor capped at 75% (was 83-90%)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_llm_improvements_planned.md",
+  "date": "2026-03-30",
+  "type": "project",
+  "desc": "Areas where additional LLM agents could improve the quant system. No cost limit on LLM usage.",
+  "bytes": 3214,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "The panic_oversold SOL SELL that was blocked (WP=36%) should have had WP=65%+",
+   "\"BTC just dropped 0.5% with volume spike \u2192 SOL will follow in 30-60 min \u2192 queue SOL SHORT\"",
+   "Instead of fixed 0.38% TP1 for BTC, adjust based on:"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_mega_session_2026_03_30.md",
+  "date": "2026-03-30",
+  "type": "project",
+  "desc": "20+ improvements in one session. Execution overhaul, sizing fix, watchdog, auto-recovery, dashboard metrics, quant rules, 2980 tests passing.",
+  "bytes": 2751,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "4. risk_per_trade 0.5%\u21921.5% for small accounts",
+   "5. Added risk_mult floor of 0.12 (never below 12% of base)",
+   "8. Ensemble chop floor 90%\u219275%, consolidation 78%\u219268%"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_quant_session_2026_03_30.md",
+  "date": "2026-03-30",
+  "type": "project",
+  "desc": "Full autonomous analysis session. 7 agents ran. MFE exit module built. Sniper setups cataloged. Time-of-day patterns mapped.",
+  "bytes": 2523,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "BB Lower Bounce is a TRAP (28% WR)",
+   "Best combos: BTC EMA20 Touch Long (100% WR), SOL RSI Bear Div (100% WR)",
+   "Best single trade: LONG at 18:00 UTC (80% WR across BTC/ETH/SOL)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_trade_forensics_2026_03_30.md",
+  "date": "2026-03-30",
+  "type": "project",
+  "desc": "Complete forensic analysis of all 7 trades. BTC SHORT is proven edge. HYPE LONG is negative EV. Leverage was the #1 issue.",
+  "bytes": 2053,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "BTC SHORT: 100% WR (2/2), avg +$46. Our best edge.",
+   "HYPE LONG: 0% WR (0/3). All counter-trend. Fixed by QuantBrain regime awareness.",
+   "Liquidation buffer fixed from 15% to 3%"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_full_kelly_approach.md",
+  "date": "2026-03-31",
+  "type": "feedback",
+  "desc": "User wants full Kelly sizing, high risk tolerance. No micro-positions. Take every trade that has data-driven edge.",
+  "bytes": 948,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "risk_per_trade = 2.5% (not 0.4% or 1.5%)",
+   "Don't add new gates without data proving they're > 60% correct"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_leverage_oversize.md",
+  "date": "2026-03-31",
+  "type": "feedback",
+  "desc": "FULL_KELLY_LEV was 19.5x when actual Kelly=7.8x. Every trade was 2-3x overleveraged, triggering CB cascade.",
+  "bytes": 989,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "FULL_KELLY_LEV was set to 19.5x but the code's own edge study said \"Full Kelly=7.8x, edge breaks above 10x.\" This meant every trade was 12-14.6x leverage, causing a single 1.25% adverse move to trigger circuit breakers and lock ou"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_quant_session_2026_03_31.md",
+  "date": "2026-03-31",
+  "type": "project",
+  "desc": "Fixed crippled sizing (positions were $35, now $200-800). Analyzed 26.9k rejected signals. Found 5 gates destroying profits. HYPE_SELL unblocked (85% WR). Data-driven gate recalibration.",
+  "bytes": 1953,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "risk_per_trade: 1.5% -> 2.5%",
+   "BTC override removed (was 0.4% \u2014 crippled BTC to $35 positions)",
+   "HYPE_SELL was hard-blocked but has 85.2% WR (225W/39L)** \u2014 unblocked"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_extreme_advancement.md",
+  "date": "2026-04-01",
+  "type": "feedback",
+  "desc": "User goes to bed expecting completed trades and major progress. Full autonomy, push hard, no sandbagging.",
+  "bytes": 822,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "User explicitly expects \"extreme advancement and several completed trades overnight\" when going to bed. This means:",
+   "Why:** User is hungry for results and progress. They trust the system to run autonomously and want to see tangible outcomes (trades, PnL, new features) when they wake up.",
+   "How to apply:"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_critical_fixes_2026_04_01.md",
+  "date": "2026-04-01",
+  "type": "project",
+  "desc": "Fixed 5 money-losing bugs \u2014 sniper leverage bypass, negative EV override, duplicate entries, solo threshold, risk_per_trade override",
+  "bytes": 1711,
+  "pos": 2,
+  "neg": 1,
+  "claim_lines": [
+   "5. **RISK_PER_TRADE=0.195 in bot/.env** \u2014 full Kelly (19.5%) was in bot/.env overriding the 5% in root .env. Changed to 0.10 (half Kelly).",
+   "Fixed 4 pre-existing test failures from config changes (time_stop 12h\u21922h, risk 2.5%\u219210%)"
+  ],
+  "neg_lines": [
+   "## Session: 2026-04-01 Critical Bug Fixes"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_overnight_analysis_2026_04_02.md",
+  "date": "2026-04-02",
+  "type": "project",
+  "desc": "Deep quant analysis at $500 equity, half Kelly. Monte Carlo sims, edge decomposition, Kelly comparison. Reverted premature quant gates.",
+  "bytes": 1881,
+  "pos": 0,
+  "neg": 2,
+  "claim_lines": [
+   "RISK_PER_TRADE: 20% (half Kelly)",
+   "2-agree signals: 50% WR, +$78 net (the only positive cohort by agree count)",
+   "1-agree: 0% WR, -$10.52"
+  ],
+  "neg_lines": [
+   "Critical decision: Reverted premature quant gates.",
+   "Tried adding ranging regime block, win_prob floor, LONG size penalty. User correctly questioned whether 18 trades justifies new filters. Reverted all 3. The right approach:"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_reflection_engine_2026_04_02.md",
+  "date": "2026-04-02",
+  "type": "project",
+  "desc": "Post-trade reflection engine with re-entry tracking, move exhaustion, quality scoring. Wired into both ensemble and sniper sizing.",
+  "bytes": 1909,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "Flags MEX when >70% of daily ATR consumed",
+   "Flags EXH when >3% move already happened in trade direction",
+   "multi_strategy_main.py: quality score adjusts qty (WEAK=50%, CAUTION=75%)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_confidence_calibration.md",
+  "date": "2026-04-03",
+  "type": "feedback",
+  "desc": "90-100% confidence is ANTI-predictive (22.7% WR). 85-90% is sweet spot (74.7% WR). Ensemble longs are inverted (0% WR).",
+  "bytes": 1159,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "85-90%: **74.7% WR**, +$68,874 \u2014 SWEET SPOT",
+   "80-85%: 49.4% WR, +$126,315 \u2014 good",
+   "65-70%: 37.7% WR, +$24,772 \u2014 bread and butter (most trades)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_overnight_session_2026_04_03.md",
+  "date": "2026-04-03",
+  "type": "project",
+  "desc": "SOL overtrading root cause found, 5 critical fixes applied, bot restarted with data-driven config",
+  "bytes": 1646,
+  "pos": 4,
+  "neg": 0,
+  "claim_lines": [
+   "33 trades total**: 30% WR, -$51.71 PnL",
+   "SOL-SHORT was bleeding**: 19 trades, 32% WR, -$114. Backtest said 85.5% WR but live was 32%.",
+   "BTC-SHORT is best edge**: 2 trades, 100% WR, +$92. Was hobbled at 1.5% risk."
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_deep_audit_2026_04_04.md",
+  "date": "2026-04-04",
+  "type": "project",
+  "desc": "22 research streams across signal pipeline, strategies, execution, market structure. Master findings in bot/data/COMPLETE_SYSTEM_AUDIT.md",
+  "bytes": 1911,
+  "pos": 3,
+  "neg": 2,
+  "claim_lines": [
+   "91% of signals die before becoming trades (8.7% pass rate)",
+   "72% of losses from position sizing (37x equity), not wrong direction",
+   "40% of worst losses had RIGHT direction but tight stops killed them"
+  ],
+  "neg_lines": [
+   "72% of losses from position sizing (37x equity), not wrong direction",
+   "\"Volume fading = edge\" \u2192 Spurious, reversed when controlling for symbol"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_llm_brain_build_2026_04_04.md",
+  "date": "2026-04-04",
+  "type": "project",
+  "desc": "Built 15 modules (7300+ lines), wired 95% of mechanical outputs to agents. Critical architecture issue found. Complete assessment documented.",
+  "bytes": 2738,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "kill 91% of signals BEFORE the LLM ever sees them. The brain can only say yes/no",
+   "Regime: 5/10 clarity, 7/10 data, ~60% expected accuracy",
+   "Quant: 6/10, 7/10, ~55%"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_quant_research_2026_04_04.md",
+  "date": "2026-04-04",
+  "type": "project",
+  "desc": "11 research streams across market structure, regime analysis, execution, strategy gaps. Complete findings with confidence levels.",
+  "bytes": 3922,
+  "pos": 2,
+  "neg": 4,
+  "claim_lines": [
+   "80% of squeeze breakouts in this period went DOWN",
+   "100% of winners were shorts (regime-dependent, not permanent)",
+   "6h prior momentum already negative (-1.14%) for winners"
+  ],
+  "neg_lines": [
+   "OI delta strategy broken (only 2 data points, needs 4+)",
+   "Simulation shows massive improvement but likely overfit by 60-70%"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_session_handoff_2026_04_04.md",
+  "date": "2026-04-04",
+  "type": "project",
+  "desc": "Complete status of LLM neural network build. Use this to continue in a new session.",
+  "bytes": 3084,
+  "pos": 2,
+  "neg": 1,
+  "claim_lines": [
+   "15 data modules wired into the 9-agent coordinator (95% data coverage)",
+   "The LLM sees signals AFTER 47 mechanical gates kill 91%. The brain is behind the filter.",
+   "Cost optimizer: smart routing saves 60-80% API costs"
+  ],
+  "neg_lines": [
+   "Safety: timeout bug fixed, Critic fallback added, notional cap, mandatory SL"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_stop_loss_override.md",
+  "date": "2026-04-05",
+  "type": "feedback",
+  "desc": "Profile sl_atr was 0.55x when strategies set 2.0x. Stops were at noise level. Fixed to 1.2x. This was the #1 mechanical loss cause.",
+  "bytes": 793,
+  "pos": 0,
+  "neg": 2,
+  "claim_lines": [
+   "Result: stops at 0.165% for BTC (noise level). 34/42 trades hit SL.",
+   "Why:** The comment said \"42% WR suggests noise whipsaws\" and the response was to tighten SL further \u2014 a death spiral. Tighter SL \u2192 more stops on noise \u2192 lower WR \u2192 tighten more.",
+   "How to apply:** Never set profile sl_atr below 1.0x ATR for crypto. The winning trades had 2.7% stop distance. Current fix: MEDIUM=1.2x, TREND=1.4x, SCALP=0.8x, REGIME=1.2x."
+  ],
+  "neg_lines": [
+   "Result: stops at 0.165% for BTC (noise level). 34/42 trades hit SL.",
+   "Why:** The comment said \"42% WR suggests noise whipsaws\" and the response was to tighten SL further \u2014 a death spiral. Tighter SL \u2192 more stops on noise \u2192 lower WR \u2192 tighten more."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_backtest_results_2026_04_05.md",
+  "date": "2026-04-05",
+  "type": "project",
+  "desc": "BTC alone with simulated LLM agents: $500\u2192$976, 15.7% DD, Sharpe 2.54, 10:1 payoff. Adding other symbols only hurts.",
+  "bytes": 1370,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "| **BTC only** | **+$517** | **+95%** | **15.7%** | **2.54** | 10.17:1 |",
+   "| BTC+SOL | +$507 | +100% | 17.4% | 0.50 | 10.09:1 |",
+   "| BTC+HYPE | +$467 | +79% | 19.5% | -0.61 | 10.06:1 |"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_deep_analysis_2026_04_05.md",
+  "date": "2026-04-05",
+  "type": "project",
+  "desc": "BB is the only profitable strategy. Solo BB > 2-agree. After-win momentum 69% WR. HYPE extreme vol = death. BTC 65% WR consistently.",
+  "bytes": 1746,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "1. **Solo BB (62% WR) > 2-agree+BB (52%)** \u2014 consensus HURTS bollinger_squeeze edge",
+   "2. **After-win momentum: 69% WR** vs after-loss 33% WR (35-point spread)",
+   "3. **Confidence is NOT predictive** \u2014 80%+ WR is WORSE than <60%"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_final_backtest_matrix_2026_04_05.md",
+  "date": "2026-04-05",
+  "type": "project",
+  "desc": "Definitive results across all configurations. BTC-only with sim agents is the clear winner. Ready for paper trading.",
+  "bytes": 1073,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "$500 \u2192 $1,019 (+104%), 14.4% DD, Sharpe 2.63, PF 9.5",
+   "| **BTC relax+sim** | **+104%** | **14.4%** | **2.63** | 58% | +$536 |",
+   "| All4 relax+sim | +94% | 24.3% | 0.12 | 41% | +$439 |"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_llm_first_architecture_2026_04_05.md",
+  "date": "2026-04-05",
+  "type": "project",
+  "desc": "Complete implementation of SIGNAL_FLOW_REDESIGN \u2014 brain before gates. All 7 steps done.",
+  "bytes": 2686,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Before:** Ensemble \u2192 47 mechanical gates \u2192 LLM veto (sees 9% of signals)",
+   "After:** Ensemble \u2192 5 safety gates \u2192 LLM pipeline (sees 100% of signals)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_mechanical_fixes_2026_04_05.md",
+  "date": "2026-04-05",
+  "type": "project",
+  "desc": "Sniper disabled, SL widened 2x, vol-target unfucked. Bot needs restart for all fixes to apply.",
+  "bytes": 1857,
+  "pos": 3,
+  "neg": 2,
+  "claim_lines": [
+   "#### 1. Sniper auto-execute (-$132, 142% of all losses)",
+   "At 0.55x ATR, BTC stop = 0.165% from entry \u2014 any wick kills it",
+   "vol_target_pct=0.005 (0.5%) replaced risk_per_trade=0.20 (20%) as the base risk"
+  ],
+  "neg_lines": [
+   "#### 2. Stop losses at noise level (34/42 trades hit SL)",
+   "Ensemble alone was +$63 with broken stops and tiny positions"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_profitable_config_2026_04_05.md",
+  "date": "2026-04-05",
+  "type": "project",
+  "desc": "12h hold, 8% risk, 1.2 ATR SL, 1.5 ATR TP1. BTC 60% WR, 3-agree 86% WR. This is the baseline to beat.",
+  "bytes": 1806,
+  "pos": 2,
+  "neg": 1,
+  "claim_lines": [
+   "### Results: $500 \u2192 $738 (+47.6%) in 60 days",
+   "43.4% event WR** (target: 45%)",
+   "BTC: 60% WR, +$481, 1.81:1 payoff"
+  ],
+  "neg_lines": [
+   "1. WHICH signals will develop into the move (78% SL rate = mostly wrong)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_system_state_2026_04_05b.md",
+  "date": "2026-04-05",
+  "type": "project",
+  "desc": "Complete honest assessment. Ensemble has edge (+$63 live). Backtest framework unreliable. Sniper disabled. Stops widened. Dynamic TP active.",
+  "bytes": 2184,
+  "pos": 6,
+  "neg": 1,
+  "claim_lines": [
+   "Ensemble on 2-agree trades: +$77 on 6 trades, 50% WR",
+   "BTC SHORT: +$92 on 2 trades, 100% WR (strongest edge)",
+   "Dynamic TP/SL system (MFE-based): active, BTC TP1=0.38%, SL=0.72%"
+  ],
+  "neg_lines": [
+   "Old SL (0.55x ATR = noise level) \u2192 widened to 1.2x ATR"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_trade_analysis_root_cause_2026_04_05.md",
+  "date": "2026-04-05",
+  "type": "project",
+  "desc": "Sniper is 142% of all losses. Ensemble alone is +$63 profitable. Ghost trades from sniper bypassing consensus.",
+  "bytes": 1266,
+  "pos": 1,
+  "neg": 1,
+  "claim_lines": [
+   "Ensemble: 22 trades, +$63, 32% WR",
+   "Sniper: 20 trades, -$132, 30% WR (all SOL SHORT)",
+   "2-agree trades: +$77, 50% WR (the only profitable bucket)"
+  ],
+  "neg_lines": [
+   "### Ghost Trade Bug"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_neural_gaps_remaining_2026_04_06.md",
+  "date": "2026-04-06",
+  "type": "project",
+  "desc": "Architecture complete but action layer incomplete. Active learning stores recommendations but doesn't apply them. Agent feedback is informational, not control signals.",
+  "bytes": 2398,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "4. **Agent self-performance** \u2014 agents receive \"YOUR PERFORMANCE: 58% accuracy\" as text but don't have explicit threshold adjustment logic. They're TOLD to self-correct via prompt instructions, but it's up to the LLM to actually d",
+   "The LLM doesn't need code-level control loops to react to performance data. A well-instructed Claude will read \"my vetoes lose money (vacc=42%)\" and naturally approve more \u2014 that's what the Critic prompt explicitly says to do. The"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_neural_network_complete_2026_04_06.md",
+  "date": "2026-04-06",
+  "type": "project",
+  "desc": "Full LLM brain built with 2,172-signal ground truth, memory pre-seeded, knowledge base wired, all agents have data-driven decision frameworks.",
+  "bytes": 1811,
+  "pos": 3,
+  "neg": 0,
+  "claim_lines": [
+   "4. **Momentum Tracker** \u2014 win/loss streak sizing (75% WR after 2 wins, 29% after 2 losses)",
+   "5. **BB+MTQ Contra-Indicator** \u2014 ensemble reduces size when both fire (35% WR)",
+   "6. **1h Early Exit Assessment** \u2014 cuts non-BB losers, holds BB (56% recovery)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_llm_first_live_day_2026_04_08.md",
+  "date": "2026-04-08",
+  "type": "project",
+  "desc": "First LLM brain live session Apr 8-9 2026. +$3.58, 66.7% WR, 94.8% veto accuracy. Key findings from 4 overnight research reports.",
+  "bytes": 1195,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "Results**: +$3.58 (+0.7%), 3 trades (2W/1L), PF=2.08x, API cost=$5.20",
+   "Why:** LLM vetoed 7+ weak signals correctly (94.8% accuracy), took 2 profitable HYPE trades.",
+   "COUNTERFACTUAL_REPORT.md \u2014 94.8% veto accuracy, exit timing is bigger leak than entry"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_per_symbol_strategy_weights.md",
+  "date": "2026-04-09",
+  "type": "feedback",
+  "desc": "Strategy weights are global but should be per-symbol. regime_trend is 100% WR on ETH/HYPE but 0% WR on SOL. Single weight forces bad compromise.",
+  "bytes": 1611,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Why**: On Apr 9 I watched the bot hit a deadlock. ETH shifted to `trending_bull` regime \u2014 the exact condition where shadow data shows `regime_trend ETH BUY = 100% WR (n=77)`. But the bot couldn't take the trade because:",
+   "regime_trend ETH BUY: **100% WR** (n=77)",
+   "regime_trend HYPE BUY: **100% WR** (n=32)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_autonomous_session_2026_04_09.md",
+  "date": "2026-04-09",
+  "type": "project",
+  "desc": "Deep research on LLM system design + mechanical layer. Found 13 dead agents, SOL_SHORT trending_bear = all profit, n_agree=1 is noise, 6x leverage cap optimal.",
+  "bytes": 1672,
+  "pos": 0,
+  "neg": 2,
+  "claim_lines": [
+   "Why:** User wanted deep research and mechanical survival while gone. Completed 5 research reports in `bot/data/analysis/`, applied 3 LLM fixes (timeouts raised to 25-60s, shared context cut -32%, tiered routing env-gated), all tes",
+   "SOL_SHORT in trending_bear = 66.7% WR, +$396 = 725% of lifetime net PnL",
+   "Shadow ledger has 4 untapped golden setups: regime_trend ETH BUY (100% WR, n=77), regime_trend HYPE BUY (100% WR, n=32), bollinger_squeeze HYPE BUY (61% WR, n=196), multi_tier_quality SOL SELL (72% WR, n=68)"
+  ],
+  "neg_lines": [
+   "n_agree=1 (solo) trades are break-even noise; n_agree=2 has ALL the profit",
+   "CRITICAL bug: `llm_integration.py:145` fail-open default. When LLM API fails, bot proceeds. Recommended fix: fail-closed on api_error reason."
+  ]
+ },
+ {
+  "silo": "ig-bot",
+  "file": "project_motion_bot.md",
+  "date": "2026-04-10",
+  "type": "project",
+  "desc": "The wagmi-project repo runs an Instagram bot @godforbidyougot_motion that auto-posts reels via BlueStacks ADB taps. Critical context for how a posting session is set up and what can go wrong.",
+  "bytes": 3608,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "CRITICAL gotcha \u2014 Instagram uses unicode ellipsis (U+2026), not three dots.** The caption field text is \"Write a caption and add hashtags\u2026\" (with `\u2026`). The script was searching for `...` (three dots), failing silently, and falling",
+   "CRITICAL gotcha \u2014 step 9 scroll breaks Share position.** The old step 9 scrolled down to check audience/trial settings, then scrolled back up. The scroll-back often didn't perfectly restore the viewport, shifting the Share button "
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_llm_knowledge_enrichment_2026_04_11.md",
+  "date": "2026-04-11",
+  "type": "project",
+  "desc": "Updated 8 agent prompts with 101-trade live data. Fixed Critic edge_data gap. Built LLM_KNOWLEDGE_BASE.md. Key insight - winners/losers identical at entry, CONTEXT is the distinguishing factor.",
+  "bytes": 2172,
+  "pos": 4,
+  "neg": 2,
+  "claim_lines": [
+   "Overseer Agent: fixed \"low WR = critical\" miscalibration \u2014 35% WR is by design",
+   "Exit Agent: trailing stop = 100% of alpha, hold time analysis, first 2h noise window",
+   "Winners and losers look IDENTICAL at entry (conf ~64%, lev ~6x). Context is the only distinguishing factor."
+  ],
+  "neg_lines": [
+   "Apr 11, 2026: Major LLM prompt enrichment session. Applied 3 bug fixes (feedback reset, leverage 7x cap, fail-open patch). Bot immediately went to +$12 after fixes.",
+   "Exit Agent: trailing stop = 100% of alpha, hold time analysis, first 2h noise window"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_overnight_deep_audit_2026_04_11.md",
+  "date": "2026-04-11",
+  "type": "project",
+  "desc": "16 research agents produced 24 reports. Found root cause: all feedback systems use WR metric on 35% WR bot, actively suppressing real edge. Signals are 97% directionally correct but stops are inside n",
+  "bytes": 2066,
+  "pos": 0,
+  "neg": 5,
+  "claim_lines": [
+   "The bot has real edge (97% of SL losses were directionally correct per MFE analysis). But the edge is systematically destroyed by:",
+   "1. Stops placed inside normal price noise (BTC SL 0.275% vs 0.37% MAE)",
+   "2. Feedback systems using win-rate metric on a 35% WR system (tuner stuck at 0.20 trust, -5.01 calibration offset actively subtracting from every signal's confidence)"
+  ],
+  "neg_lines": [
+   "1. Stops placed inside normal price noise (BTC SL 0.275% vs 0.37% MAE)",
+   "4. 77 of 101 trades should never have been taken (solo signals, wrong regimes)"
+  ]
+ },
+ {
+  "silo": "ig-bot",
+  "file": "feedback_posting_autonomy.md",
+  "date": "2026-04-11",
+  "type": "feedback",
+  "desc": "For BlueStacks posting sessions, Vince has explicitly delegated full control: keep posts flowing, recover from any failure, and \"pretend to be a person\" through the IG UI.",
+  "bytes": 1638,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "When Vince says \"we need to get posting working\" / \"you're in charge of posts,\" he means: drive every step end-to-end, handle UI interruptions, and restart on failure without asking."
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_bot_restart_permission.md",
+  "date": "2026-04-12",
+  "type": "feedback",
+  "desc": "User grants permission to restart bot when needed. LLM credits not funded yet \u2014 no LLMs for ~48h. Pure mechanical trading.",
+  "bytes": 534,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "User explicitly granted permission to restart the bot when needed for code changes.",
+   "Why:** Autonomous sessions need ability to deploy fixes without waiting for user.",
+   "How to apply:** Can kill and restart the bot process freely. Always verify no open positions first. Always confirm LLM_MODE=0 (no LLM credits for next ~48h as of 2026-04-12)."
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_llm_first_wiring_2026_04_12.md",
+  "date": "2026-04-12",
+  "type": "project",
+  "desc": "Fixed evaluate_raw() solo signal gap + enriched LLM-first context with edge_data, reflection, consecutive_losses. When LLM_FIRST_MODE=true, LLM sees everything.",
+  "bytes": 1389,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Apr 12, 2026: Completed the LLM-first architecture wiring.",
+   "Changes made:",
+   "1. `evaluate_raw()` in ensemble.py now uses min_votes=1 (solo signals pass through to LLM)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_signal_visibility_2026_04_12.md",
+  "date": "2026-04-12",
+  "type": "project",
+  "desc": "Only 79 of 1,298 signals reach the LLM. 18 quality filters kill signals pre-LLM. Fix exists in codebase (_process_symbol_llm_first). Architecture redesign needed.",
+  "bytes": 1547,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Apr 12, 2026: Critical discovery \u2014 the LLM only sees 6.1% of all strategy signals.",
+   "The fix exists**: `_process_symbol_llm_first()` in multi_strategy_main.py line 6166, with `SafetyFilterChain` (5 hard gates only) in signal_pipeline.py:1277, and `evaluate_raw()` in ensemble.py. This is 70% of the solution \u2014 needs",
+   "Reduced BB+CS redundancy penalty from 15% to 5% (was blocking proven 2-agree signals below floor)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_wr_poisoning_fix_2026_04_12.md",
+  "date": "2026-04-12",
+  "type": "project",
+  "desc": "Fixed 12 files where WR thresholds were centered on 50% instead of system's 35% baseline. Every feedback loop was self-sabotaging profitable setups.",
+  "bytes": 1351,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "Root cause**: All feedback loops used win rate centered on 50% as \"neutral\". The system runs at 35% WR with 2:1 payoff ratio \u2014 this made every symbol, regime, and strategy score as \"losing\", even profitable ones. Quality scores cr",
+   "Key design principle**: Use PnL-per-trade as primary feedback signal, not WR. A $33 trailing win at 35% WR should earn trust. A $3 loss should penalize less than a $50 loss. WR is only useful relative to the 35% system baseline.",
+   "How to apply**: Any future feedback mechanism MUST use PnL-based scoring or WR centered on 35% (not 50%). Report in bot/data/analysis/WR_POISONING_FIX_REPORT.md."
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_blueprint_session_2026_04_13.md",
+  "date": "2026-04-13",
+  "type": "project",
+  "desc": "Applied all 8 LLM blueprint bug fixes, MODE=5, TG copilot, auto-demotion, MFE logging. Website redesign merged.",
+  "bytes": 1784,
+  "pos": 3,
+  "neg": 1,
+  "claim_lines": [
+   "Auto-demotion safety net (bot/llm/auto_demotion.py): demotes MODE 5\u21923 if WR<25%, DD>12%, costs spike. Promotes back when recovered.",
+   "Why:** User funded $10 API credits, previous session wasted them. Triple counting made budget exhaust 3x early. 60% API error rate from oversized max_tokens. 100% veto rate from MODE=2. All fixed now."
+  ],
+  "neg_lines": [
+   "8 Bug Fixes Applied:"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_autonomous_session_2026_04_15.md",
+  "date": "2026-04-15",
+  "type": "project",
+  "desc": "24h autonomous session. 12 concrete findings on why bot is unprofitable. Full report in bot/data/sessions/AUTONOMOUS_SESSION_2026_04_15.md",
+  "bytes": 16983,
+  "pos": 22,
+  "neg": 7,
+  "claim_lines": [
+   "Iteration 4 (18:00 UTC) \u2014 Finding 16: position_manager.py:1215 one-line bug.** Mislabels profitable trailed-SL exits as CLEAN_LOSS. 21 historical wins mislabeled, +$130 mis-counted. True WR 33.9% vs label WR 17.4%.",
+   "Iteration 6 (19:10 UTC) \u2014 Finding 17: sector exposure cap mismatch.** `sector_exposure.py:25-47` tags BTC, ETH, SOL, HYPE all as \"l1\". `SECTOR_CAPS[l1] = 0.60`. User's 8% risk \u00d7 5x leverage = 40% notional per position. Two positio",
+   "Iteration 8 (20:15 UTC) \u2014 BIG WIN, session is going well.** ETH #3 closed TRAILING_WIN +$21.74 (entry 2340.72 \u2192 trail exit 2367.0, 2h 19m hold). Today 6 closed, net +$33.80, equity $535.11, daily_pnl +$35.11, WR20 = 60%. BTC final"
+  ],
+  "neg_lines": [
+   "My first pass said Finding 13 (DynamicTP R:R) was the #1 lever. I was wrong on two levels:",
+   "Iteration 3 (17:20 UTC) \u2014 bot is actually profitable today**: 4 trades closed, net +$11.09. HYPE TRAILING_WIN at +$13.45 (TP1 + trail) covered three tiny losses. This is the bot's intended profile working correctly \u2014 the exit mech"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_sniper_caution.md",
+  "date": "2026-04-17",
+  "type": "feedback",
+  "desc": "User is concerned about sniper re-enable; wants to understand system intricacies deeply before any auto-sniper reactivation",
+  "bytes": 1499,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Why:** Sniper history shows PROMISE (23 trades, +$48.05 net, 34.8% WR but 2.08 R-multiple) but also TAIL RISK (single \u2212$147 loss at 9.7\u00d7 leverage, clustered PnL \u2014 61% came from a single day of April 2). The user is building their "
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_wagmi_differentiation.md",
+  "date": "2026-04-17",
+  "type": "feedback",
+  "desc": "User admires juiceeverything.com's polish but wants to double-down on WAGMI's unique strengths rather than copy their UX or features",
+  "bytes": 2108,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "Why:** Said plainly on 2026-04-17 mid-overnight session after Frontend Phase 2 shipped. JUICE = clean institutional wallet dashboard for automated token management. WAGMI = something different and more. Copying JUICE features verb"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_frontend_build_2026_04_17.md",
+  "date": "2026-04-17",
+  "type": "project",
+  "desc": "JUICE-inspired web dashboard build started 2026-04-17. API server built, Next.js compiles, blueprint written.",
+  "bytes": 1097,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Frontend build started 2026-04-17 inspired by juiceeverything.com (Solana token management platform with clean institutional UI).",
+   "What exists:",
+   "Next.js 14 frontend at `/web/` \u2014 18 pages, 20+ components, builds clean"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_autonomous_work.md",
+  "date": "2026-04-18",
+  "type": "feedback",
+  "desc": "User wants Claude to work autonomously for extended periods, continuously optimizing without waiting",
+  "bytes": 2487,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "2026-04-19 update: Truly continuous.** User said: *\"please make sure you can continue to understand everything I will be back to prompt you in around 18 hours I want you working, digesting, in some fashion the WHOLE time no breaks"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_edge_builder_not_gate_defender.md",
+  "date": "2026-04-18",
+  "type": "feedback",
+  "desc": "User rejects \"outright ban\" framing; prefers mining losing cells for sub-conditions that win rather than blocking whole categories",
+  "bytes": 2049,
+  "pos": 1,
+  "neg": 1,
+  "claim_lines": [
+   "When a cell shows poor WR (e.g., HYPE LONG illiquid = 7.7% WR), DO NOT default to \"ban the cell\"",
+   "6. Ship only if retained-WR \u2265 60% and n_retained \u2265 5"
+  ],
+  "neg_lines": [
+   "Why:** user is an edge-builder, not a gate-defender. The data we have is rich enough to find sub-conditions within losing cells. A blanket ban loses the few trades that DID work \u2014 we want the micro-filter that keeps the winners an"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "feedback_quant_grade_rigor.md",
+  "date": "2026-04-18",
+  "type": "feedback",
+  "desc": "User wants every analysis, discovery, and creation at institutional-quant rigor \u2014 not descriptive journalism. Non-negotiable before real money.",
+  "bytes": 4453,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "| \"HYPE illiquid WR=7.7%, ban the cell\" | Fit a regime-conditional model with cross-validation; report out-of-sample lift with confidence intervals |",
+   "4. **Bootstrap confidence** \u2014 every PF, WR, Sharpe claim gets a 95% CI. Not \"WR=60%\" but \"WR=60% (CI 45-73%, n=15).\"",
+   "\"N=15 is good enough for WR=60%\" \u2014 needs CI and possibly paper-test gate"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "ig-bot",
+  "file": "feedback_captions_are_intentional.md",
+  "date": "2026-04-19",
+  "type": "feedback",
+  "desc": "Do not propose replacing the hardcoded VIRAL_CAPTIONS or scraped OG captions \u2014 they are a deliberate viral strategy, not a mismatch bug",
+  "bytes": 1173,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "The hardcoded `VIRAL_CAPTIONS` in `config.py` and the exact captions scraped from original posts are **intentional and a key reason posts go viral**. Vince considers captions + posting consistency to be the two main drivers of vir",
+   "Why:** Broad trending-topic captions (Japan work culture, Titanic conspiracy, Rome fire, etc.) paired with meme reels push content to Explore regardless of video subject \u2014 this is the strategy, not an accident. Vince explicitly sa",
+   "How to apply:** Never suggest rewriting, paraphrasing, or \"matching captions to video content.\" Do not propose wiring the poster to use scraped per-video captions as a fix for virality. If a viral/engagement problem comes up, look"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_snap_model_overfit_2026_04_20.md",
+  "date": "2026-04-20",
+  "type": "project",
+  "desc": "ML snap model was overfit to sin/cos hour features, outputting 0.002 for every input at hours 18-23 + 0-4 UTC. Shipped safety clamp \u2014 skip snap branch when output extreme.",
+  "bytes": 1871,
+  "pos": 1,
+  "neg": 3,
+  "claim_lines": [
+   "Impact:** For 14 of 24 hours, every signal gets `snap=0.2%` \u2192 ml_confidence drops to ~28% \u2192 adjusted conf pulled from 67% raw to 55%. Feedback floor (65-70%) then blocks everything."
+  ],
+  "neg_lines": [
+   "The bug (found 2026-04-20 21:00 UTC):** `bot/ml/learner.py:predict_direction` uses a logistic regression with 9 features. Weights learned: `sin(hour) = +2.42`, `cos(hour) = -2.29`, `bias = -2.74`. At hours 18-23 and 0-4 UTC, the t",
+   "Why:** Training data (129 outcomes) had heavy loss concentration at those hours during the profit-lock bug era. Model learned the time-of-day effect at the cost of all other features."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_chart_thread_generator.md",
+  "date": "2026-04-21",
+  "type": "project",
+  "desc": "Two Python scripts that pull live OHLCV from Hyperliquid (CCXT) and emit PNG charts + thread-ready content. Reusable for any symbol.",
+  "bytes": 1908,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "How to run:** `cd bot && python tools/btc_thread_gen.py`. Takes ~15 seconds. Pulls live data each run."
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_neural_network_session_2026_04_21.md",
+  "date": "2026-04-21",
+  "type": "project",
+  "desc": "Committee expansion, thesis accountability, signal pipeline gate, thread generator",
+  "bytes": 1747,
+  "pos": 5,
+  "neg": 0,
+  "claim_lines": [
+   "Full neural network session. 9 commits shipped.",
+   "What shipped (ordered):",
+   "1. thesis_tracker.py \u2014 forward-grading: every publish logged, grades resolved N hours later (direction, TP1, R-move)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_autonomous_overnight_2026_04_23.md",
+  "date": "2026-04-23",
+  "type": "project",
+  "desc": "Fixed 5 critical feedback loop gaps. Per-symbol weights, regime feedback, confidence floor, hold-time rules all working. IC tracker was already wired.",
+  "bytes": 4159,
+  "pos": 3,
+  "neg": 2,
+  "claim_lines": [
+   "Impact:** regime_trend now weights separately per symbol (BTC 80%, ETH 40% instead of global 60%)",
+   "Impact:** Per-regime confidence floors and risk multipliers now adaptable (trending floor=60%, ranging floor=70%)",
+   "Problem:** AdaptiveConfidenceFloor existed but record_outcome() never called, static floor=55% ignored"
+  ],
+  "neg_lines": [
+   "Impact:** System now learns optimal hold windows per regime and prevents noise trading",
+   "Hold-time rules:** Prevents early exits on short trades (<min_hold), reduces noise WR"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_causal_enrichment_2026_04_23.md",
+  "date": "2026-04-23",
+  "type": "project",
+  "desc": "Mechanistic hold-time analysis, causal insights, graduated rules, bug fixes, \u00a714 enricher",
+  "bytes": 3053,
+  "pos": 4,
+  "neg": 9,
+  "claim_lines": [
+   "87% of early SL hits (<2h) in noise regimes (illiquid=27, unknown=18, ranging=8 out of 61)",
+   "Hold-time table: <1h 29% WR -$4.29avg \u2192 4h-8h 50% WR +$10.71avg \u2192 12h+ 73% WR +$4.95avg",
+   "1. 87% early SL hits in noise regimes \u2014 trending is safe for early hold"
+  ],
+  "neg_lines": [
+   "87% of early SL hits (<2h) in noise regimes (illiquid=27, unknown=18, ranging=8 out of 61)",
+   "Mechanism: intraday microstructure creates false stop triggers in noise regimes; trending regime needs 3-4h to develop direction beyond noise"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_neural_enrichment_2026_04_23.md",
+  "date": "2026-04-23",
+  "type": "project",
+  "desc": "Phase 11-12 \u2014 learning memory closure, 13-source enricher, deep analyst, 8 live insights",
+  "bytes": 1998,
+  "pos": 4,
+  "neg": 0,
+  "claim_lines": [
+   "\u00a712: Confidence calibration (confidence floor 53%, strategy floors, per-symbol/regime adjustments)",
+   "1. Hold 4h-12h: 53% WR +$8.37 (never exit before 4h)",
+   "2. Trending only profitable regime (52% WR, all others lose)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_continuous_audit.md",
+  "date": "2026-04-24",
+  "type": "project",
+  "desc": "LLM-powered self-paced loop for continuous trade analysis, edge mining, and improvement discovery",
+  "bytes": 1749,
+  "pos": 3,
+  "neg": 1,
+  "claim_lines": [
+   ">10% WR degradation in any symbol/regime \u2192 urgent review"
+  ],
+  "neg_lines": [
+   "Feedback loop broken (outcome recorded but floor didn't adjust) \u2192 technical investigation"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "gaps_found_overnight_2026_04_24.md",
+  "date": "2026-04-24",
+  "type": "project",
+  "desc": "Comprehensive scan of all feedback/learning systems. 5 gaps fixed, 8+ more identified for next iteration.",
+  "bytes": 5255,
+  "pos": 9,
+  "neg": 0,
+  "claim_lines": [
+   "Status: 60% wired (missing signal_quality, parameter_tuner, continuous_backtest)",
+   "Status: 70% wired",
+   "Status: 40% wired (missing auto layers)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "ig-bot",
+  "file": "project_motion_bot_pitfalls.md",
+  "date": "2026-04-24",
+  "type": "project",
+  "desc": "Hard-won lessons from the 2026-04-15 caption/cover/verification refactor. Read before touching bluestacks_poster.py.",
+  "bytes": 9418,
+  "pos": 2,
+  "neg": 3,
+  "claim_lines": [
+   "## Verified post-share button coords (1080x1920)",
+   "Confirmed via uiautomator dump on 2026-04-15:"
+  ],
+  "neg_lines": [
+   "`success.txt` is written before any verification, so it logs false positives. The truth source is `get_profile_post_count()`. Per-post in-flow check uses `find_element(text=\"Save draft\")` \u2014 if found, we're still on the share scree",
+   "Fix:** `ensure_screen_rendering()` at the start of every `post_reel()`. It calls `is_screen_rendering()` which samples a 20x20 grid on a fresh screencap and fails below brightness 3/255. If black, calls `focus_bluestacks_window()`"
+  ]
+ },
+ {
+  "silo": "ig-bot",
+  "file": "project_spong_account.md",
+  "date": "2026-04-24",
+  "type": "project",
+  "desc": "Second IG account on the bot \u2014 @juice.ysaladtoppers (display name \"Spong\"), prioritized for coin creator-payouts",
+  "bytes": 1963,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "How to apply:** When working on posting config, default to juicy behavior (watermarks off, one caption, ~hourly burst) unless user explicitly asks for motion. Both `bluestacks_poster.py` and `watchdog.py` now read `VIDEO_DIR` via "
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_omniscient_fix_2026_04_25.md",
+  "date": "2026-04-25",
+  "type": "project",
+  "desc": "Fixed process leaks (61 runaway processes), added clean entry point with locking, verified omniscient quant system works end-to-end",
+  "bytes": 3195,
+  "pos": 2,
+  "neg": 3,
+  "claim_lines": [
+   "BTC: SIGNAL - BUY @ 77471.0000 (conf=80%)",
+   "Pattern: 'BTC_LONG_16h' (67% WR) | Leverage: 5.5x",
+   "ETH: SIGNAL - BUY @ 2314.7000 (conf=80%)"
+  ],
+  "neg_lines": [
+   "Settings.json had invalid hooks (pre-edit/post-edit)",
+   "Removed invalid `pre-edit` and `post-edit` hooks from `.claude/settings.json`"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_critical_fixes_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "Three critical fixes for $154 loss root causes - quality scorer wiring, signal dedup, confidence floor. All deployed and verified working.",
+  "bytes": 2218,
+  "pos": 5,
+  "neg": 0,
+  "claim_lines": [
+   "186 trades, -$154.22 net loss, 29% WR. Root causes:",
+   "3. Low-confidence signals (25-31%) using high leverage (5.6x)",
+   "<40% confidence: 2x leverage max"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_local_neural_integration_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "Successfully wired 9-agent Claude neural system locally into bot pipeline. Zero API costs, 100% test validation, autonomous monitoring running.",
+  "bytes": 2655,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "Risk Agent**: Votes VETO on <45% confidence, CAUTION on 45-60%, ALLOW on 60%+",
+   "Consensus Logic**: ANY veto = VETOED; all allow = APPROVED; mixed = APPROVED@85% confidence",
+   "Test 1: Good Signal (65% conf, 2-agree, trending)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_neural_network_audit_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "Critical architectural gap found - signal quality measured but not used in exit logic. 8 layers, only 1-2 quality-aware. SHORTs ignored because exit profile not quality-based.",
+  "bytes": 3658,
+  "pos": 2,
+  "neg": 4,
+  "claim_lines": [
+   "BUT: Position uses MEDIUM profile (50% close at TP1, TP1 at 1.0x ATR = $2348.36)",
+   "SHORTs at 41.7% WR \u2192 0.65 + 0.417 = 1.067 (BOOST, not penalty!)",
+   "Should be: `1.0 + (win_rate - 0.35)` to center on 35% baseline"
+  ],
+  "neg_lines": [
+   "3. \u274c **Exit Profile Selection** \u2014 BROKEN, strategy-based only",
+   "Exit Agent says \"HOLD, trailing stop captures max profit\" (wrong for weak signals)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_neural_network_comprehensive_audit_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "All 8 research streams completed. 2,400+ lines of design specs covering exit profiles, micro-exits, stratified agents, position cycling, scaling, risk gating, formula analysis, architecture maps.",
+  "bytes": 7183,
+  "pos": 8,
+  "neg": 0,
+  "claim_lines": [
+   "Impact: Weak signals to SCALP (+40% profit capture), strong signals to TREND (+50% hold extension)",
+   "Profit-capture trigger design for weak signals (tiers: 30% at +$3, 60% at +$5, 100% at +$1 after 60min)",
+   "Measured re-entry friction across 30 trades: avg -$14.50/re-entry, 8.2% portfolio drag"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_neural_network_deployment_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "6-hour implementation of quality-aware neural network (Phases 2, 3A, 3B, 5). Code deployed successfully but bot crashes after 3-5 minutes. Investigating instability.",
+  "bytes": 3685,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "Phase 3A: Micro-exit triggers (30-60% closes on weak signals with profit)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_omniscient_critical_fix_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "Fixed omniscient_integrated to check both LONG/SHORT patterns, not guess direction",
+  "bytes": 2661,
+  "pos": 1,
+  "neg": 1,
+  "claim_lines": [
+   "Bot was generating 0% WR (25 consecutive losses) on BTC SHORT signals during bad hours (04:38-04:46 UTC).",
+   "4. Recover from 0% WR toward 50%+ (pattern validation says 55%+ base patterns exist)"
+  ],
+  "neg_lines": [
+   "3. Trading time-specific patterns (e.g., \"BTC_SHORT_22h_day6\") during wrong times"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_omniscient_integration_2026_04_26_phase2.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "Completed all 5 systems integration + critical module cache fix. Trade forensics, risk aggregator, causal analyzer now wired into live bot.",
+  "bytes": 5811,
+  "pos": 4,
+  "neg": 2,
+  "claim_lines": [
+   "Continued from overnight system build. **Focus**: Activate 5 critical systems built yesterday + fix critical bug causing 0% WR despite pattern time-gating fix."
+  ],
+  "neg_lines": [
+   "Continued from overnight system build. **Focus**: Activate 5 critical systems built yesterday + fix critical bug causing 0% WR despite pattern time-gating fix.",
+   "## Critical Bug Fixed"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_omniscient_phase2_continuation_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "Debugged and verified all 5 systems integration. Fixed risk aggregator firing, confirmed causal analyzer + pattern discovery working. System ready for good trading hours at 13:00 UTC.",
+  "bytes": 7413,
+  "pos": 8,
+  "neg": 0,
+  "claim_lines": [
+   "Top pattern currently at 0% WR (data from new session, need live trades)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_omniscient_scale_fix_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "Critical fix for overall_confidence scale mismatch - root cause of 0% WR",
+  "bytes": 1994,
+  "pos": 0,
+  "neg": 1,
+  "claim_lines": [
+   "omniscient_decision_engine returns `overall_confidence` as a **decimal on 0-1 scale** (e.g., 0.70 = 70%)",
+   "Result: Signal created with confidence=0.70 (displayed as 1% in logs, below 60% floor)",
+   "Verification**: Logs now show \"overall_confidence=0.6976 -> confidence=70%\""
+  ],
+  "neg_lines": [
+   "## The Bug: Overall Confidence Scale Mismatch"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_omniscient_systems_build_2026_04_26.md",
+  "date": "2026-04-26",
+  "type": "project",
+  "desc": "Autonomous audit discovered 13 missing systems. Built 5 critical ones in 1 session - pattern time-gating fix + 4 new deep analyzers. Pattern time-gating deployed and validating in live logs.",
+  "bytes": 3778,
+  "pos": 7,
+  "neg": 1,
+  "claim_lines": [
+   "Root cause of 0% WR fixed. System now rejects patterns at wrong UTC hours."
+  ],
+  "neg_lines": [
+   "Root cause of 0% WR fixed. System now rejects patterns at wrong UTC hours."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_session_2026_04_27.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Full autonomous session implementing Phase 0-5 roadmap. Diagnosed omniscient failure, built Phase 1-3 infrastructure, identified Phase 0 blocker (signal EV gate).",
+  "bytes": 6760,
+  "pos": 5,
+  "neg": 1,
+  "claim_lines": [
+   "Phase 0 Goal**: 20+ mechanical trades with WR >= 50%",
+   "Bot generating signals: Bollinger Squeeze (70% confidence)",
+   "Signals rejected for negative EV (-0.4751) + low win prob (28%)"
+  ],
+  "neg_lines": [
+   "Root Cause**: Confidence bypass bug + hallucinated patterns + unvalidated sample sizes"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_session_2026_04_27_continued.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Phase 0 baseline collection, gate relaxation analysis, diagnostic findings, decision to WAIT for market improvement",
+  "bytes": 5347,
+  "pos": 1,
+  "neg": 1,
+  "claim_lines": [
+   "Confidence: 70%",
+   "Win probability: 28% (calculated from fee-adjusted R:R)",
+   "Win Rate: 0%** (all 20 trades were losses)"
+  ],
+  "neg_lines": [
+   "4. **Conclusion**: Not a bug\u2014system being appropriately conservative"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_session_2026_04_27_phase0.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Complete Phase 0 baseline collection with full neural network infrastructure ready (Phase 1-3 plans documented)",
+  "bytes": 4848,
+  "pos": 5,
+  "neg": 0,
+  "claim_lines": [
+   "Win rate: 0.0%",
+   "Auto-advance to Phase 1 when Phase 0 passes (20+ trades, WR >= 50%)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_local_neural_network_activated_2026_04_27.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Dual-mode LLM client (local neural network + API fallback) deployed. No API keys required.",
+  "bytes": 5548,
+  "pos": 4,
+  "neg": 0,
+  "claim_lines": [
+   "Check agent accuracy metrics (win_rate > 50%?)",
+   "Targets omniscient_integrated (0% WR in illiquid/ranging)",
+   "Expected improvement: 25.4% \u2192 45-55% WR"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_phase1_omniscient_filtering_2026_04_27.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Root cause (omniscient_integrated 0% WR in illiquid) and Phase 1 LLM filtering solution fully prepared. Awaiting ANTHROPIC_API_KEY.",
+  "bytes": 5479,
+  "pos": 1,
+  "neg": 3,
+  "claim_lines": [
+   "Impact**: Phase 0 25.4% WR \u2192 Phase 1 45-55% WR (expected +20-30%)",
+   "Problem**: Phase 0 mechanical ensemble degrading from 50% WR (2026-04-22) to 25.4% WR (current).",
+   "Root Cause**: omniscient_integrated strategy generating **0% WR on 47 consecutive trades** in illiquid/ranging regimes."
+  ],
+  "neg_lines": [
+   "Why it matters**: omniscient_integrated is dominating the ensemble voting because it has highest weight (1.5x), but it's being applied in wrong market regimes.",
+   "FAILED gate (need 50%+)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_phase1_v2_deployed_2026_04_27.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Phase 1 LLM filtering activated. Omniscient_integrated regime-conditional rules applied to Trade/Critic agents. Expected improvement 26.8% \u2192 50%+ WR.",
+  "bytes": 5834,
+  "pos": 6,
+  "neg": 0,
+  "claim_lines": [
+   "\u2713 APPROVE in: trending_bear (75% WR), trending_bull (65% WR)",
+   "\u2717 VETO in: illiquid, low_liquidity, range, consolidation (0% WR)",
+   "Phase 0 Baseline**: 26.8% WR (205 trades, 55 wins, 150 losses)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_phase2_critical_snapshot_issue_2026_04_27.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Deep analysis revealed deployed regime extraction code won't work because (1) snapshots are truncated at 1000 chars with incomplete JSON, (2) global \"regime\" field doesn't exist in snapshot structure ",
+  "bytes": 5819,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "Phase 1 filtering's 100% veto rate is not just due to missing regime extraction. **Deeper investigation reveals two blocking issues**:"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_phase2_root_cause_regime_detection_2026_04_27.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Phase 1 filtering vetoing 100% of signals due to missing regime context. Root cause identified and fixed in llm/client.py and claude_neural_monitor.py.",
+  "bytes": 5907,
+  "pos": 8,
+  "neg": 1,
+  "claim_lines": [
+   "100% of signals being VETOED (285/285 decisions)",
+   "Confidence collapsed to 0% on all signals",
+   "100% veto rate"
+  ],
+  "neg_lines": [
+   "100% consistency proves the system is deterministic\u2014not broken, just missing data."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_phase2_root_cause_verification_2026_04_27.md",
+  "date": "2026-04-27",
+  "type": "project",
+  "desc": "Code deployed successfully (f74255e). Verified 100% veto pattern is due to missing regime data. Both bot and neural monitor processes need restart to pick up code changes (Python import caching).",
+  "bytes": 5777,
+  "pos": 4,
+  "neg": 2,
+  "claim_lines": [
+   "100% identical voting pattern: regime=CAUTION, trade=VETO, risk=VETO, critic=ALLOW",
+   "100% \"unknown\" regime classification",
+   "100% 0-10% confidence (all marked as 0%)"
+  ],
+  "neg_lines": [
+   "\u2713 System is deterministic (not broken/random)",
+   "Evidence**: 1,449 decisions with 100% uniform pattern (deterministic, not broken)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "audit_week3_critical_findings_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "CRITICAL: Deep memory context injection infrastructure (4 functions) defined but completely unused in agent pipeline. Dead code risk.",
+  "bytes": 4726,
+  "pos": 2,
+  "neg": 1,
+  "claim_lines": [
+   "[ ] All 4 context injection functions called at least once in live agent pipeline",
+   "[ ] decisions.jsonl \u2192 patterns.jsonl data flow verified in integration test"
+  ],
+  "neg_lines": [
+   "## Finding #3: Risk Memory Injection Has Wrong Confidence Default"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_learning_activated_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Cycle 1 of 5-cycle autonomous learning loop launched. Backtest running for 365-day year-long validation. Agents will learn exact system wiring through complete signal context analysis.",
+  "bytes": 4548,
+  "pos": 5,
+  "neg": 1,
+  "claim_lines": [
+   "Mechanical gates killed 92% of signals (2,784 \u2192 199)",
+   "100% WR on small sample = statistical illusion (-9.93% equity)",
+   "\"ETH_LONG confidence 70%+ = 65% WR, we've seen this 47 times\""
+  ],
+  "neg_lines": [
+   "Agents couldn't learn from filtered noise"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_learning_cycles_2_5_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Full 5-cycle learning orchestrator running. Cycle 1 revealed hidden alpha in disabled strategies. Cycles 2-5 will empirically discover conditional edge patterns across 1,825 days of data.",
+  "bytes": 4236,
+  "pos": 4,
+  "neg": 2,
+  "claim_lines": [
+   "Results**: 2,783 signals, 28 trades, +16.3% equity, 100% WR",
+   "Monte Carlo zones**: 57% WR on 408 missed signals (+2,086% alpha potential)",
+   "Regime_trend**: 42% WR on 814 missed signals (+1,373% alpha potential)"
+  ],
+  "neg_lines": [
+   "Mechanical Gates** (Failed):",
+   "6 trades = statistical noise (100% WR is luck)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_learning_session_restart_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Restarted after power loss. Cycles 1-2 complete with hidden alpha extraction. Cycles 3-5 running. Full data pipeline built.",
+  "bytes": 5953,
+  "pos": 4,
+  "neg": 3,
+  "claim_lines": [
+   "84 total trades executed (100% WR across all)",
+   "+$4,892.99 net PnL (+49.3% on $10k equity)",
+   "monte_carlo_zones:  57% WR on 408 missed signals  \u2192 +2,087% alpha potential"
+  ],
+  "neg_lines": [
+   "Multi_Tier_Quality: 35-42% WR (likely overfit)",
+   "Overfit Detection: Std dev > 5% = noise"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_learning_session_restart_2026_04_28_CONTINUED.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Computer power loss during Cycle 3 (10:16 UTC). Restarted at 10:30 UTC. Cycles 1-3 analyzed. Cycles 4-5 running in background. Full deep quantification complete.",
+  "bytes": 7005,
+  "pos": 6,
+  "neg": 0,
+  "claim_lines": [
+   "Cycle 4**: ~40% complete (ETA 11:05 UTC)",
+   "Executed**: 84 trades (1.0% conversion)",
+   "Win Rate**: 100% (all profitable)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "curator_system_backtest_calibration.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Signal curator historical win rate table updated from 60-day backtest. SOL_SHORT +$4,608, HYPE_SHORT -$5,592, BTC weak. Curator now ranks by backtest-validated profit, not generic assumptions.",
+  "bytes": 2844,
+  "pos": 3,
+  "neg": 0,
+  "claim_lines": [
+   "Overall**: 55.2% WR, -$3,836 net P&L (win rate \u2260 profitability)",
+   "SOL**: 58.4% WR, +$3,295 P&L \u2705 (63.4% on shorts)",
+   "HYPE**: 55.1% WR, -$5,344 P&L \u26a0\ufe0f (52.8% on shorts, bad R:R)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "forensic_audit_complete_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Instance-level forensic analysis of entire signal pipeline. Two separate datasets. Outcome data only for sniper. Key insight - need outcome feedback wiring.",
+  "bytes": 4507,
+  "pos": 0,
+  "neg": 1,
+  "claim_lines": [
+   "Bot signals: 83,194 (79% pass gates, 0% have outcome data)",
+   "Sniper signals: 40,519 (98.5% profitable, full PnL data)",
+   "Regime matters**: trend:HYPE = 99.2% WR, consolidation = 100%"
+  ],
+  "neg_lines": [
+   "\u274c Feedback loop: broken"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "gate_wiring_deployment_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "4-layer professional gate stack fully implemented and verified. 30-day calibration done, 90-day extended backtest running. Wiring perfect, deployment ready pending gate configuration decision.",
+  "bytes": 4372,
+  "pos": 3,
+  "neg": 0,
+  "claim_lines": [
+   "Layer 3: Confidence distribution gate (70-79% rejection, line 544)",
+   "BASELINE (disabled): 2 trades, 0% WR, -$35.56",
+   "L1 only: 2 trades, 0% WR (no HV trades in window)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "integration_plan_weeks3-5_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Step-by-step plan to integrate deep memory context, specialist agents, and canary substrate into live agent system",
+  "bytes": 6935,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Total**: 111 tests passing, 0% integration"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "kb_deep_integration_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Maximum KB depth with 5-component auditing system deployed. Symbol-specific, regime-specific, cross-agent coherence validation live.",
+  "bytes": 6911,
+  "pos": 5,
+  "neg": 0,
+  "claim_lines": [
+   "BTC: Conservative thresholds (22% profitable)",
+   "ETH: Medium thresholds (32.7% profitable)",
+   "SOL: Aggressive thresholds (42% profitable)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "kb_integration_deployed_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Empirical knowledge base context injection now live in agent pipeline (Apr 28, 2026)",
+  "bytes": 3838,
+  "pos": 5,
+  "neg": 0,
+  "claim_lines": [
+   "Expected GO WR: 50.0%",
+   "Expected SKIP WR: 22.1%",
+   "Status: 0% drift over 1000+ cycles"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase0_audit_summary_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Complete findings from 3-hour retrospective audit of Weeks 3-5 components. All tests pass, ready to wire into main pipeline.",
+  "bytes": 4873,
+  "pos": 4,
+  "neg": 0,
+  "claim_lines": [
+   "1. **Test isolation**: Components have 100% test coverage but 0% integration coverage"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase1_extended_analysis_complete_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Complete historical analysis of omniscient_integrated failure, trade degradation, and architectural issues. Root cause: strategy regime mismatch + bad ensemble weighting.",
+  "bytes": 5410,
+  "pos": 12,
+  "neg": 2,
+  "claim_lines": [
+   "Period 1 (Mar 25-Apr 4)**: +$3,306, 31.7% WR \u2014 PROFITABLE (good R:R)",
+   "Period 5 (Apr 26-27)**: -$2,846, 7.3% WR \u2014 CATASTROPHIC (bad R:R)",
+   "Overall**: 51.7% WR, -$3,477 (lose money despite >50% WR due to unfavorable R:R)"
+  ],
+  "neg_lines": [
+   "4. **Voting assumptions wrong**: \"More strategies = robust\" false when bad strategy has high weight",
+   "### What Failed in omniscient_integrated Integration"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase2_7_completion_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Comprehensive autonomous learning system fully built and validated (Phases 2-7). 6 major infrastructure phases completed with institutional-grade quant validation. Production-ready status achieved.",
+  "bytes": 9960,
+  "pos": 6,
+  "neg": 0,
+  "claim_lines": [
+   "| Regime Backfill | PASS | 100% coverage (83,432 signals), all 4 regimes populated |",
+   "| WR Improvement | PASS | +20.5 points validated (73.7% \u2192 94.1%) \u2713 CONFIRMED |",
+   "| Agent Consistency | NEEDS_ATTENTION | 25% agreement (1/4 checks), 3 contradictions resolved |"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase2_blocker_fixed_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "CRITICAL blocker fixed - snapshots now include complete regime field for LLM agents. System can now proceed with Phase 2 LLM integration for entry decisions.",
+  "bytes": 5787,
+  "pos": 9,
+  "neg": 1,
+  "claim_lines": [
+   "CONFIDENCE_FLOOR=55%     (lowered from 60: HTF penalty relief)",
+   "MIN_SIGNAL_EV=0.08       (fee-drag aware, fee awareness ~45 bps)",
+   "BTC_ATR_MULTIPLIER=0.875 (50% reduction from 1.75, validated +$45 improvement)"
+  ],
+  "neg_lines": [
+   "### What Was Broken"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase2_phase3_completion_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Regime backfill, agent training, smart gates, validation, learning loop foundation all complete. System ready for autonomous agent learning deployment.",
+  "bytes": 4481,
+  "pos": 0,
+  "neg": 1,
+  "claim_lines": [
+   "Identified critical blocker: bot signals regime field empty (0%)",
+   "Populated regime field for ALL 83,432 bot signals (0% \u2192 100%)",
+   "Distribution: trend 31.7%, consolidation 30.5%, panic 25%, range 12.7%"
+  ],
+  "neg_lines": [
+   "Fewer trades but with much higher signal-to-noise ratio. Agents can learn clear patterns instead of noise."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase4_gates_fix_and_deployment_ready_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "CRITICAL FINDING resolved: Initial Phase 4 run failed due to gates rejecting 98% of signals. Root cause found (gates too aggressive for seasonal window). Solution: Two-track approach \u2014 paper trading N",
+  "bytes": 5009,
+  "pos": 5,
+  "neg": 0,
+  "claim_lines": [
+   "Rejected: 942 signals (98.3% rejection rate)",
+   "Result: -3.13% drawdown, 0% WR, -$20.54 net PnL",
+   "The gates rejected signals with 62-66% confidence that would have won:"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase4_validation_launched_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Phase 4 of extended KB validation started 2026-04-28. Tests top-5 configurations across 6-month window (Oct 31, 2025 - Apr 28, 2026) to validate system robustness across seasonal market changes. Phase",
+  "bytes": 3583,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "| 1 | 30-day | 2-4h | 10,800 | 55.4% | Initial validation |",
+   "| 2 | 60-day | 2-4h | 21,600 | 57.9% | 2.5% improvement |",
+   "| 3 | 90-day | 4-8h | 32,400 | 59.1% | 1.2% more improvement |"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase_a5_breakthrough_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Implemented data-driven mechanical gates (regime/setup/hour) \u2192 +$3.2k swing (from -$1.3k to +$2k)",
+  "bytes": 2517,
+  "pos": 5,
+  "neg": 3,
+  "claim_lines": [
+   "Result**: +252% improvement (net PnL swing of +$3,237.87)",
+   "1. **Regime gating**: Skip ranging (0% WR, -$1,234) and consolidation (0% WR, -$1,073) markets",
+   "2. **Setup type gating**: Skip mean_reversion setups (0% WR, -$1,272)"
+  ],
+  "neg_lines": [
+   "Instead of trying to improve agents (which added latency and confusion to a broken pipeline), Phase A.5 identified and fixed the **mechanical** problems discovered in Phase A empirical testing:",
+   "Phase A showed that **agents made performance worse**, not better. Root cause: system was trading in fundamentally unprofitable conditions (wrong regimes/setups/hours). Adding agents to a broken pipeline = garbage in, garbage out."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase_a5_reality_check_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "100% WR on 6 trades over year proves gates are too aggressive. Shift focus to agent learning, not mechanical filtering.",
+  "bytes": 2976,
+  "pos": 2,
+  "neg": 4,
+  "claim_lines": [
+   "Finding**: 100% WR was statistical illusion, not real edge",
+   "12 trades, 100% WR, +$1,955 net PnL",
+   "6 trades, 100% WR, but **-9.93% equity decline"
+  ],
+  "neg_lines": [
+   "# Phase A.5 Reality Check: Why Mechanical Gates Failed",
+   "## Why Mechanical Gates Failed"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase_a_discovery_session_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "Phase A backtests executing with full 9-agent CLI coaching. Discovered critical gate issues, disabled dead-weight strategy, enabled CLI routing. Learning framework established for continuous discovery",
+  "bytes": 5752,
+  "pos": 10,
+  "neg": 1,
+  "claim_lines": [
+   "Key Finding**: **Gates have negative value (-763%)",
+   "bollinger_squeeze**: PF=2.22, 57% WR, +$725.57 \u2713 PROFITABLE",
+   "regime_trend**: 100% WR in trending, 0% in ranging (regime-specific)"
+  ],
+  "neg_lines": [
+   "Fixed invalid flags: --no-session-persistence, --tools"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_week4_comprehensive_agents_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "All 6 new specialist agents built and integrated. Learning loop closure ready for Week 5 Canary.",
+  "bytes": 5651,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "`OpportunityProposal`: pattern_name, setup_description, backtest_wr, sample_size, confidence, proposed_action (\"add_to_ensemble\" >80% or \"alert_only\" <80%)",
+   "Output**: Confidence reduction (0-100%), severity level (critical/high/moderate/low/none), veto recommendation",
+   "`integrate_opportunist_agent()`: Run pattern discovery, auto-add >85% to ensemble, queue 75-85% for review"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "project_week5_canary_deployment_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "W5-A Canary Substrate complete (16 tests). Shadow Mode, Phase Gates, Gradual Rollout infrastructure ready.",
+  "bytes": 3643,
+  "pos": 4,
+  "neg": 0,
+  "claim_lines": [
+   "1. **SHADOW** (0% influence): Run agents in parallel, log decisions, don't trade",
+   "2. **CANARY** (5% influence): Route 5% of signals to new agents for testing",
+   "3. **RAMP** (50% influence): Gradually increase agent influence to 50%"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "wiring_breakthrough_4layer_gates_2026_04_28.md",
+  "date": "2026-04-28",
+  "type": "project",
+  "desc": "CRITICAL FIX IDENTIFIED \u2014 Gates are not sophisticated enough for threshold 20-25 strategy. Need 4-layer stack (regime+setup+confidence+risk) instead of confidence-floor-only. Gated=4 trades, Raw=88 tr",
+  "bytes": 4291,
+  "pos": 3,
+  "neg": 3,
+  "claim_lines": [
+   "Current State**: Configuration changed (KB threshold 20\u219225) but gates NOT updated. Result: gates either reject 99% of signals or accept 59% WR losers.",
+   "WR: 100% (+$2,159)",
+   "Gate kill: 99.6% rejection rate"
+  ],
+  "neg_lines": [
+   "Problem: Accepts losers from ranging/high_vol, wrong confidence bands",
+   "## Why:** Initial gate adjustment (confidence floor 60\u219230) didn't work because it was only addressing 1 dimension. The profitable backtest pattern filters on 4 dimensions simultaneously: regime + setup type + confidence distributi"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_aggressive_trading_ready_2026_04_29.md",
+  "date": "2026-04-29",
+  "type": "project",
+  "desc": "Complete autonomous execution system deployed. Trades aggressively on proven strategies (BB 80% WR, VC 82% WR). Fee drag fixed (233% \u2192 11.6%). Ready for 24/7 operation.",
+  "bytes": 7299,
+  "pos": 7,
+  "neg": 1,
+  "claim_lines": [
+   "### Fee Drag Root Cause (233% \u2192 11.6%)",
+   "Problem**: 754 signals, 28 trades, 33% WR, fee drag killing profitability",
+   "1. Disabled regime_trend (0% WR, -$996 loss)"
+  ],
+  "neg_lines": [
+   "This selectivity is GOOD (not a bug)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "curator_system_60d_validation_complete.md",
+  "date": "2026-04-29",
+  "type": "project",
+  "desc": "60-day backtest on BTC,ETH,SOL completed. Curator ranking works, but ensemble gate blocks 450+ high-edge signals. Solo strategies (regime_trend +504% alpha, MC +150%) being killed by 2-vote requiremen",
+  "bytes": 2851,
+  "pos": 5,
+  "neg": 1,
+  "claim_lines": [
+   "Executed**: 4 trades, 100% WR, +$1,821.30",
+   "Strongest symbol**: SOL (100% execution, all winners)",
+   "Gate accuracy**: 55.9% (gates hurt profitability)"
+  ],
+  "neg_lines": [
+   "2. Solo signal profitability: regime_trend +504% alpha is not noise"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "ensemble_gate_relaxation_april29_2026.md",
+  "date": "2026-04-29",
+  "type": "project",
+  "desc": "Deployed solo strategy gate relaxation based on 60-day backtest alpha analysis. regime_trend (+504% alpha) and monte_carlo_zones (+150% alpha) now allowed at high confidence thresholds. Curator signal",
+  "bytes": 2992,
+  "pos": 4,
+  "neg": 0,
+  "claim_lines": [
+   "regime_trend solo signals: 262 missed trades, 39% WR, **+504.3% alpha** \u2192 blocked",
+   "monte_carlo_zones solo: 23 missed trades, 65% WR, **+150.5% alpha** \u2192 blocked",
+   "285 total insufficient_votes rejections at 59% accuracy (gates hurt profitability)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "ensemble_gate_relaxation_backtest_results_2026_04_29.md",
+  "date": "2026-04-29",
+  "type": "project",
+  "desc": "Post-deployment 60-day backtest revealed gate relaxation was HARMFUL. 802 trades, -$3,836 net P&L. HYPE lost $5,983 on 341 trades (avg loss 55% > avg win). Gate-filtering was PROTECTING the system fro",
+  "bytes": 2821,
+  "pos": 1,
+  "neg": 1,
+  "claim_lines": [
+   "Win Rate**: 55.2% (443W / 359L)",
+   "| **HYPE** | 341 | 55.1% | **-$5,983.50** | Catastrophic |",
+   "| **SOL** | 255 | 58.4% | +$2,695.07 | Profitable |"
+  ],
+  "neg_lines": [
+   "Deployment Status**: ROLLED BACK (gate relaxation removed)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "ensemble_gate_relaxation_validation_2026_04_29.md",
+  "date": "2026-04-29",
+  "type": "project",
+  "desc": "Gate relaxation deployment confirmed working - ETH regime_trend solo (78% conf) now passing and ranking #2 in curator. Three autonomous loops running stably (Real Hyperliquid cycle 5271, Fresh Validat",
+  "bytes": 3074,
+  "pos": 6,
+  "neg": 0,
+  "claim_lines": [
+   "regime_trend: 75% minimum (unblocked regime_trend solos)",
+   "monte_carlo_zones: 60% minimum",
+   "bollinger_squeeze: 60% minimum"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase2_backtest_validation_complete_2026_04_29.md",
+  "date": "2026-04-29",
+  "type": "project",
+  "desc": "60-day validation backtest shows +$925.84 P&L (passes), gate accuracy 63.9%, micro-filters ready for paper trading. Key finding: signal throughput (0.2% candle\u2192trade) is limiting factor, not micro-fil",
+  "bytes": 3588,
+  "pos": 3,
+  "neg": 1,
+  "claim_lines": [
+   "| **Win Rate** | 100% (4/4 trades) | \u2713 Perfect |",
+   "| **Gate Accuracy** | 63.9% | \u2713 Protective |",
+   "| **Signal Conversion** | 0.2% (10/4598 candles) | \u26a0 Low |"
+  ],
+  "neg_lines": [
+   "Insight**: Micro-filters work correctly but activate downstream (after ensemble's insufficient_votes gate). Only 0 BTC, 0 SOL signals made it through. This is NOT a micro-filter bug; signal generation/throughput is the bottleneck."
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase2_micro_filters_implemented_2026_04_29.md",
+  "date": "2026-04-29",
+  "type": "project",
+  "desc": "Symbol-specific gating rules deployed to replace harmful global gate relaxation. HYPE strict, SOL SHORT >75%, BTC LONG >80%, ETH strict. Commit eea5930.",
+  "bytes": 5379,
+  "pos": 7,
+  "neg": 0,
+  "claim_lines": [
+   "HYPE Disaster**: 341 trades, -$5,983 loss (avg loss 55% > avg win)",
+   "SOL Profitable**: 255 trades, +$2,695 profit (58.4% WR)",
+   "Root Cause**: Win rate is NOT profitability. Profit factor (PF) < 1.0 = systematic losses. HYPE had 55.1% WR but PF 0.79 (losers outsize winners)."
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_session_apr30_2026.md",
+  "date": "2026-04-30",
+  "type": "project",
+  "desc": "Crash recovery + live Phase 3.2 deployment. System running autonomously 24/7. User away, Claude conducting relentless self-improvement audits.",
+  "bytes": 3068,
+  "pos": 6,
+  "neg": 0,
+  "claim_lines": [
+   "Config:** Phase 3.2 (aggressive executor, 75% WR backtest, +$1,177 net 60d)",
+   "Strategies Active:** vmc_cipher (82% WR), bollinger_squeeze (80% WR), monte_carlo_zones (100% WR)",
+   "Disabled:** regime_trend (0% WR, -$996 loss)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "critical_system_failure_apr30_2026.md",
+  "date": "2026-04-30",
+  "type": "project",
+  "desc": "Phase 3.2 autonomous deployment catastrophically failed. 205 trades at 27% WR vs 75% backtest target. Account liquidated (-$2,186). Trading HALTED pending investigation.",
+  "bytes": 2433,
+  "pos": 5,
+  "neg": 2,
+  "claim_lines": [
+   "Backtest (Phase 3.2):** 75% WR, +$1,177 net 60d",
+   "Live (205 trades):** 27% WR, -$2,186 net",
+   "By symbol:** BTC 17%, ETH 32%, SOL 36%, HYPE 22% WR"
+  ],
+  "neg_lines": [
+   "## What Went Wrong",
+   "This is NOT a bug in the bot code - it's a strategy validation failure"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_trading_session_2026_05_01.md",
+  "date": "2026-05-01",
+  "type": "project",
+  "desc": "72-hour autonomous trading session. Trend Breakout strategy deployed to fix zero-signal issue. Paper trading collecting CLI agent data. First priority.",
+  "bytes": 4728,
+  "pos": 6,
+  "neg": 0,
+  "claim_lines": [
+   "Confidence: 55-90% scale",
+   "Signal confidence 60-73%"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "session_recovery_20260501.md",
+  "date": "2026-05-01",
+  "type": "project",
+  "desc": "Complete context recovery: 220 trades analyzed, root causes identified, 3-step fix plan + 5-day blueprint for success",
+  "bytes": 3447,
+  "pos": 2,
+  "neg": 1,
+  "claim_lines": [
+   "Apr 26** (Historical): 30 trades, 10% WR, -$2,099 (omniscient_integrated - REMOVED)",
+   "May 1 20:54-20:57** (Current): 10 trades, 0% WR, -$1,500 (trend_breakout - BROKEN EXECUTION)",
+   "Expected**: Win rate 0% \u2192 40%+ immediately; stops SL-hit cascade"
+  ],
+  "neg_lines": [
+   "May 1 20:54-20:57** (Current): 10 trades, 0% WR, -$1,500 (trend_breakout - BROKEN EXECUTION)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "cycle7_execution_gating_found.md",
+  "date": "2026-05-06",
+  "type": "project",
+  "desc": "Critical discovery: signals generated/logged perfectly, but all 3 automated execution paths are disabled by config",
+  "bytes": 2336,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "Signal Pipeline Status**: 100% Operational"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "phase1_4_cli_rebuild_complete_2026_05_06.md",
+  "date": "2026-05-06",
+  "type": "project",
+  "desc": "Successfully rebuilt WAGMI into API-free, CLI-first trading system with end-to-end signal\u2192approve\u2192execute workflow",
+  "bytes": 3451,
+  "pos": 5,
+  "neg": 0,
+  "claim_lines": [
+   "Blocked by regime filters** (50%+ signals killed)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "session_20260506_autonomous_audit_continuation.md",
+  "date": "2026-05-06",
+  "type": "project",
+  "desc": "Resumed comprehensive audit after user detox break. Fixed critical config issues, recovered Phase 2 baseline, moved to CLI-only mode.",
+  "bytes": 3801,
+  "pos": 5,
+  "neg": 7,
+  "claim_lines": [
+   "1. Confidence floor dropped 69% \u2192 10% (noise floor lowered 87%)",
+   "2. Per-strategy thresholds lowered: 90% \u2192 35-40% (overfitted backtest claims)",
+   "4. Ensemble confidence floor set wrong: 55% \u2192 10% (contradiction)"
+  ],
+  "neg_lines": [
+   "1. Confidence floor dropped 69% \u2192 10% (noise floor lowered 87%)",
+   "4. Ensemble confidence floor set wrong: 55% \u2192 10% (contradiction)"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "autonomous_directive_reoriented_20260507.md",
+  "date": "2026-05-07",
+  "type": "feedback",
+  "desc": "Shifted from audit-only to profitable-trades + full-system-wiring with medium-long-term adoption mindset",
+  "bytes": 1909,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "User message (20260507, during autonomous session):",
+   "\"We need to continue making these profitable trades and tapping into our alpha system. We need to be thinking medium long term and full wiring and adoption for everything\"",
+   "Interpretation & How to Apply:"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "cycle17_critical_fixes_applied_20260507.md",
+  "date": "2026-05-07",
+  "type": "project",
+  "desc": "TIME_STOP reduction (2h\u21921h) + sniper regime backfill. Fixes 95.6% signal blockage from rotation check. Awaiting bot restart.",
+  "bytes": 2773,
+  "pos": 1,
+  "neg": 1,
+  "claim_lines": [
+   "Rationale: Current 120-min TIME_STOP locks symbols, blocking 95.6% of subsequent signals",
+   "Expected: Regime coverage increases from 55% to 85-95%",
+   "Trade conversion: 0.13% (4 trades from 3,110 signals in 20h)"
+  ],
+  "neg_lines": [
+   "Root cause: record_signal calls were broken, missing regime parameter"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "regime_field_fix_cycle8.md",
+  "date": "2026-05-07",
+  "type": "project",
+  "desc": "Fixed regime field population in signal pipeline, achieved 55% coverage. Root causes: missing populate in evaluate_with_annotations, regime lost in trend adjustment.",
+  "bytes": 1615,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "STATUS**: PARTIAL FIX COMPLETE (55% coverage, target 100%)",
+   "Before**: 0% regime coverage",
+   "After**: 55.6% regime coverage (recent signals)"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "CURRENT_SESSION_PREP_20260511.md",
+  "date": "2026-05-11",
+  "type": "project",
+  "desc": "Complete system state, blockers, and prep work for remote session",
+  "bytes": 6282,
+  "pos": 3,
+  "neg": 0,
+  "claim_lines": [
+   "Confidence Floor: 53%"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "execution_blocker_fixed_20260511.md",
+  "date": "2026-05-11",
+  "type": "project",
+  "desc": "Root cause identified and fixed - was missing signal attributes, not tier gate. Bot now executing trades successfully.",
+  "bytes": 1524,
+  "pos": 3,
+  "neg": 2,
+  "claim_lines": [
+   "Before: <1% trade conversion (0 out of 1000+ signals)",
+   "After: Expected 10-50% conversion based on gate acceptance"
+  ],
+  "neg_lines": [
+   "## What Was Wrong",
+   "Bot generated signals but execution failed silently. Root cause: ensemble Signal objects were missing sniper-specific attributes (tier, tp_scalp, tp_swing, quality_grade). Code tried direct attribute access \u2192 AttributeError killed"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "session_learnings_20260511_summary.md",
+  "date": "2026-05-11",
+  "type": "",
+  "desc": "",
+  "bytes": 9728,
+  "pos": 8,
+  "neg": 2,
+  "claim_lines": [
+   "### Root Cause #3: 100% Signal Rejection",
+   "| EV gate rejection rate | 100% | \u274c Critical blocker |"
+  ],
+  "neg_lines": [
+   "### Root Cause #1: Feedback Loop Broken",
+   "4. **Two fixes, two problems** - Feedback loop broken + rejected signals lost = system can't learn"
+  ]
+ },
+ {
+  "silo": "wagmi-archive",
+  "file": "fee_drag_fix_20260513.md",
+  "date": "2026-05-13",
+  "type": "project",
+  "desc": "Fixed critical 100x inflation bug in fee_drag calculation (ensemble.py line 2631)",
+  "bytes": 1552,
+  "pos": 1,
+  "neg": 2,
+  "claim_lines": [
+   "Before**: `fee_drag = _total_cost_bps / 100.0` \u2192 showed 0.910 (91% fees) for 92 bps",
+   "After**: `fee_drag = _total_cost_bps / 10000.0` \u2192 shows 0.0092 (0.92% fees) correctly",
+   "92 bps \u00f7 10000 = 0.0092 = 0.92% \u2713"
+  ],
+  "neg_lines": [
+   "EV was completely broken**: signals showing EV=-0.87 (impossible) now show realistic EV=-0.014",
+   "Signal rejection was blanket**: all signals failed EV gate, now marginal trades can pass"
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "project_status.md",
+  "date": "2026-05-17",
+  "type": "project",
+  "desc": "User's active projects across multiple development contexts",
+  "bytes": 1875,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "## Active Project Inventory",
+   "### On Local Drive",
+   "1. **WAGMI PROJECT** \u2014 Sophisticated autonomous crypto trading bot for Hyperliquid with multi-agent LLM system"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "main",
+  "file": "wagmi_trading_bot.md",
+  "date": "2026-05-30",
+  "type": "project",
+  "desc": "Live trading bot on separate host \u2014 equity, strategy, resilience model, outstanding tasks",
+  "bytes": 2117,
+  "pos": 2,
+  "neg": 0,
+  "claim_lines": [
+   "Safety floors (raised, not removed): 7% daily-loss circuit breaker, 10 consecutive-loss cap"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "main",
+  "file": "project_bug16_fix.md",
+  "date": "2026-05-31",
+  "type": "project",
+  "desc": "Bug",
+  "bytes": 1817,
+  "pos": 4,
+  "neg": 2,
+  "claim_lines": [
+   "Bug #16 was a look-ahead bias where coordinator.py injected live trading statistics (from post-April-28 sessions) into historical backtest agent context. This caused 100% skip rate \u2014 agents saw poisoned WR stats (0-14%) making Kel",
+   "Validation:** v3 (partial fix) = 100% skip, 99% \"range\" regime (wrong for crash period). v4 (full fix) = first decision was GO, regime correctly identified as \"high_volatility\".",
+   "Why:** Post-April-28 live trading had 0-14% WR during fallback-approve era (unfiltered trades). These stats made Kelly universally negative \u2192 all skips. Clean context gives agents real April 23-28 market data."
+  ],
+  "neg_lines": [
+   "Bug #16 was a look-ahead bias where coordinator.py injected live trading statistics (from post-April-28 sessions) into historical backtest agent context. This caused 100% skip rate \u2014 agents saw poisoned WR stats (0-14%) making Kel",
+   "Validation:** v3 (partial fix) = 100% skip, 99% \"range\" regime (wrong for crash period). v4 (full fix) = first decision was GO, regime correctly identified as \"high_volatility\"."
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "feedback_core.md",
+  "date": "2026-06-02",
+  "type": "feedback",
+  "desc": "Hard rules for this project \u2014 what to always/never do",
+  "bytes": 1081,
+  "pos": 3,
+  "neg": 1,
+  "claim_lines": [
+   "Why:** Nunu explicitly doesn't want pay-per-token API. CLI routing is built and working.",
+   "Never push to main or desktop-overdrive-2026-05-30.** Laptop works on `historical-import-2026-05-30` only.",
+   "Why:** Desktop owns live operations and their branch. Interleaving causes merge hell."
+  ],
+  "neg_lines": [
+   "Never add ANTHROPIC_API_KEY.** CLI subscription routing only (USE_CLI_LLM=true). The 1,259 api_error entries in old decisions.jsonl are from the PRE-CLI-client era \u2014 they are NOT a current bug."
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "user_profile.md",
+  "date": "2026-06-02",
+  "type": "user",
+  "desc": "Nunu's role, trading background, goals, and collaboration style",
+  "bytes": 1042,
+  "pos": 0,
+  "neg": 0,
+  "claim_lines": [
+   "Name:** Nunu (never \"Vince\" in outputs \u2014 OS username vince is fine in file paths only)",
+   "Role:** Crypto trader and bot owner. Autonomous operation: Nunu sets direction, laptop-Claude executes without hand-holding.",
+   "Trading background:"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "main",
+  "file": "project_session_progress.md",
+  "date": "2026-06-03",
+  "type": "project",
+  "desc": "Ongoing alpha improvements and fixes shipped on laptop branch historical-import-2026-05-30",
+  "bytes": 2478,
+  "pos": 2,
+  "neg": 2,
+  "claim_lines": [
+   "c=0-60%: 43.3% WR, +$889 (profitable)",
+   "c=70-75%: 14.7% WR, -$1,807 (disastrous)",
+   "c=80%+: 0% WR, -$80 (all losers)"
+  ],
+  "neg_lines": [
+   "8. Fee correction sanity check \u2014 confirms old analysis at 10x wrong fee rate",
+   "9. Bug #16 validation \u2014 confirms graduated rules reach agents post-April 23"
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "project_true_baseline.md",
+  "date": "2026-06-08",
+  "type": "project",
+  "desc": "Corrected, trustworthy backtest baseline for WAGMI \u2014 prior session numbers were buggy",
+  "bytes": 9094,
+  "pos": 3,
+  "neg": 4,
+  "claim_lines": [
+   "The prior session's backtest numbers (+69.7% return, 59.4% WR, the `Q2_2026_DEEP_ANALYSIS.md` figures) are NOT trustworthy \u2014 three bugs in `complete_backtest.py`: (1) `sorted(glob)[-1]` loaded only ONE ~30-day cache file when 208 ",
+   "TRUE baseline** (built `coordination/accurate_backtest.py`, uses `bot/data/historical_loader` merged data, correct keys, 5bps fee + 5bps slippage per side, full 2025-11-10\u21922026-06-07, BTC/ETH/SOL/HYPE): **\u221218.13% return, 32.26% WR",
+   "Real edge found:** stops too tight (247 SL exits at \u2212$92 = the whole loss vs 48 TP2 at +$309); 139 losers were >$50 green first then gave it back (no profit protection); 24h+ holds win (+$8,807) while all <24h cohorts lose; confid"
+  ],
+  "neg_lines": [
+   "BIG FINDING (2026-06-07): LLM-first as tuned today does NOT trade \u2014 vetoes the mechanical edge.** 75 decisions (70 main run Nov + 5 diagnostic on the 2 most violent trends BTC \u221220%/HYPE +66%), 0 proceeds, 0 trades. Root cause = th",
+   "Layered fidelity fixes (2026-06-07) \u2014 over-rejection had 4 stacked causes, fixed in order:** (1) wrong autonomy mode + roadmap clamp \u2192 fixed to mode 5 + ROADMAP_ENFORCE=false; (2) signal conviction mapping bug \u2014 `signals_from_stat"
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "project_validated_alpha.md",
+  "date": "2026-06-09",
+  "type": "project",
+  "desc": "First OOS-validated profitable alpha found in WAGMI backtest data (2026-06-09)",
+  "bytes": 2611,
+  "pos": 3,
+  "neg": 1,
+  "claim_lines": [
+   "First OOS-validated alpha (2026-06-09)** via `coordination/autonomous_alpha_search.py` on the 35,998-signal capture (`capture_everything/signals_wide.csv`), train/test split by time (Nov13\u2013Feb28 / Feb28\u2013Jun7). 19 rules positive in",
+   "Edge portfolio sim** (`coordination/edge_portfolio_sim.py`, report `edge_portfolio_report.json`): trading ALL consistency-filtered robust edges as a portfolio (one position/symbol, compound from $5k @ 2% risk) = **232 trades, 38.4"
+  ],
+  "neg_lines": [
+   "Edge portfolio sim** (`coordination/edge_portfolio_sim.py`, report `edge_portfolio_report.json`): trading ALL consistency-filtered robust edges as a portfolio (one position/symbol, compound from $5k @ 2% risk) = **232 trades, 38.4"
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "project_wagmi.md",
+  "date": "2026-06-16",
+  "type": "project",
+  "desc": "WAGMI bot architecture, branches, and key project context",
+  "bytes": 3377,
+  "pos": 4,
+  "neg": 2,
+  "claim_lines": [
+   "Live state 2026-06-16:** equity $4,592 (-8% from $5k May-30 reset, peak $5,056), 29 trades ~38% WR. Edge = directional SHORTS (ETH/BTC/SOL shorts net+, HYPE_LONG -$287 & SOL_LONG bleed) \u2014 corroborates [[project-validated-alpha]] S",
+   "Standing backlog (desktop's asks, pre-blackout, still open):** (1) Sonnet-timeout/Haiku-fallback for Trade Agent (bot froze 52min+2hr on hanging Sonnet calls \u2014 #1 reliability); (2) `coordination/rebuild_ledger_from_logs.py` (~23 m",
+   "Fee correction (critical for analysis):** Old analyses used 45 bps (wrong). Correct is 4.5 bps. Backtest engine now at 5 bps."
+  ],
+  "neg_lines": [
+   "`coordination/INBOX_DESKTOP_TO_LAPTOP.md` / `INBOX_LAPTOP_TO_DESKTOP.md` \u2014 NEW lightweight inbox comms (desktop built ~Jun 6). PRESENCE.json = online status per Claude. COMMS_PROTOCOL.md = usage. Tags: ANNOUNCE/ASK/FYI/BUG/FIX-AVA",
+   "Fee correction (critical for analysis):** Old analyses used 45 bps (wrong). Correct is 4.5 bps. Backtest engine now at 5 bps."
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "project_command_center.md",
+  "date": "2026-07-19",
+  "type": "project",
+  "desc": "Master project inventory on this laptop + the COMMAND_CENTER.md front door; what's local vs blocked on the other computer",
+  "bytes": 1684,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "Ground truth on THIS laptop (analysis/build machine; other computer = live trading bot):"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "main",
+  "file": "project_instagram_cats.md",
+  "date": "2026-07-19",
+  "type": "project",
+  "desc": "Instagram automation pivot \u2014 cats forever, wholesome/women-targeted, priority hello kitty/popcat/gak",
+  "bytes": 22657,
+  "pos": 14,
+  "neg": 4,
+  "claim_lines": [
+   "THREE-tier niche/mix (Nunu 2026-07-14 night): 50% hellokitty / 35% popgak / 15% catsother.** In `scraper_config.py`:",
+   "`hellokitty` (50%): hello kitty/Sanrio (+ kuromi/my melody/cinnamoroll) \u2014 19 kw, needs most volume.",
+   "`popgak` (35%): **popcat** ($POPCAT) + **gak/gakster** ($GAK, @gakstercat) \u2014 11 kw. (NOTE: it's \"popcat\", NOT \"pop king\" \u2014 Nunu corrected 2026-07-14.)"
+  ],
+  "neg_lines": [
+   "\u26a0\ufe0f DISK-I/O CONTENTION = NEW instance of the one-heavy-job rule (2026-07-19):** a post FAILED (Share button stuck disabled 90s) right after I bulk-moved 208 video files WHILE the poster was live \u2014 hundreds of MB of moves starved t",
+   "REAL BURN MATH \u2014 the deadline is the MIX, not the total.** At ~50/day on the 50/35/15 mix, runway must be computed PER TIER against its mix share: hellokitty \u00f725/day, popgak \u00f717.5/day, catsother \u00f77.5/day. The naive bank\u00f750 is WRON"
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "feedback_adhd_one_front_door.md",
+  "date": "2026-10-04",
+  "type": "feedback",
+  "desc": "Nunu has ADHD and ~zero spare time \u2014 present ONE next action, never a menu; pre-make decisions",
+  "bytes": 1111,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "Why:** Nunu's setup kept collapsing not from bad code but from load. 12 half-live projects, each"
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "main",
+  "file": "feedback_launch_from_home_dir.md",
+  "date": "2026-10-04",
+  "type": "feedback",
+  "desc": "Root cause of months of broken sessions \u2014 Claude was launched from C:\\windows\\System32, which has an empty memory dir",
+  "bytes": 1203,
+  "pos": 2,
+  "neg": 1,
+  "claim_lines": [
+   "project: Claude Code scopes memory **per working directory**, and Nunu had been launching from",
+   "Why it matters:** this is invisible from inside a session. The symptom (\"nothing works, I've wasted"
+  ],
+  "neg_lines": [
+   "months\") looks like broken projects and is actually an empty room."
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "project_public_repo_credential_leak.md",
+  "date": "2026-10-04",
+  "type": "project",
+  "desc": "wagmi-project is a PUBLIC GitHub repo that leaked a real IG password in git history; code fixed, rotation still pending",
+  "bytes": 1232,
+  "pos": 2,
+  "neg": 1,
+  "claim_lines": [
+   "Found 2026-10-04.** `github.com/Vince2kLyleStyle/wagmi-project` is **public** (verified via GitHub",
+   "Fixed in commit `a9a4c8b`** (local, branch `claude/tiktok-scraper-tool-hXD41`, NOT yet pushed):"
+  ],
+  "neg_lines": [
+   "code also sit in two abandoned worktrees under `wagmi-project/.claude/worktrees/` (gitignored, local only)."
+  ]
+ },
+ {
+  "silo": "main",
+  "file": "project_wagmi_unapplied_fix.md",
+  "date": "2026-10-04",
+  "type": "project",
+  "desc": "The July 2026 swarm's validated fix was NEVER applied \u2014 desktop bot traded 10 weeks on the config the analysis called loss-making",
+  "bytes": 1663,
+  "pos": 4,
+  "neg": 0,
+  "claim_lines": [
+   "In-code trap already flagged: strategy weight `\"trend\": 0.50` = \u2212$200, 18% WR, PF 0.15."
+  ],
+  "neg_lines": []
+ },
+ {
+  "silo": "main",
+  "file": "user_workflow_phone.md",
+  "date": "2026-10-04",
+  "type": "user",
+  "desc": "How Nunu actually works \u2014 ~10 hrs/day on PHONE at work, laptop only when home; drives the whole content/growth division of labor",
+  "bytes": 2312,
+  "pos": 1,
+  "neg": 0,
+  "claim_lines": [
+   "Nunu's real constraint (told me 2026-07-27):** ~10 hrs every day at work, but it's **ALL on their phone** \u2014 the laptop (where Claude Code + all the automation scripts + code live) is only available when home."
+  ],
+  "neg_lines": []
+ }
+]

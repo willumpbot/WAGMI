@@ -20,13 +20,14 @@ DATA = BOT / "data"
 WEIGHT = {"earned": 1.0, "promising": 0.5, "unproven": 0.25, "context": 0.0, "backwards": 0.0}
 
 # family = voices that are near-copies; the laptop's voice_families.json (mission 5) will refine this.
-FAMILY = {"structure": "trend", "stretch": "trend", "driver": "trend", "momentum_7d": "trend",
-          "structure_4h": "trend-4h", "stretch_4h": "trend-4h", "driver_4h": "trend-4h",
-          "rsi": "stretch", "range": "stretch", "history_5d": "base-rate",
-          "funding": "positioning", "oi": "positioning", "liq_skew": "positioning",
-          "book": "microstructure", "btc": "market", "weather": "market",
-          "copilot": "co-pilot", "strategies": "bot-strategies", "trade_agent": "bot-ai",
-          "rules": "rules", "chief": "chief", "bot_position": "bot", "owner": "owner"}
+FAMILY = {  # laptop mission 5 (voice_families.json): stretch, range and driver correlate 0.64-0.78 = ONE voice
+    "structure": "structure", "stretch": "stretch/driver", "driver": "stretch/driver", "range": "stretch/driver",
+    "momentum_7d": "momentum", "rsi": "rsi", "history_5d": "base-rate",
+    "structure_4h": "trend-4h", "stretch_4h": "trend-4h", "driver_4h": "trend-4h",
+    "funding": "funding", "oi": "positioning", "liq_skew": "positioning",
+    "book": "microstructure", "btc": "btc", "weather": "market",
+    "copilot": "co-pilot", "strategies": "bot-strategies", "trade_agent": "bot-ai",
+    "rules": "rules", "chief": "chief", "bot_position": "bot", "owner": "owner"}
 
 
 def _graded_trust():
@@ -195,8 +196,13 @@ def consensus(V):
     ws = sum(WEIGHT.get(v["trust"], 0) for v in bear)
     fam_b = len({v["family"] for v in bull})
     fam_s = len({v["family"] for v in bear})
+    # Move SIZE (laptop mission 5, held out of sample): the fewer independent families dissent, the bigger
+    # the next day's move (1 dissenting ~5.1% vs 4 dissenting ~3.2%, average ~3.5%). No directional content.
+    dissent = min(fam_b, fam_s)
+    size = ("bigger than usual" if dissent <= 1 and (fam_b + fam_s) >= 3 else
+            "smaller than usual" if dissent >= 4 else "normal")
     return {"bull": len(bull), "bear": len(bear), "neutral": sum(1 for v in V if v["reading"] == 0),
-            "bull_families": fam_b, "bear_families": fam_s,
+            "bull_families": fam_b, "bear_families": fam_s, "dissent_families": dissent, "move_size": size,
             "trust_weighted": round(wb - ws, 2), "trust_total": round(wb + ws, 2)}
 
 

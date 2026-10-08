@@ -1,0 +1,62 @@
+{
+ "cutoff": "2026-04-16",
+ "horizon_h": 48,
+ "picked_on_train": "12.0|0.5",
+ "default": "1.0|1.5",
+ "train_n": 6523,
+ "test_n": 9140,
+ "test_picked_R": 0.0503,
+ "test_default_R": -0.4915,
+ "test_paired_diff_R": 0.5419,
+ "test_paired_ci": [
+  0.3001,
+  0.7987
+ ],
+ "per_symbol": {
+  "BTC": {
+   "n": 4525,
+   "picked_R": 0.0062,
+   "default_R": -0.4326,
+   "diff_R": 0.4388,
+   "ci": [
+    0.0947,
+    0.8382
+   ]
+  },
+  "ETH": {
+   "n": 4072,
+   "picked_R": 0.0324,
+   "default_R": -0.628,
+   "diff_R": 0.6604,
+   "ci": [
+    0.4593,
+    0.8563
+   ]
+  },
+  "HYPE": {
+   "n": 3810,
+   "picked_R": 0.0016,
+   "default_R": -0.2558,
+   "diff_R": 0.2574,
+   "ci": [
+    0.0089,
+    0.4964
+   ]
+  },
+  "SOL": {
+   "n": 3256,
+   "picked_R": -0.0019,
+   "default_R": -0.3863,
+   "diff_R": 0.3844,
+   "ci": [
+    0.0846,
+    0.6913
+   ]
+  }
+ },
+ "monotonicity_rho": {
+  "train": 0.9429,
+  "test": 0.7714,
+  "full": 1.0
+ }
+}

@@ -1,0 +1,56 @@
+{
+ "threshold": 0.7,
+ "n_voices": 10,
+ "n_families": 8,
+ "families": {
+  "fam_1": [
+   "bollinger"
+  ],
+  "fam_2": [
+   "btc"
+  ],
+  "fam_3": [
+   "funding"
+  ],
+  "fam_4": [
+   "mom30"
+  ],
+  "fam_5": [
+   "mom7"
+  ],
+  "fam_6": [
+   "rsi"
+  ],
+  "fam_7": [
+   "driver",
+   "range20",
+   "stretch"
+  ],
+  "fam_8": [
+   "structure"
+  ]
+ },
+ "representatives": {
+  "fam_1": "bollinger",
+  "fam_2": "btc",
+  "fam_3": "funding",
+  "fam_4": "mom30",
+  "fam_5": "mom7",
+  "fam_6": "rsi",
+  "fam_7": "stretch",
+  "fam_8": "structure"
+ },
+ "independence_weight": {
+  "bollinger": 1.0,
+  "btc": 1.0,
+  "funding": 1.0,
+  "mom30": 1.0,
+  "mom7": 1.0,
+  "rsi": 1.0,
+  "driver": 0.3333,
+  "range20": 0.3333,
+  "stretch": 0.3333,
+  "structure": 1.0
+ },
+ "note": "weight = 1/family size; multiply a voice's vote by this so correlated copies cannot double-count in a consensus score."
+}

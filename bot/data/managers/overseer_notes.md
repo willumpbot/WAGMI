@@ -13,3 +13,13 @@ Curated by the overseer (Claude). External evidence, each item with its source a
 - 2026-10-08, laptop mission 4: 29 slices were trained on Mar 16 – Apr 29 and tested on May 1 – Jun 5. ZERO had a training CI excluding 0, so nothing qualifies.
   - Watchlist (sign held in both halves, nothing significant): agree=3+ & SHORT (-33 / -37 bps), agree=3+ overall.
   - This contradicts the consensus assumption ("more strategies agreeing = better") and agrees with the server's trade table (agree=3+ SHORT: -$62, n=10). It's cheap to watch forward.
+- 2026-10-08, laptop mission 5: an 18k symbol-day panel from 2020 to 2026, train/test split. Results:
+  - Stretch, range and driver are ONE voice (correlation 0.64–0.78).
+  - Voice AGREEMENT does not predict direction out of sample: a high-consensus cell went +4.0% in train, -0.3% in test.
+  - Consensus predicts MOVE SIZE: next-day move ~5.1% with 1 dissenting family vs ~3.2% with 4. ATR→vol corr is 0.35 out of sample.
+  - Of 34 voice×regime combos, 0 survived.
+  - Do not propose rules that rely on voice agreement for direction.
+- 2026-10-08, laptop geometry sweep:
+  - The bot's stop×1/TP 1.5R scores -0.43R per setup.
+  - Wider stops remove the loss (OOS paired diff +0.54R, CI [+0.30, +0.80]; all four majors significant), but this converges to ~0R. It is loss elimination, not alpha.
+  - The 18-filter gate stack has NEGATIVE value: passed signals returned -12.1 bps vs -8.9 for rejected.
