@@ -4,3 +4,4 @@ data/agent_grades/candles/
 data/agent_grades/graded_decisions.jsonl
 data/agent_grades/live/
 data/managers/last_brief.txt
+data/hivemind/

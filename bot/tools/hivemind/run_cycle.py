@@ -1,0 +1,38 @@
+"""One hivemind cycle for Task Scheduler: assemble every voice, then rebuild the desk.
+
+  pythonw tools/hivemind/run_cycle.py            # every 15 min
+  pythonw tools/hivemind/run_cycle.py --chief    # every 4h: also the Opus chief read + grading
+"""
+import sys
+import traceback
+from datetime import datetime, timezone
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+LOG = HERE.parents[1] / "data" / "hivemind" / "cycle.log"
+
+
+def log(msg):
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG, "a", encoding="utf-8") as f:
+        f.write(f"{datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S}Z {msg}\n")
+
+
+def main():
+    import assemble, desk, chief
+    try:
+        assemble.assemble()
+        if "--chief" in sys.argv:
+            out = chief.run_chief()
+            log("chief: " + ", ".join(f"{s} {c.get('lean')}{c.get('conviction')}" for s, c in out.get("coins", {}).items()))
+        chief.resolve()
+        desk.build()
+        log("cycle ok" + (" (+chief)" if "--chief" in sys.argv else ""))
+    except Exception:
+        log("cycle FAILED: " + traceback.format_exc().replace("\n", " | ")[-800:])
+        raise
+
+
+if __name__ == "__main__":
+    main()
