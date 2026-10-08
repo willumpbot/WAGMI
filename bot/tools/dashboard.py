@@ -105,6 +105,42 @@ WHY = [
     ("widget", "junk", "Windows widgets", "The news and weather panel. Being removed."),
     ("crossdevice", "junk", "Phone Link", "Phone syncing. Not needed."),
     ("windowspackagemanager", "junk", "App installer service", "Windows package manager sitting idle."),
+    ("memcompression", "windows", "Memory compression", "Windows squeezing RAM because you're low. Expected on this machine."),
+    ("smss", "windows", "Windows session starter", "Core Windows. Cannot be closed."),
+    ("lsaiso", "windows", "Credential guard", "Protects your login secrets. Essential."),
+    ("ngciso", "windows", "Windows Hello guard", "Protects your PIN/face login. Essential."),
+    ("conhost", "windows", "Console helper", "Invisible helper behind each background command, including the bot's jobs. Normal."),
+    ("dashost", "windows", "Device pairing", "Windows talking to connected devices. Normal."),
+    ("wudfhost", "windows", "Driver host", "Runs device drivers safely. Normal."),
+    ("shellhost", "windows", "Shell host", "Part of your desktop."),
+    ("defender", "windows", "Defender helper", "Part of your antivirus."),
+    ("securityhealth", "windows", "Windows Security", "The Windows Security status service."),
+    ("msdtc", "windows", "Transaction service", "Windows plumbing. Idle and harmless."),
+    ("unsecapp", "windows", "System info helper", "Windows plumbing. Harmless."),
+    ("aggregatorhost", "windows", "Windows telemetry", "Windows background reporting. Harmless."),
+    ("presentationfontcache", "windows", "Font cache", "Speeds up fonts. Harmless."),
+    ("wmiregistration", "windows", "System info registration", "Windows plumbing. Harmless."),
+    ("appvshnotify", "windows", "App virtualisation helper", "Windows/Office plumbing. Harmless."),
+    ("monotificationux", "windows", "Update notifier", "Windows Update's reminder pop-ups."),
+    ("appactions", "windows", "App actions", "Windows feature for app shortcuts. Harmless."),
+    ("wslservice", "windows", "Linux subsystem (WSL)", "Lets Windows run Linux tools. Harmless; not used by the bot."),
+    ("igfx", "hardware", "Intel graphics helper", "Your built-in graphics driver."),
+    ("intelaudio", "hardware", "Intel audio driver", "Sound driver."),
+    ("intelcphdcp", "hardware", "Intel video protection", "Graphics driver part (for streaming video)."),
+    ("jhi_service", "hardware", "Intel security chip", "Intel firmware helper. Harmless."),
+    ("wlanext", "hardware", "Wi-Fi driver", "Your wireless driver."),
+    ("presentmon", "hardware", "Frame-rate monitor", "Graphics performance helper. Harmless."),
+    ("corsair", "hardware", "Corsair hardware helper", "For Corsair RAM/peripheral lighting. Harmless but optional."),
+    ("start_hdr", "hardware", "HDR helper", "Display HDR helper. Harmless."),
+    ("msi", "junk", "MSI vendor helper", "Motherboard maker's extras. Not needed."),
+    ("omapsvcbroker", "junk", "HP vendor helper", "HP software plumbing. Not needed."),
+    ("hpprintscandoctor", "junk", "HP Print Doctor", "Printer troubleshooting app. Not needed."),
+    ("discord", "junk", "Discord", "The Discord app. The bot's alerts don't need it open."),
+    ("xboxpcapp", "junk", "Xbox app", "Xbox app helper. Not needed."),
+    ("phoneexperiencehost", "junk", "Phone Link", "Phone syncing. Not needed."),
+    ("microsoftstartfeed", "junk", "News feed", "Windows news/weather feed. Not needed."),
+    ("voicecontrol", "junk", "Voice control", "Voice-control utility. Optional."),
+    ("sdxhelper", "junk", "Office helper", "Office background helper. Not needed."),
 ]
 
 CAT_ORDER = ["bot", "yours", "windows", "hardware", "junk", "unknown"]
@@ -127,6 +163,12 @@ CAT_NOTE = {
 
 
 def classify(name, cmdline):
+    exact = {"system": ("windows", "Windows kernel", "The core of Windows. Cannot be closed."),
+             "registry": ("windows", "Windows registry", "Windows' settings store. Cannot be closed."),
+             "system idle process": ("windows", "Idle time", "Not a real program: spare CPU time. 0 MB."),
+             "?": ("windows", "Protected Windows process", "Windows hides this one's name. Normal.")}
+    if (name or "").strip().lower() in exact:
+        return exact[name.strip().lower()]
     hay = (name + " " + (cmdline or "")).lower()
     for key, cat, label, expl in WHY:
         if key in hay:
