@@ -89,6 +89,10 @@ table.lv{width:100%;border-collapse:collapse;font-size:12px}
 .obimb{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:6px;gap:1px}
 table.pos{width:100%;border-collapse:collapse;font-size:12px} .pos td,.pos th{padding:3px 4px;text-align:right} .pos th{color:var(--soft);font-weight:600;font-size:10.5px}
 .pos td:first-child,.pos th:first-child{text-align:left}
+.mv{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;cursor:pointer;white-space:nowrap}
+.mv:hover{border-color:var(--accent)} .mv b{margin-right:4px}
+.alrow{display:flex;gap:6px;align-items:center;font-size:12px;margin-top:4px} .alrow button{background:none;border:0;color:var(--soft);cursor:pointer}
+.flashbg{animation:fb 1s 3}@keyframes fb{50%{background:var(--warn)}}
 kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;font-size:10px}
 </style>
 </head>
@@ -104,6 +108,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
   <span class="tk"><span class="k">Data</span><span class="num mut" id="age"></span></span>
 </div>
 <div class="wrap">
+  <div id="movers" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-size:12px"></div>
   <table class="board" id="board"><thead><tr id="bh"></tr></thead><tbody id="bb"></tbody></table>
   <div class="detail">
     <div class="col">
@@ -132,6 +137,9 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         </div>
         <div class="out num" id="c_out"></div><div class="warn" id="c_warn"></div>
       </div>
+      <div class="box"><h3>Price alerts <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">chime + flash when crossed (this tab must stay open)</span></h3>
+        <div class="alrow"><input id="al_px" type="number" step="any" placeholder="price" style="background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:3px 6px;width:120px"><button id="al_add" style="border:1px solid var(--line);border-radius:5px;padding:3px 8px;color:var(--ink)">Add alert</button></div>
+        <div id="al_list"></div></div>
       <div class="box"><h3>Voices on this coin <span class="sp"></span><span id="dcons" class="mut" style="text-transform:none;letter-spacing:0"></span></h3><div class="vs" id="dvoices"></div><div class="chips" id="drules"></div></div>
     </div>
   </div>
@@ -378,6 +386,10 @@ async function hlPost(body){ const r = await fetch("https://api.hyperliquid.xyz/
 function emaArr(v, n){ const k = 2/(n+1); let e = null; return v.map(x => e = e === null ? x : x*k + e*(1-k)); }
 async function loadUniverse(){
   try { const [meta, ctx] = await hlPost({type:"metaAndAssetCtxs"});
+    const mv = meta.universe.map((u,i)=>{ const c = ctx[i]||{}; const p = +c.markPx, pp = +c.prevDayPx; return {n:u.name, v:+c.dayNtlVlm||0, ch: pp ? (p/pp-1)*100 : 0, d:u.isDelisted}; })
+      .filter(x=>!x.d).sort((a,b)=>b.v-a.v).slice(0,60).sort((a,b)=>Math.abs(b.ch)-Math.abs(a.ch)).slice(0,10);
+    $("movers").innerHTML = `<span class="mut" style="align-self:center">Biggest movers (top-60 volume, 24h):</span>` + mv.map(x=>`<span class="mv" data-c="${x.n}"><b>${x.n}</b><span class="num ${x.ch>=0?"up":"dn"}">${pct(x.ch)}</span></span>`).join("");
+    document.querySelectorAll(".mv").forEach(el=>el.onclick=()=>adhoc(el.dataset.c));
     const rows = meta.universe.map((u,i)=>({n:u.name, v:+((ctx[i]||{}).dayNtlVlm||0), d:u.isDelisted})).filter(x=>!x.d).sort((a,b)=>b.v-a.v);
     $("universe").innerHTML = rows.map(x=>`<option value="${x.n}">`).join(""); window.UNIVERSE = new Set(rows.map(x=>x.n)); } catch(e) {}
 }
@@ -465,10 +477,26 @@ async function account(){
     document.querySelectorAll("#acct tr[data-c]").forEach(tr => tr.onclick = () => adhoc(tr.dataset.c));
   } catch(e) { $("acct").innerHTML = "<span class='mut'>account unavailable</span>"; }
 }
+function alerts(){ try { return JSON.parse(localStorage.getItem("alerts")||"[]"); } catch(e) { return []; } }
+function saveAlerts(a){ try { localStorage.setItem("alerts", JSON.stringify(a)); } catch(e) {} renderAlerts(); }
+function renderAlerts(){
+  const a = alerts();
+  $("al_list").innerHTML = a.length ? a.map((x,i)=>`<div class="alrow num"><b>${x.c}</b> ${x.dir>0?"rises above":"falls below"} ${fmt(x.p)} ${x.hit?'<span class="pill up">HIT '+new Date(x.hit).toLocaleTimeString()+'</span>':""}<button data-i="${i}">✕</button></div>`).join("") : "<div class='mut' style='font-size:11.5px'>No alerts.</div>";
+  document.querySelectorAll("#al_list button").forEach(b=>b.onclick=()=>{ const a=alerts(); a.splice(+b.dataset.i,1); saveAlerts(a); });
+}
+function chime(){ try { const ac = new (window.AudioContext||window.webkitAudioContext)(); [0,0.18,0.36].forEach(t=>{ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=880; o.connect(g); g.connect(ac.destination); g.gain.setValueAtTime(.15, ac.currentTime+t); g.gain.exponentialRampToValueAtTime(.001, ac.currentTime+t+.15); o.start(ac.currentTime+t); o.stop(ac.currentTime+t+.16); }); } catch(e) {} }
+function checkAlerts(mids){
+  const a = alerts(); let changed = false;
+  for (const x of a) { if (x.hit) continue; const v = +(mids[x.c] ?? NaN); if (isNaN(v)) continue;
+    if ((x.dir>0 && v>=x.p) || (x.dir<0 && v<=x.p)) { x.hit = Date.now(); changed = true; chime();
+      document.title = `🔔 ${x.c} ${fmt(v)}`; document.body.classList.remove("flashbg"); void document.body.offsetWidth; document.body.classList.add("flashbg");
+      try { if (Notification.permission==="granted") new Notification(`${x.c} crossed ${fmt(x.p)}`, {body:`now ${fmt(v)}`}); } catch(e) {} } }
+  if (changed) saveAlerts(a);
+}
 async function poll(){
   try {
     const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"allMids"}'});
-    const mids = await r.json(); $("livedot").style.background = "var(--good)";
+    const mids = await r.json(); $("livedot").style.background = "var(--good)"; checkAlerts(mids);
     for (const s of SYMS) { if (!mids[s]) continue; const v = +mids[s], prev = live[s]; live[s] = v;
       const el = $("px_"+s); if (el) { el.textContent = fmt(v); if (prev && v!==prev) { el.classList.remove("flash-up","flash-dn"); void el.offsetWidth; el.classList.add(v>prev?"flash-up":"flash-dn"); } }
       const ch = $("ch_"+s); if (ch) { const c = dayChg(s); ch.textContent = pct(c,2); ch.className = "num " + (c>=0?"up":"dn"); } }
@@ -480,6 +508,10 @@ document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{tf=b.dataset.
 ["c_acct","c_risk","c_side","c_lev"].forEach(id=>$(id).oninput=calc);
 ["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;calc()});
 $("c_side").onchange=()=>{delete $("c_stop").dataset.touched;calc()};
+$("al_add").onclick = () => { const p = +$("al_px").value; if (!p) return; const now = px(sel);
+  const a = alerts(); a.push({c: sel, p, dir: p >= now ? 1 : -1}); saveAlerts(a); $("al_px").value = "";
+  try { if (window.Notification && Notification.permission === "default") Notification.requestPermission(); } catch(e) {} };
+renderAlerts();
 $("search").addEventListener("change", ev=>adhoc(ev.target.value));
 $("search").addEventListener("keydown", ev=>{ if (ev.key==="Enter") adhoc(ev.target.value); });
 document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!=="INPUT"){ ev.preventDefault(); $("search").focus(); return; }
