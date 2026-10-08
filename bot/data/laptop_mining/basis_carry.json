@@ -1,0 +1,176 @@
+{
+ "fee_rt_pct": 0.35,
+ "capital_mult": 2.0,
+ "max_abs_basis_filter": 5.0,
+ "screen": {
+  "AZTEC": {
+   "verdict": "missing data"
+  },
+  "BERA": {
+   "verdict": "missing data"
+  },
+  "HYPE": {
+   "verdict": "use",
+   "days": 672,
+   "basis_mean_pct": 0.0294,
+   "basis_sd_pct": 0.1011,
+   "funding_mean_pct": 0.05614
+  },
+  "MON": {
+   "verdict": "missing data"
+  },
+  "PUMP": {
+   "verdict": "reject: scale mismatch",
+   "days": 455,
+   "basis_mean_pct": 2459.5038,
+   "basis_sd_pct": 1137.0999,
+   "funding_mean_pct": 0.04019
+  },
+  "STABLE": {
+   "verdict": "missing data"
+  },
+  "TRUMP": {
+   "verdict": "missing data"
+  }
+ },
+ "usable_assets": [
+  "HYPE"
+ ],
+ "split_day": "2026-01-12",
+ "holds": {
+  "1d|train": {
+   "n": 403,
+   "funding_pct": 0.07707,
+   "d_basis_pct": -9e-05,
+   "net_pct": -0.27285,
+   "ci": [
+    -0.2888,
+    -0.25533
+   ],
+   "net_on_capital_pct": -0.13642,
+   "annualised_pct": -49.79,
+   "significant": true
+  },
+  "1d|test": {
+   "n": 268,
+   "funding_pct": 0.02486,
+   "d_basis_pct": -0.0005,
+   "net_pct": -0.32464,
+   "ci": [
+    -0.33214,
+    -0.31703
+   ],
+   "net_on_capital_pct": -0.16232,
+   "annualised_pct": -59.25,
+   "significant": true
+  },
+  "3d|train": {
+   "n": 403,
+   "funding_pct": 0.22884,
+   "d_basis_pct": -0.00287,
+   "net_pct": -0.11828,
+   "ci": [
+    -0.16493,
+    -0.07074
+   ],
+   "net_on_capital_pct": -0.05914,
+   "annualised_pct": -7.2,
+   "significant": true
+  },
+  "3d|test": {
+   "n": 266,
+   "funding_pct": 0.07453,
+   "d_basis_pct": -0.00013,
+   "net_pct": -0.27534,
+   "ci": [
+    -0.28833,
+    -0.26244
+   ],
+   "net_on_capital_pct": -0.13767,
+   "annualised_pct": -16.75,
+   "significant": true
+  },
+  "7d|train": {
+   "n": 403,
+   "funding_pct": 0.52265,
+   "d_basis_pct": -0.0052,
+   "net_pct": 0.17785,
+   "ci": [
+    0.049,
+    0.32275
+   ],
+   "net_on_capital_pct": 0.08893,
+   "annualised_pct": 4.64,
+   "significant": true
+  },
+  "7d|test": {
+   "n": 262,
+   "funding_pct": 0.17355,
+   "d_basis_pct": -0.00017,
+   "net_pct": -0.17628,
+   "ci": [
+    -0.20562,
+    -0.14868
+   ],
+   "net_on_capital_pct": -0.08814,
+   "annualised_pct": -4.6,
+   "significant": true
+  },
+  "14d|train": {
+   "n": 403,
+   "funding_pct": 1.00619,
+   "d_basis_pct": -0.00798,
+   "net_pct": 0.66417,
+   "ci": [
+    0.37274,
+    1.04177
+   ],
+   "net_on_capital_pct": 0.33208,
+   "annualised_pct": 8.66,
+   "significant": true
+  },
+  "14d|test": {
+   "n": 255,
+   "funding_pct": 0.34594,
+   "d_basis_pct": -0.00066,
+   "net_pct": -0.0034,
+   "ci": [
+    -0.06069,
+    0.05511
+   ],
+   "net_on_capital_pct": -0.0017,
+   "annualised_pct": -0.04,
+   "significant": false
+  },
+  "30d|train": {
+   "n": 403,
+   "funding_pct": 1.9762,
+   "d_basis_pct": -0.01372,
+   "net_pct": 1.63992,
+   "ci": [
+    1.01786,
+    2.51385
+   ],
+   "net_on_capital_pct": 0.81996,
+   "annualised_pct": 9.98,
+   "significant": true
+  },
+  "30d|test": {
+   "n": 239,
+   "funding_pct": 0.72979,
+   "d_basis_pct": -0.00106,
+   "net_pct": 0.38085,
+   "ci": [
+    0.25758,
+    0.50984
+   ],
+   "net_on_capital_pct": 0.19042,
+   "annualised_pct": 2.32,
+   "significant": true
+  }
+ },
+ "breakeven_days": {
+  "HYPE": 6.23
+ },
+ "verdict": "real on test at 30d|test"
+}

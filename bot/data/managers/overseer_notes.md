@@ -38,3 +38,8 @@ Curated by the overseer (Claude). External evidence, each item with its source a
   - Funding is 99.3% persistent when in its top quintile, but cross-asset carry (BTC hedge) loses: hedge drift is 25–38x the funding.
   - The same-asset spot/perp basis version may be +0.49% per 3 days: UNVERIFIED, needs HL spot availability.
   - Squeeze odds (adverse >2x forecast in 1d) are modestly predictable: more voice agreement means more squeeze risk (top decile 1.7–1.8x base). Funding sign agrees but adds ~no AUC.
+- 2026-10-08, laptop mission 14 (BASIS_TRADE): CLOSED, not an edge.
+  - Only HYPE has usable HL spot+perp; BTC/ETH/SOL/XRP have no HL spot.
+  - The same-asset hedge works (drift sd 0.11% vs 5.8% cross-asset), but 35 bps of fees needs ~6 days of carry.
+  - Only the 30-day hold survives OOS: +0.38% per 30d = ~2.3%/yr on 2x capital, and decaying. Do not build.
+  - Would change with cross-venue spot for majors or maker-only fills.
