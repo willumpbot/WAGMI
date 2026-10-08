@@ -26,6 +26,7 @@ OUT = Path(r"C:\Users\vince\WAGMI\dashboard.html")
 RC = {
     0x0: ("ok", "Finished cleanly."),
     0x41301: ("running", "Running right now."),
+    0x41303: ("ok", "Scheduled; it hasn't had its first run yet."),
     0x41300: ("ok", "Ready, waiting for its next scheduled time."),
     0x41306: ("ok", "Was stopped normally."),
     0xC000013A: ("attn", "Its console window got closed. This is the one that keeps "
