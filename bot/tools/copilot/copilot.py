@@ -437,6 +437,19 @@ def _adx(df: pd.DataFrame, period: int = ADX_PERIOD) -> pd.Series:
     return dx.ewm(alpha=1.0 / period, adjust=False).mean()
 
 
+def _di(df: pd.DataFrame, period: int = ADX_PERIOD):
+    """Latest (+DI, -DI): which side is driving the move ADX measures."""
+    high, low = df["h"], df["l"]
+    tr = _true_range(df)
+    up_move, down_move = high.diff(), -low.diff()
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
+    atr = tr.ewm(alpha=1.0 / period, adjust=False).mean().replace(0, np.nan)
+    p = 100.0 * pd.Series(plus_dm, index=df.index).ewm(alpha=1.0 / period, adjust=False).mean() / atr
+    m = 100.0 * pd.Series(minus_dm, index=df.index).ewm(alpha=1.0 / period, adjust=False).mean() / atr
+    return float(p.iloc[-1]), float(m.iloc[-1])
+
+
 def _bollinger(series: pd.Series, period: int = BB_PERIOD, mult: float = BB_MULT):
     mid = series.rolling(period).mean()
     std = series.rolling(period).std()
@@ -701,6 +714,7 @@ class DipRead:
     settled_close: Optional[float] = None
     settled_close_date: Optional[str] = None  # "YYYY-MM-DD", the settled candle's OPEN date (HL daily-candle convention)
     trend_1d: str = "n/a"           # up / down / chop / n/a
+    structure_note: str = ""        # plain-language structure + pullback + who is driving
     trend_strength: str = "n/a"     # strong / weak / n/a
     adx_1d: Optional[float] = None
     ret_1d_pct: Optional[float] = None
@@ -771,6 +785,24 @@ def build_dip_read(client, symbol: str) -> DipRead:
     is_trending = r.adx_1d is not None and r.adx_1d >= ADX_TREND_THRESHOLD
     r.trend_1d = dir_1d if is_trending else "chop"
     r.trend_strength = "strong" if is_trending else "weak"
+    # Plain-language daily structure. trend_1d alone mislabels pullbacks: EMA20>EMA50
+    # still says "up" during a sharp drop, and ADX measures the DROP's strength.
+    # Spell out the three separate facts a swing trader reads.
+    try:
+        plus_di, minus_di = _di(df_1d)
+        above_fast = close.iloc[-1] > ema_f.iloc[-1]
+        adx_word = ("no clear trend" if r.adx_1d is None or r.adx_1d < 20
+                    else "moderate" if r.adx_1d < 30 else "strong")
+        driver = "buyers" if plus_di > minus_di else "sellers"
+        r.structure_note = (
+            f"structure {'UP' if dir_1d == 'up' else 'DOWN'} (20d avg {'above' if dir_1d == 'up' else 'below'} 50d avg)"
+            f" | price {'above' if above_fast else 'BELOW'} its 20d avg"
+            + ((" (pullback inside the uptrend)" if dir_1d == "up" and not above_fast else
+                " (bounce inside the downtrend)" if dir_1d == "down" and above_fast else ""))
+            + f" | {driver} driving the recent move ({adx_word}, ADX {r.adx_1d:.0f}, +DI {plus_di:.0f} / -DI {minus_di:.0f})"
+            if r.adx_1d is not None else "")
+    except Exception:
+        r.structure_note = ""
 
     # ---- Returns ----
     if len(close) >= 2:

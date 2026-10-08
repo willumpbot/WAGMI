@@ -257,10 +257,20 @@ def _hl_bull_bear(dip, funding_note_positive: Optional[bool], beta: Optional[flo
     unknown: List[str] = []
 
     # trend / momentum
+    _pullback = "pullback inside" in getattr(dip, "structure_note", "")
+    _bounce = "bounce inside" in getattr(dip, "structure_note", "")
     if dip.trend_1d == "up" and dip.trend_strength == "strong":
-        bull.append(f"intact uptrend (ADX {dip.adx_1d:.0f} strong up)")
+        if _pullback:
+            bull.append("uptrend structure still intact (20d avg above 50d)")
+            bear.append(f"but price is below its 20d avg and sellers drove the recent move (ADX {dip.adx_1d:.0f})")
+        else:
+            bull.append(f"intact uptrend (ADX {dip.adx_1d:.0f} strong up)")
     elif dip.trend_1d == "down" and dip.trend_strength == "strong":
-        bear.append(f"intact downtrend (ADX {dip.adx_1d:.0f} strong down)")
+        if _bounce:
+            bear.append("downtrend structure still intact (20d avg below 50d)")
+            bull.append(f"but price is above its 20d avg and buyers drove the recent move (ADX {dip.adx_1d:.0f})")
+        else:
+            bear.append(f"intact downtrend (ADX {dip.adx_1d:.0f} strong down)")
     elif dip.trend_1d == "chop":
         unknown.append("no trend - chop regime (ADX below trend threshold); direction is noise here")
 
@@ -435,8 +445,11 @@ def build_hl_eye(client, symbol: str, equity: float, deep: bool = False) -> EyeB
     # ---- 1. WHERE IT IS ----
     L.append("1) WHERE IT IS (price vs the levels that matter):")
     adx_s = f"{dip.adx_1d:.0f}" if dip.adx_1d is not None else "?"
-    L.append(f"  Price {_fmt_price(dip.price)} | {dip.trend_1d.upper()} ({dip.trend_strength}, ADX {adx_s}) | "
-             f"{_fmt_pct(dip.ret_1d_pct)}/1d, {_fmt_pct(dip.ret_7d_pct)}/7d")
+    L.append(f"  Price {_fmt_price(dip.price)} | {_fmt_pct(dip.ret_1d_pct)}/1d, {_fmt_pct(dip.ret_7d_pct)}/7d")
+    if getattr(dip, "structure_note", ""):
+        L.append(f"  Daily: {dip.structure_note}")
+    else:
+        L.append(f"  Daily: {dip.trend_1d.upper()} ({dip.trend_strength}, ADX {adx_s})")
     if dip.swing_high and dip.swing_low:
         span = dip.swing_high - dip.swing_low
         pos = (dip.price - dip.swing_low) / span * 100.0 if span > 0 else None
