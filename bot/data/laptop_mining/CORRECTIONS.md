@@ -1,6 +1,11 @@
-# CORRECTIONS — final. Nothing changes in the bot.
+# CORRECTIONS — nothing changes in the bot. Four server-side fixes recommended.
 
-_2026-10-08. Branch `laptop-mining-2026-10`. Read this instead of any other document here._
+_2026-10-08, extended 2026-10-09 with server missions 1-4. Branch `laptop-mining-2026-10`.
+Read this instead of any other document here._
+
+**Two separate things live in this file.** Part 1 (below) is the trading-config question: the answer
+is **change nothing**. Part 2 (near the end) is server missions 1-4, which recommend four changes to
+the *terminal, scanner and plan grader* — display and code, not the bot's trading behaviour.
 
 ---
 
