@@ -230,6 +230,13 @@ def _slice_table(rows, key, since=0.0):
     return lines
 
 
+def _overseer_notes():
+    try:
+        return (OUT / "overseer_notes.md").read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return ["(none)"]
+
+
 def _waves_lines():
     try:
         d = json.loads((DATA / "data_waves" / "data_waves.json").read_text(encoding="utf-8"))
@@ -273,6 +280,9 @@ def brief(rules, tr, sg_hist, sg_live):
         "## G. EXPLORATORY context slices (2026-10-08 data-waves study, May-Oct signals, ~36 tests run, so ~2 would"
         " pass |t|>2 by chance; treat as hypotheses only):",
         *_waves_lines(),
+        "",
+        "## H. Overseer notes (curated external evidence, e.g. the laptop's independent re-grading):",
+        *_overseer_notes(),
         "",
         "## E. Your active rules and their FORWARD scores (only data after each rule was written):",
         *(act_lines or ["(none yet)"]),
