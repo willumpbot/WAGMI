@@ -198,7 +198,31 @@ def get_bot():
         "equity": hb.get("equity"),
         "errors": hb.get("errors"),
         "positions": pos.get("position_count", hb.get("positions")),
+        "llm_degraded": bool(hb.get("llm_first_degraded")),
+        "last_ai_decision_age": last_ai_decision_age(),
     }
+
+
+def last_ai_decision_age():
+    """Seconds since the newest LLM agent decision, from the tail of
+    agent_performance.jsonl. None if unreadable. The 2026-10-05..07 outage
+    sat at 79% failed calls for ~3 days while every other signal was green."""
+    path = BOT / "data" / "llm" / "agent_performance.jsonl"
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 200_000))
+            lines = f.read().decode("utf-8", "replace").splitlines()
+    except Exception:
+        return None
+    for line in reversed(lines):
+        try:
+            rec = json.loads(line)
+        except Exception:
+            continue
+        if rec.get("type") == "decision" and rec.get("timestamp"):
+            return time.time() - float(rec["timestamp"])
+    return None
 
 
 def get_procs():
@@ -375,6 +399,15 @@ def build():
         todo.append(("Your bot is not responding.",
                      "Last sign of life %s. Tell Claude \"the bot is down\" and it will "
                      "restart it." % human_age(bot["age"])))
+    if bot["alive"] and bot.get("llm_degraded"):
+        todo.append(("The bot's AI brain is offline.",
+                     "Its AI calls are failing, so it has fallen back to a mode that "
+                     "won't open trades. Often the Claude login expired. Tell Claude "
+                     "\"the AI is down\"."))
+    elif bot["alive"] and (bot.get("last_ai_decision_age") or 0) > 3 * 3600:
+        todo.append(("The bot's AI hasn't made a decision in %s." % human_dur(bot["last_ai_decision_age"]),
+                     "It normally decides a few times an hour. Its calls may be failing "
+                     "quietly. Tell Claude \"the AI is quiet\"."))
     for t in tasks:
         if t["status"] == "attn":
             todo.append((t["name"] + " needs attention.", t["msg"]))
