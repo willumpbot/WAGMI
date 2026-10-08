@@ -32,7 +32,11 @@ from llm.agents.base import AgentOutput, AgentRole
 logger = logging.getLogger("bot.llm.agents.performance_tracker")
 
 # ── Data directory ──────────────────────────────────────────────────
-_DEFAULT_DATA_DIR = os.path.join("data", "llm")
+try:
+    from core import paths as _paths
+    _DEFAULT_DATA_DIR = str(_paths.DATA_DIR / "llm")
+except Exception:  # pragma: no cover - fall back to the old cwd-relative path
+    _DEFAULT_DATA_DIR = os.path.join("data", "llm")
 _PERF_FILE = "agent_performance.jsonl"
 _DECISION_INDEX_FILE = "agent_decision_index.json"
 
@@ -1131,8 +1135,28 @@ class AgentPerformanceTracker:
 
     # ── Persistence ─────────────────────────────────────────────────
 
+    def _live_write_allowed(self) -> bool:
+        """False when a test/backtest process would append to the live file.
+
+        ~7% of agent_performance.jsonl was pytest fixture rows (0-150ms
+        latency, canned reasoning) because this writer never consulted the
+        provenance gate the other live writers use.
+        """
+        try:
+            from core.provenance import gate_live_write, PollutionError
+        except Exception:
+            return True
+        try:
+            gate_live_write(self._perf_path)
+            return True
+        except PollutionError:
+            logger.debug(f"[PERF] Skipped simulated-source write to {self._perf_path}")
+            return False
+
     def _append_records(self, records: List[AgentDecisionRecord]) -> None:
         """Append decision records to the JSONL file."""
+        if not self._live_write_allowed():
+            return
         try:
             with open(self._perf_path, "a") as f:
                 for rec in records:
@@ -1157,6 +1181,8 @@ class AgentPerformanceTracker:
 
     def _append_raw(self, entry: Dict[str, Any]) -> None:
         """Append a raw dict entry to the JSONL file."""
+        if not self._live_write_allowed():
+            return
         try:
             with open(self._perf_path, "a") as f:
                 f.write(json.dumps(entry, default=str) + "\n")
