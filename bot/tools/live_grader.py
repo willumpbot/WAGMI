@@ -389,6 +389,19 @@ def build_scorecard():
     critic = _diff([r["e"] for r in Ck if r["critic"]["dec"] == "approve"],
                    [r["e"] for r in Ck if r["critic"]["dec"] in ("challenge", "veto", "reject")])
 
+    # Confidence bar (llm/living_conf_floor.py): the gate passes roughly the top
+    # 10% of confidences. Within trade-GO rounds, compare those above a trailing
+    # P90 cut (computed only from earlier GO rounds) against the rest.
+    Gs = sorted([r for r in G if (r.get("trade") or {}).get("conf") is not None], key=lambda r: r["ts"])
+    above, below, hist_conf = [], [], []
+    for r in Gs:
+        c = float(r["trade"]["conf"])
+        if len(hist_conf) >= 30:
+            cut = sorted(hist_conf[-200:])[int(0.9 * (len(hist_conf[-200:]) - 1))]
+            (above if c >= cut else below).append(r["e"])
+        hist_conf.append(c)
+    floor = _diff(above, below)
+
     X = [r for r in rows if r["kind"] == "exit" and r.get("r4h") is not None and r.get("pos_side")]
     X = _dedupe(X, lambda r: (r["sym"], r["pos_side"], r["dec"], hour(r)))
     xv = lambda r: _sgn(r["pos_side"]) * r["r4h"]
@@ -411,6 +424,10 @@ def build_scorecard():
                    "historical_diff_bps": hist_line(["risk", "within_trade_go_take_minus_block"])},
         "critic": {"question": "On GO rounds, did its approvals beat its challenges?", **critic,
                    "verdict": _verdict(critic)},
+        "confidence bar": {"question": "On GO rounds, did the top-10% confidence calls (what the bar lets through) beat the rest?",
+                           **floor, "verdict": _verdict(floor),
+                           # 10-07 study rows, same trailing-P90 method: +11.0 bps, CI [-13.9, +32.9], n 136 vs 744
+                           "historical_diff_bps": 11.0},
         "exit":   {"question": "After it said HOLD, did the position do better than after FULL CLOSE? (gross)",
                    **exit_, "verdict": _verdict(exit_)},
     }
