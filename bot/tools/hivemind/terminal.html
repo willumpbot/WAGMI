@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WAGMI Terminal</title>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{
   --bg:#0d0f12;--panel:#14171c;--panel2:#1a1e24;--line:#262b33;--ink:#e6e3dc;--soft:#8f8a80;--dim:#5d5a54;
@@ -97,7 +98,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
       <div class="box">
         <h3><span id="dsym" class="sym" style="font-size:15px;color:var(--ink);letter-spacing:0"></span><span class="num" id="dpx" style="font-size:14px;color:var(--ink)"></span><span class="sp"></span>
           <span class="seg"><button data-tf="1d" class="on">1D</button><button data-tf="4h">4H</button></span></h3>
-        <svg id="chart"></svg>
+        <div id="lw" style="width:100%;height:360px;display:none"></div><svg id="chart"></svg>
         <div class="readout num" id="readout">Hover the chart for prices. <kbd>↑</kbd><kbd>↓</kbd> switch coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe</div>
       </div>
       <div class="box"><h3>Chief analyst <span class="sp"></span><span id="dchief"></span></h3><div class="read" id="dread"></div></div>
@@ -190,7 +191,55 @@ function chartData(){
   const ch = C(sel).chart || {};
   return tf === "4h" ? ch.h4 || {} : ch;
 }
+let LW = null;
+function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function drawLW(){
+  const el = $("lw"); el.style.display = ""; $("chart").style.display = "none";
+  const d = chartData(); const o = d.ohlc || []; if (!o.length) return;
+  if (LW) { LW.chart.remove(); LW = null; }
+  const chart = LightweightCharts.createChart(el, {
+    autoSize: true,
+    layout: {background: {type: "solid", color: cssv("--panel")}, textColor: cssv("--soft"), fontFamily: "Segoe UI, system-ui, sans-serif", fontSize: 11},
+    grid: {vertLines: {color: cssv("--line")}, horzLines: {color: cssv("--line")}},
+    rightPriceScale: {borderColor: cssv("--line")},
+    timeScale: {borderColor: cssv("--line"), timeVisible: tf === "4h", secondsVisible: false, rightOffset: 4},
+    crosshair: {mode: 0},
+  });
+  const up = cssv("--pos"), dn = cssv("--neg");
+  const ref = o[o.length-1][3], prec = ref >= 1000 ? 0 : ref >= 10 ? 2 : ref >= 1 ? 4 : 6;
+  const pf = {type: "price", precision: prec, minMove: Math.pow(10, -prec)};
+  const cs = chart.addCandlestickSeries({upColor: up, downColor: dn, wickUpColor: up, wickDownColor: dn, borderVisible: false, priceFormat: pf});
+  const bars = o.map((b,i) => ({time: Math.floor(d.t[i]/1000), open: b[0], high: b[1], low: b[2], close: b[3]}));
+  cs.setData(bars);
+  const e20 = chart.addLineSeries({priceFormat: pf, color: cssv("--ink"), lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+  e20.setData((d.ema20||[]).map((v,i) => ({time: bars[i].time, value: v})));
+  const e50 = chart.addLineSeries({priceFormat: pf, color: cssv("--soft"), lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+  e50.setData((d.ema50||[]).map((v,i) => ({time: bars[i].time, value: v})));
+  const r = (C(sel).market||{}).range_20d || {};
+  if (tf === "1d") {
+    if (r.high) cs.createPriceLine({price: r.high, color: cssv("--soft"), lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "20d high"});
+    if (r.low) cs.createPriceLine({price: r.low, color: cssv("--soft"), lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "20d low"});
+  }
+  for (const c of clusters(sel)) cs.createPriceLine({price: c.p, color: cssv("--liq"), lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: "liq " + c.n});
+  const bp = (C(sel).bot||{}).position;
+  if (bp) { cs.createPriceLine({price: bp.entry, color: cssv("--accent"), lineWidth: 1, lineStyle: 0, axisLabelVisible: true, title: "bot entry"});
+            if (bp.sl) cs.createPriceLine({price: bp.sl, color: cssv("--bad"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "bot stop"}); }
+  chart.timeScale().fitContent();
+  chart.subscribeCrosshairMove(p => {
+    const b = p && p.seriesData ? p.seriesData.get(cs) : null;
+    if (!b) { $("readout").innerHTML = "Drag to pan, scroll to zoom, double-click the price axis to reset. <kbd>↑</kbd><kbd>↓</kbd> coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe"; return; }
+    const dt = new Date(p.time*1000), now = px(sel);
+    $("readout").innerHTML = `${dt.toLocaleString(undefined,{month:"short",day:"numeric",hour:tf==="4h"?"2-digit":undefined})} · O ${fmt(b.open)} H ${fmt(b.high)} L ${fmt(b.low)} C ${fmt(b.close)} · <span class="${b.close>=b.open?"up":"dn"}">${pct((b.close/b.open-1)*100,2)}</span>${now?` · close vs now ${pct((now/b.close-1)*100,2)}`:""}`;
+  });
+  LW = {chart, cs, last: bars[bars.length-1]};
+}
+function liveTick(){
+  if (!LW) return; const p = px(sel); if (!p) return;
+  const b = LW.last; LW.last = {time: b.time, open: b.open, high: Math.max(b.high, p), low: Math.min(b.low, p), close: p};
+  LW.cs.update(LW.last);
+}
 function drawChart(){
+  if (window.LightweightCharts) return drawLW();
   const svg = $("chart"), W = svg.clientWidth || 800, H = 340;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const d = chartData(); const o = d.ohlc || [];
@@ -315,7 +364,7 @@ async function poll(){
     for (const s of SYMS) { if (!mids[s]) continue; const v = +mids[s], prev = live[s]; live[s] = v;
       const el = $("px_"+s); if (el) { el.textContent = fmt(v); if (prev && v!==prev) { el.classList.remove("flash-up","flash-dn"); void el.offsetWidth; el.classList.add(v>prev?"flash-up":"flash-dn"); } }
       const ch = $("ch_"+s); if (ch) { const c = dayChg(s); ch.textContent = pct(c,2); ch.className = "num " + (c>=0?"up":"dn"); } }
-    $("dpx").textContent = fmt(px(sel));
+    $("dpx").textContent = fmt(px(sel)); liveTick();
   } catch(e) { $("livedot").style.background = "var(--bad)"; }
 }
 
@@ -329,10 +378,10 @@ document.addEventListener("keydown",ev=>{ if (ev.target.tagName==="INPUT") retur
   if (ev.key==="ArrowUp"){sel=rows[Math.max(0,i-1)];renderBoard();renderDetail();ev.preventDefault();}
   if (ev.key==="d"||ev.key==="D") document.querySelector('.seg button[data-tf="1d"]').click();
   if (ev.key==="4") document.querySelector('.seg button[data-tf="4h"]').click(); });
-window.addEventListener("resize", drawChart);
+window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
 topbar(); renderBoard(); renderDetail(); poll();
 setInterval(poll, 3000); setInterval(topbar, 1000);
-setInterval(()=>{ if (document.querySelector("#chart:hover")) return; drawChart(); levels(); calc(); }, 15000);
+setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);
 </script>
 </body>
