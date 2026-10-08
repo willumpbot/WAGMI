@@ -147,11 +147,80 @@ reading an optimum off ×20 or ×32 is reading noise about a stop that never fir
 **So the stop change is defensible on cost grounds at ~+0.12R, not on edge grounds at +0.35R.** That
 is a smaller, duller, and much more trustworthy reason, and it does not need any prediction to hold.
 
-## What I owe next
-- `(real+flip)/2` with week-block CIs **on all 24 cells**, not 5 — the direction-free estimate done right.
-- Re-derive the 48h drift from the corrected entry with week clustering, or drop the claim.
-- Find the stop width that minimises *total* cost where the bracket still binds (×4–×8), rather than
-  reading a saturated surface.
+---
+
+# RESULT — `geometry_v3.py`, all 24 cells, synthetic control passed
+
+_Run 2026-10-08. 15,663 signals, 14 ISO weeks, 71 days. Data: `geometry_v3.json`._
+
+## The synthetic control passes — the step v2 skipped
+
+Built an exact-zero-effect dataset by removing the measured effect, then injected known deltas:
+
+| injected | detected? | CI95 |
+|---|---|---|
+| **0.0000** | **no** | [−0.0730, +0.0480] |
+| 0.0200 | no | [−0.0520, +0.0690] |
+| 0.0500 | no | [−0.0212, +0.0985] |
+| **0.0800** | **YES** | [+0.0078, +0.1276] |
+| **0.1232** (fee prediction) | **YES** | [+0.0529, +0.1715] |
+| 0.1745 | YES | [+0.1037, +0.2230] |
+
+**No false positive at zero effect; smallest detectable effect 0.08R.** The estimator can see the
+0.1232R fee prediction. v2's null could not have passed this — it killed a known-real 0.148R effect.
+
+## All 24 cells, with the binding rate
+
+| cell | bound | sym (geometry) | sym CI95 (week blocks) | dir | real adv | verdict |
+|---|---|---|---|---|---|---|
+| 0.5\|0.5 | 100.0% | **−0.1953** | [−0.2530, −0.1502] | +0.0996 | −0.0957 | **significantly WORSE** |
+| 0.5\|1.0 | 99.7% | **−0.1372** | [−0.1987, −0.0852] | +0.0301 | −0.1071 | **significantly WORSE** |
+| 0.5\|1.5 | 99.4% | **−0.1316** | [−0.1765, −0.0941] | +0.0208 | −0.1108 | **significantly WORSE** |
+| 1.0\|0.5 | 98.3% | +0.0429 | [−0.0431, +0.1087] | +0.0870 | +0.1299 | not significant |
+| 1.0\|1.0 | 93.5% | +0.0307 | [−0.0130, +0.0577] | +0.0362 | +0.0669 | not significant |
+| **1.0\|1.5** | 86.0% | 0 | — | 0 | 0 | **← the bot today** |
+| **2.0\|0.5** | **79.1%** | **+0.1187** | **[+0.0395, +0.1661]** | +0.0719 | +0.1906 | **real & binds** |
+| 2.0\|1.0 | 60.6% | +0.1050 | [+0.0506, +0.1357] | +0.0437 | +0.1487 | real & binds |
+| 2.0\|1.5 | 51.5% | +0.0820 | [+0.0174, +0.1414] | +0.0657 | +0.1477 | real & binds |
+| 4.0\|0.5 | 44.3% | +0.1731 | [+0.0972, +0.2182] | +0.1282 | +0.3014 | real, barely binds |
+| 8.0\|0.5 | 14.3% | +0.1832 | [+0.1137, +0.2312] | +0.1791 | +0.3623 | real but NO BRACKET |
+| 32.0\|0.5 | **0.0%** | +0.1745 | [+0.1105, +0.2165] | +0.1735 | +0.3479 | real but NO BRACKET |
+
+(All 24 in `geometry_v3.json`. **15 of 24 cells are saturated** — the bracket never binds.)
+
+## Three findings
+
+1. **Tightening the stop is significantly harmful.** At ×0.5 the direction-free cost is −0.13R to
+   −0.20R, CIs well clear of zero. This is the sturdiest result in the whole geometry thread, and it
+   is a *cost* result — it needs nothing predicted. (v3 also fixes a labelling bug that printed these
+   as "not significant" because the verdict only tested the upper bound.)
+2. **Changing only the target does nothing.** `1.0|0.5` and `1.0|1.0` both have CIs containing zero.
+   v2's "cheap alternative — keep the stop, change the target" is **null**.
+3. **The actionable setting is stop ×2, target 0.5R.** +0.1187R direction-free,
+   CI [+0.0395, +0.1661], bracket still binding on **79.1%** of trades.
+
+## Recommendation: ×2 / 0.5R — not ×8, not ×32
+
+Bigger `sym` values exist at ×4–×32, but the binding rate collapses 79.1% → 44.3% → 14.3% → 0.0%.
+Those cells measure *"no bracket"*, not *"a wider bracket"*, so reading an optimum off them is reading
+noise about a stop that never fires. `×2 | 0.5R` is where a real bracket still exists and the fee
+saving is already captured: fees predict +0.0636R of the +0.1187R (54%), and per `TIE_RULE.md` the
+remainder is **understated** — at tp 0.5R the target is really touched first 75–81% of the time where
+the sim assumed 0%.
+
+**So the decision card becomes: stop ×1 → ×2, target 1.5R → 0.5R, worth +0.1187R per trade on
+fee/geometry grounds alone.** Ignore the +0.0719R directional half. Far smaller and duller than the
+×8–×32 the refuted v1 pointed at — and it does not depend on any prediction being right.
+
+### Caveat on the binding floor
+`BIND_FLOOR = 0.50` is my judgment call and it is load-bearing: it excludes `4.0|0.5`, which has a
+larger `sym` (+0.1731R) but binds only 44.3%. If a bracket resolving fewer than half of trades is
+acceptable, ×4 is the aggressive read. ×2 is the conservative one and the one I recommend.
+
+## Still owed
+- Re-derive the 48h drift from the corrected entry with week clustering, or drop the claim. The
+  `−0.2174%, t = −10.0, "robust"` figure remains unreproducible and must not be quoted.
+- Apply the *measured* tie rule rather than the conservative one, which should widen the ×2 advantage.
 
 ## Lesson
 The retraction fixed a real problem — validating on data that had informed the choice — and then I
