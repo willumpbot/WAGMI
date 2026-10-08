@@ -278,7 +278,7 @@ Guidance:
 Output ONLY a JSON object:
 {"new_rules":[{"action":"avoid|favor","slice":{...},"thesis":"<=200 chars, the mechanism","evidence":"which sections, which numbers","expected_n_per_week":<int>}],
  "withdraw":[{"id":"<rule id>","reason":"<=120 chars"}],
- "note":"<=300 chars, what you noticed overall"}"""
+ "note":"<=400 chars, what you noticed overall"}"""
 
 
 def ask_manager(text):
@@ -354,7 +354,7 @@ def main():
             prop = ask_manager(text)
             run["added"] = apply_proposal(rules, prop)
             run["withdrawn"] = [w.get("id") for w in prop.get("withdraw") or []]
-            run["note"] = str(prop.get("note", ""))[:300]
+            run["note"] = str(prop.get("note", ""))[:700]
         except Exception as e:
             run["error"] = str(e)[:300]
     _save_rules(rules)

@@ -363,6 +363,7 @@ CSS = """
   --bg:#f7f6f3; --panel:#fffefb; --line:#e5e2da; --ink:#2f2c28; --soft:#6f6a62;
   --ok:#3f7d5e; --okbg:#eaf3ee; --attn:#8a6a2f; --attnbg:#f7f0e0;
   --run:#3d6584; --runbg:#e9f0f5; --accent:#4a6fa5;
+  --pos:#2a78d6; --neg:#e34948; --mid:#c9c6bf;
 }
 :root:not([data-theme="light"]){ }
 @media (prefers-color-scheme: dark){
@@ -370,12 +371,14 @@ CSS = """
     --bg:#16181b; --panel:#1d2024; --line:#2c3035; --ink:#e4e1db; --soft:#9a948b;
     --ok:#7fb99a; --okbg:#1d2a24; --attn:#d0ab6a; --attnbg:#2b2519;
     --run:#8fb4d0; --runbg:#1b262e; --accent:#8ba9d4;
+    --pos:#3987e5; --neg:#e66767; --mid:#4a4a46;
   }
 }
 :root[data-theme="dark"]{
   --bg:#16181b; --panel:#1d2024; --line:#2c3035; --ink:#e4e1db; --soft:#9a948b;
   --ok:#7fb99a; --okbg:#1d2a24; --attn:#d0ab6a; --attnbg:#2b2519;
   --run:#8fb4d0; --runbg:#1b262e; --accent:#8ba9d4;
+  --pos:#3987e5; --neg:#e66767; --mid:#4a4a46;
 }
 *{box-sizing:border-box}
 body{
@@ -416,6 +419,26 @@ h2{font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;
        background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .stat{background:var(--panel);padding:18px 20px}
+.chart{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px 10px;margin:0 0 14px}
+.chart h3{font-size:15px;font-weight:600;margin:0 0 2px}
+.chart p{color:var(--soft);font-size:13.5px;margin:0 0 8px}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart svg text{fill:var(--soft);font-size:11px;font-variant-numeric:tabular-nums}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .zero{stroke:var(--soft);stroke-width:1}
+.chart .ln{fill:none;stroke:var(--pos);stroke-width:2;stroke-linejoin:round}
+.chart .hit{fill:transparent}
+.chart .hit:hover{fill:var(--pos);fill-opacity:.25}
+.chart .bp{fill:var(--pos)} .chart .bn{fill:var(--neg)} .chart .bx{fill:var(--mid)}
+.chart rect:hover{opacity:.75}
+.chart details{font-size:13px;color:var(--soft);margin-top:6px}
+.chart table{border-collapse:collapse;margin-top:6px;font-variant-numeric:tabular-nums}
+.chart td,.chart th{padding:2px 10px 2px 0;text-align:left}
+.think{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px 0;margin-bottom:14px}
+.think .r{padding:12px 20px;border-bottom:1px solid var(--line)}
+.think .r:last-child{border-bottom:none}
+.think .h{font-weight:600;font-size:15px}
+.think .t{color:var(--soft);font-size:14px;margin-top:2px}
 .stat .k{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--soft);margin-bottom:5px}
 .stat .v{font-size:24px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden;margin:14px 0 6px}
@@ -428,6 +451,107 @@ kbd{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:
   .row{flex-wrap:wrap;gap:5px} .nm{flex-basis:100%}
 }
 """
+
+
+def recent_thinking(n_rounds=4):
+    """Last few complete decision rounds from agent_performance.jsonl, newest first."""
+    path = BOT / "data" / "llm" / "agent_performance.jsonl"
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 400_000))
+            lines = f.read().decode("utf-8", "replace").splitlines()
+    except Exception:
+        return []
+    rounds = {}
+    for line in lines:
+        try:
+            r = json.loads(line)
+        except Exception:
+            continue
+        if r.get("type") != "decision" or r.get("agent_role") not in ("regime", "trade", "risk", "critic", "exit"):
+            continue
+        rounds.setdefault(r.get("pipeline_id"), {})[r["agent_role"]] = r
+    out = sorted(rounds.values(), key=lambda m: max(x["timestamp"] for x in m.values()), reverse=True)
+    return out[:n_rounds]
+
+
+def _first_sentence(txt, limit=230):
+    txt = (txt or "").strip()
+    if txt.startswith("{"):
+        return ""
+    cut = min([i for i in (txt.find(". "), len(txt)) if i >= 0]) + 1
+    txt = txt[:cut].rstrip(". ") + "."
+    return txt if len(txt) <= limit else txt[:limit - 1].rstrip() + "…"
+
+
+def _svg_line(points, w=860, h=170, pad_l=46, pad_b=22):
+    """points: [(ts, value)]. Single series, so no legend: the chart title names it."""
+    if len(points) < 2:
+        return ""
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    x0, x1 = min(xs), max(xs)
+    lo, hi = min(min(ys), 0), max(max(ys), 0)
+    span = (hi - lo) or 1
+    lo, hi = lo - span * 0.08, hi + span * 0.08
+    X = lambda t: pad_l + (t - x0) / ((x1 - x0) or 1) * (w - pad_l - 8)
+    Y = lambda v: 8 + (hi - v) / (hi - lo) * (h - 8 - pad_b)
+    o = ["<svg viewBox='0 0 %d %d' role='img'>" % (w, h)]
+    for v in (lo + (hi - lo) * k / 4 for k in range(5)):
+        o.append("<line class='grid' x1='%d' x2='%d' y1='%.1f' y2='%.1f'/>" % (pad_l, w - 8, Y(v), Y(v)))
+        o.append("<text x='%d' y='%.1f' text-anchor='end'>%s$%.0f</text>" % (pad_l - 6, Y(v) + 4, "-" if v < 0 else "+", abs(v)))
+    o.append("<line class='zero' x1='%d' x2='%d' y1='%.1f' y2='%.1f'/>" % (pad_l, w - 8, Y(0), Y(0)))
+    seen_month = set()
+    for t in xs:
+        m = datetime.fromtimestamp(t, timezone.utc).strftime("%b")
+        if m not in seen_month:
+            seen_month.add(m)
+            o.append("<text x='%.1f' y='%d'>%s</text>" % (X(t), h - 4, m))
+    o.append("<polyline class='ln' points='%s'/>" % " ".join("%.1f,%.1f" % (X(t), Y(v)) for t, v in points))
+    for t, v in points:
+        o.append("<circle class='hit' cx='%.1f' cy='%.1f' r='6'><title>%s: %s$%.2f total</title></circle>" % (
+            X(t), Y(v), datetime.fromtimestamp(t, timezone.utc).strftime("%b %d"), "-" if v < 0 else "+", abs(v)))
+    o.append("</svg>")
+    return "".join(o)
+
+
+def _svg_bars(series, w=860, h=170, pad_l=46, pad_b=22):
+    """series: [(label, value or None, tooltip)]. Diverging: blue above zero, red below."""
+    if not series:
+        return ""
+    vals = [v for _, v, _ in series if v is not None]
+    lim = max([abs(v) for v in vals] + [10]) * 1.1
+    Y = lambda v: 8 + (lim - v) / (2 * lim) * (h - 8 - pad_b)
+    n = len(series)
+    slot = (w - pad_l - 8) / n
+    bw = max(4, slot - 4)
+    o = ["<svg viewBox='0 0 %d %d' role='img'>" % (w, h)]
+    for v in (-lim, -lim / 2, 0, lim / 2, lim):
+        o.append("<line class='%s' x1='%d' x2='%d' y1='%.1f' y2='%.1f'/>" % (
+            "zero" if v == 0 else "grid", pad_l, w - 8, Y(v), Y(v)))
+        o.append("<text x='%d' y='%.1f' text-anchor='end'>%+.2f%%</text>" % (pad_l - 6, Y(v) + 4, v / 100))
+    for i, (lab, v, tip) in enumerate(series):
+        x = pad_l + i * slot + 2
+        if v is None:
+            o.append("<rect class='bx' x='%.1f' y='%.1f' width='%.1f' height='2' rx='1'><title>%s</title></rect>" % (
+                x, Y(0) - 1, bw, e(tip)))
+        else:
+            top, bot = (Y(v), Y(0)) if v >= 0 else (Y(0), Y(v))
+            o.append("<rect class='%s' x='%.1f' y='%.1f' width='%.1f' height='%.1f' rx='2'><title>%s</title></rect>" % (
+                "bp" if v >= 0 else "bn", x, top, bw, max(bot - top, 1), e(tip)))
+        if i % 2 == 0:
+            o.append("<text x='%.1f' y='%d' text-anchor='middle'>%s</text>" % (x + bw / 2, h - 4, e(lab)))
+    o.append("</svg>")
+    return "".join(o)
+
+
+def _week_label(wk):
+    try:
+        d = datetime.strptime(wk + "-1", "%G-W%V-%u")
+        return d.strftime("%b %d")
+    except Exception:
+        return wk
 
 
 def build():
@@ -554,6 +678,83 @@ def build():
         p.append("<div class='stat'><div class='k'>%s</div><div class='v'>%s</div></div>" % (e(k), e(v)))
     p.append("</div>")
 
+    # ── what the AI is thinking ──────────────────────────────────────
+    rounds = recent_thinking()
+    if rounds:
+        p.append("<h2>What the AI is thinking</h2>")
+        p.append("<p class='note'>%s</p>" % e(
+            "The bot's latest decision rounds, newest first, in each agent's own words. "
+            "A 'go' here still has to clear the confidence bar before it becomes a trade."))
+        p.append("<div class='think'>")
+        for m in rounds:
+            ts = max(x["timestamp"] for x in m.values())
+            sym = next(iter(m.values())).get("symbol", "?")
+            bits = []
+            if "regime" in m:
+                bits.append("market: %s" % m["regime"]["decision"].replace("_", " "))
+            if "trade" in m:
+                bits.append("trade agent: %s (confidence %.0f%%)" % (
+                    m["trade"]["decision"].upper(), 100 * float(m["trade"].get("confidence") or 0)))
+            if "critic" in m:
+                bits.append("critic: %s" % m["critic"]["decision"])
+            if "exit" in m:
+                bits.append("exit agent: %s" % m["exit"]["decision"].replace("_", " "))
+            why = _first_sentence((m.get("trade") or m.get("exit") or m.get("regime") or {}).get("reasoning_summary"))
+            p.append("<div class='r'><div class='h'>%s · %s · %s</div><div class='t'>%s</div></div>" % (
+                e(sym), e(human_age(time.time() - ts)), e(" · ".join(bits)), e(why)))
+        runs = []
+        try:
+            with open(BOT / "data" / "managers" / "runs.jsonl", encoding="utf-8") as f:
+                runs = [json.loads(l) for l in f if l.strip()]
+        except Exception:
+            pass
+        notes = [r for r in runs if r.get("note")]
+        if notes:
+            p.append("<div class='r'><div class='h'>Opus manager's latest note (%s)</div><div class='t'>%s</div></div>" % (
+                e(notes[-1]["ts"][:10]), e(notes[-1]["note"])))
+        p.append("</div>")
+
+    # ── how it's improving ───────────────────────────────────────────
+    prog = read_json(BOT / "data" / "agent_grades" / "live" / "progress.json", None)
+    if prog:
+        p.append("<h2>How it's improving</h2>")
+        pnl = prog.get("cum_pnl") or []
+        if len(pnl) >= 2:
+            last = pnl[-1][1]
+            p.append("<div class='chart'><h3>Total trading profit since May: %s$%.2f</h3>"
+                     "<p>Every closed trade added up, after fees. Flat stretches are when it wasn't trading. "
+                     "Hover a point for the date.</p>%s</div>" % ("-" if last < 0 else "+", abs(last), _svg_line(pnl)))
+        wk = prog.get("pick_quality_weekly") or {}
+        if wk:
+            from datetime import timedelta
+            keys = sorted(wk)
+            d = datetime.strptime(keys[0] + "-1", "%G-W%V-%u")
+            end = datetime.strptime(keys[-1] + "-1", "%G-W%V-%u")
+            full = {}
+            while d <= end:
+                k = d.strftime("%G-W%V")
+                full[k] = wk.get(k, {"n_go": 0, "n_skip": 0, "go_minus_skip": None})
+                d += timedelta(days=7)
+            wk = full
+            ser = []
+            for k, v in wk.items():
+                g = v.get("go_minus_skip")
+                tip = ("%s: GO picks did %+.2f%% vs SKIPs (%d go, %d skip)" % (_week_label(k), g / 100, v["n_go"], v["n_skip"])
+                       if g is not None else "%s: too few graded decisions (%d go, %d skip)" % (
+                           _week_label(k), v["n_go"], v["n_skip"]))
+                ser.append((_week_label(k), g, tip))
+            p.append("<div class='chart'><h3>Is the AI picking better trades than it skips?</h3>"
+                     "<p>Each bar is one week: how the setups the trade agent said GO to did over the next "
+                     "4 hours, minus the ones it skipped. Blue above the line means its picks were better; "
+                     "red means its skips did better. Steady blue is what learning looks like. "
+                     "Gray means too few graded decisions that week. August is missing (the PC was moving).</p>%s"
+                     % _svg_bars(ser))
+            p.append("<details><summary>Show as a table</summary><table><tr><th>Week of</th><th>GO minus SKIP</th>"
+                     "<th>GO</th><th>SKIP</th></tr>%s</table></details></div>" % "".join(
+                         "<tr><td>%s</td><td>%s</td><td>%d</td><td>%d</td></tr>" % (
+                             e(_week_label(k)), ("%+.2f%%" % (v["go_minus_skip"] / 100)) if v.get("go_minus_skip") is not None else "-",
+                             v["n_go"], v["n_skip"]) for k, v in wk.items()))
+
     # ── agent report cards (tools/live_grader.py) ────────────────────
     sc = read_json(BOT / "data" / "agent_grades" / "live" / "live_scorecard.json", None)
     if sc:
@@ -567,7 +768,7 @@ def build():
         words = {"collecting": "still collecting", "promising": "promising",
                  "earning": "EARNING its keep", "no edge yet": "no edge yet",
                  "backwards": "doing worse than chance"}
-        p.append("<ul class='todo'>")
+        p.append("<div class='think'>")
         for name, a in (sc.get("agents") or {}).items():
             n = min(a.get("nA", 0), a.get("nB", 0))
             if "diff_bps" in a:
@@ -577,10 +778,10 @@ def build():
                 detail = "%d vs %d cases so far" % (a.get("nA", 0), a.get("nB", 0))
             if a.get("historical_diff_bps") is not None:
                 detail += "; before the upgrade: %+.2f%%" % (a["historical_diff_bps"] / 100)
-            p.append("<li><b>%s agent: %s.</b><span>%s %s</span></li>" % (
+            p.append("<div class='r'><div class='h'>%s agent: %s</div><div class='t'>%s %s</div></div>" % (
                 e(name.capitalize()), e(words.get(a.get("verdict"), a.get("verdict"))),
                 e(a.get("question", "")), e(detail)))
-        p.append("</ul>")
+        p.append("</div>")
 
     # ── rules manager (tools/rules_manager.py) ───────────────────────
     rules = read_json(BOT / "data" / "managers" / "rules.json", None)
@@ -595,7 +796,7 @@ def build():
             "%d testing, %d earned, %d retired." % (
                 sum(r["status"] == "shadow" for r in rules), sum(r["status"] == "earned" for r in rules),
                 sum(r["status"] == "retired" for r in rules))))
-        p.append("<ul class='todo'>")
+        p.append("<div class='think'>")
         for r in live:
             sl = ", ".join("%s %s" % (k, v) for k, v in r["slice"].items())
             fw = (r.get("forward") or {})
@@ -606,10 +807,10 @@ def build():
                 prog += "; signals here did %+.2f%% vs the rest" % (fs["diff"] / 100)
             if ft.get("n_in"):
                 prog += "; trades here made $%+.2f total" % ft.get("total_in", 0)
-            p.append("<li><b>%s %s: %s [%s]</b><span>%s. %s</span></li>" % (
+            p.append("<div class='r'><div class='h'>%s %s: %s [%s]</div><div class='t'>%s. %s</div></div>" % (
                 e(r["id"]), e(r["action"].upper()), e(sl), e("EARNED" if r["status"] == "earned" else "testing"),
                 e(r.get("thesis", "").rstrip(".")), e(prog)))
-        p.append("</ul>")
+        p.append("</div>")
 
     # ── scheduled jobs ───────────────────────────────────────────────
     p.append("<h2>Scheduled jobs</h2>")

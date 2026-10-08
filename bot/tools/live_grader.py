@@ -435,6 +435,80 @@ def _offset_at(path, since, ts_of):
     return off
 
 
+PROGRESS = LIVE / "progress.json"
+HIST_ROWS = DATA / "agent_grades" / "graded_decisions.jsonl"
+HIST_WEEKLY_CACHE = LIVE / "hist_weekly.json"
+
+
+def _week(ts):
+    d = datetime.fromtimestamp(ts, timezone.utc)
+    return d.strftime("%G-W%V")
+
+
+def _weekly_pick_quality(path):
+    """Per ISO week: mean edge of the trade agent's GO picks minus its SKIPs (bps, 4h, net)."""
+    agg = collections.defaultdict(lambda: {"go": [], "skip": []})
+    seen = set()
+    try:
+        f = open(path, encoding="utf-8")
+    except FileNotFoundError:
+        return {}
+    with f:
+        for ln in f:
+            try:
+                r = json.loads(ln)
+            except Exception:
+                continue
+            if r.get("kind") != "pipeline" or not r.get("prop_side") or r.get("r4h") is None:
+                continue
+            d = (r.get("trade") or {}).get("dec")
+            d = "go" if d == "go" else ("skip" if d in ("skip", "flat") else None)
+            if not d:
+                continue
+            key = (r["sym"], r["prop_side"], d, int(r["ts"] // 3600))
+            if key in seen:
+                continue
+            seen.add(key)
+            e = _sgn(r["prop_side"]) * r["r4h"] - FEE
+            agg[_week(r["ts"])][d].append(e)
+    out = {}
+    for wk, v in agg.items():
+        g, s = v["go"], v["skip"]
+        out[wk] = {"n_go": len(g), "n_skip": len(s),
+                   "go_minus_skip": round(sum(g) / len(g) - sum(s) / len(s), 1) if len(g) >= 5 and len(s) >= 5 else None}
+    return out
+
+
+def build_progress():
+    """Weekly series for the dashboard's 'how it's improving' charts."""
+    hist = _load(HIST_WEEKLY_CACHE, None)
+    try:
+        mtime = HIST_ROWS.stat().st_mtime
+    except OSError:
+        mtime = 0
+    if not hist or hist.get("mtime") != mtime:
+        hist = {"mtime": mtime, "weeks": _weekly_pick_quality(HIST_ROWS)}
+        _save(HIST_WEEKLY_CACHE, hist)
+    weeks = dict(hist["weeks"])
+    weeks.update(_weekly_pick_quality(RESOLVED))   # live rows win for overlapping weeks
+
+    pnl = []
+    try:
+        import csv
+        with open(DATA / "trade_ledger.csv", encoding="utf-8") as f:
+            rows = sorted((float(r["timestamp"]), float(r["net_pnl"] or 0)) for r in csv.DictReader(f)
+                          if r.get("timestamp"))
+        cum = 0.0
+        for ts, p in rows:
+            cum += p
+            pnl.append([round(ts), round(cum, 2)])
+    except Exception:
+        pass
+    _save(PROGRESS, {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                     "pick_quality_weekly": dict(sorted(weeks.items())),
+                     "cum_pnl": pnl})
+
+
 def main():
     LIVE.mkdir(parents=True, exist_ok=True)
     state = _load(STATE, {})
@@ -456,6 +530,10 @@ def main():
     _save(PENDING, pending)
     _save(STATE, state)
     sc = build_scorecard()
+    try:
+        build_progress()
+    except Exception as e:
+        _log(f"progress build failed: {e}")
     _log(f"resolved {n}; pending {len(pending.get('ready', []))} pipelines + "
          f"{len(pending.get('exits', []))} exits; open {len(pending.get('open', {}))}; "
          f"total graded {sc['resolved_rows']}")
