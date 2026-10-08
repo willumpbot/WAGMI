@@ -134,6 +134,41 @@ async def login():
     await client.disconnect()
 
 
+PENDING = TG / "pending_login.json"
+
+
+async def login_start(phone):
+    """Step 1 (non-interactive): ask Telegram to send a login code to the owner's Telegram app."""
+    client = await _client()
+    await client.connect()
+    r = await client.send_code_request(phone)
+    PENDING.write_text(json.dumps({"phone": phone, "hash": r.phone_code_hash}), encoding="utf-8")
+    print("Code sent. Check your Telegram app (a message from 'Telegram'), then run:")
+    print("  ! python tools/hivemind/tg_listener.py --code 12345")
+    print("(add  --password YOURPASSWORD  if you use two-step verification)")
+    await client.disconnect()
+
+
+async def login_finish(code, password=None):
+    """Step 2 (non-interactive): complete the login with the code (and 2FA password if set)."""
+    from telethon.errors import SessionPasswordNeededError
+    p = json.loads(PENDING.read_text(encoding="utf-8"))
+    client = await _client()
+    await client.connect()
+    try:
+        await client.sign_in(p["phone"], code, phone_code_hash=p["hash"])
+    except SessionPasswordNeededError:
+        if not password:
+            print("Your account has two-step verification. Run again with:  --code " + code + " --password YOURPASSWORD")
+            await client.disconnect()
+            return
+        await client.sign_in(password=password)
+    me = await client.get_me()
+    PENDING.unlink(missing_ok=True)
+    print(f"Logged in as {me.first_name}. The scanner starts within 15 minutes (or now: task WAGMI-TGListener).")
+    await client.disconnect()
+
+
 async def list_chats():
     client = await _client()
     await client.connect()
@@ -221,12 +256,29 @@ async def run():
 
     client.loop.create_task(stay_invisible())
     client.loop.create_task(link_watch())
-    print(f"{datetime.now(timezone.utc):%H:%M}Z listening ({'all groups' if wanted is None else len(wanted)} chats)")
+    n_groups = 0
+    async for d in client.iter_dialogs():
+        if (d.is_group or d.is_channel) and (wanted is None or d.id in wanted):
+            n_groups += 1
+    stamp = TG / "last_start.txt"
+    if not stamp.exists() or time.time() - stamp.stat().st_mtime > 6 * 3600:
+        await client.send_message("me", f"✅ WAGMI scanner online: watching {n_groups} groups/channels for contract "
+                                        "addresses. Read-only, invisible to others. Cards will appear here.", link_preview=False)
+    stamp.write_text(str(time.time()), encoding="utf-8")
+    with open(TG / "listener.log", "a", encoding="utf-8") as f:
+        f.write(f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} listening on {n_groups} chats\n")
+    print(f"{datetime.now(timezone.utc):%H:%M}Z listening ({n_groups} chats)")
     await client.run_until_disconnected()
 
 
 if __name__ == "__main__":
-    if "--login" in sys.argv:
+    def _arg(flag):
+        return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv and sys.argv.index(flag) + 1 < len(sys.argv) else None
+    if "--phone" in sys.argv:
+        asyncio.run(login_start(_arg("--phone")))
+    elif "--code" in sys.argv:
+        asyncio.run(login_finish(_arg("--code"), _arg("--password")))
+    elif "--login" in sys.argv:
         asyncio.run(login())
     elif "--chats" in sys.argv:
         asyncio.run(list_chats())
