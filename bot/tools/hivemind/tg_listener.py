@@ -281,6 +281,7 @@ if __name__ == "__main__":
     elif "--login" in sys.argv:
         asyncio.run(login())
     elif "--chats" in sys.argv:
+        sys.stdout.reconfigure(encoding="utf-8")
         asyncio.run(list_chats())
     elif "--test" in sys.argv:
         sys.stdout.reconfigure(encoding="utf-8")
