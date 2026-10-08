@@ -34,7 +34,8 @@ def build():
                  f"range {ad.get('ci95', ['-', '-'])[0]} to {ad.get('ci95', ['-', '-'])[1]})."),
         "ready_when": "the live gain's whole range is above zero with 60+ signals",
         "ready": ready_g,
-        "note": "This removes a loss; it does not create a profit edge.",
+        "note": ("This removes a loss; it does not create a profit edge. Already built and tested, switched off, on branch "
+                 "claude/adaptive-stops (ADAPTIVE_STOPS=true): saying yes = merge, set the flag, restart when flat."),
     })
     sc = _load(BOT / "data" / "agent_grades" / "live" / "live_scorecard.json", {}) or {}
     d = sc.get("ic_muted_drops") or {}
