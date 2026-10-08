@@ -1,0 +1,87 @@
+{
+ "panel": 29402,
+ "coins": 24,
+ "cutoff": "2025-06-01",
+ "buckets": {
+  "<=1 dissent": {
+   "n": 5700,
+   "mean_move_pct": 5.283,
+   "median_move_pct": 3.082,
+   "mean_em_pct": 4.324,
+   "log_ratio_actual_over_em": -0.361,
+   "log_ratio_week_t": -14.87,
+   "weeks": 298
+  },
+  "2 dissent": {
+   "n": 10676,
+   "mean_move_pct": 4.519,
+   "median_move_pct": 2.566,
+   "mean_em_pct": 3.963,
+   "log_ratio_actual_over_em": -0.4965,
+   "log_ratio_week_t": -22.63,
+   "weeks": 317
+  },
+  ">=3 dissent": {
+   "n": 13026,
+   "mean_move_pct": 4.474,
+   "median_move_pct": 2.41,
+   "mean_em_pct": 3.932,
+   "log_ratio_actual_over_em": -0.5094,
+   "log_ratio_week_t": -20.9,
+   "weeks": 317
+  }
+ },
+ "raw_spread_pp": 0.809,
+ "em_explains_pp": 0.392,
+ "em_explains_pct_of_raw": 48.5,
+ "residual_log_spread": 0.1484,
+ "regression": {
+  "train": {
+   "n": 19658,
+   "log_em_coef": 0.843,
+   "disagree_coef": -0.0521,
+   "disagree_week_ci": [
+    -0.072,
+    -0.0313
+   ],
+   "disagree_significant": true
+  },
+  "test": {
+   "n": 9744,
+   "log_em_coef": 0.2068,
+   "disagree_coef": -0.0885,
+   "disagree_week_ci": [
+    -0.1258,
+    -0.0528
+   ],
+   "disagree_significant": true
+  }
+ },
+ "permutation": {
+  "real": 0.1484,
+  "perm_mean": 0.1185,
+  "perm_ci": [
+   0.0871,
+   0.1491
+  ],
+  "p_two_sided": 0.026
+ },
+ "mde_log_spread": 0.1437,
+ "joint_test": {
+  "cells": 1699,
+  "weeks": 282,
+  "mean_log": 0.0273,
+  "week_mean_log": 0.0088,
+  "week_t": 0.17,
+  "week_ci": [
+   -0.0947,
+   0.1124
+  ],
+  "pct_cells_positive": 53.4,
+  "level_pct": 0.89,
+  "placebo_mean": 0.0017,
+  "placebo_p": 0.2667,
+  "survives": false
+ },
+ "verdict": "does not survive controlling for the HAR forecast -- remove the caption"
+}
