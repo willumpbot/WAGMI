@@ -540,6 +540,35 @@ def build():
                 e(a.get("question", "")), e(detail)))
         p.append("</ul>")
 
+    # ── rules manager (tools/rules_manager.py) ───────────────────────
+    rules = read_json(BOT / "data" / "managers" / "rules.json", None)
+    if rules:
+        live = [r for r in rules if r.get("status") != "retired"]
+        p.append("<h2>Rules the AI manager is testing</h2>")
+        p.append("<p class='note'>%s</p>" % e(
+            "Once a day an Opus 'manager' proposes specific rules about which kinds of "
+            "trades to avoid or favor. Each rule is scored ONLY on what happens after it "
+            "was written, so it can't pass by fitting the past. Nothing acts on a rule yet; "
+            "'earned' means it has proven itself and is ready for you to switch on. "
+            "%d testing, %d earned, %d retired." % (
+                sum(r["status"] == "shadow" for r in rules), sum(r["status"] == "earned" for r in rules),
+                sum(r["status"] == "retired" for r in rules))))
+        p.append("<ul class='todo'>")
+        for r in live:
+            sl = ", ".join("%s %s" % (k, v) for k, v in r["slice"].items())
+            fw = (r.get("forward") or {})
+            fs, ft = fw.get("signals_bps") or {}, fw.get("trades_usd") or {}
+            prog = "since %s: %d signals, %d trades in this slice" % (
+                r.get("created_iso", "")[:10], fs.get("n_in", 0), ft.get("n_in", 0))
+            if "diff" in fs:
+                prog += "; signals here did %+.2f%% vs the rest" % (fs["diff"] / 100)
+            if ft.get("n_in"):
+                prog += "; trades here made $%+.2f total" % ft.get("total_in", 0)
+            p.append("<li><b>%s %s: %s [%s]</b><span>%s. %s</span></li>" % (
+                e(r["id"]), e(r["action"].upper()), e(sl), e("EARNED" if r["status"] == "earned" else "testing"),
+                e(r.get("thesis", "")), e(prog)))
+        p.append("</ul>")
+
     # ── scheduled jobs ───────────────────────────────────────────────
     p.append("<h2>Scheduled jobs</h2>")
     nattn = sum(1 for t in tasks if t["status"] == "attn")

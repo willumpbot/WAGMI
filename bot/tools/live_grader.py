@@ -127,7 +127,8 @@ def ingest(state, pending):
                 continue
             side = "LONG" if r.get("side") in ("BUY", "LONG") else "SHORT"
             sigs.append([_iso(r["timestamp"]), r["symbol"], side, r.get("entry"),
-                         r.get("sl"), r.get("tp1"), r.get("num_agree"), r.get("confidence")])
+                         r.get("sl"), r.get("tp1"), r.get("num_agree"), r.get("confidence"),
+                         r.get("regime")])
         except Exception:
             continue
     now = time.time()
@@ -261,6 +262,7 @@ def resolve(pending):
             if sg:
                 row["sltp"] = sltp(path, sg[2], sg[4], sg[5])
                 row["sig_agree"], row["sig_conf"] = sg[6], sg[7]
+                row["sig_regime"] = sg[8] if len(sg) > 8 else None
             fo.write(json.dumps(row) + "\n")
             done += 1
         for r in due_exits:
