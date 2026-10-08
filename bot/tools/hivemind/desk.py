@@ -261,6 +261,7 @@ def build_terminal():
             "decisions": _load(HM / "decisions.json", []) or [],
             "journal": _load(HM / "journal.json", {}) or {},
             "scan": _load(HM / "scan.json", {}) or {}, "plans": _load(HM / "plans.json", {}) or {},
+            "tgTrack": _load(HM / "tg" / "track.json", {}) or {},
             "levelStats": ((_load(BOT / "data" / "laptop_mining" / "levels.json", {}) or {}).get("levels") or {}),
             "safeLev": ((_load(BOT / "data" / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table") or {})}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")

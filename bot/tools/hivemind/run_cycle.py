@@ -53,7 +53,7 @@ def main():
             journal.main()
         except Exception as e:
             log(f"journal failed: {e}")
-        for mod, fn in (("scanner", "run"), ("plans", "resolve")):
+        for mod, fn in (("scanner", "run"), ("plans", "resolve"), ("tg_track", "run")):
             try:
                 res = getattr(__import__(mod), fn)()
                 if mod == "scanner":
