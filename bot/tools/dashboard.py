@@ -511,6 +511,34 @@ def build():
         p.append("<div class='stat'><div class='k'>%s</div><div class='v'>%s</div></div>" % (e(k), e(v)))
     p.append("</div>")
 
+    # ── agent report cards (tools/live_grader.py) ────────────────────
+    sc = read_json(BOT / "data" / "agent_grades" / "live" / "live_scorecard.json", None)
+    if sc:
+        p.append("<h2>AI agent report cards</h2>")
+        p.append("<p class='note'>%s</p>" % e(
+            "Every AI decision is checked 12 hours later against what the price "
+            "actually did. %d decisions graded since %s. An agent is 'earning' only "
+            "when its good calls beat its bad calls by a clear margin over 100+ cases. "
+            "Updated %s." % (sc.get("resolved_rows", 0), (sc.get("since") or "")[:10],
+                             human_age(time.time() - datetime.fromisoformat(sc["updated"]).timestamp()))))
+        words = {"collecting": "still collecting", "promising": "promising",
+                 "earning": "EARNING its keep", "no edge yet": "no edge yet",
+                 "backwards": "doing worse than chance"}
+        p.append("<ul class='todo'>")
+        for name, a in (sc.get("agents") or {}).items():
+            n = min(a.get("nA", 0), a.get("nB", 0))
+            if "diff_bps" in a:
+                detail = "%+.2f%% per call (range %+.2f%% to %+.2f%%), %d cases" % (
+                    a["diff_bps"] / 100, a["ci95"][0] / 100, a["ci95"][1] / 100, n)
+            else:
+                detail = "%d vs %d cases so far" % (a.get("nA", 0), a.get("nB", 0))
+            if a.get("historical_diff_bps") is not None:
+                detail += "; before the upgrade: %+.2f%%" % (a["historical_diff_bps"] / 100)
+            p.append("<li><b>%s agent: %s.</b><span>%s %s</span></li>" % (
+                e(name.capitalize()), e(words.get(a.get("verdict"), a.get("verdict"))),
+                e(a.get("question", "")), e(detail)))
+        p.append("</ul>")
+
     # ── scheduled jobs ───────────────────────────────────────────────
     p.append("<h2>Scheduled jobs</h2>")
     nattn = sum(1 for t in tasks if t["status"] == "attn")
