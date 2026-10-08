@@ -55,7 +55,11 @@ def main():
             log(f"journal failed: {e}")
         for mod, fn in (("scanner", "run"), ("plans", "resolve")):
             try:
-                getattr(__import__(mod), fn)()
+                res = getattr(__import__(mod), fn)()
+                if mod == "scanner":
+                    import scan_grader
+                    scan_grader.log(res)
+                    scan_grader.resolve()
             except Exception as e:
                 log(f"{mod} failed: {e}")
         try:
