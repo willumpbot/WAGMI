@@ -33,3 +33,8 @@ Curated by the overseer (Claude). External evidence, each item with its source a
     Vol-scaling adds +0.19–0.21R only with a near target (0.5R), and it was observed on test, not pre-registered. Treat as a hypothesis.
   - Safe leverage (13k coin-days, OOS p95 94.6%, p99 97.7%) roughly halves from calm to hot: BTC 16.8x→7.7x.
     HYPE's calmest quintile is worse than BTC's hottest. Divide the table by 1.5.
+- 2026-10-08, laptop:
+  - Geometry walk-forward: wider stops beat the bot default in 4/4 folds, CI excluding 0 in all (mean +0.50R). It cannot make bad periods good.
+  - Funding is 99.3% persistent when in its top quintile, but cross-asset carry (BTC hedge) loses: hedge drift is 25–38x the funding.
+  - The same-asset spot/perp basis version may be +0.49% per 3 days: UNVERIFIED, needs HL spot availability.
+  - Squeeze odds (adverse >2x forecast in 1d) are modestly predictable: more voice agreement means more squeeze risk (top decile 1.7–1.8x base). Funding sign agrees but adds ~no AUC.

@@ -1,0 +1,69 @@
+{
+ "fold_days": 14,
+ "n_folds": 4,
+ "beat_default": "4/4",
+ "ci_excluded_0": 4,
+ "mean_diff_R": 0.4954,
+ "pick_counts": {
+  "12.0|0.5": 3,
+  "8.0|0.5": 1
+ },
+ "folds": [
+  {
+   "fold": "2026-03-26..2026-04-08",
+   "n": 4118,
+   "picked": "12.0|0.5",
+   "picked_R": -0.0421,
+   "default_R": -0.4083,
+   "diff_R": 0.3662,
+   "ci": [
+    0.1475,
+    0.549
+   ],
+   "better": true,
+   "ci_excludes_0": true
+  },
+  {
+   "fold": "2026-04-09..2026-04-22",
+   "n": 3143,
+   "picked": "12.0|0.5",
+   "picked_R": 0.009,
+   "default_R": -0.2934,
+   "diff_R": 0.3023,
+   "ci": [
+    0.0272,
+    0.5386
+   ],
+   "better": true,
+   "ci_excludes_0": true
+  },
+  {
+   "fold": "2026-04-23..2026-05-10",
+   "n": 6916,
+   "picked": "12.0|0.5",
+   "picked_R": 0.0781,
+   "default_R": -0.4427,
+   "diff_R": 0.5208,
+   "ci": [
+    0.2329,
+    0.8468
+   ],
+   "better": true,
+   "ci_excludes_0": true
+  },
+  {
+   "fold": "2026-05-11..2026-06-05",
+   "n": 325,
+   "picked": "8.0|0.5",
+   "picked_R": -0.3573,
+   "default_R": -1.1497,
+   "diff_R": 0.7924,
+   "ci": [
+    0.3599,
+    1.3378
+   ],
+   "better": true,
+   "ci_excludes_0": true
+  }
+ ]
+}

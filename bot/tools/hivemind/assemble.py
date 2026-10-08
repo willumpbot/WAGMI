@@ -284,22 +284,49 @@ def voice_vol(sym):
     return volforecast.forecast(df["c"].tolist()[-40:])
 
 
-def voice_risk(sym, vol, price):
-    """Laptop missions 8+9: forecast-sized stop and safe leverage for the coin's current vol quintile."""
-    t = (_load(DATA / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table", {}).get(sym)
-    f = (vol or {}).get("next_day_move_pct")
+def _laptop_module(name):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("laptop_" + name, DATA / "laptop_mining" / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_RISK_VOICE = None
+_SQUEEZE = None
+
+
+def voice_risk(sym, vol, price, disagree=None):
+    """The laptop's risk_voice.risk_read (single source of truth for the tested stop/target/leverage numbers)
+    plus its squeeze model: P(adverse move > 2x the forecast move within 1 day), SQUEEZE.md '+ consensus'."""
+    global _RISK_VOICE, _SQUEEZE
+    import basemap
+    import math
+    if _RISK_VOICE is None:
+        _RISK_VOICE = _laptop_module("risk_voice")
+    if _SQUEEZE is None:
+        _SQUEEZE = (_load(DATA / "laptop_mining" / "squeeze.json", {}) or {}).get("sides", {})
+    df = basemap._closed(basemap._daily(sym)).tail(60)
     out = {}
-    if f and price:
-        d = 2 * f / 100 * price
-        out["stop_long"], out["stop_short"] = round(price - d, 6), round(price + d, 6)
-        out["target_long"], out["target_short"] = round(price + 0.5 * d, 6), round(price - 0.5 * d, 6)
-        out["rule"] = "stop 2x forecast move, target 0.5R, 48h time stop (ADAPTIVE_STOPS.md)"
-    if t and f:
-        q, v = min(t["quintiles"].items(), key=lambda kv: abs(kv[1]["fcast_median"] - f))
-        h1 = v["horizons"]["1d"]
-        out.update({"vol_quintile": q, "safe_lev_long": round(v["max_lev_long_1d_p99"] / 1.5, 1),
-                    "safe_lev_short": round(v["max_lev_short_1d_p99"] / 1.5, 1),
-                    "worst_1d_long_p99": h1["long"]["p99"], "worst_1d_short_p99": h1["short"]["p99"]})
+    for side in ("long", "short"):
+        r = _RISK_VOICE.risk_read(sym, df, side)
+        f1 = r.get("expected_move_1d_pct")
+        sq = None
+        m = ((_SQUEEZE.get(side) or {}).get("models") or {}).get("+ consensus")
+        if m and f1 and disagree is not None:
+            c = m["coef"]
+            z = c[0] + c[1] * math.log(f1 + 1e-8) + c[2] * disagree
+            sq = round(100 / (1 + math.exp(-z)), 1)
+        out[side] = {"stop_pct": r.get("stop_pct"), "target_pct": r.get("target_pct"),
+                     "max_leverage": r.get("max_leverage"), "worst_case_1d_pct": r.get("worst_case_1d_pct"),
+                     "vol_bucket": r.get("vol_bucket"), "expected_move_label": r.get("expected_move_label"),
+                     "squeeze_pct": sq, "squeeze_base_pct": (_SQUEEZE.get(side) or {}).get("base_rate_test")}
+        if price and r.get("stop_pct"):
+            sgn = 1 if side == "long" else -1
+            out[side]["stop_price"] = round(price * (1 - sgn * r["stop_pct"] / 100), 6)
+            out[side]["target_price"] = round(price * (1 + sgn * r["target_pct"] / 100), 6)
+    out["rule"] = "stop 2x forecast move, target 0.5R, 48h (risk_voice.py, laptop)"
+    out["notes"] = "Long-side squeeze odds over-predict mid-range: use for ranking only (SQUEEZE.md)."
     return out
 
 
@@ -349,10 +376,6 @@ def assemble():
             except Exception as e:
                 st[name] = {"error": f"{type(e).__name__}: {e}"[:200]}
         try:
-            st["risk"] = voice_risk(sym, st.get("vol"), (st.get("market") or {}).get("price"))
-        except Exception as e:
-            st["risk"] = {"error": f"{type(e).__name__}: {e}"[:200]}
-        try:
             st["deep"] = voice_deep(sym, (st.get("market") or {}).get("price") or 0)
         except Exception as e:
             st["deep"] = {"error": f"{type(e).__name__}: {e}"[:200]}
@@ -370,6 +393,11 @@ def assemble():
             st["voices"] = vz.compute(sym, st, shared, chief_c)
             st["consensus"] = vz.consensus(st["voices"])
             st["contradictions"] = vz.contradictions(st["voices"])
+            try:
+                st["risk"] = voice_risk(sym, st.get("vol"), (st.get("market") or {}).get("price"),
+                                        (st.get("consensus") or {}).get("dissent_families"))
+            except Exception as e:
+                st["risk"] = {"error": f"{type(e).__name__}: {e}"[:200]}
             _log_voices(sym, st)
         except Exception as e:
             st["voices"] = []

@@ -210,6 +210,16 @@ function trend(s){
 function vmap(s){ const m = {}; for (const v of (C(s).voices||[])) m[v.voice] = v; return m; }
 function atr(s){ return (C(s).market||{}).atr_pct_1d; }
 function safeLev(s){
+  const rk = C(s).risk;
+  if (rk && rk.long && rk.long.max_leverage != null) {
+    const t = (DATA.safeLev || {})[s] || {}; const q = (rk.long.vol_bucket || "").split(" ")[0];
+    const qq = (t.quintiles || {})[q] || {}; const h = qq.horizons || {};
+    return {q: rk.long.vol_bucket, long: rk.long.max_leverage, short: rk.short.max_leverage, cap: t.max_leverage,
+            adv: {"1d": h["1d"], "3d": h["3d"]}, src: "risk_voice"};
+  }
+  return safeLevTable(s);
+}
+function safeLevTable(s){
   // SAFE_LEVERAGE.md: leverage whose liquidation sits beyond the 99th-percentile 1-day adverse move for the coin's
   // current forecast-volatility quintile, divided by 1.5 as the laptop recommends (absorbs funding/fees, true p99).
   const t = (DATA.safeLev || {})[s]; const f = (C(s).vol || {}).next_day_move_pct;
@@ -239,6 +249,7 @@ const COLS = [
   {k:"rng", h:"20D Range", v:s=>((C(s).market||{}).range_20d||{}).position, r:s=>{const r=(C(s).market||{}).range_20d||{};if(r.position==null)return"–";const p=Math.max(0,Math.min(1,r.position))*100;return `<span class="rb" title="${(r.position*100).toFixed(0)}% from low ${fmt(r.low)} to high ${fmt(r.high)}"><i style="left:${p}%"></i></span> <span class="num mut">${(r.position*100).toFixed(0)}%</span>`}},
   {k:"atr", h:"Exp. Move 1D", v:s=>((C(s).vol||{}).next_day_move_pct ?? atr(s)), r:s=>{const f=C(s).vol||{};const c=C(s).consensus||{};const z=c.move_size;const v=f.next_day_move_pct;return `<span class="num" title="Forecast size of tomorrow's move (HAR volatility model, beats 'same as recent' out of sample; 5-day vol forecast ${f.next_5d_vol_pct??"–"}%). Typical day (ATR): ${atr(s)!=null?atr(s).toFixed(1)+"%":"–"}. ${z?"Voices: "+z+".":""}">${v!=null?"±"+v.toFixed(1)+"%":(atr(s)!=null?atr(s).toFixed(1)+"%":"–")}${z==="bigger than usual"?' <span class="up">▲</span>':z==="smaller than usual"?' <span class="mut">▼</span>':""}</span>`}},
   {k:"slev", h:"Safe lev L/S", v:s=>{const x=safeLev(s);return x?Math.min(x.long,x.short):null}, r:s=>{const x=safeLev(s);if(!x)return'<span class="dim">–</span>';return `<span class="num" title="Max leverage with liquidation beyond the worst 1-day move on 99% of similar-volatility days (vol quintile ${x.q}), divided by 1.5 for safety. From 13k coin-days, held out of sample.">${x.long.toFixed(1)}× <span class="mut">/</span> ${x.short.toFixed(1)}×</span>`}},
+  {k:"sq", h:"Squeeze L/S", v:s=>{const r=C(s).risk||{};return Math.max((r.long||{}).squeeze_pct||0,(r.short||{}).squeeze_pct||0)}, r:s=>{const r=C(s).risk||{},L=r.long||{},S=r.short||{};if(L.squeeze_pct==null)return'<span class="dim">–</span>';const cl=(v,b)=>v>=b*1.4?"dn":v<=b*0.8?"up":"mut";return `<span class="num" title="Chance of a move more than 2x the expected size AGAINST you within a day (SQUEEZE.md; higher when voices agree). Normal: long ${L.squeeze_base_pct}% / short ${S.squeeze_base_pct}%. Long side: use for ranking only."><span class="${cl(L.squeeze_pct,L.squeeze_base_pct)}">${L.squeeze_pct}%</span> <span class="mut">/</span> <span class="${cl(S.squeeze_pct,S.squeeze_base_pct)}">${S.squeeze_pct}%</span></span>`}},
   {k:"fund", h:"Funding/h", v:s=>(C(s).market||{}).funding_hourly, r:s=>{const f=(C(s).market||{}).funding_hourly;if(f==null)return"–";return `<span class="num ${f>2.5e-5?"dn":f<0?"up":"mut"}">${(f*100).toFixed(4)}%</span>`}},
   {k:"oi", h:"OI", v:s=>(oi(s)||{}).v, r:s=>{const o=oi(s);return o?`<span class="num mut" title="over ~${o.d} days">${o.v>0?"+":""}${o.v}%</span>`:"–"}},
   {k:"lu", h:"Liq ↑", v:s=>(nearestLiq(s,1)||{}).d, r:s=>{const l=nearestLiq(s,1);return l?`<span class="num">${fmt(l.p)}</span> <span class="num mut">${pct(l.d)}</span>`:"–"}},
@@ -390,7 +401,8 @@ function hist(){
 function calc(){
   const p = px(sel), side = $("c_side").value, a = (C(sel).vol||{}).next_day_move_pct || atr(sel) || 3;
   if (!$("c_entry").dataset.touched) $("c_entry").value = p ? +p.toPrecision(6) : "";
-  if (!$("c_stop").dataset.touched) $("c_stop").value = p ? +(p*(1 - (side==="LONG"?1:-1)*2*a/100)).toPrecision(6) : "";
+  if (!$("c_stop").dataset.touched) { const rk = ((C(sel).risk||{})[side.toLowerCase()]||{}); const sp = rk.stop_pct ?? 2*a;
+    $("c_stop").value = p ? +(p*(1 - (side==="LONG"?1:-1)*sp/100)).toPrecision(6) : ""; }
   const acct = +$("c_acct").value, risk = +$("c_risk").value/100, e = +$("c_entry").value, st = +$("c_stop").value, lev = Math.max(1,+$("c_lev").value);
   const dist = Math.abs(e-st)/e, riskUsd = acct*risk, notional = dist ? riskUsd/dist : 0, qty = e ? notional/e : 0, margin = notional/lev;
   const mm = 0.005, liq = side==="LONG" ? e*(1-1/lev+mm) : e*(1+1/lev-mm);
@@ -591,7 +603,7 @@ function playbook(){
   const cards = [
     {cls:"no", n:"YOU", t:"Decide the direction. Nothing here can", w:"Not the bot, not its AI, not the voices agreeing. Tested on 18k days and 8k decisions. Your read decides; the terminal sizes the risk."},
     {cls:"ok", n: f!=null ? "±"+f.toFixed(1)+"%" : "–", t:`${sel}: expected move tomorrow`, w:"This IS predictable (beat the naive guess in 22/22 test periods). Plan stops and targets around it."},
-    {cls:"ok", n: f!=null ? (2*f).toFixed(1)+"%" : "2× move", t:"Put the stop about this far away", w:`2× the expected move, take profit at half that distance, close after 48h. Tight stops lost ~0.4R per trade in testing.${g.adaptive?` Live check so far: ${g.adaptive.mean_r}R vs ${g.mean_r_current}R for tight stops.`:""}`},
+    {cls:"ok", n: ((C(sel).risk||{}).long||{}).stop_pct!=null ? (+C(sel).risk.long.stop_pct).toFixed(1)+"%" : (f!=null ? (2*f).toFixed(1)+"%" : "2× move"), t:"Put the stop about this far away", w:`2× the expected move, take profit at half that distance, close after 48h. Tight stops lost ~0.4R per trade in testing.${g.adaptive?` Live check so far: ${g.adaptive.mean_r}R vs ${g.mean_r_current}R for tight stops.`:""}`},
     {cls: x ? "ok" : "wait", n: x ? Math.min(x.long,x.short).toFixed(1)+"×" : "–", t:`${sel}: max safe leverage now`, w: x ? `Long ${x.long.toFixed(1)}× · short ${x.short.toFixed(1)}×. Above this, a normal bad day (1-in-100) liquidates you. Halves on wild days.` : "No table for this coin yet."},
     {cls:"wait", n: c.move_size_hint || "–", t:"Voices agreeing = bigger day, not direction", w:"When most independent voices line up, expect a bigger move either way. Size down, not up."},
     {cls:"no", n:"RSI", t:"\"Oversold\" is not a buy", w:"On these coins, extreme RSI has more often kept going. Treat it as a warning."},
