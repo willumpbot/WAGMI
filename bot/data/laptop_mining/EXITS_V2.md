@@ -10,7 +10,15 @@ Data: `exits_v2.json`. Supersedes `EXITS.md`._
 **`EXITS.md` found that cutting at 4h/12h/24h costs 0.08–0.12R. Once the horizon is long enough for a
 48h time stop to actually fire, and the stop width is one that actually binds, that result
 disappears: every confidence interval contains zero, and 9 of 12 cells flip sign between calendar
-halves.** The bot's current `TIME_STOP_HOURS = 12` needs no change.
+halves.** No change to `TIME_STOP_HOURS` is justified at any baseline.
+
+**Note on the baseline value.** The live bot reads `bot/trading_config.py:283`,
+`_env_int("TIME_STOP_HOURS", 2)` — default **2**, env-overridable. The `12.0` figures in
+`bot/manual/simulator.py:38` and `pa_simulator.py:46` belong to *backtest tools*, not the live
+config; an earlier draft of `LAPTOP_REPLY_3.md` wrongly cited them as the live value and that is
+withdrawn. The server's decision card says the running value is 8, which implies an env override I
+cannot see from this machine. **The verdict is HOLD whether the baseline is 2, 8 or 12** — no cell in
+the measured range differs significantly from no time stop at all.
 
 This is a **real** null, not a powerless one — see the synthetic control below.
 
@@ -45,13 +53,13 @@ did not.
 
 ## The result
 
-### Stop ×1 (what the bot runs today), target 0.5R — baseline is no time stop
+### Stop ×1 (the bot's current stop width), target 0.5R — baseline is no time stop
 
 | time stop | vs none | CI95 (week blocks) | direction-free | CI95 |
 |---|---|---|---|---|
 | 4h | +0.0161 | [−0.0719, +0.1042] | −0.0118 | [−0.0348, +0.0161] |
-| 8h | +0.0073 | [−0.0869, +0.0777] | −0.0154 | [−0.0348, +0.0030] |
-| **12h ← the bot** | **+0.0149** | **[−0.0604, +0.0718]** | −0.0077 | [−0.0311, +0.0106] |
+| **8h ← the card's stated baseline** | **+0.0073** | **[−0.0869, +0.0777]** | −0.0154 | [−0.0348, +0.0030] |
+| 12h | +0.0149 | [−0.0604, +0.0718] | −0.0077 | [−0.0311, +0.0106] |
 | 24h | −0.0089 | [−0.0401, +0.0176] | −0.0139 | [−0.0260, +0.0006] |
 | 48h | +0.0068 \* | [+0.0011, +0.0114] | +0.0026 | [−0.0004, +0.0051] |
 | 72h | +0.0038 | [+0.0000, +0.0103] | +0.0014 | [−0.0003, +0.0040] |
@@ -91,8 +99,8 @@ a policy effect. **Whatever v1 measured, it did not survive the next seven weeks
 
 ## Trader rules
 
-1. **Leave the time stop alone.** 12h is as good as 4h, 24h, 48h or none at either stop width, and
-   nothing in the measured range is worth 0.05R.
+1. **Leave the time stop alone.** 2h, 8h and 12h are all as good as 24h, 48h or none at either stop
+   width, and nothing in the measured range is worth 0.05R.
 2. **Do not read an exit policy off a backtest whose horizon equals the policy** — the longest cell is
    silently the baseline, and every other cell inherits its bias.
 3. **Measure exits on a bracket that binds.** At ×8 only 14.3% of trades reach stop or target, so the

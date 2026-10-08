@@ -112,17 +112,63 @@ other four refutations stand.
 
 ---
 
-## 2. TIME STOP: the card's baseline does not exist in the code
+## 2. TIME STOP: hold the change — and one correction of my own
 
-**You have the current value as 8h. `EXITS.md` has it as 2h. The code says 12h.**
+### ⚠️ Correction first: I got the baseline wrong, in an earlier version of this very file
 
-```
-bot/manual/simulator.py:38     TIME_STOP_HOURS = 12.0   # "12h optimal per edge study (+4.5R net vs +2.4R at 24h)"
-bot/manual/pa_simulator.py:46  TIME_STOP_HOURS = 12.0
-bot/GO_LIVE_RECOMMENDATION.md:43   TIME_STOP_HOURS=12
-```
+I previously wrote here that the live value is **12h** and that `EXITS.md`'s "2h" was my error.
+**That was backwards.** I had grepped `bot/manual/*`, which are *backtest tools*, not the live config.
+The actual picture:
 
-The change is **12 → 48**, not 8 → 48. The error in `EXITS.md` line 11 was mine and is corrected here.
+| file | value | what it is |
+|---|---|---|
+| **`bot/trading_config.py:283`** | **`_env_int("TIME_STOP_HOURS", 2)`** | **the live bot** — default 2, env-overridable |
+| `bot/manual/simulator.py:38` | `12.0` | a backtest tool — this is where the "12h optimal per edge study" comment lives |
+| `bot/manual/pa_simulator.py:46` | `12.0` | also a backtest tool |
+
+So **`EXITS.md`'s "the bot's `TIME_STOP_HOURS` is 2" was right all along** and I withdraw my
+"correction" of it. Your card's **8** is presumably an env override set on the server, which I cannot
+see from here — **please confirm the running value**, since it is the one number none of my docs can
+establish.
+
+This changes nothing about the recommendation below: the answer is HOLD whether the baseline is 2, 8
+or 12. But the claim was wrong and it went out under my name.
+
+### The recommendation: HOLD. No time-stop change is justified.
+
+`exits_v2.py` / `EXITS_V2.md`. Re-run with two artifacts removed, the v1 finding disappears.
+
+**Artifact 1 — the 48h baseline was a no-op.** `exits.py:31` sets `HORIZON_H = 48` while testing stops
+at (4,12,24,**48**). A 48h stop on a 48h horizon can never fire, so **"48h" *was* the baseline** and
+its −0.0146R was a mark-to-close artifact. Every other cell was measured against it. Fixed: horizon
+120h, so 4–72h all genuinely bind.
+
+**Artifact 2 — the bracket barely existed.** `exits.py:30` sets `STOP_MULT = 8.0`, "the geometry
+plateau", from the refuted `GEOMETRY.md`. Per §1, ×8 binds on only **14.3%** of trades — so the time
+stop *was* the dominant exit, which is close to circular. Fixed: tested at ×1 and ×2, both binding.
+
+**The synthetic control passes** (no false positive at zero; smallest detectable effect **0.05R**).
+v1 claimed −0.0939R at 12h and −0.1158R at 4h — both well above that floor, so this test would have
+found them.
+
+| stop ×1, vs no time stop | | stop ×2, vs no time stop | |
+|---|---|---|---|
+| 4h | +0.0161 [−0.0719, +0.1042] | 4h | +0.0389 [−0.0816, +0.1404] |
+| 12h | +0.0149 [−0.0604, +0.0718] | 12h | +0.0304 [−0.0710, +0.1417] |
+| 24h | −0.0089 [−0.0401, +0.0176] | 24h | −0.0245 [−0.0658, +0.0391] |
+| 48h | +0.0068 [+0.0011, +0.0114] | 48h | −0.0040 [−0.0255, +0.0271] |
+
+**Not one cell shows a significant cost.** The only two significant cells in the table (×1 at 48h/72h)
+are *positive* and under 0.01R. And the calendar walk-forward kills it outright — **sign flips in 9 of
+12 cells**, with ×2|12h going **+0.1714 → −0.0347** between adjacent 7-week halves. That is a regime
+signature, not a policy effect.
+
+Note this independently reproduces `RETRACTION.md`'s finding #4 by a different route: the red team
+found the train half was +0.0505R and that 2 of 25 days carried the headline; I find the horizon and
+the non-binding bracket produced it. Two methods, same null.
+
+**Also: the +0.48R on your card never came from the exits work at all** — it is
+`ADAPTIVE_STOPS.md`'s stop-width number. See §1 for where that figure actually stands (+0.1187R).
 
 **"48h" is a no-op, not a setting.** `exits.py:31` is `HORIZON_H = 48` and the stops tested are
 `(4, 12, 24, 48)`. A 48h time stop on a 48h horizon **can never fire** — it is numerically the
