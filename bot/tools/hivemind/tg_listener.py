@@ -195,6 +195,8 @@ async def run():
     recent = {}
     conf = _load_conf()
     wanted = None if conf.get("chats") == "all_groups" else set(int(x) for x in conf.get("chats", []))
+    # chats whose cards go to Saved Messages; the others are logged silently for caller grading
+    notify = None if "notify" not in conf else set(int(x) for x in conf["notify"])
 
     @client.on(events.NewMessage(incoming=True))
     async def handler(ev):
@@ -223,8 +225,10 @@ async def run():
                                     "sender": snd, "ca": ca, "msg": (ev.raw_text or "")[:300],
                                     "price_usd": card.get("price_usd"), "mcap": card.get("market_cap"),
                                     "liq": card.get("liquidity_usd"), "chain": card.get("chain"),
-                                    "name": card.get("name"), "ok": card.get("ok")}, ensure_ascii=False) + "\n")
-            await client.send_message("me", format_card(card, chat_t, snd, ca), link_preview=False)
+                                    "name": card.get("name"), "ok": card.get("ok"),
+                                    "notified": notify is None or ev.chat_id in notify}, ensure_ascii=False) + "\n")
+            if notify is None or ev.chat_id in notify:
+                await client.send_message("me", format_card(card, chat_t, snd, ca), link_preview=False)
 
     async def link_watch():
         import phone_link

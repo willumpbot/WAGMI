@@ -32,7 +32,7 @@ table.board{width:100%;border-collapse:collapse;background:var(--panel);border:1
 .board th{font-weight:600;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
 .board th:first-child,.board td:first-child{text-align:left}
 .board th:hover{color:var(--ink)}
-.board td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.board td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 .board tr:last-child td{border-bottom:none}
 .board tbody tr{cursor:pointer}.board tbody tr:hover{background:var(--panel2)}.board tr.sel{background:var(--sel);box-shadow:inset 3px 0 0 var(--accent)}
 .sym{font-weight:800;font-size:14px}
@@ -109,6 +109,35 @@ table.pos{width:100%;border-collapse:collapse;font-size:12px} .pos td,.pos th{pa
 .pb .w{font-size:11px;color:var(--soft);margin-top:3px;line-height:1.35}
 .pb.ok{border-left-color:var(--good)} .pb.no{border-left-color:var(--bad)} .pb.wait{border-left-color:var(--warn)}
 .lc .take{font-size:15px;font-weight:700;line-height:1.3;margin:4px 0 6px;color:var(--ink)}
+
+.app{display:grid;grid-template-columns:260px minmax(0,1fr) 330px;gap:8px;padding:8px 10px}
+@media (min-width:1101px){body{height:100vh;display:flex;flex-direction:column;overflow:hidden}.app{flex:1;min-height:0}.foot{padding:3px 14px}}
+.app>aside,.app>main{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:8px}
+.app .box{padding:8px 10px}
+.chartbox{flex:0 0 auto;display:flex;flex-direction:column;height:56vh;min-height:340px}
+.chartbox #lw{flex:1}
+.sit{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line);font-size:12.5px}
+.sit .s-sym{font-size:16px;font-weight:800}
+.sit .s-i{white-space:nowrap} .sit .s-i b{font-weight:600}
+.sit .s-k{color:var(--soft);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;margin-right:4px}
+.pane-h{display:flex;align-items:center;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);padding:2px 2px 0}
+.pane-h .sp{flex:1}
+#wl{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.wr{display:grid;grid-template-columns:50px 1fr auto;grid-template-rows:auto auto;column-gap:6px;padding:6px 8px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12px}
+.wr:last-child{border-bottom:none} .wr:hover{background:var(--panel2)} .wr.sel{background:var(--sel);box-shadow:inset 3px 0 0 var(--accent)}
+.wr .c{font-weight:800;font-size:13px} .wr .p{text-align:right} .wr .ch{text-align:right}
+.wr .sub{grid-column:1 / span 3;display:flex;gap:6px;align-items:center;color:var(--soft);font-size:10.5px;margin-top:2px}
+.wr svg{display:block}
+.stack{display:flex;flex-direction:column;gap:4px}
+.stack .mv{display:flex;justify-content:space-between;gap:6px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--soft);font:inherit;font-size:12px;font-weight:600;padding:6px 10px;cursor:pointer}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.tabp{display:none;flex-direction:column;gap:8px} .tabp.on{display:flex}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip.f{cursor:pointer;border:1px solid var(--line)} .chip.f.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+@media (max-width:1100px){.app{grid-template-columns:1fr;height:auto}.app>aside,.app>main{overflow:visible}.chartbox{height:60vh}.two{grid-template-columns:1fr}}
+.right .out{font-size:11.5px;grid-template-columns:auto 1fr}.right .out div:nth-child(even){text-align:right}
 kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;font-size:10px}
 </style>
 </head>
@@ -123,23 +152,37 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
   <span class="note" id="chiefnote"></span>
   <span class="tk"><span class="k">Data</span><span class="num mut" id="age"></span></span>
 </div>
-<div class="wrap">
-  <div id="decisions" style="margin-bottom:8px;font-size:12px"></div>
-  <div class="playbook" id="playbook"></div>
-  <div id="movers" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;font-size:12px"></div>
-  <div id="near" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-size:12px"></div>
-  <table class="board" id="board"><thead><tr id="bh"></tr></thead><tbody id="bb"></tbody></table>
-  <div class="detail">
-    <div class="col">
-      <div class="box">
-        <h3><span id="dsym" class="sym" style="font-size:15px;color:var(--ink);letter-spacing:0"></span><span class="num" id="dpx" style="font-size:14px;color:var(--ink)"></span><span class="sp"></span>
-          <span class="seg"><button data-tf="1d" class="on">1D</button><button data-tf="4h">4H</button></span></h3>
-        <div id="lw" style="width:100%;height:360px;display:none"></div><svg id="chart"></svg>
-        <div class="readout num" id="readout">Hover the chart for prices. <kbd>↑</kbd><kbd>↓</kbd> switch coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe</div>
-      </div>
-      <div class="box" id="memebox" style="display:none"><h3>Token risk card <span id="mm_q" style="color:var(--ink);text-transform:none;letter-spacing:0"></span><span class="sp"></span><a href="#" id="mm_x" style="color:var(--soft)">close</a></h3><div id="mm_body"></div></div>
+<div id="situation" class="sit"></div>
+<div class="app">
+  <aside class="left">
+    <div class="pane-h">Watchlist <span class="sp"></span><span class="mut" id="wl_note"></span></div>
+    <div id="wl"></div>
+    <div class="pane-h">Near a level</div><div id="near" class="stack"></div>
+    <div class="pane-h">Biggest movers (HL, 24h)</div><div id="movers" class="stack"></div>
+  </aside>
+  <main class="center">
+    <div class="box chartbox">
+      <h3><span id="dsym" class="sym" style="font-size:15px;color:var(--ink);letter-spacing:0"></span><span class="num" id="dpx" style="font-size:14px;color:var(--ink)"></span><span class="sp"></span>
+        <span class="seg" id="tfseg"><button data-tf="15m">15m</button><button data-tf="1h">1h</button><button data-tf="4h">4h</button><button data-tf="1d" class="on">1D</button><button data-tf="1w">1W</button></span>
+        <span class="seg" id="ovseg" title="Overlays"><button data-ov="ema" class="on">Avg</button><button data-ov="range" class="on">Range</button><button data-ov="liq" class="on">Liq</button><button data-ov="lv" class="on">Levels</button><button data-ov="vol" class="on">Vol</button></span></h3>
+      <div id="lw" style="width:100%;height:100%;min-height:300px;display:none"></div><svg id="chart"></svg>
+      <div class="readout num" id="readout">Drag to pan, scroll to zoom. <kbd>↑</kbd><kbd>↓</kbd> coin · <kbd>1</kbd>-<kbd>5</kbd> timeframe · <kbd>/</kbd> search</div>
+    </div>
+    <div class="box" id="memebox" style="display:none"><h3>Token risk card <span id="mm_q" style="color:var(--ink);text-transform:none;letter-spacing:0"></span><span class="sp"></span><a href="#" id="mm_x" style="color:var(--soft)">close</a></h3><div id="mm_body"></div></div>
+    <div class="tabs" id="tabs">
+      <button data-tab="t_scr" class="on">Screener</button><button data-tab="t_pos">Positions</button><button data-tab="t_jr">Journal</button>
+      <button data-tab="t_calls">Calls &amp; chief</button><button data-tab="t_lv">Levels</button><button data-tab="t_vox">Voices</button><button data-tab="t_lab">Lab <span id="dec_badge"></span></button>
+    </div>
+    <div class="tabp on" id="t_scr">
+      <div id="filters" class="chips" style="margin:0 0 6px"></div>
+      <div style="overflow-x:auto"><table class="board" id="board"><thead><tr id="bh"></tr></thead><tbody id="bb"></tbody></table></div>
+    </div>
+    <div class="tabp" id="t_pos">
       <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
-      <div class="box"><h3>My trading journal <span class="sp"></span><span class="mut" id="jr_note" style="text-transform:none;letter-spacing:0"></span></h3><div id="jr"></div></div>
+      <div class="box"><h3>My Hyperliquid account <span class="sp"></span><span class="mut" id="acctnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="acct"></div></div>
+    </div>
+    <div class="tabp" id="t_jr"><div class="box"><h3>My trading journal <span class="sp"></span><span class="mut" id="jr_note" style="text-transform:none;letter-spacing:0"></span></h3><div id="jr"></div></div></div>
+    <div class="tabp" id="t_calls">
       <div class="box"><h3>My call on <span id="mc_sym" style="color:var(--ink)"></span> <span class="sp"></span><span class="mut" id="mc_card" style="text-transform:none;letter-spacing:0"></span></h3>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <span class="seg" id="mc_lean"><button data-v="LONG">&#9650; LONG</button><button data-v="SHORT">&#9660; SHORT</button><button data-v="NEUTRAL">&#9679; NEUTRAL</button></span>
@@ -150,36 +193,42 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         <div id="mc_msg" class="mut" style="font-size:11.5px;margin-top:5px">Logged with the live price and graded at 1 and 5 days, the same way as the chief and every voice.</div>
         <div id="mc_list" style="margin-top:6px;font-size:12px"></div>
       </div>
-      <div class="box"><h3>Chief analyst <span class="sp"></span><span id="dchief"></span></h3><div class="read" id="dread"></div></div>
       <div class="box"><h3>Next 5 days when it looked like this <span class="sp"></span><span class="mut" id="hn" style="text-transform:none;letter-spacing:0"></span></h3><div id="dhist"></div></div>
     </div>
-    <div class="col">
-      <div class="box"><h3>Levels <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">distance · in expected daily moves</span></h3><table class="lv num" id="levels"></table></div>
-      <div class="box"><h3>Positioning, last 7 days</h3><div id="posn"></div></div>
-      <div class="box"><h3>Order book <span class="sp"></span><span class="mut num" id="obspread" style="text-transform:none;letter-spacing:0"></span></h3><div id="ob" class="num"></div></div>
-      <div class="box"><h3>My Hyperliquid account <span class="sp"></span><span class="mut" id="acctnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="acct"></div></div>
-      <div class="box"><h3>Position calculator</h3>
-        <div class="calc">
-          <label>Account $<input id="c_acct" type="number" value="5000"></label>
-          <label>Risk %<input id="c_risk" type="number" value="1" step="0.25"></label>
-          <label>Side<select id="c_side"><option>LONG</option><option>SHORT</option></select></label>
-          <label>Leverage<input id="c_lev" type="number" value="3" step="1"></label>
-          <label>Entry<input id="c_entry" type="number" step="any"></label>
-          <label>Stop<input id="c_stop" type="number" step="any"></label>
-        </div>
-        <div class="out num" id="c_out"></div><div class="warn" id="c_warn"></div>
-        <div class="mut" style="font-size:11px;margin-top:6px">Defaults follow the laptop's tests: stop 2&times; the forecast daily move, target 0.5R, close after 48h if neither is hit (+0.09R per setup on unseen data vs -0.43R for the bot's tight stops; the scaling part is still being confirmed live). Safe leverage: SAFE_LEVERAGE.md.</div>
+    <div class="tabp" id="t_lv">
+      <div class="two">
+        <div class="box"><h3>Levels <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">distance · in expected daily moves</span></h3><table class="lv num" id="levels"></table></div>
+        <div class="box"><h3>Positioning, last 7 days</h3><div id="posn"></div></div>
       </div>
-      <div class="box"><h3>Price alerts <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">chime + flash when crossed (this tab must stay open)</span></h3>
-        <div class="alrow"><input id="al_px" type="number" step="any" placeholder="price" style="background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:3px 6px;width:120px"><button id="al_add" style="border:1px solid var(--line);border-radius:5px;padding:3px 8px;color:var(--ink)">Add alert</button></div>
-        <div id="al_list"></div></div>
-      <div class="box"><h3>Voices on this coin <span class="sp"></span><span id="dcons" class="mut" style="text-transform:none;letter-spacing:0"></span></h3><div class="vs" id="dvoices"></div><div class="chips" id="drules"></div></div>
     </div>
-  </div>
+    <div class="tabp" id="t_vox"><div class="box"><h3>Voices on this coin <span class="sp"></span><span id="dcons" class="mut" style="text-transform:none;letter-spacing:0"></span></h3><div class="vs" id="dvoices"></div><div class="chips" id="drules"></div></div></div>
+    <div class="tabp" id="t_lab">
+      <div id="decisions" style="margin-bottom:8px;font-size:12px"></div>
+      <div class="playbook" id="playbook"></div>
+      <div class="lab" id="lab"></div>
+    </div>
+  </main>
+  <aside class="right">
+    <div class="box"><h3>Chief analyst <span class="sp"></span><span id="dchief"></span></h3><div class="read" id="dread"></div></div>
+    <div class="box"><h3>Position calculator</h3>
+      <div class="calc">
+        <label>Account $<input id="c_acct" type="number" value="5000"></label>
+        <label>Risk %<input id="c_risk" type="number" value="1" step="0.25"></label>
+        <label>Side<select id="c_side"><option>LONG</option><option>SHORT</option></select></label>
+        <label>Leverage<input id="c_lev" type="number" value="3" step="1"></label>
+        <label>Entry<input id="c_entry" type="number" step="any"></label>
+        <label>Stop<input id="c_stop" type="number" step="any"></label>
+      </div>
+      <div class="out num" id="c_out"></div><div class="warn" id="c_warn"></div>
+      <div class="mut" style="font-size:10.5px;margin-top:5px">Defaults = the laptop's tested setup: stop 2&times; forecast move, target 0.5R, 48h max hold.</div>
+    </div>
+    <div class="box"><h3>Order book <span class="sp"></span><span class="mut num" id="obspread" style="text-transform:none;letter-spacing:0"></span></h3><div id="ob" class="num"></div></div>
+    <div class="box"><h3>Price alerts</h3>
+      <div class="alrow"><input id="al_px" type="number" step="any" placeholder="price" style="background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:3px 6px;width:110px"><button id="al_add" style="border:1px solid var(--line);border-radius:5px;padding:3px 8px;color:var(--ink)">Add</button><span class="mut" style="font-size:10.5px">chimes when crossed</span></div>
+      <div id="al_list"></div></div>
+  </aside>
 </div>
-<div class="wrap"><div class="labhead"><b>LAB</b> <span class="mut">What the research has proven so far, from the laptop's studies and the live graders. Each card says how it was tested.</span></div>
-  <div class="lab" id="lab"></div></div>
-<div class="foot">Measured context and graded opinions only. No voice in this system has a proven directional edge yet; the decision is yours. Live prices from Hyperliquid every 3s; analysis refreshed every 15 min, chief every 4h.</div>
+<div class="foot">Measured context and graded opinions only. Nothing here has a proven directional edge; the call is yours, the terminal sizes the risk. Live prices from Hyperliquid every 3s; analysis every 15 min; chief every 4h.</div>
 <script>
 const DATA = __DATA__;
 // Same page works locally (file://) and on the phone through the tunnel (served by the API at /t).
@@ -279,29 +328,45 @@ const COLS = [
 
 function renderBoard(){
   $("bh").innerHTML = COLS.map(c=>`<th data-k="${c.k}">${c.h}${sortKey===c.k?(sortDir>0?" ▲":" ▼"):""}</th>`).join("");
-  let rows = SYMS.slice();
+  let rows = SYMS.filter(s => [...FSET].every(k => FILTERS.find(f => f[0] === k)[2](s)));
+  renderFilters(rows.length);
   if (sortKey) { const c = COLS.find(x=>x.k===sortKey); rows.sort((a,b)=>{const va=c.v(a),vb=c.v(b);return ((va??-1e18)>(vb??-1e18)?1:-1)*sortDir}); }
   $("bb").innerHTML = rows.map(s=>`<tr data-s="${s}" class="${s===sel?"sel":""}">${COLS.map(c=>`<td>${c.r(s)}</td>`).join("")}</tr>`).join("");
   document.querySelectorAll("#bh th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;sortDir=sortKey===k?-sortDir:-1;sortKey=k;renderBoard()});
-  document.querySelectorAll("#bb tr").forEach(tr=>tr.onclick=()=>{sel=tr.dataset.s;renderBoard();renderDetail()});
+  document.querySelectorAll("#bb tr").forEach(tr=>tr.onclick=()=>pick(tr.dataset.s));
 }
 
+const TF_MS = {"15m":9e5, "1h":36e5, "4h":144e5, "1d":864e5, "1w":6048e5};
+const TF_SPAN = {"15m":4*864e5, "1h":21*864e5, "4h":75*864e5, "1d":220*864e5, "1w":1400*864e5};
+const BARS = {};
+let OV = (()=>{ try { return JSON.parse(localStorage.getItem("ov")||"null"); } catch(e) { return null; } })() || {ema:1, range:1, liq:1, lv:1, vol:1};
+async function fetchBars(sym, t){
+  const k = sym+"|"+t, c = BARS[k]; if (c && Date.now()-c.at < 60000) return c;
+  const now = Date.now();
+  const raw = await hlPost({type:"candleSnapshot", req:{coin:sym, interval:t, startTime:now-TF_SPAN[t], endTime:now}});
+  if (!Array.isArray(raw) || !raw.length) throw new Error("no candles");
+  const o = raw.map(b=>[+b.o,+b.h,+b.l,+b.c]), cl = o.map(b=>b[3]);
+  return BARS[k] = {at: Date.now(), t: raw.map(b=>b.t), ohlc: o, vol: raw.map(b=>+b.v*+b.c), ema20: emaArr(cl,20), ema50: emaArr(cl,50)};
+}
 function chartData(){
+  const k = BARS[sel+"|"+tf]; if (k) return k;
   const ch = C(sel).chart || {};
-  return tf === "4h" ? ch.h4 || {} : ch;
+  return tf === "4h" ? ch.h4 || {} : tf === "1d" ? ch : {};
 }
 let LW = null;
 function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 function drawLW(){
   const el = $("lw"); el.style.display = ""; $("chart").style.display = "none";
-  const d = chartData(); const o = d.ohlc || []; if (!o.length) return;
+  const d = chartData(); const o = d.ohlc || [];
+  if (!o.length) { $("readout").textContent = "Loading " + sel + " " + tf + " candles from Hyperliquid…"; return; }
   if (LW) { LW.chart.remove(); LW = null; }
+  const intraday = tf !== "1d" && tf !== "1w";
   const chart = LightweightCharts.createChart(el, {
     autoSize: true,
     layout: {background: {type: "solid", color: cssv("--panel")}, textColor: cssv("--soft"), fontFamily: "Segoe UI, system-ui, sans-serif", fontSize: 11},
     grid: {vertLines: {color: cssv("--line")}, horzLines: {color: cssv("--line")}},
     rightPriceScale: {borderColor: cssv("--line")},
-    timeScale: {borderColor: cssv("--line"), timeVisible: tf === "4h", secondsVisible: false, rightOffset: 4},
+    timeScale: {borderColor: cssv("--line"), timeVisible: intraday, secondsVisible: false, rightOffset: 4},
     crosshair: {mode: 0},
   });
   const up = cssv("--pos"), dn = cssv("--neg");
@@ -310,35 +375,54 @@ function drawLW(){
   const cs = chart.addCandlestickSeries({upColor: up, downColor: dn, wickUpColor: up, wickDownColor: dn, borderVisible: false, priceFormat: pf});
   const bars = o.map((b,i) => ({time: Math.floor(d.t[i]/1000), open: b[0], high: b[1], low: b[2], close: b[3]}));
   cs.setData(bars);
-  const e20 = chart.addLineSeries({priceFormat: pf, color: cssv("--ink"), lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
-  e20.setData((d.ema20||[]).map((v,i) => ({time: bars[i].time, value: v})));
-  const e50 = chart.addLineSeries({priceFormat: pf, color: cssv("--soft"), lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
-  e50.setData((d.ema50||[]).map((v,i) => ({time: bars[i].time, value: v})));
+  let vs = null;
+  if (OV.vol && d.vol) {
+    vs = chart.addHistogramSeries({priceScaleId: "v", priceFormat: {type: "volume"}, lastValueVisible: false, priceLineVisible: false});
+    chart.priceScale("v").applyOptions({scaleMargins: {top: 0.82, bottom: 0}});
+    vs.setData(d.vol.map((v,i) => ({time: bars[i].time, value: v, color: (o[i][3] >= o[i][0] ? up : dn) + "55"})));
+    cs.priceScale().applyOptions({scaleMargins: {top: 0.06, bottom: 0.2}});
+  }
+  if (OV.ema) {
+    const e20 = chart.addLineSeries({priceFormat: pf, color: cssv("--ink"), lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+    e20.setData((d.ema20||[]).map((v,i) => ({time: bars[i].time, value: v})));
+    const e50 = chart.addLineSeries({priceFormat: pf, color: cssv("--soft"), lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+    e50.setData((d.ema50||[]).map((v,i) => ({time: bars[i].time, value: v})));
+  }
   const r = (C(sel).market||{}).range_20d || {};
-  if (tf === "1d") {
+  if (OV.lv) { const e = (C(sel).chart||{}).ema50; if (e && e.length) cs.createPriceLine({price: e[e.length-1], color: cssv("--good"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "50d avg"}); }
+  if (OV.range) {
     if (r.high) cs.createPriceLine({price: r.high, color: cssv("--soft"), lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "20d high"});
     if (r.low) cs.createPriceLine({price: r.low, color: cssv("--soft"), lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "20d low"});
   }
-  for (const c of clusters(sel)) cs.createPriceLine({price: c.p, color: cssv("--liq"), lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: "liq " + c.n});
+  if (OV.liq) for (const c of clusters(sel)) cs.createPriceLine({price: c.p, color: cssv("--liq"), lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: "liq " + c.n});
   const bp = (C(sel).bot||{}).position;
-  if (bp) { cs.createPriceLine({price: bp.entry, color: cssv("--accent"), lineWidth: 1, lineStyle: 0, axisLabelVisible: true, title: "bot entry"});
+  if (bp && OV.lv) { cs.createPriceLine({price: bp.entry, color: cssv("--accent"), lineWidth: 1, lineStyle: 0, axisLabelVisible: true, title: "bot entry"});
             if (bp.sl) cs.createPriceLine({price: bp.sl, color: cssv("--bad"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "bot stop"}); }
   chart.timeScale().fitContent();
   chart.subscribeCrosshairMove(p => {
     const b = p && p.seriesData ? p.seriesData.get(cs) : null;
-    if (!b) { $("readout").innerHTML = "Drag to pan, scroll to zoom, double-click the price axis to reset. <kbd>↑</kbd><kbd>↓</kbd> coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe"; return; }
+    if (!b) { $("readout").innerHTML = "Drag to pan, scroll to zoom, double-click the price axis to reset. <kbd>↑</kbd><kbd>↓</kbd> coin · <kbd>1</kbd>–<kbd>5</kbd> timeframe · <kbd>/</kbd> search"; return; }
+    const bv = vs ? p.seriesData.get(vs) : null;
     const dt = new Date(p.time*1000), now = px(sel);
-    $("readout").innerHTML = `${dt.toLocaleString(undefined,{month:"short",day:"numeric",hour:tf==="4h"?"2-digit":undefined})} · O ${fmt(b.open)} H ${fmt(b.high)} L ${fmt(b.low)} C ${fmt(b.close)} · <span class="${b.close>=b.open?"up":"dn"}">${pct((b.close/b.open-1)*100,2)}</span>${now?` · close vs now ${pct((now/b.close-1)*100,2)}`:""}`;
+    $("readout").innerHTML = `${dt.toLocaleString(undefined,{month:"short",day:"numeric",hour:intraday?"2-digit":undefined, minute:tf==="15m"?"2-digit":undefined})} · O ${fmt(b.open)} H ${fmt(b.high)} L ${fmt(b.low)} C ${fmt(b.close)} · <span class="${b.close>=b.open?"up":"dn"}">${pct((b.close/b.open-1)*100,2)}</span>${bv?` · vol ${usd(bv.value)}`:""}${now?` · close vs now ${pct((now/b.close-1)*100,2)}`:""}`;
   });
   LW = {chart, cs, last: bars[bars.length-1]};
 }
 function liveTick(){
   if (!LW) return; const p = px(sel); if (!p) return;
-  const b = LW.last; LW.last = {time: b.time, open: b.open, high: Math.max(b.high, p), low: Math.min(b.low, p), close: p};
+  const b = LW.last, iv = TF_MS[tf]/1000, bucket = Math.floor(Date.now()/1000/iv)*iv;
+  if (tf !== "1w" && bucket > b.time) LW.last = {time: bucket, open: b.close, high: p, low: p, close: p};
+  else LW.last = {time: b.time, open: b.open, high: Math.max(b.high, p), low: Math.min(b.low, p), close: p};
   LW.cs.update(LW.last);
 }
+let drawSeq = 0;
 function drawChart(){
+  const s0 = sel, t0 = tf, my = ++drawSeq, have = BARS[s0+"|"+t0];
+  if (!have || Date.now()-have.at > 60000) fetchBars(s0, t0).then(()=>{ if (my === drawSeq && window.LightweightCharts) drawLW(); }).catch(()=>{});
   if (window.LightweightCharts) return drawLW();
+  return drawSvg();
+}
+function drawSvg(){
   const svg = $("chart"), W = svg.clientWidth || 800, H = 340;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const d = chartData(); const o = d.ohlc || [];
@@ -452,7 +536,7 @@ function renderDetail(){
   const c = chief(sel);
   $("dchief").innerHTML = c.lean ? `<span class="pill ${c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt"}">${c.lean} · ${c.conviction}/5</span>` : "";
   $("dread").innerHTML = c.read ? `${esc(c.read)}<div class="mut" style="margin-top:6px"><b>Levels:</b> ${esc(c.key_levels)}<br><b>View changes if:</b> ${esc(c.invalidation)}${c.expected_move?`<br><b>Expected move:</b> ${esc(c.expected_move)}`:""}${c.if_you_trade?`<br><b>If you trade it:</b> ${esc(c.if_you_trade)}`:""}</div><div class="dim" style="margin-top:4px;font-size:11px">${esc(DATA.chief.ts||"")} · track record: ${esc(DATA.chiefCard)}</div>` : "<span class='mut'>No read yet.</span>";
-  drawChart(); levels(); voices(); hist(); calc(); book(); positioning(); myCalls(); playbook(); myPosWarn();
+  drawChart(); levels(); voices(); hist(); calc(); book(); positioning(); myCalls(); playbook(); myPosWarn(); renderWatchlist(); renderSituation();
 }
 
 function topbar(){
@@ -469,7 +553,7 @@ async function loadUniverse(){
   try { const [meta, ctx] = await hlPost({type:"metaAndAssetCtxs"});
     const mv = meta.universe.map((u,i)=>{ const c = ctx[i]||{}; const p = +c.markPx, pp = +c.prevDayPx; return {n:u.name, v:+c.dayNtlVlm||0, ch: pp ? (p/pp-1)*100 : 0, d:u.isDelisted}; })
       .filter(x=>!x.d).sort((a,b)=>b.v-a.v).slice(0,60).sort((a,b)=>Math.abs(b.ch)-Math.abs(a.ch)).slice(0,10);
-    $("movers").innerHTML = `<span class="mut" style="align-self:center">Biggest movers (top-60 volume, 24h):</span>` + mv.map(x=>`<span class="mv" data-c="${x.n}"><b>${x.n}</b><span class="num ${x.ch>=0?"up":"dn"}">${pct(x.ch)}</span></span>`).join("");
+    $("movers").innerHTML = mv.map(x=>`<span class="mv" data-c="${x.n}"><b>${x.n}</b><span class="num ${x.ch>=0?"up":"dn"}">${pct(x.ch)}</span></span>`).join("");
     document.querySelectorAll(".mv").forEach(el=>el.onclick=()=>adhoc(el.dataset.c));
     const rows = meta.universe.map((u,i)=>({n:u.name, v:+((ctx[i]||{}).dayNtlVlm||0), d:u.isDelisted})).filter(x=>!x.d).sort((a,b)=>b.v-a.v);
     $("universe").innerHTML = rows.map(x=>`<option value="${x.n}">`).join(""); window.UNIVERSE = new Set(rows.map(x=>x.n)); } catch(e) {}
@@ -644,6 +728,7 @@ function barsSvg(items, w, h, opt){
 function decisionsStrip(){
   const D = DATA.decisions || []; if (!D.length) return;
   const ready = D.filter(d=>d.ready);
+  $("dec_badge").innerHTML = ready.length ? `<span class="pill up">${ready.length}</span>` : "";
   $("decisions").innerHTML = `<details${ready.length?" open":""}><summary style="cursor:pointer"><b>Decisions for you:</b> <span class="${ready.length?"up":"mut"}">${ready.length} ready</span> · <span class="mut">${D.length-ready.length} still gathering evidence</span></summary>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:8px;margin-top:6px">${D.map(d=>`<div class="pb ${d.ready?"ok":"wait"}"><div class="t">${d.ready?"READY: ":""}${esc(d.title)}</div><div class="w"><b style="color:var(--ink)">Ask:</b> ${esc(d.ask)}</div><div class="w"><b style="color:var(--ink)">Why:</b> ${esc(d.why)}</div><div class="w"><b style="color:var(--ink)">So far:</b> ${esc(d.live)}</div><div class="w">Ready when ${esc(d.ready_when)}. ${esc(d.note||"")}</div></div>`).join("")}</div></details>`;
 }
@@ -703,8 +788,9 @@ function nearLevels(){
       if (inMoves <= 0.5) out.push({s, name, v, d, m: inMoves, st: k ? levelStat(k, v, p) : null}); }
   }
   out.sort((a,b)=>a.m-b.m);
-  $("near").innerHTML = out.length ? `<span class="mut" style="align-self:center">Near a level (within ½ expected daily move):</span>` + out.slice(0,10).map(x=>`<span class="mv" data-c="${x.s}" title="${x.name} at ${fmt(x.v)}, ${pct(x.d,2)} away = ${x.m.toFixed(2)} expected daily moves"><b>${x.s}</b>${x.name} <span class="num ${x.d>=0?"up":"dn"}">${pct(x.d,1)}</span>${x.st?` <span class="${x.st.cls}" style="font-size:10.5px">${x.st.cls==="up"?"✔ holds":x.st.cls==="dn"?"✖ often breaks":"• no edge"}</span>`:""}</span>`).join("") : `<span class="mut">No board coin is within half an expected daily move of a key level right now.</span>`;
-  document.querySelectorAll("#near .mv").forEach(el=>el.onclick=()=>{ sel = el.dataset.c; renderBoard(); renderDetail(); });
+  window.NEAR = new Set(out.map(x=>x.s));
+  $("near").innerHTML = out.length ? out.slice(0,10).map(x=>`<span class="mv" data-c="${x.s}" title="${x.name} at ${fmt(x.v)}, ${pct(x.d,2)} away = ${x.m.toFixed(2)} expected daily moves"><b>${x.s}</b>${x.name} <span class="num ${x.d>=0?"up":"dn"}">${pct(x.d,1)}</span>${x.st?` <span class="${x.st.cls}" style="font-size:10.5px">${x.st.cls==="up"?"✔ holds":x.st.cls==="dn"?"✖ often breaks":"• no edge"}</span>`:""}</span>`).join("") : `<span class="mut" style="font-size:11.5px">Nothing within half an expected daily move of a key level.</span>`;
+  document.querySelectorAll("#near .mv").forEach(el=>el.onclick=()=>pick(el.dataset.c));
 }
 function myPosWarn(){
   const q = (window.MYPOS || {})[sel];
@@ -737,6 +823,66 @@ function journalBox(){
   if (T.length) h += `<div style="margin-top:6px">${T.map(t=>`<div class="num" style="display:grid;grid-template-columns:90px 60px 60px 1fr 80px;gap:6px;font-size:11.5px"><span class="mut">${(t.open||"").slice(5,16).replace("T"," ")}</span><b>${t.coin}</b><span class="${t.side==="LONG"?"up":"dn"}">${t.side}</span><span class="mut">${t.status==="open"?"open":(t.hold_h+"h")}${(t.context||{}).chief_lean?" · chief "+t.context.chief_lean:""}</span><span class="${t.net_pnl>=0?"up":"dn"}" style="text-align:right">${t.status==="open"?"":"$"+t.net_pnl.toFixed(2)}</span></div>`).join("")}</div>`;
   $("jr").innerHTML = h;
 }
+function pick(s){ if (!s) return; sel = s; renderBoard(); renderDetail(); }
+function lvx(v){ return v < 10 ? v.toFixed(1) : v.toFixed(0); }
+function sparkVals(s){ const ch = C(s).chart || {}, h = (ch.h4||{}).ohlc; return h && h.length ? h.slice(-42).map(b=>b[3]) : (ch.ohlc||[]).slice(-8).map(b=>b[3]); }
+function miniSpark(v){
+  if (v.length < 2) return "";
+  const w = 100, h = 20, lo = Math.min(...v), hi = Math.max(...v), rg = (hi-lo)||1, up = v[v.length-1] >= v[0];
+  const pts = v.map((x,i)=>`${(i/(v.length-1)*w).toFixed(1)},${(h-1-(x-lo)/rg*(h-2)).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="var(${up?"--pos":"--neg"})" stroke-width="1.4" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function renderWatchlist(){
+  $("wl").innerHTML = SYMS.map(s=>{
+    const c = dayChg(s), t = trend(s), f = (C(s).vol||{}).next_day_move_pct, x = safeLev(s), ch = chief(s), bp = (C(s).bot||{}).position, mp = (window.MYPOS||{})[s];
+    return `<div class="wr ${s===sel?"sel":""}" data-s="${s}" title="7-day line from 4h closes"><span class="c">${s}</span><span>${miniSpark(sparkVals(s))}</span><span class="num p" id="wp_${s}">${fmt(px(s))}</span>
+      <span class="sub"><span class="${t.up?"up":"dn"}" title="daily trend: ${t.sub}">${t.up?"▲":"▼"}</span>${f!=null?`<span class="num" title="expected move tomorrow">±${f.toFixed(1)}%</span>`:""}${x?`<span class="num" title="safe leverage long / short">${lvx(x.long)}×/${lvx(x.short)}×</span>`:""}${ch.lean&&ch.lean!=="NEUTRAL"?`<span class="${ch.lean==="LONG"?"up":"dn"}" title="chief analyst lean, conviction">chief ${ch.lean[0]}${ch.conviction||""}</span>`:""}${bp?`<span class="pill ${bp.side==="SHORT"?"dn":"up"}" title="bot holds this">BOT</span>`:""}${mp?`<span class="pill ${+mp.szi>0?"up":"dn"}" title="you hold this">ME</span>`:""}<span style="flex:1"></span><span class="num ${c>=0?"up":"dn"}" id="wc_${s}">${pct(c,2)}</span></span></div>`; }).join("");
+  $("wl_note").textContent = SYMS.length + " coins";
+  document.querySelectorAll("#wl .wr").forEach(el=>el.onclick=()=>pick(el.dataset.s));
+}
+function renderSituation(){
+  const s = sel, p = px(s), c = dayChg(s), t = trend(s), f4 = C(s).tf4h || {}, m = C(s).market || {}, r = m.range_20d || {};
+  const f = (C(s).vol||{}).next_day_move_pct ?? atr(s), x = safeLev(s), rk = C(s).risk || {}, L = rk.long || {}, S = rk.short || {};
+  const cs = C(s).consensus || {}, ch = chief(s), fu = m.funding_hourly, lu = nearestLiq(s,1), ld = nearestLiq(s,-1), mp = (window.MYPOS||{})[s];
+  const stop = L.stop_pct ?? (f!=null ? 2*f : null);
+  const I = (k, v, tip) => `<span class="s-i" title="${esc(tip||"")}"><span class="s-k">${k}</span>${v}</span>`;
+  const it = [`<span class="s-sym">${s}</span><span class="num" style="font-size:15px;font-weight:700" id="sit_px">${fmt(p)}</span><span class="num ${c>=0?"up":"dn"}" id="sit_ch">${pct(c,2)}</span>`,
+    I("Trend", `<span class="${t.up?"up":"dn"}">${t.up?"▲":"▼"} 1D</span> <span class="mut">${t.sub}</span>${f4.structure_4h!=null?` · <span class="${f4.structure_4h>0?"up":"dn"}">${f4.structure_4h>0?"▲":"▼"} 4H</span>`:""}`, "Context only: trend direction has no proven edge on its own."),
+    I("Exp. move", f!=null?`<b class="num">±${f.toFixed(1)}%</b>`:"–", "Forecast size of tomorrow's move. Size IS predictable (22/22 test periods); direction is not."),
+    I("Stop", stop!=null?`<b class="num">${(+stop).toFixed(1)}%</b> <span class="mut">· tgt 0.5R · 48h</span>`:"–", "The tested setup: stop 2x the expected move, take profit at half the stop distance, close after 48h."),
+    I("Safe lev", x?`<b class="num">${lvx(x.long)}×</b> <span class="mut">L</span> <b class="num">${lvx(x.short)}×</b> <span class="mut">S</span>`:"–", "Above this, a 1-in-100 bad day liquidates you."),
+    L.squeeze_pct!=null ? I("Squeeze", `<span class="num ${L.squeeze_pct>=L.squeeze_base_pct*1.4?"dn":""}">${L.squeeze_pct}%</span><span class="mut"> L </span><span class="num ${S.squeeze_pct>=S.squeeze_base_pct*1.4?"dn":""}">${S.squeeze_pct}%</span><span class="mut"> S</span>`, `Chance of a move more than 2x expected AGAINST you within a day. Normal: long ${L.squeeze_base_pct}% / short ${S.squeeze_base_pct}%.`) : "",
+    r.position!=null ? I("20D range", `<span class="rb"><i style="left:${Math.max(0,Math.min(1,r.position))*100}%"></i></span> <span class="num">${(r.position*100).toFixed(0)}%</span>`, `Low ${fmt(r.low)} · high ${fmt(r.high)}. The 20d low breaks MORE than chance; the 50d avg holds from above.`) : "",
+    I("Liq", `${lu?`<span class="num up">↑${pct(lu.d,1)}</span>`:""} ${ld?`<span class="num dn">↓${pct(ld.d,1)}</span>`:""}`, "Nearest liquidation clusters above and below (7 days)."),
+    fu!=null ? I("Funding", `<span class="num ${fu>2.5e-5?"dn":fu<0?"up":"mut"}">${(fu*100).toFixed(4)}%/h</span>`, "Red = longs paying shorts (crowded long).") : "",
+    I("Voices", `<span class="${cs.move_size==="bigger than usual"?"up":"mut"}">${esc(cs.move_size_hint||"–")}</span>`, "Agreement predicts the SIZE of the next move, not its direction."),
+    ch.lean ? I("Chief", `<span class="pill ${ch.lean==="LONG"?"up":ch.lean==="SHORT"?"dn":"nt"}">${ch.lean} ${ch.conviction||""}/5</span>`, ch.read||"") : "",
+    mp ? I("Mine", `<span class="pill ${+mp.szi>0?"up":"dn"}">${+mp.szi>0?"LONG":"SHORT"} ${(mp.leverage||{}).value||""}×</span> <span class="num ${+mp.unrealizedPnl>=0?"up":"dn"}">$${(+mp.unrealizedPnl).toFixed(2)}</span>`, "Your live Hyperliquid position") : ""];
+  $("situation").innerHTML = it.filter(Boolean).join("");
+}
+const FILTERS = [
+  ["up", "Trend up", s=>trend(s).up],
+  ["down", "Trend down", s=>!trend(s).up],
+  ["big", "Bigger move expected", s=>(C(s).consensus||{}).move_size==="bigger than usual"],
+  ["near", "Near a level", s=>!!(window.NEAR && window.NEAR.has(s))],
+  ["lowlev", "Safe lev under 3×", s=>{ const x = safeLev(s); return !!x && Math.min(x.long, x.short) < 3; }],
+  ["crowd", "Longs paying", s=>((C(s).market||{}).funding_hourly||0) > 2.5e-5],
+  ["shortpay", "Shorts paying", s=>((C(s).market||{}).funding_hourly||0) < 0],
+  ["chief", "Chief has a lean", s=>["LONG","SHORT"].includes(chief(s).lean)],
+  ["held", "Bot or me in it", s=>!!((C(s).bot||{}).position || (window.MYPOS||{})[s])],
+];
+let FSET = new Set();
+function renderFilters(shown){
+  $("filters").innerHTML = `<span class="mut" style="font-size:11px;align-self:center">Filter (all must match):</span>` + FILTERS.map(([k,l,fn])=>`<span class="chip f ${FSET.has(k)?"on":""}" data-k="${k}">${l} <span class="num">${SYMS.filter(fn).length}</span></span>`).join("")
+    + (FSET.size ? `<span class="chip f" data-k="_clear">clear</span><span class="mut" style="font-size:11px;align-self:center">${shown} of ${SYMS.length}</span>` : "");
+  document.querySelectorAll("#filters .chip.f").forEach(el=>el.onclick=()=>{ const k = el.dataset.k; if (k === "_clear") FSET.clear(); else FSET.has(k) ? FSET.delete(k) : FSET.add(k); renderBoard(); });
+}
+function showTab(id){
+  if (!$(id)) id = "t_scr";
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.tab===id));
+  document.querySelectorAll(".tabp").forEach(p=>p.classList.toggle("on", p.id===id));
+  try { localStorage.setItem("tab", id); } catch(e) {}
+}
 async function poll(){
   try {
     const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"allMids"}'});
@@ -744,11 +890,16 @@ async function poll(){
     for (const s of SYMS) { if (!mids[s]) continue; const v = +mids[s], prev = live[s]; live[s] = v;
       const el = $("px_"+s); if (el) { el.textContent = fmt(v); if (prev && v!==prev) { el.classList.remove("flash-up","flash-dn"); void el.offsetWidth; el.classList.add(v>prev?"flash-up":"flash-dn"); } }
       const ch = $("ch_"+s); if (ch) { const c = dayChg(s); ch.textContent = pct(c,2); ch.className = "num " + (c>=0?"up":"dn"); } }
+    for (const s of SYMS) { const w = $("wp_"+s); if (w) w.textContent = fmt(px(s)); const wc = $("wc_"+s); if (wc) { const c = dayChg(s); wc.textContent = pct(c,2); wc.className = "num " + (c>=0?"up":"dn"); } }
+    if ($("sit_px")) { $("sit_px").textContent = fmt(px(sel)); const c = dayChg(sel); $("sit_ch").textContent = pct(c,2); $("sit_ch").className = "num " + (c>=0?"up":"dn"); }
     $("dpx").textContent = fmt(px(sel)); liveTick();
   } catch(e) { $("livedot").style.background = "var(--bad)"; }
 }
 
-document.querySelectorAll(".seg button[data-tf]").forEach(b=>b.onclick=()=>{tf=b.dataset.tf;document.querySelectorAll(".seg button[data-tf]").forEach(x=>x.classList.toggle("on",x===b));drawChart()});
+document.querySelectorAll(".seg button[data-tf]").forEach(b=>b.onclick=()=>{tf=b.dataset.tf;document.querySelectorAll(".seg button[data-tf]").forEach(x=>x.classList.toggle("on",x===b));try{localStorage.setItem("tf",tf)}catch(e){}drawChart()});
+document.querySelectorAll("#ovseg button").forEach(b=>{ b.classList.toggle("on", !!OV[b.dataset.ov]); b.onclick=()=>{ OV[b.dataset.ov] = OV[b.dataset.ov] ? 0 : 1; b.classList.toggle("on", !!OV[b.dataset.ov]); try { localStorage.setItem("ov", JSON.stringify(OV)); } catch(e) {} drawChart(); }; });
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+try { showTab(localStorage.getItem("tab") || "t_scr"); const t0 = localStorage.getItem("tf"); if (t0 && TF_MS[t0]) { tf = t0; document.querySelectorAll(".seg button[data-tf]").forEach(x=>x.classList.toggle("on", x.dataset.tf===tf)); } } catch(e) {}
 ["c_acct","c_risk","c_side","c_lev"].forEach(id=>$(id).oninput=calc);
 ["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;calc()});
 $("c_side").onchange=()=>{delete $("c_stop").dataset.touched;calc()};
@@ -764,11 +915,11 @@ $("search").addEventListener("change", ev=>adhoc(ev.target.value));
 $("search").addEventListener("keydown", ev=>{ if (ev.key==="Enter") adhoc(ev.target.value); });
 document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!=="INPUT"){ ev.preventDefault(); $("search").focus(); return; }
   if (ev.target.tagName==="INPUT") return;
-  const rows=[...document.querySelectorAll("#bb tr")].map(r=>r.dataset.s); let i=rows.indexOf(sel);
-  if (ev.key==="ArrowDown"){sel=rows[Math.min(rows.length-1,i+1)];renderBoard();renderDetail();ev.preventDefault();}
-  if (ev.key==="ArrowUp"){sel=rows[Math.max(0,i-1)];renderBoard();renderDetail();ev.preventDefault();}
-  if (ev.key==="d"||ev.key==="D") document.querySelector('.seg button[data-tf="1d"]').click();
-  if (ev.key==="4") document.querySelector('.seg button[data-tf="4h"]').click(); });
+  const rows = SYMS; let i = rows.indexOf(sel);
+  if (ev.key==="ArrowDown"){pick(rows[Math.min(rows.length-1,i+1)]);ev.preventDefault();}
+  if (ev.key==="ArrowUp"){pick(rows[Math.max(0,i-1)]);ev.preventDefault();}
+  const tfk = {"1":"15m","2":"1h","3":"4h","4":"1d","5":"1w","d":"1d","D":"1d"}[ev.key];
+  if (tfk) document.querySelector(`.seg button[data-tf="${tfk}"]`).click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
 topbar(); renderBoard(); renderDetail(); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
