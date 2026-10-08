@@ -24,8 +24,17 @@ random.seed(20261008)
 H = {"1h": 3600, "4h": 4 * 3600, "12h": 12 * 3600}
 
 
+MERGED = os.path.join(HERE, "candles_merged")
+
+
 def load_candles(sym):
-    p = os.path.join(CANDLES, f"{sym}_1h.csv")
+    # Prefer the validated merged store (local cache verified against HL, or
+    # verified by 1h->6h internal consistency; HL wins on overlap). Fall back to
+    # the plain HL pull for symbols whose cache was REJECTED (HYPE, DOGE) or
+    # absent -- HL itself is always trusted.
+    p = os.path.join(MERGED, f"{sym}_1h.csv")
+    if not os.path.exists(p):
+        p = os.path.join(CANDLES, f"{sym}_1h.csv")
     if not os.path.exists(p):
         return None
     out = []
