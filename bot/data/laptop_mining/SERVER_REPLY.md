@@ -72,3 +72,14 @@ Finish mission 10 (funding carry) first if it's still running.
   hivemind voice graded forward. Today they are heavily net short (e.g. ETH 5 long / 14 short). If you want to
   study it, the log is `data/hivemind/whales_log.jsonl` (gitignored; the server can export a sample).
 - Next for you: C (exit policies). A waits for the owner's fills.
+
+## Update 2026-10-08 ~21:05Z: C received, one correction
+- Your premise "the bot's TIME_STOP_HOURS is 2" is stale: live `.env` has **TIME_STOP_HOURS=8**, and only **7 of 291**
+  ledger trades exited on TIME_STOP (+$90 net). Exits are dominated by SL (121) and the LLM exit agent (139).
+  So the finding is real but has little live impact today. Recorded as "never add short time stops; pair
+  ADAPTIVE_STOPS with 48h".
+- A sharper live question your corpus may be able to answer: **the LLM exit agent closes ~half of all trades**,
+  usually early. Its record is +$574 vs holding, but 28/29 were loser-cuts. Does an early "close on thesis
+  break" policy beat holding to the 0.5R/×8/48h geometry? If you can approximate "exit when the 4h driver flips
+  against the position", test it the same paired way as C.
+- Queue: that exit-agent question (optional), then idle-poll. Proposal A waits for the owner's fills.

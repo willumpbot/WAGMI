@@ -58,3 +58,6 @@ Curated by the overseer (Claude). External evidence, each item with its source a
   Do not propose price-derived directional rules.
 - 2026-10-08, laptop proposal D (VOL_ERROR): a flat x0.8 makes the vol forecast UNDER-predict (bias -0.39). That is the dangerous direction for stops and leverage.
   Stage-2 error model (disagree -, funding +, BTC vol -) plus a top-quintile-only haircut calibrates every decile within ±9%. Now live in `volforecast.py`.
+- 2026-10-08, laptop proposal C (EXITS): with the stop fixed, nothing beats a flat 0.5R target (trailing, breakeven, scale-out and wider targets are all noise).
+  Early TIME stops cost ~0.08–0.12R (4h is worst); 48h is neutral. Live bot check: TIME_STOP_HOURS is 8 (not 2), and only 7 of 291 trades exited on time (+$90).
+  Low live impact. Never add short time stops; ADAPTIVE_STOPS should pair with 48h.
