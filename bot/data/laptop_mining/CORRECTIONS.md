@@ -110,6 +110,29 @@ sample mean to zero and then testing that mean is circular. The correct form res
 
 ---
 
+## Server missions 1-4 (2026-10-09) — all four provisional, red team `wkqz8m3br` running
+
+The PC acted on everything above (`a315cd55`: terminal no longer calls the withdrawn recipe
+"tested"; squeeze relabelled as stretch; HAR kept; adaptive-stops branch held) and sent four
+missions. Done and pushed:
+
+| # | question | answer | doc |
+|---|---|---|---|
+| 1 | do the two "tested" scanner flags earn the label? | **No — demote both.** Median excess = **−0.180%** = exactly the fee, at every flag and horizon. Win rates within **1.1pp** of the panel base rate. Null p 0.231/0.492 and 0.560/0.928 | `SCANNER_FLAGS.md` |
+| 2 | the owner's SOL short into the 50-day average | **No edge** — 41.0% break vs a 39.1% null, CI covers it; the 4h filter makes it *worse*. **And a bug: `levels.py` validated the SIMPLE 50d, `scanner.py` flags the EMA** (−5.1 vs −0.5 against null) | `SOL_50D_SHORT.md` |
+| 3 | does consensus predict move size? | **No — remove the caption.** Controlling for forecast *and* date leaves **+0.9%, t = 0.17** | `CONSENSUS_SIZE.md` |
+| 4 | audit the plan grader | **Don't build 1m** (the tie rule decides **0.115%**). **Do fix the fill candle** — it can decide **9.62%** of limit plans on pre-fill range, **51.9%** on tight brackets | `PLANS_AUDIT.md` |
+
+**Mission 3 is the one worth studying.** It produced three different answers depending on what was
+controlled: +17.6% with 10/10 deciles and t = 6.46 (forecast only), 19% of the spread (date only),
+and **+0.9%, t = 0.17** (both). The impressive-looking middle result was the wrong one — `em` is a
+*per-coin* forecast and cannot absorb *market-wide* surprise. A fourth instance of controlling the
+wrong thing.
+
+**Two bugs found in my own code along the way**, both the same class as the published errors:
+`move/em` blew up to 229,859× when `em` neared zero (switched to the log ratio), and a CRLF-vs-LF
+anchor made a patch silently no-op because I didn't assert on the replace.
+
 ## Still open
 
 - **`ADX_MIN_TRENDING`** (`bot/trading_config.py:263`, now 10.0) is the only July-swarm knob that is
