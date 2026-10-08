@@ -19,6 +19,7 @@ BOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BOT / "tools"))
 HM = BOT / "data" / "hivemind"
 OUT = BOT.parent / "desk.html"
+TERMINAL_OUT = BOT.parent / "terminal.html"
 
 
 def e(x):
@@ -213,5 +214,24 @@ def build():
     return OUT
 
 
+def build_terminal():
+    """The trading terminal: one self-contained page, data embedded, live prices fetched in the browser."""
+    import voices as vz
+    allst = _load(HM / "state" / "_all.json", {}) or {}
+    chief = _load(HM / "chief_latest.json", {}) or {}
+    card_ = (_load(HM / "chief_scorecard.json", {}) or {}).get("horizons", {}).get("5d", {})
+    card_txt = (f"{card_.get('n_calls', 0)} calls graded at 5d"
+                + (f", directional right {card_['directional_hit'] * 100:.0f}%" if card_.get("directional_hit") is not None
+                   else ", still collecting"))
+    data = {"state": allst, "chief": chief, "chiefCard": card_txt, "info": vz.INFO}
+    tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")
+    page = tpl.replace("__DATA__", json.dumps(data, default=str).replace("</", "<\\/"))
+    tmp = TERMINAL_OUT.with_suffix(".tmp")
+    tmp.write_text(page, encoding="utf-8")
+    tmp.replace(TERMINAL_OUT)
+    return TERMINAL_OUT
+
+
 if __name__ == "__main__":
     print(build())
+    print(build_terminal())

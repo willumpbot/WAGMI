@@ -238,9 +238,21 @@ def voice_chart(sym):
             out.append(e_)
         return out
     e20, e50 = ema(closes, 20), ema(closes, 50)
-    keep = 70
-    return {"t": ts[-keep:], "ohlc": [rows[t] for t in ts[-keep:]],
-            "ema20": [round(x, 6) for x in e20[-keep:]], "ema50": [round(x, 6) for x in e50[-keep:]]}
+    keep = 90
+    out = {"t": ts[-keep:], "ohlc": [rows[t] for t in ts[-keep:]],
+           "ema20": [round(x, 6) for x in e20[-keep:]], "ema50": [round(x, 6) for x in e50[-keep:]]}
+    body = _j.dumps({"type": "candleSnapshot", "req": {"coin": sym, "interval": "4h",
+                     "startTime": int((time.time() - 45 * 86400) * 1000), "endTime": int(time.time() * 1000)}}).encode()
+    req = _u.Request("https://api.hyperliquid.xyz/info", data=body, headers={"Content-Type": "application/json"})
+    with _u.urlopen(req, timeout=20) as r:
+        b4 = _j.loads(r.read())
+    c4 = [float(b["c"]) for b in b4]
+    f20, f50 = ema(c4, 20), ema(c4, 50)
+    k4 = 150
+    out["h4"] = {"t": [int(b["t"]) for b in b4][-k4:],
+                 "ohlc": [[float(b["o"]), float(b["h"]), float(b["l"]), float(b["c"])] for b in b4][-k4:],
+                 "ema20": [round(x, 6) for x in f20[-k4:]], "ema50": [round(x, 6) for x in f50[-k4:]]}
+    return out
 
 
 def voice_history(sym, market):

@@ -33,6 +33,7 @@ def main():
             log("chief: " + ", ".join(f"{s} {c.get('lean')}{c.get('conviction')}" for s, c in out.get("coins", {}).items()))
         chief.resolve()
         desk.build()
+        desk.build_terminal()
         log("cycle ok" + (" (+chief)" if "--chief" in sys.argv else ""))
     except Exception:
         log("cycle FAILED: " + traceback.format_exc().replace("\n", " | ")[-800:])
