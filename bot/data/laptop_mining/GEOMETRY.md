@@ -103,6 +103,24 @@ Spearman ρ of mean R against stop multiplier (tp fixed at 1.0R):
 | test | **+0.771** | ×1 −0.443, ×2 −0.201, ×4 −0.014, ×6 +0.066, ×8 +0.065, ×12 +0.047 |
 | full | **+1.000** | ×1 −0.354, ×2 −0.223, ×4 −0.066, ×6 −0.007, ×8 +0.006, ×12 +0.006 |
 
+### 4. Walk-forward — PASSED, 4/4 folds (added 2026-10-08)
+The single-split weakness is now closed. Expanding window, pick on all prior days, score the next 14:
+
+| fold | n | picked | picked R | default R | advantage | CI95 |
+|---|---|---|---|---|---|---|
+| Mar 26 – Apr 08 | 4,118 | 12.0\|0.5 | −0.042 | −0.408 | **+0.366** | [+0.147, +0.549] |
+| Apr 09 – Apr 22 | 3,143 | 12.0\|0.5 | +0.009 | −0.293 | **+0.302** | [+0.027, +0.539] |
+| Apr 23 – May 10 | 6,916 | 12.0\|0.5 | +0.078 | −0.443 | **+0.521** | [+0.233, +0.847] |
+| May 11 – Jun 05 | 325 | 8.0\|0.5 | −0.357 | −1.150 | **+0.792** | [+0.360, +1.338] |
+
+**4/4 folds beat the default; the CI excluded zero in 4/4.** Mean advantage +0.495R, median +0.444R,
+worst fold +0.302R. The chosen cell is stable (wide stop, 0.5R target, in every fold).
+
+Two honest notes: only four folds fit in a 3-month corpus, so this is not the 22-fold confirmation the
+volatility model got. And the final fold shows the limit of the fix — the default lost −1.150R in late
+May while the repaired geometry still lost −0.357R. Widening the stop reduces bad periods; it does not
+make them good. Script: `geometry_walkforward.py`, data: `geometry_walkforward.json`.
+
 ---
 
 ## Why this is different from everything else here
