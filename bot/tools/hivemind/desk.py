@@ -214,6 +214,35 @@ def build():
     return OUT
 
 
+def lab_data():
+    """What the research has proven, compacted for the terminal's Lab section."""
+    LM = BOT / "data" / "laptop_mining"
+    coop = _load(LM / "cooperation.json", {}) or {}
+    vol = _load(LM / "volatility_forecast.json", {}) or {}
+    wf = _load(LM / "walkforward_vol.json", {}) or {}
+    geo = _load(LM / "geometry_sweep.json", {}) or {}
+    geo2 = _load(LM / "geometry_sweep_pass2.json", {}) or {}
+    cells = {c["stop_mult"]: round(c["mean_R"], 3) for c in geo.get("cells", []) + geo2.get("cells", [])
+             if c.get("tp_mult") == 1.0}
+    curve = sorted(cells.items())
+    grades = (_load(HM / "voice_grades.json", {}) or {}).get("voices", {})
+    return {
+        "agreement": {k: {"e5": v.get("e5"), "e5_ci": v.get("e5_ci"), "n": v.get("n")}
+                      for k, v in ((coop.get("agreement") or {}).get("by_k") or {}).items()},
+        "bottom_line": coop.get("bottom_line"),
+        "vol_calibration": vol.get("y1_calibration_test"),
+        "vol_walkforward": {"folds": wf.get("n_folds"), "wins": wf.get("har_beats_naive_folds"),
+                            "har_qlike": wf.get("mean_har_qlike"), "naive_qlike": wf.get("mean_naive_qlike")},
+        "geometry_curve": curve,
+        "geometry_default": (geo.get("bot_default") or {}).get("mean_R"),
+        "geometry_live": _load(HM / "geometry_shadow.json", {}) or {},
+        "voices": {k: {"trust": v.get("trust"), "mean": v.get("mean_bps_5d"), "ci": v.get("ci95"),
+                       "horizon": v.get("horizon", "5d")} for k, v in grades.items()},
+        "ic_drops": ((_load(BOT / "data" / "agent_grades" / "live" / "live_scorecard.json", {}) or {})
+                     .get("ic_muted_drops")),
+    }
+
+
 def build_terminal():
     """The trading terminal: one self-contained page, data embedded, live prices fetched in the browser."""
     import voices as vz
@@ -228,7 +257,7 @@ def build_terminal():
     except OSError:
         token = ""
     data = {"state": allst, "chief": chief, "chiefCard": card_txt, "info": vz.INFO, "ownerToken": token,
-            "ownerCard": _load(HM / "owner_scorecard.json", {}) or {}}
+            "ownerCard": _load(HM / "owner_scorecard.json", {}) or {}, "lab": lab_data()}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")
     page = tpl.replace("__DATA__", json.dumps(data, default=str).replace("</", "<\\/"))
     tmp = TERMINAL_OUT.with_suffix(".tmp")
