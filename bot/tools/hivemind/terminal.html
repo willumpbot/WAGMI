@@ -231,6 +231,18 @@ function safeLevTable(s){
   return {q: best.q, long: best.v.max_lev_long_1d_p99 / 1.5, short: best.v.max_lev_short_1d_p99 / 1.5, cap: t.max_leverage,
           adv: {"1d": h["1d"], "3d": h["3d"]}};
 }
+function levelStat(kind, level, price){
+  // LEVELS.md (laptop mission 11): break vs a random line at the same distance, 2,955 touches 2020-26.
+  const L = (DATA.levelStats || {})[kind]; if (!L || !level || !price) return null;
+  const side = price >= level ? "from_above" : "from_below";
+  const a = ((L[side] || {}).all) || {}; if (a.break_rate == null) return null;
+  const br = a.break_rate*100, nu = a.null_break_rate*100, sig = !!a.beats_null || (a.break_ci && (a.break_ci[0]*100 > nu || a.break_ci[1]*100 < nu));
+  let verdict, cls;
+  if (!sig) { verdict = "no better than a random line"; cls = "mut"; }
+  else if (br < nu) { verdict = side === "from_above" ? "real support: holds more than chance" : "real resistance: holds more than chance"; cls = "up"; }
+  else { verdict = "breaks MORE than chance: not reliable"; cls = "dn"; }
+  return {side, br, nu, verdict, cls, reject: (a.reject_rate||0)*100};
+}
 function nearestLiq(s, dir){
   const p = px(s); let best = null;
   for (const c of clusters(s)) { const d = (c.p/p-1)*100; if (dir>0 ? d>0.15 : d<-0.15) if (!best || Math.abs(d) < Math.abs(best.d)) best = {p:c.p, d}; }
@@ -365,7 +377,9 @@ function levels(){
   const cc = chief(sel);
   L.push(["<b>price now</b>", p, true]);
   L.sort((x,y)=>y[1]-x[1]);
-  $("levels").innerHTML = L.map(([n,v,now])=>{ const d=(v/p-1)*100; return `<tr class="${now?"now":""}"><td>${n}</td><td>${fmt(v)}</td><td class="${now?"":d>0?"up":"dn"}">${now?"":pct(d,2)}</td><td class="mut">${now||!a?"":(Math.abs(d)/a).toFixed(1)+"d"}</td></tr>`; }).join("");
+  const kindOf = n => n === "20-day high" ? "hi20" : n === "20-day low" ? "lo20" : n === "50-day avg" ? "ma50" : null;
+  $("levels").innerHTML = L.map(([n,v,now])=>{ const d=(v/p-1)*100; const k = kindOf(n); const st = k ? levelStat(k, v, p) : null;
+    return `<tr class="${now?"now":""}"><td>${n}${st?`<div class="${st.cls}" style="font-size:10.5px;font-family:Segoe UI,sans-serif" title="When price touches it ${st.side.replace("_"," ")}: breaks ${st.br.toFixed(0)}% vs ${st.nu.toFixed(0)}% for a random line; bounces away ${st.reject.toFixed(0)}%; the rest just stall (LEVELS.md, 2,955 touches).">${st.verdict}</div>`:""}</td><td>${fmt(v)}</td><td class="${now?"":d>0?"up":"dn"}">${now?"":pct(d,2)}</td><td class="mut">${now||!a?"":(Math.abs(d)/a).toFixed(1)+"d"}</td></tr>`; }).join("");
 }
 
 function voices(){
@@ -606,6 +620,7 @@ function playbook(){
     {cls:"ok", n: ((C(sel).risk||{}).long||{}).stop_pct!=null ? (+C(sel).risk.long.stop_pct).toFixed(1)+"%" : (f!=null ? (2*f).toFixed(1)+"%" : "2× move"), t:"Put the stop about this far away", w:`2× the expected move, take profit at half that distance, close after 48h. Tight stops lost ~0.4R per trade in testing.${g.adaptive?` Live check so far: ${g.adaptive.mean_r}R vs ${g.mean_r_current}R for tight stops.`:""}`},
     {cls: x ? "ok" : "wait", n: x ? Math.min(x.long,x.short).toFixed(1)+"×" : "–", t:`${sel}: max safe leverage now`, w: x ? `Long ${x.long.toFixed(1)}× · short ${x.short.toFixed(1)}×. Above this, a normal bad day (1-in-100) liquidates you. Halves on wild days.` : "No table for this coin yet."},
     {cls:"wait", n: c.move_size_hint || "–", t:"Voices agreeing = bigger day, not direction", w:"When most independent voices line up, expect a bigger move either way. Size down, not up."},
+    {cls:"ok", n:"50d", t:"The 50-day average is real support. The 20-day low is not.", w:"From above, the 50-day avg breaks only 32% vs 37% for a random line. The 20-day low breaks MORE than random (42-48%) and keeps going. The 20-day high means nothing. A third of touches just stall."},
     {cls:"no", n:"RSI", t:"\"Oversold\" is not a buy", w:"On these coins, extreme RSI has more often kept going. Treat it as a warning."},
   ];
   $("playbook").innerHTML = cards.map(k=>`<div class="pb ${k.cls}"><div class="n num">${k.n}</div><div class="t">${esc(k.t)}</div><div class="w">${esc(k.w)}</div></div>`).join("");
@@ -648,10 +663,11 @@ function nearLevels(){
     if (ch.ema50 && ch.ema50.length) L.push(["50d avg", ch.ema50[ch.ema50.length-1]]);
     for (const k of clusters(s)) if (k.n >= 500) L.push([`liq cluster (${k.n})`, k.p]);
     for (const [name, v] of L) { const d = (v/p-1)*100, inMoves = Math.abs(d)/em;
-      if (inMoves <= 0.5) out.push({s, name, v, d, m: inMoves}); }
+      const k = name === "20d high" ? "hi20" : name === "20d low" ? "lo20" : name === "50d avg" ? "ma50" : null;
+      if (inMoves <= 0.5) out.push({s, name, v, d, m: inMoves, st: k ? levelStat(k, v, p) : null}); }
   }
   out.sort((a,b)=>a.m-b.m);
-  $("near").innerHTML = out.length ? `<span class="mut" style="align-self:center">Near a level (within ½ expected daily move):</span>` + out.slice(0,10).map(x=>`<span class="mv" data-c="${x.s}" title="${x.name} at ${fmt(x.v)}, ${pct(x.d,2)} away = ${x.m.toFixed(2)} expected daily moves"><b>${x.s}</b>${x.name} <span class="num ${x.d>=0?"up":"dn"}">${pct(x.d,1)}</span></span>`).join("") : `<span class="mut">No board coin is within half an expected daily move of a key level right now.</span>`;
+  $("near").innerHTML = out.length ? `<span class="mut" style="align-self:center">Near a level (within ½ expected daily move):</span>` + out.slice(0,10).map(x=>`<span class="mv" data-c="${x.s}" title="${x.name} at ${fmt(x.v)}, ${pct(x.d,2)} away = ${x.m.toFixed(2)} expected daily moves"><b>${x.s}</b>${x.name} <span class="num ${x.d>=0?"up":"dn"}">${pct(x.d,1)}</span>${x.st?` <span class="${x.st.cls}" style="font-size:10.5px">${x.st.cls==="up"?"✔ holds":x.st.cls==="dn"?"✖ often breaks":"• no edge"}</span>`:""}</span>`).join("") : `<span class="mut">No board coin is within half an expected daily move of a key level right now.</span>`;
   document.querySelectorAll("#near .mv").forEach(el=>el.onclick=()=>{ sel = el.dataset.c; renderBoard(); renderDetail(); });
 }
 async function poll(){

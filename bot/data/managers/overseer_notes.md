@@ -48,3 +48,8 @@ Curated by the overseer (Claude). External evidence, each item with its source a
 - 2026-10-08, laptop mission 13: KEEP the IC gate. Inverted regime_trend and bollinger are significantly negative; mean_reversion is n.s.
   The laptop's PROXY of bollinger_squeeze run un-inverted was +17 bps on test (sign-stable). The server checked the bot's REAL BB signals (May–Oct, n=664):
   4h is worse than other signals in both halves; 24h flips sign (H1 +45.6, H2 -13.1 vs others). Not confirmed. Keep it muted and keep watching.
+- 2026-10-08, laptop mission 11 (LEVELS): 2,955 touches vs random-level nulls.
+  - 20d LOW breaks MORE than random: 42–48% vs 37–39%, with follow-through.
+  - 50d avg from ABOVE holds: breaks 32% vs 36.5% null; from below it is random.
+  - 20d high: no information.
+  - Break rate is flat across vol quintiles, and about a third of touches stall.
