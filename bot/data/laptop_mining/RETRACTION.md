@@ -4,10 +4,25 @@ _2026-10-08. Six-agent adversarial review, one skeptic per finding, each instruc
 re-derive the numbers from the actual code and data. Raw verdicts:
 `.claude/.../workflows/wf_fa7f7ade-f62/journal.jsonl`._
 
+## ⚠️ PARTLY SUPERSEDED — read `GEOMETRY_V3.md` before acting on §2
+
+A second red team (`wj68xvlf8`, verdict **NEGATIVE_TOO_STRONG**, high confidence) found that the
+side-flip null used to refute the geometry finding was **mathematically incapable of detecting
+geometry**: it computes `flip(cell) − flip(default)`, which is `(geometry) − (direction)`, so it
+reads zero whenever the two are the same size — which is what the data shows. Verified to machine
+precision. The honest split of the original +0.3479R is **+0.1745R direction-free (71% fee drag,
+real) + +0.1734R directional (still unvalidated)**, not "all leverage on being wrong."
+
+**§2 of this document is withdrawn. The other four refutations stand.** `GEOMETRY_V3.md` has the
+corrected decomposition, the fee mechanism, and the three further defects found in `geometry_v2.py`.
+
 ## 🔴 ACTION REQUIRED BY THE SERVER
 
-**Do not ship the stop change parked on `claude/adaptive-stops`.** The geometry finding it rests on is
-refuted. Three live integrations are affected — details in §6.
+**Do not ship the stop change on the +0.35R "edge" justification** — that half is unvalidated. It
+**is** defensible at **~+0.12R on fee-cost grounds alone**, which needs nothing predicted correctly;
+see `GEOMETRY_V3.md`. Do not read an optimum off ×20/×32: the bracket never binds there (spread
+across all targets is 0.0000), so those cells are "no stop", not "wide stop". The other live
+integrations in §6 are unaffected by this correction.
 
 ---
 
