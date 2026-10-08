@@ -64,9 +64,23 @@ def _compact(allstate):
         c = dict(st)
         deep = c.get("deep") or {}
         c["deep"] = {k: v[:6] for k, v in deep.items() if isinstance(v, list)}
+        # chart/positioning carry full candle + funding series for the terminal (~27k chars per coin); the chief
+        # gets a summary, otherwise the old hard cut at 60k silently dropped every coin after ETH
+        ch = c.pop("chart", None) or {}
+        o = ch.get("ohlc") or []
+        c["chart"] = {"last_10_daily_closes": [b[3] for b in o[-10:]],
+                      "ema20": (ch.get("ema20") or [None])[-1], "ema50": (ch.get("ema50") or [None])[-1]}
+        pos = c.pop("positioning", None) or {}
+        ser = pos.get("series") or []
+        c["positioning"] = {"funding_oi_last_6": ser[-6:], "recent_liqs": (pos.get("liqs") or [])[-8:]}
         out["coins"][sym] = c
     txt = json.dumps(out, default=str)
-    return txt[:60000]
+    if len(txt) > 90000:   # never cut mid-JSON: drop the bulkiest optional blocks instead
+        for c in out["coins"].values():
+            for k in ("rules", "contradictions", "deep"):
+                c.pop(k, None)
+        txt = json.dumps(out, default=str)
+    return txt
 
 
 def _price(sym):
