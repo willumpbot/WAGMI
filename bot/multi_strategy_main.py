@@ -4260,6 +4260,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 # exactly-once reconcile can match journal
                                 # entries to ledger truth.
                                 "position_id": getattr(pos, "position_id", "") or "",
+                                "pipeline_id": _er_mf.get("pipeline_id", "") or "",
+                                "thesis_id": _er_mf.get("thesis_id", "") or "",
                                 # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION):
                                 # numeric funding/OI captured at open (blank
                                 # when the feed was unavailable or the flag off).
@@ -9131,6 +9133,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             # were structurally ungradeable on the live path).
             "llm_notes": _full_notes[:500],
             "thesis_id": _thesis_id_entry,
+            "pipeline_id": getattr(entry_decision, "pipeline_id", "") or "",
             # ENTRY_REASONS_KEYS_FIX (2026-07-14, measurement-only): the LLM-first
             # path never persisted win_prob/rr/ev, so close-path reflection
             # (on_close win_prob/ev/rr) and EV calibration (predicted_ev) read

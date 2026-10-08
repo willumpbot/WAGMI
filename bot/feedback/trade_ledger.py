@@ -84,6 +84,11 @@ LEDGER_COLUMNS = [
     "funding_rate_entry",
     "open_interest_entry",
     "premium_entry",
+    # LINEAGE (2026-10-08, LINEAGE_JOIN_GAP.md S5): the multi-agent round that
+    # opened the trade (joins to agent_performance.jsonl pipeline_id) and the
+    # thesis it graded. Appended at the END; blank on older rows.
+    "pipeline_id",
+    "thesis_id",
 ]
 
 

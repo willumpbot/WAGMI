@@ -987,6 +987,8 @@ class PositionManager:
                     atr=atr,
                     regime=(entry_reasons or {}).get("regime", ""),
                     entry_type=entry_type,
+                    position_id=getattr(pos, "position_id", "") or "",
+                    pipeline_id=(entry_reasons or {}).get("pipeline_id", "") or "",
                 )
         except Exception:
             pass

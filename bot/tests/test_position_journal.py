@@ -84,8 +84,11 @@ class TestPositionIdentity:
 class TestLedgerPositionIdColumn:
     def test_position_id_in_schema(self):
         assert "position_id" in LEDGER_COLUMNS
-        # Appended at the END so pre-existing column positions are unchanged.
-        assert LEDGER_COLUMNS[-1] == "position_id"
+        # Appended after the original schema so pre-existing column positions
+        # are unchanged; later additions (funding snapshot, lineage ids) only
+        # ever go after it.
+        assert LEDGER_COLUMNS.index("position_id") > LEDGER_COLUMNS.index("win")
+        assert LEDGER_COLUMNS[-2:] == ["pipeline_id", "thesis_id"]
 
     def test_record_trade_writes_position_id_from_dict(self, tmp_path):
         led = TradeLedger(data_dir=str(tmp_path))

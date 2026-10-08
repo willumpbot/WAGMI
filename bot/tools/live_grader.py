@@ -151,7 +151,7 @@ def ingest(state, pending):
             continue  # test-fixture signature (see agent_grades/SCORECARD.md caveats)
         slim = {"ts": r.get("timestamp"), "sym": r.get("symbol"), "side": r.get("side"),
                 "dec": r.get("decision"), "conf": r.get("confidence"), "model": r.get("model_used"),
-                "txt": txt, "fallback": fallback}
+                "txt": txt, "fallback": fallback, "ctx": r.get("ctx")}
         role = r.get("agent_role")
         if role in ("trade", "critic", "risk", "quant", "regime"):
             open_pipes.setdefault(r.get("pipeline_id"), {})[role] = slim
@@ -169,6 +169,11 @@ def ingest(state, pending):
         sym = next(iter(m.values()))["sym"]
         if sym not in SYMS:
             continue
+        ctx = next((x["ctx"] for x in m.values() if x.get("ctx")), None)
+        if ctx and ctx.get("trigger") != "llm_first_entry":
+            # Event round: the agents looked at every market and `sym` is just
+            # the first one in the snapshot. Not gradeable against one price.
+            continue
         sg = None
         for s in reversed(state["signals"]):
             if s[1] == sym and 0 <= t0 - s[0] <= SIGNAL_MATCH:
@@ -176,9 +181,16 @@ def ingest(state, pending):
                 break
         txts = " ".join(m.get(k, {}).get("txt", "") for k in ("trade", "critic", "risk"))
         tside = _text_side(txts, sym)
+        exact = (ctx or {}).get("signal") or {}
+        exact_side = {"BUY": "LONG", "LONG": "LONG", "SELL": "SHORT", "SHORT": "SHORT"}.get(
+            str(exact.get("side", "")).upper())
+        if exact_side:
+            sg = [t0, sym, exact_side, exact.get("entry"), exact.get("sl"), exact.get("tp1"),
+                  sg[6] if sg else None, exact.get("confidence"), sg[8] if sg and len(sg) > 8 else None]
         row = {"kind": "pipeline", "pid": pid, "ts": t0, "sym": sym,
                "prop_side": sg[2] if sg else tside,
-               "side_src": "signal" if sg else ("text" if tside else None),
+               "side_src": "exact" if exact_side else ("signal" if sg else ("text" if tside else None)),
+               "round": "entry" if ctx else "unknown",
                "sig": sg}
         for role, x in m.items():
             row[role] = {"dec": x["dec"], "conf": x["conf"], "model": x["model"], "fallback": x["fallback"]}

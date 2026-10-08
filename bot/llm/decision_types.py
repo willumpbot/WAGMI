@@ -225,6 +225,10 @@ class EntryDecision:
     # position's entry_reasons so the calibration ledger can record EACH
     # agent's own confidence at close (was recording 0.0 for all).
     agent_confidences: Dict[str, float] = field(default_factory=dict)
+    # Id of the multi-agent round that produced this decision; the same id is
+    # on every agent record in agent_performance.jsonl, so a trade can be
+    # joined to its exact decision chain (LINEAGE_JOIN_GAP.md S2).
+    pipeline_id: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -244,6 +248,7 @@ class EntryDecision:
             "notes": self.notes,
             "memory_update": self.memory_update,
             "agent_confidences": self.agent_confidences,
+            "pipeline_id": self.pipeline_id,
         }
 
     @classmethod

@@ -66,6 +66,11 @@ class AgentDecisionRecord:
     # filler because the role's schema has no confidence field. Scorers must
     # exclude "default" rows (GM_AGENT_SKILL_24K: 7/9 roles were constant 0.5).
     confidence_source: str = "agent"
+    # Round context: why the pipeline ran and what it was asked about. Entry
+    # rounds (trigger "llm_first_entry") evaluate ONE signal; trigger-path
+    # rounds see every market and their `symbol` is just the first market in
+    # the snapshot, so graders must not price them against that symbol.
+    context: Optional[Dict[str, Any]] = None
 
 
 @dataclass
@@ -221,6 +226,7 @@ class AgentPerformanceTracker:
                 latency_ms=output.latency_ms,
                 raw_data=output.data,
                 confidence_source=conf_source,
+                context=signal_context or None,
             )
             records.append(record)
 
@@ -1175,7 +1181,9 @@ class AgentPerformanceTracker:
                         "model_used": rec.model_used,
                         "latency_ms": rec.latency_ms,
                     }
-                    f.write(json.dumps(entry) + "\n")
+                    if rec.context:
+                        entry["ctx"] = rec.context
+                    f.write(json.dumps(entry, default=str) + "\n")
         except Exception as e:
             logger.error(f"[PERF] Failed to write records: {e}")
 

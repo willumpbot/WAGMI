@@ -1676,11 +1676,21 @@ class AgentCoordinator:
             if trade_out.ok:
                 _side = trade_out.data.get("side", trade_out.data.get("s", ""))
             _pipeline_id = str(_uuid.uuid4())[:12]
+            _ctx = {"trigger": trigger_reason, "n_markets": len(_markets)}
+            try:
+                _sg = (_markets[0].get("sg") or [None])[0] if _markets else None
+                if isinstance(_sg, dict) and trigger_reason == "llm_first_entry":
+                    _ctx["signal"] = {k: _sg.get(k) for k in ("side", "entry", "sl", "tp1", "confidence")
+                                      if _sg.get(k) is not None}
+            except Exception:
+                pass
+            self._last_pipeline_id = _pipeline_id
             _tracker.record_pipeline_run(
                 pipeline_id=_pipeline_id,
                 symbol=_sym,
                 side=_side,
                 agent_outputs=pipeline_results,
+                signal_context=_ctx,
             )
             # Record veto counterfactual if critic vetoed
             if decision.action in ("flat", "skip") and critic_out and critic_out.ok:
@@ -1923,6 +1933,7 @@ class AgentCoordinator:
         # ── Run the standard agent pipeline ──
         # Reuse get_trading_decision which handles all enrichment, agents,
         # debate, consistency, learning integration, etc.
+        self._last_pipeline_id = ""   # never let a failed round reuse a stale id
         decision = self.get_trading_decision(
             snapshot_data=snapshot_data,
             trigger_reason="llm_first_entry",
@@ -2153,6 +2164,7 @@ class AgentCoordinator:
             notes=_entry_notes,
             memory_update=decision.memory_update,
             agent_confidences=_agent_confidences,
+            pipeline_id=getattr(self, "_last_pipeline_id", "") or "",
         )
 
         logger.info(
