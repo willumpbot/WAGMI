@@ -27,7 +27,8 @@ def build():
         "id": "bot-stops",
         "title": "Widen the bot's stops",
         "ask": "Switch the bot from its tight stops to stops sized at 2x the forecast daily move, 0.5R target, 48h time limit.",
-        "why": "Tight stops lose about 0.4R per trade even on random entries (laptop, 15.6k signals, held-out data: +0.54R better when wider).",
+        "why": ("Tight stops lose about 0.4R per trade even on random entries. Laptop: +0.54R better when wider on held-out "
+                "data, and it won in 4 of 4 walk-forward periods (+0.50R average). It reduces losses; it does not make bad periods good."),
         "live": (f"Live paired test, {g.get('n', 0)} signals: current {g.get('mean_r_current')}R, wider {g.get('mean_r_proposal')}R, "
                  f"forecast-sized {ad.get('mean_r', '-')}R (gain {ad.get('paired_diff_vs_current', '-')}R, "
                  f"range {ad.get('ci95', ['-', '-'])[0]} to {ad.get('ci95', ['-', '-'])[1]})."),
