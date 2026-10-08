@@ -175,7 +175,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     </div>
     <div class="box" id="memebox" style="display:none"><h3>Token risk card <span id="mm_q" style="color:var(--ink);text-transform:none;letter-spacing:0"></span><span class="sp"></span><a href="#" id="mm_x" style="color:var(--soft)">close</a></h3><div id="mm_body"></div></div>
     <div class="tabs" id="tabs">
-      <button data-tab="t_scr" class="on">Screener</button><button data-tab="t_scan">Scanner <span id="scan_badge" class="mut"></span></button><button data-tab="t_plans">Plans <span id="plan_badge"></span></button><button data-tab="t_pos">Positions</button><button data-tab="t_jr">Journal</button>
+      <button data-tab="t_scr" class="on">Screener</button><button data-tab="t_scan">Scanner <span id="scan_badge" class="mut"></span></button><button data-tab="t_plans">Plans <span id="plan_badge"></span></button><button data-tab="t_pos">Positions <span id="pos_badge"></span></button><button data-tab="t_jr">Journal</button>
       <button data-tab="t_calls">Calls &amp; chief</button><button data-tab="t_lv">Levels</button><button data-tab="t_vox">Voices</button><button data-tab="t_lab">Lab <span id="dec_badge"></span></button>
     </div>
     <div class="tabp on" id="t_scr">
@@ -189,6 +189,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     </div>
     <div class="tabp" id="t_plans"><div id="plans"></div></div>
     <div class="tabp" id="t_pos">
+      <div class="box"><h3>Bot's open positions (paper) <span class="sp"></span><span class="mut" id="botnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="botpos"></div></div>
       <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
       <div class="box"><h3>My Hyperliquid account <span class="sp"></span><span class="mut" id="acctnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="acct"></div></div>
     </div>
@@ -414,7 +415,8 @@ function drawLW(){
   if (OV.liq) for (const c of clusters(sel)) cs.createPriceLine({price: c.p, color: cssv("--liq"), lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: "liq " + c.n});
   const bp = (C(sel).bot||{}).position;
   if (bp && OV.lv) { cs.createPriceLine({price: bp.entry, color: cssv("--accent"), lineWidth: 1, lineStyle: 0, axisLabelVisible: true, title: "bot entry"});
-            if (bp.sl) cs.createPriceLine({price: bp.sl, color: cssv("--bad"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "bot stop"}); }
+            if (bp.sl) cs.createPriceLine({price: bp.sl, color: cssv("--bad"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "bot stop"});
+            if (bp.tp1) cs.createPriceLine({price: bp.tp1, color: cssv("--good"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: ["TP1_HIT","TRAILING"].includes(bp.state) ? "bot target 1 ✔" : "bot target 1"}); }
   if (OV.lv) for (const q of PLANS.filter(q => q.coin === sel && ["waiting","open"].includes((q.result||{}).status))) {
     cs.createPriceLine({price: q.entry, color: cssv("--accent"), lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: "plan entry"});
     cs.createPriceLine({price: q.stop, color: cssv("--bad"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "plan stop"});
@@ -934,6 +936,32 @@ function setupsNow(){
     : `<span class="mut" style="font-size:11.5px">No coin is on a tested setup right now.</span>`;
   document.querySelectorAll("#setups .mv").forEach(el => el.onclick = () => adhoc(el.dataset.c));
 }
+function botState(st){ return ({OPEN:"open, first target not hit yet", TP1_HIT:"first target hit, part banked", TRAILING:"first target hit, rest riding on a trailing stop"})[st] || (st||"").toLowerCase(); }
+function botPos(s){
+  const b = (C(s).bot||{}).position; if (!b) return null;
+  const now = midOf(s) || px(s), sg = b.side==="SHORT" ? -1 : 1;
+  const open = now ? (now-b.entry)*sg*b.qty : null, mv = now ? (now/b.entry-1)*100*sg : null;
+  const stopPnl = b.sl ? (b.sl-b.entry)*sg*b.qty : null;
+  return {...b, now, open, mv, stopPnl, total: (b.realized_pnl||0) + (open||0)};
+}
+function renderBotPos(){
+  const rows = SYMS.map(s => [s, botPos(s)]).filter(x => x[1]);
+  $("pos_badge").innerHTML = rows.length ? `<span class="pill nt">${rows.length}</span>` : "";
+  $("botnote").textContent = rows.length ? "updates every 15 min; price is live" : "";
+  $("botpos").innerHTML = rows.length ? rows.map(([s,b]) => `<div style="border-bottom:1px solid var(--line);padding:6px 0;cursor:pointer" data-c="${s}">
+      <div style="font-size:14px"><b>${s}</b> <span class="pill ${b.side==="SHORT"?"dn":"up"}">${b.side} ${b.leverage||""}×</span> <span class="mut">${botState(b.state)}</span>
+        <span style="float:right" class="num ${b.total>=0?"up":"dn"}" title="banked + open">${b.total>=0?"+":""}$${b.total.toFixed(2)} total</span></div>
+      <div class="out num" style="margin-top:4px">
+        <div>Entry → now</div><div>${fmt(b.entry)} → ${fmt(b.now)} <span class="${b.mv>=0?"up":"dn"}">(${pct(b.mv,1)} in its favour)</span></div>
+        <div>Banked so far</div><div class="${(b.realized_pnl||0)>=0?"up":"dn"}">$${(b.realized_pnl||0).toFixed(2)}</div>
+        <div>Still open</div><div>${b.qty} ${s} · <span class="${(b.open||0)>=0?"up":"dn"}">$${(b.open||0).toFixed(2)}</span></div>
+        <div>Stop</div><div>${b.sl?fmt(b.sl):"–"}${b.stopPnl!=null?` <span class="${b.stopPnl>=0?"up":"dn"}">(if hit: ${b.stopPnl>=0?"+":""}$${b.stopPnl.toFixed(2)} on the rest${b.stopPnl>=0?", profit locked":""})</span>`:""}</div>
+        <div>First target</div><div>${b.tp1?fmt(b.tp1):"–"}${["TP1_HIT","TRAILING"].includes(b.state)?' <span class="up">✔ hit</span>':""}</div>
+        <div>Opened</div><div>${new Date(b.open_time).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</div></div>
+      ${b.notes?`<div class="mut" style="font-size:11.5px;margin-top:3px">Why: ${esc(b.notes.replace(/^LLM-FIRST:\s*/,""))}</div>`:""}</div>`).join("")
+    : `<div class="mut" style="font-size:12px">The bot has no open positions.</div>`;
+  document.querySelectorAll("#botpos [data-c]").forEach(el => el.onclick = () => pick(el.dataset.c));
+}
 function pick(s){ if (!s) return; sel = s; renderBoard(); renderDetail(); }
 function lvx(v){ return v < 10 ? v.toFixed(1) : v.toFixed(0); }
 function sparkVals(s){ const ch = C(s).chart || {}, h = (ch.h4||{}).ohlc; return h && h.length ? h.slice(-42).map(b=>b[3]) : (ch.ohlc||[]).slice(-8).map(b=>b[3]); }
@@ -968,6 +996,7 @@ function renderSituation(){
     fu!=null ? I("Funding", `<span class="num ${fu>2.5e-5?"dn":fu<0?"up":"mut"}">${(fu*100).toFixed(4)}%/h</span>`, "Red = longs paying shorts (crowded long).") : "",
     I("Voices", `<span class="${cs.move_size==="bigger than usual"?"up":"mut"}">${esc(cs.move_size_hint||"–")}</span>`, "Agreement predicts the SIZE of the next move, not its direction."),
     ch.lean ? I("Chief", `<span class="pill ${ch.lean==="LONG"?"up":ch.lean==="SHORT"?"dn":"nt"}">${ch.lean} ${ch.conviction||""}/5</span>`, ch.read||"") : "",
+    botPos(s) ? (b => I("Bot", `<span class="pill ${b.side==="SHORT"?"dn":"up"}">${b.side}</span> <span class="mut">${["TP1_HIT","TRAILING"].includes(b.state)?"target 1 hit, trailing":"open"}</span> <span class="num ${b.total>=0?"up":"dn"}">${b.total>=0?"+":""}$${b.total.toFixed(2)}</span>`, `Bot (paper): entry ${fmt(b.entry)}, stop ${fmt(b.sl)}, banked $${(b.realized_pnl||0).toFixed(2)}. Details in the Positions tab.`))(botPos(s)) : "",
     mp ? I("Mine", `<span class="pill ${+mp.szi>0?"up":"dn"}">${+mp.szi>0?"LONG":"SHORT"} ${(mp.leverage||{}).value||""}×</span> <span class="num ${+mp.unrealizedPnl>=0?"up":"dn"}">$${(+mp.unrealizedPnl).toFixed(2)}</span>`, "Your live Hyperliquid position") : ""];
   $("situation").innerHTML = it.filter(Boolean).join("");
 }
@@ -1000,6 +1029,7 @@ async function poll(){
     const mids = await r.json(); window.MIDS = mids; $("livedot").style.background = "var(--good)"; checkAlerts(mids);
     for (const x of (SCAN.coins||[])) { const el = $("sp_"+x.coin); if (el && mids[x.coin]) el.textContent = fmt(+mids[x.coin]); }
     for (const q of PLANS) { const el = $("pr_"+q.id); if (el) el.innerHTML = rBar(q); }
+    if (!(poll.n = (poll.n||0) + 1) % 5) renderBotPos();
     for (const s of SYMS) { if (!mids[s]) continue; const v = +mids[s], prev = live[s]; live[s] = v;
       const el = $("px_"+s); if (el) { el.textContent = fmt(v); if (prev && v!==prev) { el.classList.remove("flash-up","flash-dn"); void el.offsetWidth; el.classList.add(v>prev?"flash-up":"flash-dn"); } }
       const ch = $("ch_"+s); if (ch) { const c = dayChg(s); ch.textContent = pct(c,2); ch.className = "num " + (c>=0?"up":"dn"); } }
@@ -1036,7 +1066,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   const tfk = {"1":"15m","2":"1h","3":"4h","4":"1d","5":"1w","d":"1d","D":"1d"}[ev.key];
   if (tfk) document.querySelector(`.seg button[data-tf="${tfk}"]`).click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderScan(); setupsNow(); renderPlans(); renderBoard(); renderDetail(); loadPlans(); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); renderBoard(); renderDetail(); loadPlans(); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);
