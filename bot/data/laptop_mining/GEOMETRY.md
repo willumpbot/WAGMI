@@ -8,8 +8,8 @@ _2026-10-08. Scripts: `sweep_geometry.py`, `sweep_oos.py`. Data:
 
 **The bot's stop/target geometry costs it about half an R on every setup. Fixing it recovers that
 to break-even. This is the only claim in this entire investigation that passed an out-of-sample
-split, a per-symbol breakdown and a monotonicity check — the three tests that killed everything
-else, including my own earlier candidates.**
+split, a per-symbol breakdown, a monotonicity check and a walk-forward — the tests that killed
+everything else, including my own earlier candidates.**
 
 It is a **loss-elimination** result, not alpha. The repaired configuration earns **+0.05R**, which
 is statistically zero. Three independent datasets still say the signals have no directional edge.
@@ -67,7 +67,7 @@ At a 168h (1 week) horizon the same shape holds but sits higher: stop ×8 / tp 0
 
 ---
 
-## The three tests
+## The four tests
 
 ### 1. Out of sample — PASSED
 Grid fitted on 2026-02-11 → 04-15 (n=6,523), then the train-selected cell re-scored on
@@ -134,7 +134,7 @@ Four candidates looked strong and then died, each to one of these same tests:
 | `avoid agree=3+ SHORT` | survives, but 1 hit in 29 slices is what noise produces |
 | **`chop_floor`** (−33.6 bps level) | sign **flipped** across the split (train +7.4, test −35.8); no dose-response — smallest breaches were worst |
 
-The geometry result faced all three tests and passed all three. That asymmetry is the point.
+The geometry result faced all four tests and passed all four. That asymmetry is the point.
 
 ---
 
