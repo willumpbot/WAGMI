@@ -67,8 +67,35 @@ If a bracket binds, the target must matter. It stops mattering:
 | ×32 | +0.0002 / +0.0002 / +0.0002 | **0.0000** |
 
 Beyond ×20 every trade just marks to the 48h horizon. **Those cells are "no stop", not "wide stop."**
-The real finding is *the bot's bracket is tight enough that fees eat it*. My recommendation is
-**×4–×8, where the bracket still binds and most of the fee saving is already captured** — not ×32.
+The real finding is *the bot's bracket is tight enough that fees eat it*.
+
+### The number for the card: stop ×2, target 0.5R
+
+`geometry_v3.py` now runs the direction-free estimator with week-block CIs on **all 24 cells** plus a
+measured binding rate, and the **synthetic control passes** (no false positive at zero effect;
+smallest detectable effect 0.08R, so it can see the 0.1232R fee prediction — v2's null could not have
+passed this). Results in `GEOMETRY_V3.md` / `geometry_v3.json`:
+
+| cell | bound | sym (direction-free) | CI95 (week blocks) | verdict |
+|---|---|---|---|---|
+| 0.5\|1.5 | 99.4% | **−0.1316** | [−0.1765, −0.0941] | **significantly WORSE** |
+| **1.0\|1.5** | 86.0% | 0 | — | **← the bot today** |
+| **2.0\|0.5** | **79.1%** | **+0.1187** | **[+0.0395, +0.1661]** | **real & binds** |
+| 4.0\|0.5 | 44.3% | +0.1731 | [+0.0972, +0.2182] | barely binds |
+| 8.0\|0.5 | 14.3% | +0.1832 | [+0.1137, +0.2312] | NO BRACKET |
+| 32.0\|0.5 | 0.0% | +0.1745 | [+0.1105, +0.2165] | NO BRACKET |
+
+**Recommend `stop ×1 → ×2`, `target 1.5R → 0.5R`. Worth +0.1187R per trade, direction-free.** 15 of
+24 cells are saturated, so ×8/×32 are off the table. Two more results worth having:
+
+- **Tightening the stop is significantly harmful** (−0.13R to −0.20R at ×0.5, CIs clear of zero).
+  The sturdiest result in the whole thread.
+- **Changing only the target does nothing** — `1.0|0.5` is +0.0429 [−0.0431, +0.1087] and `1.0|1.0`
+  is +0.0307 [−0.0130, +0.0577]. v2's "cheap alternative" is **null**; don't ship that either.
+
+Caveat I want on the record: `BIND_FLOOR = 0.50` is my judgment call and it is load-bearing — it is
+what excludes `4.0|0.5` (+0.1731R but binding only 44.3%). ×4 is the aggressive read if you will
+accept a bracket that resolves under half of trades. ×2 is the conservative one.
 
 ### Also wrong in my v2, for the record
 - "Zero of **24** cells survive the null" — **the null ran on 5 cells.** The other 19 were never
