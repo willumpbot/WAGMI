@@ -28,3 +28,8 @@ Curated by the overseer (Claude). External evidence, each item with its source a
 - 2026-10-08, the geometry shadow on SERVER signals (Sep 1 – Oct 8, n=205, out of sample for the laptop's choice):
   current -0.27R vs proposal (stop×8, 1R, 48h) -0.05R; paired +0.23R, CI [-0.07, +0.43] over 18 days.
   Same sign as the laptop (+0.54R), not yet significant. The HAR vol model beat naive in 22/22 walk-forward folds.
+- 2026-10-08, laptop missions 8+9:
+  - Adaptive stops: stop 2× the forecast move, tp 0.5R, 48h time stop = +0.093R on test vs the bot's -0.431R. Width alone is +0.48R (confirmed again).
+    Vol-scaling adds +0.19–0.21R only with a near target (0.5R), and it was observed on test, not pre-registered. Treat as a hypothesis.
+  - Safe leverage (13k coin-days, OOS p95 94.6%, p99 97.7%) roughly halves from calm to hot: BTC 16.8x→7.7x.
+    HYPE's calmest quintile is worse than BTC's hottest. Divide the table by 1.5.

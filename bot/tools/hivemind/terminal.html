@@ -155,6 +155,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
           <label>Stop<input id="c_stop" type="number" step="any"></label>
         </div>
         <div class="out num" id="c_out"></div><div class="warn" id="c_warn"></div>
+        <div class="mut" style="font-size:11px;margin-top:6px">Defaults follow the laptop's tests: stop 2&times; the forecast daily move, target 0.5R, close after 48h if neither is hit (+0.09R per setup on unseen data vs -0.43R for the bot's tight stops; the scaling part is still being confirmed live). Safe leverage: SAFE_LEVERAGE.md.</div>
       </div>
       <div class="box"><h3>Price alerts <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">chime + flash when crossed (this tab must stay open)</span></h3>
         <div class="alrow"><input id="al_px" type="number" step="any" placeholder="price" style="background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:3px 6px;width:120px"><button id="al_add" style="border:1px solid var(--line);border-radius:5px;padding:3px 8px;color:var(--ink)">Add alert</button></div>
@@ -175,7 +176,7 @@ let sel = SYMS[0], tf = "1d", sortKey = null, sortDir = -1;
 const $ = id => document.getElementById(id);
 const fmt = v => v == null || isNaN(v) ? "–" : (Math.abs(v) >= 1000 ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(4));
 const pct = (v,d=1) => v == null || isNaN(v) ? "–" : (v>=0?"+":"") + v.toFixed(d) + "%";
-const usd = v => v >= 1e6 ? "$" + (v/1e6).toFixed(2) + "M" : v >= 1e3 ? "$" + (v/1e3).toFixed(1) + "k" : "$" + v.toFixed(0);
+const usd = v => v >= 1e9 ? "$" + (v/1e9).toFixed(2) + "B" : v >= 1e6 ? "$" + (v/1e6).toFixed(2) + "M" : v >= 1e3 ? "$" + (v/1e3).toFixed(1) + "k" : "$" + v.toFixed(0);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const C = s => DATA.state.coins[s] || ADHOC[s] || {};
 const chief = s => (DATA.chief.coins || {})[s] || {};
@@ -198,6 +199,18 @@ function trend(s){
 }
 function vmap(s){ const m = {}; for (const v of (C(s).voices||[])) m[v.voice] = v; return m; }
 function atr(s){ return (C(s).market||{}).atr_pct_1d; }
+function safeLev(s){
+  // SAFE_LEVERAGE.md: leverage whose liquidation sits beyond the 99th-percentile 1-day adverse move for the coin's
+  // current forecast-volatility quintile, divided by 1.5 as the laptop recommends (absorbs funding/fees, true p99).
+  const t = (DATA.safeLev || {})[s]; const f = (C(s).vol || {}).next_day_move_pct;
+  if (!t || f == null) return null;
+  let best = null;
+  for (const [q, v] of Object.entries(t.quintiles || {})) if (!best || Math.abs(v.fcast_median - f) < Math.abs(best.v.fcast_median - f)) best = {q, v};
+  if (!best) return null;
+  const h = best.v.horizons || {};
+  return {q: best.q, long: best.v.max_lev_long_1d_p99 / 1.5, short: best.v.max_lev_short_1d_p99 / 1.5, cap: t.max_leverage,
+          adv: {"1d": h["1d"], "3d": h["3d"]}};
+}
 function nearestLiq(s, dir){
   const p = px(s); let best = null;
   for (const c of clusters(s)) { const d = (c.p/p-1)*100; if (dir>0 ? d>0.15 : d<-0.15) if (!best || Math.abs(d) < Math.abs(best.d)) best = {p:c.p, d}; }
@@ -215,6 +228,7 @@ const COLS = [
   {k:"drv", h:"Buyers/Sellers", v:s=>{const d=(C(s).market||{}).di;return d?d.plus/(d.plus+d.minus):null}, r:s=>{const d=(C(s).market||{}).di;if(!d)return"–";const b=d.plus/(d.plus+d.minus)*100;return `<span class="mb" title="buyers ${d.plus} / sellers ${d.minus}"><i style="width:${b}%;background:var(--pos)"></i><i style="width:${100-b}%;background:var(--neg)"></i></span>`}},
   {k:"rng", h:"20D Range", v:s=>((C(s).market||{}).range_20d||{}).position, r:s=>{const r=(C(s).market||{}).range_20d||{};if(r.position==null)return"–";const p=Math.max(0,Math.min(1,r.position))*100;return `<span class="rb" title="${(r.position*100).toFixed(0)}% from low ${fmt(r.low)} to high ${fmt(r.high)}"><i style="left:${p}%"></i></span> <span class="num mut">${(r.position*100).toFixed(0)}%</span>`}},
   {k:"atr", h:"Exp. Move 1D", v:s=>((C(s).vol||{}).next_day_move_pct ?? atr(s)), r:s=>{const f=C(s).vol||{};const c=C(s).consensus||{};const z=c.move_size;const v=f.next_day_move_pct;return `<span class="num" title="Forecast size of tomorrow's move (HAR volatility model, beats 'same as recent' out of sample; 5-day vol forecast ${f.next_5d_vol_pct??"–"}%). Typical day (ATR): ${atr(s)!=null?atr(s).toFixed(1)+"%":"–"}. ${z?"Voices: "+z+".":""}">${v!=null?"±"+v.toFixed(1)+"%":(atr(s)!=null?atr(s).toFixed(1)+"%":"–")}${z==="bigger than usual"?' <span class="up">▲</span>':z==="smaller than usual"?' <span class="mut">▼</span>':""}</span>`}},
+  {k:"slev", h:"Safe lev L/S", v:s=>{const x=safeLev(s);return x?Math.min(x.long,x.short):null}, r:s=>{const x=safeLev(s);if(!x)return'<span class="dim">–</span>';return `<span class="num" title="Max leverage with liquidation beyond the worst 1-day move on 99% of similar-volatility days (vol quintile ${x.q}), divided by 1.5 for safety. From 13k coin-days, held out of sample.">${x.long.toFixed(1)}× <span class="mut">/</span> ${x.short.toFixed(1)}×</span>`}},
   {k:"fund", h:"Funding/h", v:s=>(C(s).market||{}).funding_hourly, r:s=>{const f=(C(s).market||{}).funding_hourly;if(f==null)return"–";return `<span class="num ${f>2.5e-5?"dn":f<0?"up":"mut"}">${(f*100).toFixed(4)}%</span>`}},
   {k:"oi", h:"OI", v:s=>(oi(s)||{}).v, r:s=>{const o=oi(s);return o?`<span class="num mut" title="over ~${o.d} days">${o.v>0?"+":""}${o.v}%</span>`:"–"}},
   {k:"lu", h:"Liq ↑", v:s=>(nearestLiq(s,1)||{}).d, r:s=>{const l=nearestLiq(s,1);return l?`<span class="num">${fmt(l.p)}</span> <span class="num mut">${pct(l.d)}</span>`:"–"}},
@@ -366,7 +380,7 @@ function hist(){
 function calc(){
   const p = px(sel), side = $("c_side").value, a = (C(sel).vol||{}).next_day_move_pct || atr(sel) || 3;
   if (!$("c_entry").dataset.touched) $("c_entry").value = p ? +p.toPrecision(6) : "";
-  if (!$("c_stop").dataset.touched) $("c_stop").value = p ? +(p*(1 - (side==="LONG"?1:-1)*1.5*a/100)).toPrecision(6) : "";
+  if (!$("c_stop").dataset.touched) $("c_stop").value = p ? +(p*(1 - (side==="LONG"?1:-1)*2*a/100)).toPrecision(6) : "";
   const acct = +$("c_acct").value, risk = +$("c_risk").value/100, e = +$("c_entry").value, st = +$("c_stop").value, lev = Math.max(1,+$("c_lev").value);
   const dist = Math.abs(e-st)/e, riskUsd = acct*risk, notional = dist ? riskUsd/dist : 0, qty = e ? notional/e : 0, margin = notional/lev;
   const mm = 0.005, liq = side==="LONG" ? e*(1-1/lev+mm) : e*(1+1/lev-mm);
@@ -378,11 +392,15 @@ function calc(){
   $("c_out").innerHTML = `<div>Risk</div><div>$${riskUsd.toFixed(2)}</div><div>Stop distance</div><div>${(dist*100).toFixed(2)}% (${(dist*100/a).toFixed(1)}× expected daily move)</div>
     <div>Position</div><div>${qty?qty.toPrecision(4):"–"} ${sel} · $${notional.toFixed(0)}</div><div>Margin at ${lev}x</div><div>$${margin.toFixed(0)}</div>
     <div>Liquidation (approx.)</div><div>${fmt(liq)}</div><div>Round-trip fees</div><div>$${fee.toFixed(2)} (${(fee/riskUsd*100||0).toFixed(0)}% of risk)</div>
+    <div>Target at 0.5R</div><div>${fmt(e + (side==="LONG"?1:-1)*0.5*Math.abs(e-st))}</div>
+    ${(()=>{const x=safeLev(sel);if(!x)return"";const sl=side==="LONG"?x.long:x.short;const a1=((x.adv["1d"]||{})[side.toLowerCase()]||{});
+      return `<div>Safe leverage now</div><div class="${lev>sl?"dn":"up"}">${sl.toFixed(1)}× (vol quintile ${x.q})</div><div>Worst 1-day move against you</div><div>${a1.p95!=null?a1.p95.toFixed(1)+"% (95% of days) · "+a1.p99.toFixed(1)+"% (99%)":"–"}</div>`;})()}
     ${tgts.slice(0,3).map(t=>`<div>To ${t[0]}</div><div>${t[2].toFixed(1)}R</div>`).join("")}`;
   const w = [];
   if (wrongSide) w.push("Stop is on the wrong side of entry.");
   if (side==="LONG" ? liq>=st : liq<=st) w.push("Liquidation comes before your stop: lower the leverage.");
   if (margin > acct) w.push("Margin exceeds the account.");
+  { const x = safeLev(sel); if (x) { const sl = side==="LONG" ? x.long : x.short; if (lev > sl) w.push(`Leverage ${lev}× is above the safe ${sl.toFixed(1)}× for this coin's current volatility.`); } }
   if (dist*100 < a) w.push("Stop is inside one expected daily move: tight stops lost ~0.4R per trade in testing (GEOMETRY.md); wider stops cut that loss.");
   $("c_warn").textContent = w.join(" ");
 }

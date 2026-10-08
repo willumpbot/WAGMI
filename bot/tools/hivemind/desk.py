@@ -257,7 +257,8 @@ def build_terminal():
     except OSError:
         token = ""
     data = {"state": allst, "chief": chief, "chiefCard": card_txt, "info": vz.INFO, "ownerToken": token,
-            "ownerCard": _load(HM / "owner_scorecard.json", {}) or {}, "lab": lab_data()}
+            "ownerCard": _load(HM / "owner_scorecard.json", {}) or {}, "lab": lab_data(),
+            "safeLev": ((_load(BOT / "data" / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table") or {})}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")
     page = tpl.replace("__DATA__", json.dumps(data, default=str).replace("</", "<\\/"))
     tmp = TERMINAL_OUT.with_suffix(".tmp")
