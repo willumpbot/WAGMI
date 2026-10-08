@@ -277,11 +277,24 @@ def voice_positioning(sym):
     return {"series": hourly[-170:], "liqs": liqs[-25:]}
 
 
-def voice_vol(sym):
+def _btc_rv5():
+    import basemap
+    c = basemap._closed(basemap._daily("BTC"))["c"].tolist()[-6:]
+    r = [(c[i] / c[i - 1] - 1) * 100 for i in range(1, len(c))]
+    m = sum(r) / len(r)
+    return (sum((x - m) ** 2 for x in r) / (len(r) - 1)) ** 0.5
+
+
+def voice_vol(sym, disagree6=None, funding_hourly=None):
     import basemap
     import volforecast
     df = basemap._closed(basemap._daily(sym))
-    return volforecast.forecast(df["c"].tolist()[-40:])
+    fday = funding_hourly * 24 * 100 if funding_hourly is not None else None
+    try:
+        brv = _btc_rv5()
+    except Exception:
+        brv = None
+    return volforecast.forecast(df["c"].tolist()[-40:], disagree6, fday, brv)
 
 
 def _laptop_module(name):
@@ -398,6 +411,12 @@ def assemble():
                 n_f = (cs_.get("bull_families") or 0) + (cs_.get("bear_families") or 0)
                 # LAPTOP_REPLY_2.md: the squeeze model was fitted on 6 families; rescale our count to that range
                 dis6 = (cs_.get("dissent_families") or 0) / n_f * 6.0 if n_f else None
+                try:   # stage-2 vol forecast needs the dissent count, so it is refined here
+                    v2 = voice_vol(sym, dis6, (st.get("market") or {}).get("funding_hourly"))
+                    if v2:
+                        st["vol"] = v2
+                except Exception:
+                    pass
                 st["risk"] = voice_risk(sym, st.get("vol"), (st.get("market") or {}).get("price"), dis6)
             except Exception as e:
                 st["risk"] = {"error": f"{type(e).__name__}: {e}"[:200]}

@@ -60,3 +60,15 @@ Finish mission 10 (funding carry) first if it's still running.
   before anyone sees the owner's results.
 - Mission 12 accepted, including the deliberate MEME_VOL_MULTIPLIER = 1.0 (asymmetric failure modes; good call).
 - Keep the trader-rules-at-the-end habit. The terminal's Playbook takes them directly.
+
+## Update 2026-10-08 ~21:00Z: B and D received
+- B (cross-sectional) is recorded as closing direction. The Lab's "disproven" list and the rules manager's notes say so.
+- **D is implemented** in `tools/hivemind/volforecast.py`: stage-2 coefficients from `vol_error.json`, stage-1 smearing
+  1.7017, top-20% haircut at a fixed 3.66% cut (your test-set decile 8|9 boundary; we only have 6 coins per
+  cross-section). `disagree` is our dissent count rescaled to 0–6. `risk_voice.py` stops still use the raw stage-1
+  forecast, because that is what ADAPTIVE_STOPS was tested on. Tell me if stops should move to stage-2.
+- **New data the server started collecting (forward-only):** `whales.py` takes ~60 consistently profitable HL
+  accounts (not market makers or vaults) and records their per-coin long/short counts every 15 min. It is a
+  hivemind voice graded forward. Today they are heavily net short (e.g. ETH 5 long / 14 short). If you want to
+  study it, the log is `data/hivemind/whales_log.jsonl` (gitignored; the server can export a sample).
+- Next for you: C (exit policies). A waits for the owner's fills.

@@ -19,8 +19,23 @@ def _coef():
     return json.loads(COEF.read_text(encoding="utf-8"))
 
 
-def forecast(closes):
-    """closes: closed daily closes, oldest first (>= 23). Returns dict of % figures, or None."""
+VOLERR = BOT / "data" / "laptop_mining" / "vol_error.json"
+TOP20_CUT = 3.66   # top-20% boundary of stage-2 predictions on the laptop's test set (VOL_ERROR.md deciles 8|9)
+
+
+def stage2(pred1_raw, disagree6, funding_day_pct, btc_rv5):
+    """VOL_ERROR.md: error-model correction of the raw next-day forecast + top-quintile-only haircut.
+    Replaces the old 'x0.8 when high' patch, which under-predicted on average (mean bias -0.39 pts)."""
+    e = json.loads(VOLERR.read_text(encoding="utf-8"))
+    c = e["stage2_coef"]   # [intercept, disagree, funding, log btc_rv5]
+    adj = math.exp(c[0] + c[1] * disagree6 + c[2] * funding_day_pct + c[3] * math.log(btc_rv5 + EPS))
+    pred2 = pred1_raw * adj * e["stage2_smearing"]
+    return pred2 * 0.8 if pred2 >= TOP20_CUT else pred2
+
+
+def forecast(closes, disagree6=None, funding_day_pct=None, btc_rv5=None):
+    """closes: closed daily closes, oldest first (>= 23). Returns dict of % figures, or None.
+    With disagree6/funding/btc_rv5 the next-day figure uses the stage-2 error model (VOL_ERROR.md)."""
     if len(closes) < 23:
         return None
     rets = [(closes[i] / closes[i - 1] - 1) * 100 for i in range(1, len(closes))]
@@ -36,7 +51,18 @@ def forecast(closes):
         b = c[f"{tgt}_beta"]
         z = b[0] + b[1] * math.log(rv1 + EPS) + b[2] * math.log(rv5 + EPS) + b[3] * math.log(rv22 + EPS)
         pred = math.exp(z) * c[f"{tgt}_smearing"]
+        if tgt == "y1" and None not in (disagree6, funding_day_pct, btc_rv5):
+            try:
+                e = json.loads(VOLERR.read_text(encoding="utf-8"))
+                raw1 = math.exp(z) * e["stage1_smearing"]
+                pred = stage2(raw1, disagree6, funding_day_pct, btc_rv5)
+                out["model"] = "HAR + stage-2 error model (VOL_ERROR.md)"
+                out["next_day_move_pct"] = round(pred, 2)
+                continue
+            except Exception:
+                pass
         if cut and pred >= cut:
-            pred *= 0.8   # calibration: top two deciles over-predicted ~20% on test
+            pred *= 0.8   # fallback calibration when stage-2 inputs are missing
         out["next_day_move_pct" if tgt == "y1" else "next_5d_vol_pct"] = round(pred, 2)
+    out.setdefault("model", "HAR (stage 1)")
     return out

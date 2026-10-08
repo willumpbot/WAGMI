@@ -56,3 +56,5 @@ Curated by the overseer (Claude). External evidence, each item with its source a
 - 2026-10-08, laptop proposal B: cross-sectional (long top 3 / short bottom 3 of 11 coins, 9 signals) has 0 of 18 cells sig+stable. Five are significantly NEGATIVE at 1d (fees: four legs = 36 bps/day); the 5d train winners vanish on test.
   DIRECTION IS CLOSED for anything derived from price history (~98 tests, 4 datasets). New data is needed: owner fills, order flow, on-chain.
   Do not propose price-derived directional rules.
+- 2026-10-08, laptop proposal D (VOL_ERROR): a flat x0.8 makes the vol forecast UNDER-predict (bias -0.39). That is the dangerous direction for stops and leverage.
+  Stage-2 error model (disagree -, funding +, BTC vol -) plus a top-quintile-only haircut calibrates every decile within ±9%. Now live in `volforecast.py`.

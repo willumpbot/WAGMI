@@ -1,0 +1,344 @@
+{
+ "stage1_smearing": 1.7017,
+ "features_tested": [
+  "l_pred",
+  "disagree",
+  "f_tr_f",
+  "has_f",
+  "l_btc",
+  "l_since",
+  "term"
+ ],
+ "features_sign_stable": [
+  "disagree",
+  "f_tr_f",
+  "l_btc"
+ ],
+ "variants": {
+  "stage 1 only (raw HAR)": {
+   "qlike": 0.50782,
+   "corr": 0.2526,
+   "top2_decile_ratio": 0.824,
+   "bias": 0.2463,
+   "deciles": [
+    {
+     "decile": 1,
+     "n": 542,
+     "pred": 1.6261,
+     "actual": 1.6361,
+     "ratio": 1.006
+    },
+    {
+     "decile": 2,
+     "n": 542,
+     "pred": 2.0917,
+     "actual": 1.9595,
+     "ratio": 0.937
+    },
+    {
+     "decile": 3,
+     "n": 542,
+     "pred": 2.4252,
+     "actual": 2.3152,
+     "ratio": 0.955
+    },
+    {
+     "decile": 4,
+     "n": 542,
+     "pred": 2.7177,
+     "actual": 2.8406,
+     "ratio": 1.045
+    },
+    {
+     "decile": 5,
+     "n": 542,
+     "pred": 2.967,
+     "actual": 2.9079,
+     "ratio": 0.98
+    },
+    {
+     "decile": 6,
+     "n": 542,
+     "pred": 3.2247,
+     "actual": 3.1808,
+     "ratio": 0.986
+    },
+    {
+     "decile": 7,
+     "n": 542,
+     "pred": 3.4826,
+     "actual": 3.265,
+     "ratio": 0.938
+    },
+    {
+     "decile": 8,
+     "n": 542,
+     "pred": 3.7702,
+     "actual": 3.4018,
+     "ratio": 0.902
+    },
+    {
+     "decile": 9,
+     "n": 542,
+     "pred": 4.1712,
+     "actual": 3.4645,
+     "ratio": 0.831
+    },
+    {
+     "decile": 10,
+     "n": 542,
+     "pred": 5.235,
+     "actual": 4.2768,
+     "ratio": 0.817
+    }
+   ]
+  },
+  "stage 1 x0.80 flat (current)": {
+   "qlike": 0.52018,
+   "corr": 0.2526,
+   "top2_decile_ratio": 1.03,
+   "bias": -0.3879,
+   "deciles": [
+    {
+     "decile": 1,
+     "n": 542,
+     "pred": 1.3009,
+     "actual": 1.6361,
+     "ratio": 1.258
+    },
+    {
+     "decile": 2,
+     "n": 542,
+     "pred": 1.6733,
+     "actual": 1.9595,
+     "ratio": 1.171
+    },
+    {
+     "decile": 3,
+     "n": 542,
+     "pred": 1.9402,
+     "actual": 2.3152,
+     "ratio": 1.193
+    },
+    {
+     "decile": 4,
+     "n": 542,
+     "pred": 2.1741,
+     "actual": 2.8406,
+     "ratio": 1.307
+    },
+    {
+     "decile": 5,
+     "n": 542,
+     "pred": 2.3736,
+     "actual": 2.9079,
+     "ratio": 1.225
+    },
+    {
+     "decile": 6,
+     "n": 542,
+     "pred": 2.5798,
+     "actual": 3.1808,
+     "ratio": 1.233
+    },
+    {
+     "decile": 7,
+     "n": 542,
+     "pred": 2.786,
+     "actual": 3.265,
+     "ratio": 1.172
+    },
+    {
+     "decile": 8,
+     "n": 542,
+     "pred": 3.0161,
+     "actual": 3.4018,
+     "ratio": 1.128
+    },
+    {
+     "decile": 9,
+     "n": 542,
+     "pred": 3.337,
+     "actual": 3.4645,
+     "ratio": 1.038
+    },
+    {
+     "decile": 10,
+     "n": 542,
+     "pred": 4.188,
+     "actual": 4.2768,
+     "ratio": 1.021
+    }
+   ]
+  },
+  "stage 1 + stage 2 model": {
+   "qlike": 0.50368,
+   "corr": 0.2714,
+   "top2_decile_ratio": 0.808,
+   "bias": 0.2784,
+   "deciles": [
+    {
+     "decile": 1,
+     "n": 542,
+     "pred": 1.6291,
+     "actual": 1.5955,
+     "ratio": 0.979
+    },
+    {
+     "decile": 2,
+     "n": 542,
+     "pred": 2.08,
+     "actual": 1.9229,
+     "ratio": 0.924
+    },
+    {
+     "decile": 3,
+     "n": 542,
+     "pred": 2.4129,
+     "actual": 2.2523,
+     "ratio": 0.933
+    },
+    {
+     "decile": 4,
+     "n": 542,
+     "pred": 2.7138,
+     "actual": 2.7195,
+     "ratio": 1.002
+    },
+    {
+     "decile": 5,
+     "n": 542,
+     "pred": 2.9824,
+     "actual": 2.9433,
+     "ratio": 0.987
+    },
+    {
+     "decile": 6,
+     "n": 542,
+     "pred": 3.2349,
+     "actual": 3.2829,
+     "ratio": 1.015
+    },
+    {
+     "decile": 7,
+     "n": 542,
+     "pred": 3.5164,
+     "actual": 3.2478,
+     "ratio": 0.924
+    },
+    {
+     "decile": 8,
+     "n": 542,
+     "pred": 3.8193,
+     "actual": 3.4882,
+     "ratio": 0.913
+    },
+    {
+     "decile": 9,
+     "n": 542,
+     "pred": 4.2486,
+     "actual": 3.4014,
+     "ratio": 0.801
+    },
+    {
+     "decile": 10,
+     "n": 542,
+     "pred": 5.3943,
+     "actual": 4.3942,
+     "ratio": 0.815
+    }
+   ]
+  },
+  "stage 2 + top-2-decile x0.8": {
+   "qlike": 0.49929,
+   "corr": 0.2755,
+   "top2_decile_ratio": 0.968,
+   "bias": 0.0855,
+   "deciles": [
+    {
+     "decile": 1,
+     "n": 542,
+     "pred": 1.6291,
+     "actual": 1.5955,
+     "ratio": 0.979
+    },
+    {
+     "decile": 2,
+     "n": 542,
+     "pred": 2.08,
+     "actual": 1.9229,
+     "ratio": 0.924
+    },
+    {
+     "decile": 3,
+     "n": 542,
+     "pred": 2.4129,
+     "actual": 2.2523,
+     "ratio": 0.933
+    },
+    {
+     "decile": 4,
+     "n": 542,
+     "pred": 2.7138,
+     "actual": 2.7195,
+     "ratio": 1.002
+    },
+    {
+     "decile": 5,
+     "n": 542,
+     "pred": 2.9824,
+     "actual": 2.9433,
+     "ratio": 0.987
+    },
+    {
+     "decile": 6,
+     "n": 542,
+     "pred": 3.2098,
+     "actual": 3.1454,
+     "ratio": 0.98
+    },
+    {
+     "decile": 7,
+     "n": 542,
+     "pred": 3.3784,
+     "actual": 3.5412,
+     "ratio": 1.048
+    },
+    {
+     "decile": 8,
+     "n": 542,
+     "pred": 3.5617,
+     "actual": 3.2329,
+     "ratio": 0.908
+    },
+    {
+     "decile": 9,
+     "n": 542,
+     "pred": 3.7657,
+     "actual": 3.5044,
+     "ratio": 0.931
+    },
+    {
+     "decile": 10,
+     "n": 542,
+     "pred": 4.3694,
+     "actual": 4.3906,
+     "ratio": 1.005
+    }
+   ]
+  }
+ },
+ "stage2_features": [
+  "disagree",
+  "f_tr_f",
+  "l_btc"
+ ],
+ "stage2_coef": [
+  -0.36316,
+  -0.06397,
+  0.52144,
+  -0.03793
+ ],
+ "stage2_smearing": 1.6959,
+ "verdict": "stage 2 + top-2-decile x0.8 beats the flat patch"
+}
