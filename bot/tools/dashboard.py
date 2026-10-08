@@ -760,7 +760,7 @@ def build():
     if sc:
         p.append("<h2>AI agent report cards</h2>")
         p.append("<p class='note'>%s</p>" % e(
-            "Every AI decision is checked 12 hours later against what the price "
+            "Every AI decision is checked 4 hours later against what the price "
             "actually did. %d decisions graded since %s. An agent is 'earning' only "
             "when its good calls beat its bad calls by a clear margin over 100+ cases. "
             "Updated %s." % (sc.get("resolved_rows", 0), (sc.get("since") or "")[:10],
