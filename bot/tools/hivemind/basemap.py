@@ -33,12 +33,8 @@ def _daily(sym):
     if path.exists() and time.time() - path.stat().st_mtime < REBUILD_S:
         raw = json.loads(path.read_text())
     else:
-        body = json.dumps({"type": "candleSnapshot", "req": {
-            "coin": sym, "interval": "1d", "startTime": 0, "endTime": int(time.time() * 1000)}}).encode()
-        req = urllib.request.Request("https://api.hyperliquid.xyz/info", data=body,
-                                     headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            raw = json.loads(r.read())
+        import hl
+        raw = hl.candles(sym, "1d", 0)
         CACHE.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(raw))
     df = pd.DataFrame([{"t": int(b["t"]), "o": float(b["o"]), "h": float(b["h"]), "l": float(b["l"]),
@@ -127,13 +123,8 @@ def _table():
 def live_state(sym):
     """Today's combination using the still-forming daily candle at the current price."""
     path = CACHE / f"{sym}_live.json"
-    body = json.dumps({"type": "candleSnapshot", "req": {
-        "coin": sym, "interval": "1d", "startTime": int((time.time() - 120 * 86400) * 1000),
-        "endTime": int(time.time() * 1000)}}).encode()
-    req = urllib.request.Request("https://api.hyperliquid.xyz/info", data=body,
-                                 headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        raw = json.loads(r.read())
+    import hl
+    raw = hl.candles(sym, "1d", (int(time.time() // 86400) - 120) * 86_400_000)
     df = pd.DataFrame([{"t": int(b["t"]), "o": float(b["o"]), "h": float(b["h"]), "l": float(b["l"]),
                         "c": float(b["c"])} for b in raw]).sort_values("t").reset_index(drop=True)
     f = features(df)

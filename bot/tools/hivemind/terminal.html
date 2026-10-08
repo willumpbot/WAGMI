@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WAGMI Terminal</title>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{
+  --bg:#0d0f12;--panel:#14171c;--panel2:#1a1e24;--line:#262b33;--ink:#e6e3dc;--soft:#8f8a80;--dim:#5d5a54;
+  --pos:#3987e5;--neg:#e66767;--posbg:rgba(57,135,229,.16);--negbg:rgba(230,103,103,.16);
+  --good:#4cc24c;--bad:#e66767;--warn:#eda100;--accent:#8ba9d4;--liq:#eda100;--sel:#20262e;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#f3f2ee;--panel:#fffefb;--panel2:#f7f6f2;--line:#e2dfd7;--ink:#24211d;--soft:#6f6a62;--dim:#a29d94;
+  --pos:#2a78d6;--neg:#d03b3b;--posbg:rgba(42,120,214,.12);--negbg:rgba(208,59,59,.12);
+  --good:#0ca30c;--bad:#d03b3b;--warn:#b07800;--accent:#4a6fa5;--liq:#c98500;--sel:#eef1f6}}
+:root[data-theme="light"]{--bg:#f3f2ee;--panel:#fffefb;--panel2:#f7f6f2;--line:#e2dfd7;--ink:#24211d;--soft:#6f6a62;--dim:#a29d94;
+  --pos:#2a78d6;--neg:#d03b3b;--posbg:rgba(42,120,214,.12);--negbg:rgba(208,59,59,.12);--good:#0ca30c;--bad:#d03b3b;--warn:#b07800;--accent:#4a6fa5;--liq:#c98500;--sel:#eef1f6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 "Segoe UI",system-ui,sans-serif}
+.num{font-variant-numeric:tabular-nums;font-family:"Cascadia Mono","Consolas",ui-monospace,monospace}
+.top{display:flex;flex-wrap:wrap;gap:18px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{font-weight:800;letter-spacing:.12em;font-size:12px}
+.extra{color:var(--warn);font-size:11px;margin-left:6px}
+.tk{display:flex;gap:6px;align-items:baseline}.tk .k{color:var(--soft);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.note{flex:1 1 360px;color:var(--soft);font-size:12px;min-width:0}
+.dotlive{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;margin-right:4px;animation:p 2s infinite}
+@keyframes p{50%{opacity:.3}}
+.wrap{padding:10px 14px}
+table.board{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.board th{font-weight:600;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+.board th:first-child,.board td:first-child{text-align:left}
+.board th:hover{color:var(--ink)}
+.board td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.board tr:last-child td{border-bottom:none}
+.board tbody tr{cursor:pointer}.board tbody tr:hover{background:var(--panel2)}.board tr.sel{background:var(--sel);box-shadow:inset 3px 0 0 var(--accent)}
+.sym{font-weight:800;font-size:14px}
+.up{color:var(--pos)}.dn{color:var(--neg)}.mut{color:var(--soft)}.dim{color:var(--dim)}
+.flash-up{animation:fu .8s}.flash-dn{animation:fd .8s}
+@keyframes fu{from{background:var(--posbg)}}@keyframes fd{from{background:var(--negbg)}}
+.pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700}
+.pill.up{background:var(--posbg)}.pill.dn{background:var(--negbg)}.pill.nt{background:var(--panel2);color:var(--soft)}
+.mb{display:inline-flex;width:64px;height:6px;border-radius:3px;overflow:hidden;gap:1px;vertical-align:middle;background:var(--panel2)}
+.mb i{display:block;height:100%}
+.rb{position:relative;display:inline-block;width:64px;height:6px;border-radius:3px;background:var(--panel2);vertical-align:middle}
+.rb i{position:absolute;top:-3px;width:3px;height:12px;border-radius:1px;background:var(--ink)}
+.dots{display:inline-flex;gap:2px;vertical-align:middle;margin-left:4px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--line)}.dots i.on{background:currentColor}
+.detail{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:10px;margin-top:10px}
+@media (max-width:980px){.detail{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.box h3{margin:0 0 8px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);display:flex;align-items:center;gap:8px}
+.box h3 .sp{flex:1}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{background:none;border:0;color:var(--soft);font:inherit;font-size:11px;padding:2px 9px;cursor:pointer}
+.seg button.on{background:var(--panel2);color:var(--ink);font-weight:700}
+#chart{width:100%;height:340px;display:block;cursor:crosshair}
+.readout{font-size:11.5px;color:var(--soft);min-height:16px}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+table.lv{width:100%;border-collapse:collapse;font-size:12px}
+.lv td{padding:3px 4px;border-bottom:1px dashed var(--line)}.lv td:not(:first-child){text-align:right}
+.lv tr.now td{color:var(--ink);font-weight:700;border-bottom:1px solid var(--accent)}
+.lv .tag{font-size:10px;color:var(--soft);margin-left:4px}
+.vs{display:grid;grid-template-columns:20px 1fr auto;gap:3px 8px;align-items:center;font-size:12px}
+.vs .g{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff}
+.vs .g.up{background:var(--pos);color:#fff}.vs .g.dn{background:var(--neg);color:#fff}.vs .g.nt{background:var(--panel2);color:var(--soft)}
+.vs .g.t-context{opacity:.5}.vs .g.t-backwards{opacity:.35}
+.vs .d{color:var(--soft);font-size:11px}
+.tb{font-size:9.5px;padding:0 5px;border-radius:999px;background:var(--panel2);color:var(--soft);white-space:nowrap}
+.tb.t-earned{color:var(--good)}.tb.t-promising{color:var(--pos)}.tb.t-backwards{color:var(--bad)}
+.hbar{display:flex;height:16px;border-radius:4px;overflow:hidden;gap:1px;font-size:10.5px;font-weight:700;color:#fff}
+.hbar div{display:flex;align-items:center;padding:0 6px;white-space:nowrap}
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:12px}
+.calc label{display:flex;flex-direction:column;gap:2px;color:var(--soft);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
+.calc input,.calc select{background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;font-size:13px;padding:4px 6px;width:100%}
+.out{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin-top:8px;font-size:12.5px}
+.out div:nth-child(odd){color:var(--soft)}
+.warn{color:var(--warn);font-size:11.5px;margin-top:6px}
+.read{font-size:12.5px;line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.chip{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--panel2);color:var(--soft)}
+.chip.good{color:var(--good)}.chip.bad{color:var(--bad)}.chip.rule{border:1px dashed var(--line)}
+.foot{color:var(--dim);font-size:11px;padding:8px 14px 18px}
+
+.obr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11.5px;position:relative;padding:1px 4px}
+.obr span:nth-child(2),.obr span:nth-child(3){text-align:right}
+.obr i{position:absolute;top:0;bottom:0;right:0;opacity:.18;border-radius:2px}
+.obr.a{color:var(--neg)} .obr.a i{background:var(--neg)} .obr.b{color:var(--pos)} .obr.b i{background:var(--pos)}
+.obmid{text-align:center;font-size:11px;color:var(--soft);padding:3px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:2px 0}
+.obimb{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:6px;gap:1px}
+table.pos{width:100%;border-collapse:collapse;font-size:12px} .pos td,.pos th{padding:3px 4px;text-align:right} .pos th{color:var(--soft);font-weight:600;font-size:10.5px}
+.pos td:first-child,.pos th:first-child{text-align:left}
+.mv{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;cursor:pointer;white-space:nowrap}
+.mv:hover{border-color:var(--accent)} .mv b{margin-right:4px}
+.alrow{display:flex;gap:6px;align-items:center;font-size:12px;margin-top:4px} .alrow button{background:none;border:0;color:var(--soft);cursor:pointer}
+.flashbg{animation:fb 1s 3}@keyframes fb{50%{background:var(--warn)}}
+
+.labhead{margin:16px 0 8px;font-size:12px;letter-spacing:.04em}
+.lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:10px}
+.lc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.lc h4{margin:0 0 2px;font-size:13px} .lc .v{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.lc .v.yes{color:var(--good)} .lc .v.no{color:var(--bad)} .lc .v.wait{color:var(--warn)}
+.lc p{margin:6px 0 0;font-size:12px;color:var(--soft);line-height:1.45}
+.lc svg text{fill:var(--soft);font-size:10px}
+
+.playbook{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px;margin-bottom:10px}
+.pb{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:8px 10px}
+.pb .n{font-size:20px;font-weight:800;line-height:1.1}
+.pb .t{font-size:12.5px;font-weight:700;margin-top:2px}
+.pb .w{font-size:11px;color:var(--soft);margin-top:3px;line-height:1.35}
+.pb.ok{border-left-color:var(--good)} .pb.no{border-left-color:var(--bad)} .pb.wait{border-left-color:var(--warn)}
+.lc .take{font-size:15px;font-weight:700;line-height:1.3;margin:4px 0 6px;color:var(--ink)}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;font-size:10px}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="brand">WAGMI TERMINAL</span>
+  <input id="search" list="universe" placeholder="HL coin or token address…  /" autocomplete="off" style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font:inherit;padding:4px 8px;width:170px">
+  <datalist id="universe"></datalist>
+  <span class="tk num"><span class="dotlive" id="livedot"></span><span class="k">UTC</span><span id="clock"></span></span>
+  <span class="tk"><span class="k">Weather</span><b id="weather"></b></span>
+  <span class="tk"><span class="k">Breadth</span><b class="num" id="breadth"></b></span>
+  <span class="note" id="chiefnote"></span>
+  <span class="tk"><span class="k">Data</span><span class="num mut" id="age"></span></span>
+</div>
+<div class="wrap">
+  <div id="decisions" style="margin-bottom:8px;font-size:12px"></div>
+  <div class="playbook" id="playbook"></div>
+  <div id="movers" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;font-size:12px"></div>
+  <div id="near" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-size:12px"></div>
+  <table class="board" id="board"><thead><tr id="bh"></tr></thead><tbody id="bb"></tbody></table>
+  <div class="detail">
+    <div class="col">
+      <div class="box">
+        <h3><span id="dsym" class="sym" style="font-size:15px;color:var(--ink);letter-spacing:0"></span><span class="num" id="dpx" style="font-size:14px;color:var(--ink)"></span><span class="sp"></span>
+          <span class="seg"><button data-tf="1d" class="on">1D</button><button data-tf="4h">4H</button></span></h3>
+        <div id="lw" style="width:100%;height:360px;display:none"></div><svg id="chart"></svg>
+        <div class="readout num" id="readout">Hover the chart for prices. <kbd>↑</kbd><kbd>↓</kbd> switch coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe</div>
+      </div>
+      <div class="box" id="memebox" style="display:none"><h3>Token risk card <span id="mm_q" style="color:var(--ink);text-transform:none;letter-spacing:0"></span><span class="sp"></span><a href="#" id="mm_x" style="color:var(--soft)">close</a></h3><div id="mm_body"></div></div>
+      <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
+      <div class="box"><h3>My trading journal <span class="sp"></span><span class="mut" id="jr_note" style="text-transform:none;letter-spacing:0"></span></h3><div id="jr"></div></div>
+      <div class="box"><h3>My call on <span id="mc_sym" style="color:var(--ink)"></span> <span class="sp"></span><span class="mut" id="mc_card" style="text-transform:none;letter-spacing:0"></span></h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="seg" id="mc_lean"><button data-v="LONG">&#9650; LONG</button><button data-v="SHORT">&#9660; SHORT</button><button data-v="NEUTRAL">&#9679; NEUTRAL</button></span>
+          <span class="mut" style="font-size:11px">conviction</span><span class="seg" id="mc_conv"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3" class="on">3</button><button data-v="4">4</button><button data-v="5">5</button></span>
+          <input id="mc_reason" placeholder="why, in a few words" style="flex:1;min-width:160px;background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:4px 6px">
+          <button id="mc_send" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:5px 12px;cursor:pointer">Log call</button>
+        </div>
+        <div id="mc_msg" class="mut" style="font-size:11.5px;margin-top:5px">Logged with the live price and graded at 1 and 5 days, the same way as the chief and every voice.</div>
+        <div id="mc_list" style="margin-top:6px;font-size:12px"></div>
+      </div>
+      <div class="box"><h3>Chief analyst <span class="sp"></span><span id="dchief"></span></h3><div class="read" id="dread"></div></div>
+      <div class="box"><h3>Next 5 days when it looked like this <span class="sp"></span><span class="mut" id="hn" style="text-transform:none;letter-spacing:0"></span></h3><div id="dhist"></div></div>
+    </div>
+    <div class="col">
+      <div class="box"><h3>Levels <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">distance · in expected daily moves</span></h3><table class="lv num" id="levels"></table></div>
+      <div class="box"><h3>Positioning, last 7 days</h3><div id="posn"></div></div>
+      <div class="box"><h3>Order book <span class="sp"></span><span class="mut num" id="obspread" style="text-transform:none;letter-spacing:0"></span></h3><div id="ob" class="num"></div></div>
+      <div class="box"><h3>My Hyperliquid account <span class="sp"></span><span class="mut" id="acctnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="acct"></div></div>
+      <div class="box"><h3>Position calculator</h3>
+        <div class="calc">
+          <label>Account $<input id="c_acct" type="number" value="5000"></label>
+          <label>Risk %<input id="c_risk" type="number" value="1" step="0.25"></label>
+          <label>Side<select id="c_side"><option>LONG</option><option>SHORT</option></select></label>
+          <label>Leverage<input id="c_lev" type="number" value="3" step="1"></label>
+          <label>Entry<input id="c_entry" type="number" step="any"></label>
+          <label>Stop<input id="c_stop" type="number" step="any"></label>
+        </div>
+        <div class="out num" id="c_out"></div><div class="warn" id="c_warn"></div>
+        <div class="mut" style="font-size:11px;margin-top:6px">Defaults follow the laptop's tests: stop 2&times; the forecast daily move, target 0.5R, close after 48h if neither is hit (+0.09R per setup on unseen data vs -0.43R for the bot's tight stops; the scaling part is still being confirmed live). Safe leverage: SAFE_LEVERAGE.md.</div>
+      </div>
+      <div class="box"><h3>Price alerts <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">chime + flash when crossed (this tab must stay open)</span></h3>
+        <div class="alrow"><input id="al_px" type="number" step="any" placeholder="price" style="background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:3px 6px;width:120px"><button id="al_add" style="border:1px solid var(--line);border-radius:5px;padding:3px 8px;color:var(--ink)">Add alert</button></div>
+        <div id="al_list"></div></div>
+      <div class="box"><h3>Voices on this coin <span class="sp"></span><span id="dcons" class="mut" style="text-transform:none;letter-spacing:0"></span></h3><div class="vs" id="dvoices"></div><div class="chips" id="drules"></div></div>
+    </div>
+  </div>
+</div>
+<div class="wrap"><div class="labhead"><b>LAB</b> <span class="mut">What the research has proven so far, from the laptop's studies and the live graders. Each card says how it was tested.</span></div>
+  <div class="lab" id="lab"></div></div>
+<div class="foot">Measured context and graded opinions only. No voice in this system has a proven directional edge yet; the decision is yours. Live prices from Hyperliquid every 3s; analysis refreshed every 15 min, chief every 4h.</div>
+<script>
+const DATA = __DATA__;
+// Same page works locally (file://) and on the phone through the tunnel (served by the API at /t).
+const API = location.protocol.startsWith("http") ? location.origin : "http://127.0.0.1:8000";
+const ADHOC = {};   // coins looked up from the search box: chart + price + risk only (not in the hivemind)
+const SYMS = Object.keys(DATA.state.coins || {});
+const live = {};
+let sel = SYMS[0], tf = "1d", sortKey = null, sortDir = -1;
+const $ = id => document.getElementById(id);
+const fmt = v => v == null || isNaN(v) ? "–" : (Math.abs(v) >= 1000 ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(4));
+const pct = (v,d=1) => v == null || isNaN(v) ? "–" : (v>=0?"+":"") + v.toFixed(d) + "%";
+const usd = v => v >= 1e9 ? "$" + (v/1e9).toFixed(2) + "B" : v >= 1e6 ? "$" + (v/1e6).toFixed(2) + "M" : v >= 1e3 ? "$" + (v/1e3).toFixed(1) + "k" : "$" + v.toFixed(0);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const C = s => DATA.state.coins[s] || ADHOC[s] || {};
+const chief = s => (DATA.chief.coins || {})[s] || {};
+
+function clusters(s){
+  const out = [];
+  for (const l of ((C(s).deep||{}).liquidation_magnets||[])) {
+    const m = l.match(/cluster \$([\d.,]+) \(([+-][\d.]+)%\) x(\d+)/);
+    if (m) out.push({p: parseFloat(m[1].replace(/,/g,"")), n: +m[3]});
+  }
+  return out;
+}
+function px(s){ return live[s] ?? (C(s).market||{}).price; }
+function dayOpen(s){ const o = (C(s).chart||{}).ohlc; return o && o.length ? o[o.length-1][0] : null; }
+function dayChg(s){ const p = px(s), o = dayOpen(s); return p && o ? (p/o-1)*100 : (C(s).market||{}).ret_1d_pct; }
+function trend(s){
+  const n = (C(s).market||{}).structure || "";
+  const up = n.includes("structure UP");
+  return {up, sub: n.includes("pullback") ? "pullback" : n.includes("bounce") ? "bounce" : (up ? "pushing up" : "pushing down")};
+}
+function vmap(s){ const m = {}; for (const v of (C(s).voices||[])) m[v.voice] = v; return m; }
+function atr(s){ return (C(s).market||{}).atr_pct_1d; }
+function safeLev(s){
+  const rk = C(s).risk;
+  if (rk && rk.long && rk.long.max_leverage != null) {
+    const t = (DATA.safeLev || {})[s] || {}; const q = (rk.long.vol_bucket || "").split(" ")[0];
+    const qq = (t.quintiles || {})[q] || {}; const h = qq.horizons || {};
+    return {q: rk.long.vol_bucket, long: rk.long.max_leverage, short: rk.short.max_leverage, cap: t.max_leverage,
+            adv: {"1d": h["1d"], "3d": h["3d"]}, src: "risk_voice"};
+  }
+  return safeLevTable(s);
+}
+function safeLevTable(s){
+  // SAFE_LEVERAGE.md: leverage whose liquidation sits beyond the 99th-percentile 1-day adverse move for the coin's
+  // current forecast-volatility quintile, divided by 1.5 as the laptop recommends (absorbs funding/fees, true p99).
+  const t = (DATA.safeLev || {})[s]; const f = (C(s).vol || {}).next_day_move_pct;
+  if (!t || f == null) return null;
+  let best = null;
+  for (const [q, v] of Object.entries(t.quintiles || {})) if (!best || Math.abs(v.fcast_median - f) < Math.abs(best.v.fcast_median - f)) best = {q, v};
+  if (!best) return null;
+  const h = best.v.horizons || {};
+  return {q: best.q, long: best.v.max_lev_long_1d_p99 / 1.5, short: best.v.max_lev_short_1d_p99 / 1.5, cap: t.max_leverage,
+          adv: {"1d": h["1d"], "3d": h["3d"]}};
+}
+function levelStat(kind, level, price){
+  // LEVELS.md (laptop mission 11): break vs a random line at the same distance, 2,955 touches 2020-26.
+  const L = (DATA.levelStats || {})[kind]; if (!L || !level || !price) return null;
+  const side = price >= level ? "from_above" : "from_below";
+  const a = ((L[side] || {}).all) || {}; if (a.break_rate == null) return null;
+  const br = a.break_rate*100, nu = a.null_break_rate*100, sig = !!a.beats_null || (a.break_ci && (a.break_ci[0]*100 > nu || a.break_ci[1]*100 < nu));
+  let verdict, cls;
+  if (!sig) { verdict = "no better than a random line"; cls = "mut"; }
+  else if (br < nu) { verdict = side === "from_above" ? "real support: holds more than chance" : "real resistance: holds more than chance"; cls = "up"; }
+  else { verdict = "breaks MORE than chance: not reliable"; cls = "dn"; }
+  return {side, br, nu, verdict, cls, reject: (a.reject_rate||0)*100};
+}
+function nearestLiq(s, dir){
+  const p = px(s); let best = null;
+  for (const c of clusters(s)) { const d = (c.p/p-1)*100; if (dir>0 ? d>0.15 : d<-0.15) if (!best || Math.abs(d) < Math.abs(best.d)) best = {p:c.p, d}; }
+  return best;
+}
+function oi(s){ for (const l of ((C(s).deep||{}).funding_oi||[])) { const m = l.match(/\(([+-]?\d+)%, last ~(\d+)d/); if (m) return {v:+m[1], d:+m[2]}; } return null; }
+
+const COLS = [
+  {k:"sym", h:"Coin", v:s=>s, r:s=>`<span class="sym">${s}</span>${C(s).adhoc?'<span class="extra" title="Looked up from search: chart, price and risk only. Not analysed by the hivemind.">chart only</span>':""}${(C(s).bot||{}).position ? ` <span class="pill ${(C(s).bot.position.side==="SHORT")?"dn":"up"}">BOT ${C(s).bot.position.side[0]}</span>`:""}`},
+  {k:"px", h:"Last", v:px, r:s=>`<span class="num" id="px_${s}">${fmt(px(s))}</span>`},
+  {k:"chg", h:"Day", v:dayChg, r:s=>{const c=dayChg(s);return `<span class="num ${c>=0?"up":"dn"}" id="ch_${s}">${pct(c,2)}</span>`}},
+  {k:"wk", h:"7D", v:s=>(C(s).market||{}).ret_7d_pct, r:s=>{const c=(C(s).market||{}).ret_7d_pct;return `<span class="num ${c>=0?"up":"dn"}">${pct(c)}</span>`}},
+  {k:"t1d", h:"Trend 1D", v:s=>trend(s).up?1:-1, r:s=>{const t=trend(s);return `<span class="pill ${t.up?"up":"dn"}">${t.up?"▲":"▼"}</span> <span class="mut">${t.sub}</span>`}},
+  {k:"t4h", h:"4H", v:s=>(C(s).tf4h||{}).structure_4h, r:s=>{const f=C(s).tf4h||{};if(f.structure_4h==null)return"–";return `<span class="pill ${f.structure_4h>0?"up":"dn"}">${f.structure_4h>0?"▲":"▼"}</span>`}},
+  {k:"drv", h:"Buyers/Sellers", v:s=>{const d=(C(s).market||{}).di;return d?d.plus/(d.plus+d.minus):null}, r:s=>{const d=(C(s).market||{}).di;if(!d)return"–";const b=d.plus/(d.plus+d.minus)*100;return `<span class="mb" title="buyers ${d.plus} / sellers ${d.minus}"><i style="width:${b}%;background:var(--pos)"></i><i style="width:${100-b}%;background:var(--neg)"></i></span>`}},
+  {k:"rng", h:"20D Range", v:s=>((C(s).market||{}).range_20d||{}).position, r:s=>{const r=(C(s).market||{}).range_20d||{};if(r.position==null)return"–";const p=Math.max(0,Math.min(1,r.position))*100;return `<span class="rb" title="${(r.position*100).toFixed(0)}% from low ${fmt(r.low)} to high ${fmt(r.high)}"><i style="left:${p}%"></i></span> <span class="num mut">${(r.position*100).toFixed(0)}%</span>`}},
+  {k:"atr", h:"Exp. Move 1D", v:s=>((C(s).vol||{}).next_day_move_pct ?? atr(s)), r:s=>{const f=C(s).vol||{};const c=C(s).consensus||{};const z=c.move_size;const v=f.next_day_move_pct;return `<span class="num" title="Forecast size of tomorrow's move (HAR volatility model, beats 'same as recent' out of sample; 5-day vol forecast ${f.next_5d_vol_pct??"–"}%). Typical day (ATR): ${atr(s)!=null?atr(s).toFixed(1)+"%":"–"}. ${z?"Voices: "+z+".":""}">${v!=null?"±"+v.toFixed(1)+"%":(atr(s)!=null?atr(s).toFixed(1)+"%":"–")}${z==="bigger than usual"?' <span class="up">▲</span>':z==="smaller than usual"?' <span class="mut">▼</span>':""}</span>`}},
+  {k:"slev", h:"Safe lev L/S", v:s=>{const x=safeLev(s);return x?Math.min(x.long,x.short):null}, r:s=>{const x=safeLev(s);if(!x)return'<span class="dim">–</span>';return `<span class="num" title="Max leverage with liquidation beyond the worst 1-day move on 99% of similar-volatility days (vol quintile ${x.q}), divided by 1.5 for safety. From 13k coin-days, held out of sample.">${x.long.toFixed(1)}× <span class="mut">/</span> ${x.short.toFixed(1)}×</span>`}},
+  {k:"sq", h:"Squeeze L/S", v:s=>{const r=C(s).risk||{};return Math.max((r.long||{}).squeeze_pct||0,(r.short||{}).squeeze_pct||0)}, r:s=>{const r=C(s).risk||{},L=r.long||{},S=r.short||{};if(L.squeeze_pct==null)return'<span class="dim">–</span>';const cl=(v,b)=>v>=b*1.4?"dn":v<=b*0.8?"up":"mut";return `<span class="num" title="Chance of a move more than 2x the expected size AGAINST you within a day (SQUEEZE.md; higher when voices agree). Normal: long ${L.squeeze_base_pct}% / short ${S.squeeze_base_pct}%. Long side: use for ranking only."><span class="${cl(L.squeeze_pct,L.squeeze_base_pct)}">${L.squeeze_pct}%</span> <span class="mut">/</span> <span class="${cl(S.squeeze_pct,S.squeeze_base_pct)}">${S.squeeze_pct}%</span></span>`}},
+  {k:"tt", h:"Top traders L/S", v:s=>{const v=(C(s).voices||[]).find(x=>x.voice==="top_traders");return v?v.reading:null}, r:s=>{const v=(C(s).voices||[]).find(x=>x.voice==="top_traders");if(!v)return'<span class="dim">–</span>';const m=v.detail.match(/(\d+) long vs (\d+) short/);const L=m?+m[1]:0,S=m?+m[2]:0,t=(L+S)||1;return `<span class="mb" title="${esc(v.detail)}. New data (started Oct 8): no track record yet."><i style="width:${L/t*100}%;background:var(--pos)"></i><i style="width:${S/t*100}%;background:var(--neg)"></i></span> <span class="num mut">${L}/${S}</span>`}},
+  {k:"fund", h:"Funding/h", v:s=>(C(s).market||{}).funding_hourly, r:s=>{const f=(C(s).market||{}).funding_hourly;if(f==null)return"–";return `<span class="num ${f>2.5e-5?"dn":f<0?"up":"mut"}">${(f*100).toFixed(4)}%</span>`}},
+  {k:"oi", h:"OI", v:s=>(oi(s)||{}).v, r:s=>{const o=oi(s);return o?`<span class="num mut" title="over ~${o.d} days">${o.v>0?"+":""}${o.v}%</span>`:"–"}},
+  {k:"lu", h:"Liq ↑", v:s=>(nearestLiq(s,1)||{}).d, r:s=>{const l=nearestLiq(s,1);return l?`<span class="num">${fmt(l.p)}</span> <span class="num mut">${pct(l.d)}</span>`:"–"}},
+  {k:"ld", h:"Liq ↓", v:s=>(nearestLiq(s,-1)||{}).d, r:s=>{const l=nearestLiq(s,-1);return l?`<span class="num">${fmt(l.p)}</span> <span class="num mut">${pct(l.d)}</span>`:"–"}},
+  {k:"hist", h:"Hist 5D ▲", v:s=>(((C(s).history||{}).next_5d)||{}).up_pct, r:s=>{const a=((C(s).history||{}).next_5d)||{};if(!a.n)return"–";return `<span class="num ${a.up_pct>=55?"up":a.up_pct<=45?"dn":"mut"}" title="${a.n} past cases, ~${a.n_eff} independent">${a.up_pct.toFixed(0)}%</span>`}},
+  {k:"vox", h:"Agreement → size", v:s=>(C(s).consensus||{}).dissent_families, r:s=>{const c=C(s).consensus||{};const b=c.bull_families||0,r=c.bear_families||0,t=(b+r)||1;const z=c.move_size;return `<span class="mb" title="Independent voice families leaning up ${b} / down ${r}. Agreement does NOT predict direction (out of sample); it predicts the SIZE of the next move: ${c.dissent_families??"?"} families disagree → ${c.move_size_hint||""}."><i style="width:${b/t*100}%;background:var(--pos)"></i><i style="width:${r/t*100}%;background:var(--neg)"></i></span> <span class="num ${z==="bigger than usual"?"up":"mut"}">${c.move_size_hint||""}</span>`}},
+  {k:"chief", h:"Chief", v:s=>({LONG:1,SHORT:-1}[chief(s).lean]||0)*(chief(s).conviction||0), r:s=>{const c=chief(s);if(!c.lean)return"–";const cl=c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt";return `<span class="pill ${cl}">${c.lean}<span class="dots">${[0,1,2,3,4].map(i=>`<i class="${i<(c.conviction||0)?"on":""}"></i>`).join("")}</span></span>`}},
+];
+
+function renderBoard(){
+  $("bh").innerHTML = COLS.map(c=>`<th data-k="${c.k}">${c.h}${sortKey===c.k?(sortDir>0?" ▲":" ▼"):""}</th>`).join("");
+  let rows = SYMS.slice();
+  if (sortKey) { const c = COLS.find(x=>x.k===sortKey); rows.sort((a,b)=>{const va=c.v(a),vb=c.v(b);return ((va??-1e18)>(vb??-1e18)?1:-1)*sortDir}); }
+  $("bb").innerHTML = rows.map(s=>`<tr data-s="${s}" class="${s===sel?"sel":""}">${COLS.map(c=>`<td>${c.r(s)}</td>`).join("")}</tr>`).join("");
+  document.querySelectorAll("#bh th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;sortDir=sortKey===k?-sortDir:-1;sortKey=k;renderBoard()});
+  document.querySelectorAll("#bb tr").forEach(tr=>tr.onclick=()=>{sel=tr.dataset.s;renderBoard();renderDetail()});
+}
+
+function chartData(){
+  const ch = C(sel).chart || {};
+  return tf === "4h" ? ch.h4 || {} : ch;
+}
+let LW = null;
+function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function drawLW(){
+  const el = $("lw"); el.style.display = ""; $("chart").style.display = "none";
+  const d = chartData(); const o = d.ohlc || []; if (!o.length) return;
+  if (LW) { LW.chart.remove(); LW = null; }
+  const chart = LightweightCharts.createChart(el, {
+    autoSize: true,
+    layout: {background: {type: "solid", color: cssv("--panel")}, textColor: cssv("--soft"), fontFamily: "Segoe UI, system-ui, sans-serif", fontSize: 11},
+    grid: {vertLines: {color: cssv("--line")}, horzLines: {color: cssv("--line")}},
+    rightPriceScale: {borderColor: cssv("--line")},
+    timeScale: {borderColor: cssv("--line"), timeVisible: tf === "4h", secondsVisible: false, rightOffset: 4},
+    crosshair: {mode: 0},
+  });
+  const up = cssv("--pos"), dn = cssv("--neg");
+  const ref = o[o.length-1][3], prec = ref >= 1000 ? 0 : ref >= 10 ? 2 : ref >= 1 ? 4 : 6;
+  const pf = {type: "price", precision: prec, minMove: Math.pow(10, -prec)};
+  const cs = chart.addCandlestickSeries({upColor: up, downColor: dn, wickUpColor: up, wickDownColor: dn, borderVisible: false, priceFormat: pf});
+  const bars = o.map((b,i) => ({time: Math.floor(d.t[i]/1000), open: b[0], high: b[1], low: b[2], close: b[3]}));
+  cs.setData(bars);
+  const e20 = chart.addLineSeries({priceFormat: pf, color: cssv("--ink"), lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+  e20.setData((d.ema20||[]).map((v,i) => ({time: bars[i].time, value: v})));
+  const e50 = chart.addLineSeries({priceFormat: pf, color: cssv("--soft"), lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+  e50.setData((d.ema50||[]).map((v,i) => ({time: bars[i].time, value: v})));
+  const r = (C(sel).market||{}).range_20d || {};
+  if (tf === "1d") {
+    if (r.high) cs.createPriceLine({price: r.high, color: cssv("--soft"), lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "20d high"});
+    if (r.low) cs.createPriceLine({price: r.low, color: cssv("--soft"), lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "20d low"});
+  }
+  for (const c of clusters(sel)) cs.createPriceLine({price: c.p, color: cssv("--liq"), lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: "liq " + c.n});
+  const bp = (C(sel).bot||{}).position;
+  if (bp) { cs.createPriceLine({price: bp.entry, color: cssv("--accent"), lineWidth: 1, lineStyle: 0, axisLabelVisible: true, title: "bot entry"});
+            if (bp.sl) cs.createPriceLine({price: bp.sl, color: cssv("--bad"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "bot stop"}); }
+  chart.timeScale().fitContent();
+  chart.subscribeCrosshairMove(p => {
+    const b = p && p.seriesData ? p.seriesData.get(cs) : null;
+    if (!b) { $("readout").innerHTML = "Drag to pan, scroll to zoom, double-click the price axis to reset. <kbd>↑</kbd><kbd>↓</kbd> coin · <kbd>D</kbd>/<kbd>4</kbd> timeframe"; return; }
+    const dt = new Date(p.time*1000), now = px(sel);
+    $("readout").innerHTML = `${dt.toLocaleString(undefined,{month:"short",day:"numeric",hour:tf==="4h"?"2-digit":undefined})} · O ${fmt(b.open)} H ${fmt(b.high)} L ${fmt(b.low)} C ${fmt(b.close)} · <span class="${b.close>=b.open?"up":"dn"}">${pct((b.close/b.open-1)*100,2)}</span>${now?` · close vs now ${pct((now/b.close-1)*100,2)}`:""}`;
+  });
+  LW = {chart, cs, last: bars[bars.length-1]};
+}
+function liveTick(){
+  if (!LW) return; const p = px(sel); if (!p) return;
+  const b = LW.last; LW.last = {time: b.time, open: b.open, high: Math.max(b.high, p), low: Math.min(b.low, p), close: p};
+  LW.cs.update(LW.last);
+}
+function drawChart(){
+  if (window.LightweightCharts) return drawLW();
+  const svg = $("chart"), W = svg.clientWidth || 800, H = 340;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const d = chartData(); const o = d.ohlc || [];
+  if (!o.length) { svg.innerHTML = ""; return; }
+  const p = px(sel), cl = clusters(sel), r = (C(sel).market||{}).range_20d || {};
+  let lo = Math.min(...o.map(b=>b[2])), hi = Math.max(...o.map(b=>b[1]));
+  for (const c of cl) { if (c.p > lo*0.85 && c.p < hi*1.15) { lo = Math.min(lo,c.p); hi = Math.max(hi,c.p); } }
+  if (p) { lo = Math.min(lo,p); hi = Math.max(hi,p); }
+  const pad = (hi-lo)*0.05; lo -= pad; hi += pad;
+  const L = 8, R = 74, T = 10, B = 22, n = o.length, step = (W-L-R)/n;
+  const X = i => L + i*step + step/2, Y = v => T + (hi-v)/(hi-lo)*(H-T-B);
+  let g = "";
+  for (let k=0;k<5;k++){ const v = lo + (hi-lo)*k/4; g += `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${W-R+6}" y="${Y(v)+4}" fill="var(--dim)" font-size="10" class="num">${fmt(v)}</text>`; }
+  if (tf==="1d" && r.low && r.high) { const x0 = X(Math.max(0,n-20)) - step/2; g += `<rect x="${x0}" y="${Y(r.high)}" width="${W-R-x0}" height="${Y(r.low)-Y(r.high)}" fill="var(--soft)" opacity=".08"/>`; }
+  for (const c of cl) { if (c.p<lo||c.p>hi) continue; g += `<line x1="${L}" x2="${W-R}" y1="${Y(c.p)}" y2="${Y(c.p)}" stroke="var(--liq)" stroke-width="1" stroke-dasharray="1 3" opacity=".8"/><rect x="${W-R-40}" y="${Y(c.p)-2}" width="40" height="4" rx="2" fill="var(--liq)"><title>Liquidation cluster ${fmt(c.p)}: ${c.n} forced closes (7d)</title></rect>`; }
+  o.forEach((b,i)=>{ const up = b[3]>=b[0], col = up?"var(--pos)":"var(--neg)";
+    g += `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(b[1])}" y2="${Y(b[2])}" stroke="${col}"/><rect x="${X(i)-step*.33}" y="${Y(Math.max(b[0],b[3]))}" width="${Math.max(1,step*.66)}" height="${Math.max(1,Math.abs(Y(b[0])-Y(b[3])))}" fill="${col}" rx="1"/>`; });
+  for (const [k,st] of [["ema50","stroke='var(--soft)' stroke-dasharray='4 3'"],["ema20","stroke='var(--ink)' opacity='.7'"]]) {
+    const pts = (d[k]||[]).map((v,i)=>`${X(i)},${Y(v)}`).join(" "); g += `<polyline points="${pts}" fill="none" stroke-width="1.5" ${st}/>`; }
+  const step_l = Math.max(1, Math.round(n/7));
+  for (let i=0;i<n;i+=step_l){ const dt = new Date(d.t[i]); g += `<text x="${X(i)}" y="${H-6}" fill="var(--dim)" font-size="10" text-anchor="middle">${dt.toLocaleDateString(undefined,{month:"short",day:"numeric"})}</text>`; }
+  if (p) g += `<line x1="${L}" x2="${W-R}" y1="${Y(p)}" y2="${Y(p)}" stroke="var(--accent)" stroke-dasharray="3 3"/><rect x="${W-R+2}" y="${Y(p)-9}" width="${R-4}" height="18" rx="3" fill="var(--accent)"/><text x="${W-R+6}" y="${Y(p)+4}" fill="var(--bg)" font-size="11" font-weight="700" class="num">${fmt(p)}</text>`;
+  g += `<g id="xh" style="display:none"><line id="xv" y1="${T}" y2="${H-B}" stroke="var(--soft)" stroke-dasharray="2 2"/><line id="xhl" x1="${L}" x2="${W-R}" stroke="var(--soft)" stroke-dasharray="2 2"/></g>`;
+  g += `<text x="${L+4}" y="${T+12}" fill="var(--dim)" font-size="10">— 20 avg   - - 50 avg   ··· liquidation cluster${tf==="1d"?"   ▒ 20-day range":""}</text>`;
+  svg.innerHTML = g;
+  svg.onmousemove = ev => { const rc = svg.getBoundingClientRect(); const x = (ev.clientX-rc.left)*W/rc.width, y = (ev.clientY-rc.top)*H/rc.height;
+    const i = Math.max(0,Math.min(n-1,Math.round((x-L-step/2)/step))); const b = o[i]; const v = hi-(y-T)/(H-T-B)*(hi-lo);
+    $("xh").style.display=""; $("xv").setAttribute("x1",X(i)); $("xv").setAttribute("x2",X(i)); $("xhl").setAttribute("y1",y); $("xhl").setAttribute("y2",y);
+    const dt = new Date(d.t[i]);
+    $("readout").innerHTML = `${dt.toLocaleString(undefined,{month:"short",day:"numeric",hour:tf==="4h"?"2-digit":undefined})} · O ${fmt(b[0])} H ${fmt(b[1])} L ${fmt(b[2])} C ${fmt(b[3])} · <span class="${b[3]>=b[0]?"up":"dn"}">${pct((b[3]/b[0]-1)*100,2)}</span> · cursor ${fmt(v)} (${pct((v/p-1)*100,2)} from now)`; };
+  svg.onmouseleave = () => { $("xh").style.display="none"; };
+}
+
+function levels(){
+  const p = px(sel), m = C(sel).market || {}, r = m.range_20d || {}, ch = C(sel).chart || {}, a = (C(sel).vol||{}).next_day_move_pct || atr(sel);
+  const L = [];
+  if (r.high) L.push(["20-day high", r.high]); if (r.low) L.push(["20-day low", r.low]);
+  if (ch.ema20) L.push(["20-day avg", ch.ema20[ch.ema20.length-1]]); if (ch.ema50) L.push(["50-day avg", ch.ema50[ch.ema50.length-1]]);
+  const h4 = ch.h4 || {}; if (h4.ema50) L.push(["4h 50-bar avg", h4.ema50[h4.ema50.length-1]]);
+  for (const c of clusters(sel)) L.push([`liq cluster <span class="tag">${c.n}</span>`, c.p]);
+  const bp = (C(sel).bot||{}).position; if (bp) { L.push(["bot entry", bp.entry]); if (bp.sl) L.push(["bot stop", bp.sl]); }
+  const cc = chief(sel);
+  L.push(["<b>price now</b>", p, true]);
+  L.sort((x,y)=>y[1]-x[1]);
+  const kindOf = n => n === "20-day high" ? "hi20" : n === "20-day low" ? "lo20" : n === "50-day avg" ? "ma50" : null;
+  $("levels").innerHTML = L.map(([n,v,now])=>{ const d=(v/p-1)*100; const k = kindOf(n); const st = k ? levelStat(k, v, p) : null;
+    return `<tr class="${now?"now":""}"><td>${n}${st?`<div class="${st.cls}" style="font-size:10.5px;font-family:Segoe UI,sans-serif" title="When price touches it ${st.side.replace("_"," ")}: breaks ${st.br.toFixed(0)}% vs ${st.nu.toFixed(0)}% for a random line; bounces away ${st.reject.toFixed(0)}%; the rest just stall (LEVELS.md, 2,955 touches).">${st.verdict}</div>`:""}</td><td>${fmt(v)}</td><td class="${now?"":d>0?"up":"dn"}">${now?"":pct(d,2)}</td><td class="mut">${now||!a?"":(Math.abs(d)/a).toFixed(1)+"d"}</td></tr>`; }).join("");
+}
+
+function voices(){
+  const V = C(sel).voices || [], I = DATA.info || {};
+  $("dvoices").innerHTML = V.map(v=>{ const cls = v.reading===1?"up":v.reading===-1?"dn":"nt"; const g = v.reading===1?"▲":v.reading===-1?"▼":"●";
+    const info = I[v.voice] ? `${I[v.voice][0]} — ${I[v.voice][1]}` : "";
+    return `<div class="g ${cls} t-${v.trust}" title="${esc(info)}">${g}</div><div title="${esc(info)}">${esc(v.label)} <span class="d">${esc(v.detail)}</span></div><span class="tb t-${v.trust}">${esc(v.trust)}</span>`; }).join("");
+  const c = C(sel).consensus || {}; $("dcons").textContent = `${c.bull||0}▲ ${c.bear||0}▼ · ${c.bull_families||0} vs ${c.bear_families||0} independent families`;
+  const R = C(sel).rules || {}; const chips = [];
+  for (const side of ["LONG","SHORT"]) for (const r of (R[side]||[])) chips.push(`<span class="chip rule" title="${esc(r.thesis)}">${r.id} ${r.action} ${side.toLowerCase()}${r.conditional_on&&r.conditional_on.length?" (if "+r.conditional_on.join("/")+")":""} · ${r.status==="earned"?"earned":"testing"}</span>`);
+  for (const k of ["LONG","SHORT"]) { const x = ((C(sel).context||{})[k])||{}; const bits=[];
+    if (x.book) bits.push(`<span class="chip ${x.book==="supports"?"good":x.book==="against"?"bad":""}">${k.toLowerCase()}: book ${x.book}</span>`);
+    if (x.btc4h) bits.push(`<span class="chip ${x.btc4h==="with"?"good":x.btc4h==="against"?"bad":""}">${k.toLowerCase()}: BTC ${x.btc4h}</span>`);
+    chips.push(...bits); }
+  $("drules").innerHTML = chips.join("");
+}
+
+function hist(){
+  const h = C(sel).history || {}, a = h.next_5d || {}, c1 = h.next_5d_this_coin || {};
+  if (!a.n) { $("dhist").innerHTML = "<span class='mut'>No history for this setup.</span>"; $("hn").textContent=""; return; }
+  $("hn").textContent = `${a.n} cases since ${String(h.history_since||"").slice(0,4)}, ~${a.n_eff} independent`;
+  const lo=-15,hi=15,X=v=>(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*100;
+  $("dhist").innerHTML = `<div class="mut" style="margin-bottom:5px">${esc(h.state_words)}</div>
+    <div class="hbar"><div style="width:${a.up_pct}%;background:var(--pos)">▲ ${a.up_pct.toFixed(0)}% up</div><div style="width:${100-a.up_pct}%;background:var(--neg);justify-content:flex-end">${(100-a.up_pct).toFixed(0)}% ▼</div></div>
+    <div style="position:relative;height:26px;margin-top:8px"><div style="position:absolute;top:12px;left:0;right:0;height:2px;background:var(--line)"></div>
+      <div style="position:absolute;left:${X(0)}%;top:5px;width:1px;height:16px;background:var(--soft)"></div>
+      <div title="middle half of outcomes" style="position:absolute;top:7px;height:12px;left:${X(a.p25_pct)}%;width:${X(a.p75_pct)-X(a.p25_pct)}%;background:var(--accent);opacity:.35;border-radius:3px"></div>
+      <div title="median" style="position:absolute;top:4px;left:${X(a.median_pct)}%;width:3px;height:18px;background:var(--ink);border-radius:2px"></div>
+      <span class="num dim" style="position:absolute;left:0;top:-4px;font-size:10px">-15%</span><span class="num dim" style="position:absolute;right:0;top:-4px;font-size:10px">+15%</span></div>
+    <div class="num mut" style="font-size:11.5px">middle half ${pct(a.p25_pct)} to ${pct(a.p75_pct)} · median ${pct(a.median_pct)}${c1.n?` · ${sel} alone: ${c1.up_pct.toFixed(0)}% up (~${c1.n_eff} indep.)`:""}</div>`;
+}
+
+function calc(){
+  const p = px(sel), side = $("c_side").value, a = (C(sel).vol||{}).next_day_move_pct || atr(sel) || 3;
+  if (!$("c_entry").dataset.touched) $("c_entry").value = p ? +p.toPrecision(6) : "";
+  if (!$("c_stop").dataset.touched) { const rk = ((C(sel).risk||{})[side.toLowerCase()]||{}); const sp = rk.stop_pct ?? 2*a;
+    $("c_stop").value = p ? +(p*(1 - (side==="LONG"?1:-1)*sp/100)).toPrecision(6) : ""; }
+  const acct = +$("c_acct").value, risk = +$("c_risk").value/100, e = +$("c_entry").value, st = +$("c_stop").value, lev = Math.max(1,+$("c_lev").value);
+  const dist = Math.abs(e-st)/e, riskUsd = acct*risk, notional = dist ? riskUsd/dist : 0, qty = e ? notional/e : 0, margin = notional/lev;
+  const mm = 0.005, liq = side==="LONG" ? e*(1-1/lev+mm) : e*(1+1/lev-mm);
+  const fee = notional*0.00045*2;
+  const wrongSide = side==="LONG" ? st>=e : st<=e;
+  const tgts = []; const r = (C(sel).market||{}).range_20d||{};
+  for (const [n,v] of [["20d high",r.high],["20d low",r.low],...clusters(sel).map(c=>["liq "+fmt(c.p),c.p])]) if (v && (side==="LONG"?v>e:v<e)) tgts.push([n,v,Math.abs(v-e)/Math.abs(e-st)]);
+  tgts.sort((x,y)=>x[2]-y[2]);
+  $("c_out").innerHTML = `<div>Risk</div><div>$${riskUsd.toFixed(2)}</div><div>Stop distance</div><div>${(dist*100).toFixed(2)}% (${(dist*100/a).toFixed(1)}× expected daily move)</div>
+    <div>Position</div><div>${qty?qty.toPrecision(4):"–"} ${sel} · $${notional.toFixed(0)}</div><div>Margin at ${lev}x</div><div>$${margin.toFixed(0)}</div>
+    <div>Liquidation (approx.)</div><div>${fmt(liq)}</div><div>Round-trip fees</div><div>$${fee.toFixed(2)} (${(fee/riskUsd*100||0).toFixed(0)}% of risk)</div>
+    <div>Target at 0.5R</div><div>${fmt(e + (side==="LONG"?1:-1)*0.5*Math.abs(e-st))}</div>
+    ${(()=>{const x=safeLev(sel);if(!x)return"";const sl=side==="LONG"?x.long:x.short;const a1=((x.adv["1d"]||{})[side.toLowerCase()]||{});
+      return `<div>Safe leverage now</div><div class="${lev>sl?"dn":"up"}">${sl.toFixed(1)}× (vol quintile ${x.q})</div><div>Worst 1-day move against you</div><div>${a1.p95!=null?a1.p95.toFixed(1)+"% (95% of days) · "+a1.p99.toFixed(1)+"% (99%)":"–"}</div>`;})()}
+    ${tgts.slice(0,3).map(t=>`<div>To ${t[0]}</div><div>${t[2].toFixed(1)}R</div>`).join("")}`;
+  const w = [];
+  if (wrongSide) w.push("Stop is on the wrong side of entry.");
+  if (side==="LONG" ? liq>=st : liq<=st) w.push("Liquidation comes before your stop: lower the leverage.");
+  if (margin > acct) w.push("Margin exceeds the account.");
+  { const x = safeLev(sel); if (x) { const sl = side==="LONG" ? x.long : x.short; if (lev > sl) w.push(`Leverage ${lev}× is above the safe ${sl.toFixed(1)}× for this coin's current volatility.`); } }
+  if (dist*100 < a) w.push("Stop is inside one expected daily move: tight stops lost ~0.4R per trade in testing (GEOMETRY.md); wider stops cut that loss.");
+  $("c_warn").textContent = w.join(" ");
+}
+
+function renderDetail(){
+  $("dsym").textContent = sel; $("dpx").textContent = fmt(px(sel));
+  const c = chief(sel);
+  $("dchief").innerHTML = c.lean ? `<span class="pill ${c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt"}">${c.lean} · ${c.conviction}/5</span>` : "";
+  $("dread").innerHTML = c.read ? `${esc(c.read)}<div class="mut" style="margin-top:6px"><b>Levels:</b> ${esc(c.key_levels)}<br><b>View changes if:</b> ${esc(c.invalidation)}${c.expected_move?`<br><b>Expected move:</b> ${esc(c.expected_move)}`:""}${c.if_you_trade?`<br><b>If you trade it:</b> ${esc(c.if_you_trade)}`:""}</div><div class="dim" style="margin-top:4px;font-size:11px">${esc(DATA.chief.ts||"")} · track record: ${esc(DATA.chiefCard)}</div>` : "<span class='mut'>No read yet.</span>";
+  drawChart(); levels(); voices(); hist(); calc(); book(); positioning(); myCalls(); playbook(); myPosWarn();
+}
+
+function topbar(){
+  const w = DATA.state.shared && DATA.state.shared.weather || {};
+  $("weather").textContent = w.regime || "–"; $("breadth").textContent = w.breadth_pct!=null ? w.breadth_pct.toFixed(0)+"%" : "–";
+  $("chiefnote").textContent = DATA.chief.market_note ? "Chief: " + DATA.chief.market_note : "";
+  const age = (Date.now() - Date.parse(DATA.state.updated))/60000; $("age").textContent = age < 60 ? Math.round(age)+"m ago" : (age/60).toFixed(1)+"h ago";
+  $("clock").textContent = new Date().toISOString().slice(11,19);
+}
+
+async function hlPost(body){ const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.json(); }
+function emaArr(v, n){ const k = 2/(n+1); let e = null; return v.map(x => e = e === null ? x : x*k + e*(1-k)); }
+async function loadUniverse(){
+  try { const [meta, ctx] = await hlPost({type:"metaAndAssetCtxs"});
+    const mv = meta.universe.map((u,i)=>{ const c = ctx[i]||{}; const p = +c.markPx, pp = +c.prevDayPx; return {n:u.name, v:+c.dayNtlVlm||0, ch: pp ? (p/pp-1)*100 : 0, d:u.isDelisted}; })
+      .filter(x=>!x.d).sort((a,b)=>b.v-a.v).slice(0,60).sort((a,b)=>Math.abs(b.ch)-Math.abs(a.ch)).slice(0,10);
+    $("movers").innerHTML = `<span class="mut" style="align-self:center">Biggest movers (top-60 volume, 24h):</span>` + mv.map(x=>`<span class="mv" data-c="${x.n}"><b>${x.n}</b><span class="num ${x.ch>=0?"up":"dn"}">${pct(x.ch)}</span></span>`).join("");
+    document.querySelectorAll(".mv").forEach(el=>el.onclick=()=>adhoc(el.dataset.c));
+    const rows = meta.universe.map((u,i)=>({n:u.name, v:+((ctx[i]||{}).dayNtlVlm||0), d:u.isDelisted})).filter(x=>!x.d).sort((a,b)=>b.v-a.v);
+    $("universe").innerHTML = rows.map(x=>`<option value="${x.n}">`).join(""); window.UNIVERSE = new Set(rows.map(x=>x.n)); } catch(e) {}
+}
+async function memeCard(q){
+  $("memebox").style.display = ""; $("mm_q").textContent = q; $("mm_body").innerHTML = "<span class='mut'>Looking up on DexScreener…</span>";
+  $("memebox").scrollIntoView({behavior:"smooth", block:"start"});
+  try {
+    const r = await fetch(API + "/v1/memecard?q=" + encodeURIComponent(q)); const c = await r.json();
+    if (!c.ok) { $("mm_body").innerHTML = `<span class="warn">${esc(c.error || "Not found on DexScreener.")}</span>`; return; }
+    const h = c.history || {}, sl = c.slippage_pct || {}, flags = c.risk_flags || [];
+    const isTicker = !/^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/.test(q);
+    $("mm_body").innerHTML = `<div style="font-size:15px;font-weight:700">${esc(c.name)} <span class="mut" style="font-size:12px">${esc(c.chain)} · ${esc(c.dex)} · <a href="${esc(c.url)}" target="_blank" style="color:var(--accent)">chart</a></span></div>
+      ${isTicker ? `<div class="warn" style="margin:4px 0">Ticker search is unsafe: tickers aren't unique and imposters are common. Paste the CONTRACT ADDRESS to be sure. Matched: ${esc(c.address)}</div>` : ""}
+      ${flags.length ? `<div class="warn" style="margin:4px 0">⚠ ${flags.map(esc).join(" · ")}</div>` : ""}
+      <div class="out num" style="margin-top:6px">
+        <div>Price</div><div>$${esc(c.price_usd)} <span class="${(c.price_change||{}).h24>=0?"up":"dn"}">${pct((c.price_change||{}).h24)} 24h</span></div>
+        <div>Liquidity / 24h volume</div><div>${usd(c.liquidity_usd||0)} / ${usd(c.volume_24h_usd||0)}</div>
+        <div>Pair age</div><div>${(c.pair_age_days||0).toFixed(0)} days</div>
+        <div>Market cap</div><div>${c.market_cap?usd(c.market_cap):"–"}</div>
+        <div>Typical daily move</div><div>±${(c.expected_move_1d_pct??h.daily_vol_pct??0).toFixed(1)}%</div>
+        <div>Suggested stop distance</div><div>${c.suggested_stop_pct!=null?c.suggested_stop_pct.toFixed(1)+"%":"–"}</div>
+        <div>Down from all-time high</div><div class="dn">${h.drawdown_from_ath_pct!=null?h.drawdown_from_ath_pct.toFixed(0)+"%":"–"}</div>
+        <div>Slippage $100 / $500 / $2k</div><div>${["$100","$500","$2000"].map(k=>sl[k]!=null?sl[k].toFixed(2)+"%":"–").join(" / ")}</div>
+        <div><b style="color:var(--ink)">Max position (≤2% slippage)</b></div><div><b style="color:var(--ink)">${c.position_cap_usd_for_2pct_slip?usd(c.position_cap_usd_for_2pct_slip):"–"}</b></div>
+      </div>
+      <div class="mut" style="font-size:11px;margin-top:6px">${(c.notes||[]).map(esc).join(" ")}</div>
+      ${(c.other_pairs||[]).length ? `<details style="font-size:11.5px;margin-top:4px"><summary class="mut">Other matches (${c.other_pairs.length})</summary>${c.other_pairs.map(o=>`<div class="num">${esc(o.symbol)} · ${esc(o.chain)} · liq ${usd(o.liquidity_usd||0)} · vol ${usd(o.volume_24h_usd||0)} ${o.why?`<span class="warn">${esc(o.why)}</span>`:""}</div>`).join("")}</details>` : ""}`;
+  } catch(e) { $("mm_body").innerHTML = "<span class='warn'>Local API not reachable (WAGMI-API runs on this PC).</span>"; }
+}
+async function adhoc(sym){
+  sym = sym.trim(); if (!sym) return;
+  if (/^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/.test(sym)) { memeCard(sym); return; }
+  const match = window.UNIVERSE ? [...window.UNIVERSE].find(x=>x.toUpperCase()===sym.toUpperCase()) : sym;
+  if (!match) { $("search").style.borderColor = ""; memeCard(sym); return; }
+  $("search").style.borderColor = "";
+  sym = match;
+  if (!DATA.state.coins[sym] && !ADHOC[sym]) {
+    const now = Date.now();
+    const [d1, h4] = await Promise.all([
+      hlPost({type:"candleSnapshot",req:{coin:sym,interval:"1d",startTime:now-160*864e5,endTime:now}}),
+      hlPost({type:"candleSnapshot",req:{coin:sym,interval:"4h",startTime:now-45*864e5,endTime:now}})]);
+    const mk = raw => { const o = raw.map(b=>[+b.o,+b.h,+b.l,+b.c]); const c = o.map(b=>b[3]);
+      return {t: raw.map(b=>b.t), ohlc: o, ema20: emaArr(c,20), ema50: emaArr(c,50)}; };
+    const D = mk(d1), H = mk(h4), o = D.ohlc, n = o.length;
+    const tr = o.slice(-15).map((b,i,a)=> i ? Math.max(b[1]-b[2], Math.abs(b[1]-a[i-1][3]), Math.abs(b[2]-a[i-1][3])) : b[1]-b[2]);
+    const atrp = tr.slice(1).reduce((x,y)=>x+y,0)/14 / o[n-1][3] * 100;
+    const last20 = o.slice(-20), hi = Math.max(...last20.map(b=>b[1])), lo = Math.min(...last20.map(b=>b[2]));
+    const p = o[n-1][3];
+    ADHOC[sym] = {chart: {...D, h4: H}, market: {price: p, atr_pct_1d: atrp,
+      ret_1d_pct: (p/o[n-2][3]-1)*100, ret_7d_pct: n>7 ? (p/o[n-8][3]-1)*100 : null,
+      range_20d: {low: lo, high: hi, position: (p-lo)/(hi-lo)},
+      structure: (D.ema20[n-1] > D.ema50[n-1] ? "structure UP" : "structure DOWN") + (p < D.ema20[n-1] ? " | price BELOW" : " | price above")},
+      voices: [], consensus: {}, history: {}, rules: {}, adhoc: true};
+    SYMS.push(sym);
+  }
+  sel = sym; renderBoard(); renderDetail();
+}
+function spark(vals, w, h, kind){
+  const v = vals.filter(x => x != null && !isNaN(x)); if (v.length < 2) return "<span class='mut'>not enough data yet</span>";
+  const lo = Math.min(...v, kind==="bars"?0:Infinity), hi = Math.max(...v, kind==="bars"?0:-Infinity), rg = (hi-lo)||1;
+  const X = i => i/(vals.length-1)*w, Y = x => h - (x-lo)/rg*h;
+  if (kind === "bars") { const bw = Math.max(1, w/vals.length - 1);
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none"><line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>${vals.map((x,i)=>x==null?"":`<rect x="${X(i)-bw/2}" y="${Math.min(Y(x),Y(0))}" width="${bw}" height="${Math.max(1,Math.abs(Y(x)-Y(0)))}" fill="${x>0?"var(--neg)":"var(--pos)"}" opacity=".8"/>`).join("")}</svg>`; }
+  const pts = vals.map((x,i)=>x==null?null:`${X(i).toFixed(1)},${Y(x).toFixed(1)}`).filter(Boolean).join(" ");
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="1.5"/></svg>`;
+}
+function positioning(){
+  const P = C(sel).positioning || {}, S = P.series || [];
+  const f = S.map(r=>r[1]), oi = S.map(r=>r[2]);
+  const fl = f.filter(x=>x!=null), ol = oi.filter(x=>x!=null);
+  const fNow = fl.length ? fl[fl.length-1] : null, oiChg = ol.length > 1 ? (ol[ol.length-1]/ol[0]-1)*100 : null;
+  const liqs = (P.liqs || []).slice().reverse();
+  const ago = t => { const m = (Date.now() - Date.parse(t))/60000; return m < 60 ? Math.round(m)+"m" : m < 1440 ? (m/60).toFixed(0)+"h" : (m/1440).toFixed(0)+"d"; };
+  const longL = liqs.filter(x=>x.side==="long").reduce((a,x)=>a+(+x.notional_usd||0),0), shortL = liqs.filter(x=>x.side==="short").reduce((a,x)=>a+(+x.notional_usd||0),0);
+  $("posn").innerHTML = S.length < 2 ? "<span class='mut'>Collector has little history for this coin yet.</span>" : `
+    <div class="mut" style="font-size:11px">Funding per hour <span title="Red = longs pay shorts (crowded long). Blue = shorts pay longs.">(red = longs paying)</span>: now <b class="num" style="color:var(--ink)">${fNow!=null?(fNow*100).toFixed(4)+"%":"–"}</b> <span class="num">(${fNow!=null?(fNow*24*365*100).toFixed(1)+"%/yr":""})</span></div>
+    ${spark(f, 300, 34, "bars")}
+    <div class="mut" style="font-size:11px;margin-top:6px">Open interest: <b class="num" style="color:var(--ink)">${ol.length?usd(ol[ol.length-1]):"–"}</b> <span class="num ${oiChg>0?"up":"dn"}">${oiChg!=null?pct(oiChg)+" this week":""}</span> <span title="Rising OI = new leverage entering; falling = positions closing.">(leverage in the market)</span></div>
+    ${spark(oi, 300, 34, "line")}`;
+  $("posn").innerHTML += liqs.length ? `<div class="mut" style="font-size:11px;margin-top:8px">Recent liquidations <span title="Long liquidated = forced SELL. Short liquidated = forced BUY.">(last ${liqs.length}: longs ${usd(longL)} · shorts ${usd(shortL)})</span></div>
+    <div style="max-height:120px;overflow:auto;font-size:11.5px">${liqs.map(x=>`<div class="num" style="display:grid;grid-template-columns:40px 1fr 1fr 1fr;gap:6px"><span class="mut">${ago(x.ts_utc)}</span><span class="${x.side==="long"?"dn":"up"}">${x.side==="long"?"long rekt":"short rekt"}</span><span style="text-align:right">${fmt(+x.price)}</span><span style="text-align:right">${usd(+x.notional_usd)}</span></div>`).join("")}</div>` : `<div class="mut" style="font-size:11px;margin-top:8px">No liquidations recorded on this coin yet (collector added ETH/HYPE/XRP/NEAR today).</div>`;
+}
+async function book(){
+  if (!sel) return;
+  try {
+    const b = await hlPost({type:"l2Book", coin: sel}); const [bids, asks] = b.levels;
+    const B = bids.slice(0,8), A = asks.slice(0,8).reverse();
+    const mx = Math.max(...B.map(x=>+x.sz), ...A.map(x=>+x.sz), 1e-9);
+    const row = (x, cls) => `<div class="obr ${cls}"><i style="width:${(+x.sz/mx*100).toFixed(0)}%"></i><span>${fmt(+x.px)}</span><span>${(+x.sz).toLocaleString(undefined,{maximumSignificantDigits:4})}</span><span class="mut">${usd(+x.sz*+x.px)}</span></div>`;
+    const bb = +bids[0].px, ba = +asks[0].px, mid = (bb+ba)/2;
+    const within = (side, pctw) => side.filter(x => Math.abs(+x.px/mid-1) <= pctw).reduce((a,x)=>a + +x.sz*+x.px, 0);
+    const bd = within(bids, .01), ad = within(asks, .01), tot = (bd+ad)||1;
+    $("obspread").textContent = `spread ${((ba-bb)/mid*1e4).toFixed(1)} bps`;
+    $("ob").innerHTML = A.map(x=>row(x,"a")).join("") + `<div class="obmid">${fmt(mid)}</div>` + B.map(x=>row(x,"b")).join("")
+      + `<div class="obimb" title="Resting size within 1% of mid: bids ${usd(bd)} vs asks ${usd(ad)}"><div style="width:${bd/tot*100}%;background:var(--pos)"></div><div style="width:${ad/tot*100}%;background:var(--neg)"></div></div>`
+      + `<div class="mut" style="font-size:11px;margin-top:3px">Within 1%: bids ${usd(bd)} · asks ${usd(ad)} (${bd>ad?"bids":"asks"} heavier ${(Math.max(bd,ad)/Math.min(bd,ad)||1).toFixed(1)}×)</div>`;
+  } catch(e) { $("ob").innerHTML = "<span class='mut'>order book unavailable</span>"; }
+}
+function getAddr(){ try { return localStorage.getItem("hl_addr") || ""; } catch(e) { return ""; } }
+async function account(){
+  const a = getAddr();
+  if (!a) { $("acct").innerHTML = `<div class="mut" style="font-size:12px;margin-bottom:6px">Paste your PUBLIC wallet address (0x…) to see your live positions here. Read-only: it can only view, never trade. Never paste a private key.</div><input id="addrin" placeholder="0x…" style="background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--ink);font:inherit;padding:4px 6px;width:100%">`;
+    $("addrin").onchange = ev => { const v = ev.target.value.trim(); if (/^0x[0-9a-fA-F]{40}$/.test(v)) { try { localStorage.setItem("hl_addr", v); } catch(e) {}
+        fetch(API + "/v1/owner_address", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken}, body: JSON.stringify({address: v})}).catch(()=>{});
+        account(); } else ev.target.style.borderColor = "var(--bad)"; };
+    $("acctnote").textContent = ""; return; }
+  try {
+    const st = await hlPost({type:"clearinghouseState", user: a});
+    const ms = st.marginSummary || {}, ps = (st.assetPositions||[]).map(x=>x.position);
+    window.MYPOS = {}; for (const q of ps) window.MYPOS[q.coin] = q; myPosWarn();
+    $("acctnote").innerHTML = `${a.slice(0,6)}…${a.slice(-4)} <a href="#" id="forget" style="color:var(--soft)">forget</a>`;
+    $("acct").innerHTML = `<div class="out" style="margin:0 0 6px"><div>Account value</div><div class="num">$${(+ms.accountValue||0).toLocaleString(undefined,{maximumFractionDigits:2})}</div><div>Margin used</div><div class="num">$${(+ms.totalMarginUsed||0).toLocaleString(undefined,{maximumFractionDigits:2})}</div></div>`
+      + (ps.length ? `<table class="pos num"><tr><th>Coin</th><th>Size</th><th>Entry</th><th>Liq</th><th>uPnL</th></tr>${ps.map(p=>`<tr style="cursor:pointer" data-c="${p.coin}"><td><b>${p.coin}</b> <span class="${+p.szi>0?"up":"dn"}">${+p.szi>0?"L":"S"} ${(p.leverage||{}).value||""}x</span></td><td>${Math.abs(+p.szi)}</td><td>${fmt(+p.entryPx)}</td><td>${p.liquidationPx?fmt(+p.liquidationPx):"–"}</td><td class="${+p.unrealizedPnl>=0?"up":"dn"}">${(+p.unrealizedPnl).toFixed(2)}</td></tr>`).join("")}</table>` : `<div class="mut">No open positions.</div>`);
+    $("forget").onclick = ev => { ev.preventDefault(); try { localStorage.removeItem("hl_addr"); } catch(e) {} account(); };
+    document.querySelectorAll("#acct tr[data-c]").forEach(tr => tr.onclick = () => adhoc(tr.dataset.c));
+  } catch(e) { $("acct").innerHTML = "<span class='mut'>account unavailable</span>"; }
+}
+function alerts(){ try { return JSON.parse(localStorage.getItem("alerts")||"[]"); } catch(e) { return []; } }
+function saveAlerts(a){ try { localStorage.setItem("alerts", JSON.stringify(a)); } catch(e) {} renderAlerts(); }
+function renderAlerts(){
+  const a = alerts();
+  $("al_list").innerHTML = a.length ? a.map((x,i)=>`<div class="alrow num"><b>${x.c}</b> ${x.dir>0?"rises above":"falls below"} ${fmt(x.p)} ${x.hit?'<span class="pill up">HIT '+new Date(x.hit).toLocaleTimeString()+'</span>':""}<button data-i="${i}">✕</button></div>`).join("") : "<div class='mut' style='font-size:11.5px'>No alerts.</div>";
+  document.querySelectorAll("#al_list button").forEach(b=>b.onclick=()=>{ const a=alerts(); a.splice(+b.dataset.i,1); saveAlerts(a); });
+}
+function chime(){ try { const ac = new (window.AudioContext||window.webkitAudioContext)(); [0,0.18,0.36].forEach(t=>{ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=880; o.connect(g); g.connect(ac.destination); g.gain.setValueAtTime(.15, ac.currentTime+t); g.gain.exponentialRampToValueAtTime(.001, ac.currentTime+t+.15); o.start(ac.currentTime+t); o.stop(ac.currentTime+t+.16); }); } catch(e) {} }
+function checkAlerts(mids){
+  const a = alerts(); let changed = false;
+  for (const x of a) { if (x.hit) continue; const v = +(mids[x.c] ?? NaN); if (isNaN(v)) continue;
+    if ((x.dir>0 && v>=x.p) || (x.dir<0 && v<=x.p)) { x.hit = Date.now(); changed = true; chime();
+      document.title = `🔔 ${x.c} ${fmt(v)}`; document.body.classList.remove("flashbg"); void document.body.offsetWidth; document.body.classList.add("flashbg");
+      try { if (Notification.permission==="granted") new Notification(`${x.c} crossed ${fmt(x.p)}`, {body:`now ${fmt(v)}`}); } catch(e) {} } }
+  if (changed) saveAlerts(a);
+}
+let MC = {lean: null, conv: 3};
+async function myCalls(){
+  $("mc_sym").textContent = sel;
+  const h = (DATA.ownerCard && DATA.ownerCard.horizons) || {}; const h5 = h["5d"] || {}, h1 = h["1d"] || {};
+  $("mc_card").textContent = h5.n_calls ? `track record: ${h5.n_directional} directional calls graded at 5d, right ${(h5.directional_hit*100).toFixed(0)}%` : (h1.n_calls ? `${h1.n_calls} graded at 1d` : "no graded calls yet");
+  try {
+    const r = await fetch(API + "/v1/owner_calls", {headers: {"X-Owner-Token": DATA.ownerToken}});
+    const j = await r.json(); const rows = (j.calls || []).slice(-6).reverse();
+    $("mc_list").innerHTML = rows.map(x => {
+      const now = live[x.symbol]; const mv = now ? (now/x.price-1)*100 : null; const sg = x.lean==="LONG" ? 1 : x.lean==="SHORT" ? -1 : 0;
+      return `<div class="num" style="display:grid;grid-template-columns:90px 50px 80px 1fr 70px;gap:6px"><span class="mut">${new Date(x.ts*1000).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span><b>${x.symbol}</b><span class="${sg>0?"up":sg<0?"dn":"mut"}">${x.lean} ${x.conviction}</span><span class="mut" style="overflow:hidden;text-overflow:ellipsis">${esc(x.reason)}</span><span class="${sg*(mv||0)>=0?"up":"dn"}" title="move since the call, in the call's direction">${mv!=null&&sg?pct(sg*mv,2):""}</span></div>`;
+    }).join("");
+  } catch(e) { $("mc_list").innerHTML = "<span class='mut'>Local API not reachable (it runs on this PC as WAGMI-API).</span>"; }
+}
+async function sendCall(){
+  if (!MC.lean) { $("mc_msg").textContent = "Pick LONG, SHORT or NEUTRAL first."; return; }
+  const body = {coin: sel, lean: MC.lean, conviction: MC.conv, reason: $("mc_reason").value, price: px(sel)};
+  try {
+    const r = await fetch(API + "/v1/owner_call", {method: "POST", headers: {"Content-Type": "application/json", "X-Owner-Token": DATA.ownerToken}, body: JSON.stringify(body)});
+    const j = await r.json(); if (!j.ok) throw new Error(j.error);
+    $("mc_msg").textContent = `Logged: ${sel} ${MC.lean} (conviction ${MC.conv}) at ${fmt(px(sel))}. Graded in 1 and 5 days.`;
+    $("mc_reason").value = ""; MC.lean = null;
+    document.querySelectorAll("#mc_lean button").forEach(b => b.classList.remove("on")); myCalls();
+  } catch(e) { $("mc_msg").textContent = "Could not log it: " + e.message; }
+}
+function barsSvg(items, w, h, opt){
+  // items: [{l, v, lo?, hi?, hl?}]; one series, values may be negative; optional CI whiskers
+  opt = opt || {}; const vals = items.flatMap(x => [x.v, x.lo ?? x.v, x.hi ?? x.v]);
+  const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), rg = (hi - lo) || 1, B = 16, T = 6;
+  const Y = v => T + (hi - v) / rg * (h - T - B), bw = w / items.length;
+  let g = `<line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>`;
+  items.forEach((x, i) => { const cx = i * bw + bw / 2, col = x.hl ? "var(--accent)" : x.v >= 0 ? "var(--pos)" : "var(--neg)";
+    g += `<rect x="${cx - bw * .32}" y="${Math.min(Y(x.v), Y(0))}" width="${bw * .64}" height="${Math.max(1, Math.abs(Y(x.v) - Y(0)))}" rx="2" fill="${col}"><title>${x.l}: ${x.v}${opt.unit || ""}${x.lo != null ? " (95% range " + x.lo + " to " + x.hi + ")" : ""}</title></rect>`;
+    if (x.lo != null) g += `<line x1="${cx}" x2="${cx}" y1="${Y(x.lo)}" y2="${Y(x.hi)}" stroke="var(--ink)" opacity=".5"/>`;
+    g += `<text x="${cx}" y="${h - 3}" text-anchor="middle">${x.l}</text>`; });
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}">${g}</svg>`;
+}
+function decisionsStrip(){
+  const D = DATA.decisions || []; if (!D.length) return;
+  const ready = D.filter(d=>d.ready);
+  $("decisions").innerHTML = `<details${ready.length?" open":""}><summary style="cursor:pointer"><b>Decisions for you:</b> <span class="${ready.length?"up":"mut"}">${ready.length} ready</span> · <span class="mut">${D.length-ready.length} still gathering evidence</span></summary>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:8px;margin-top:6px">${D.map(d=>`<div class="pb ${d.ready?"ok":"wait"}"><div class="t">${d.ready?"READY: ":""}${esc(d.title)}</div><div class="w"><b style="color:var(--ink)">Ask:</b> ${esc(d.ask)}</div><div class="w"><b style="color:var(--ink)">Why:</b> ${esc(d.why)}</div><div class="w"><b style="color:var(--ink)">So far:</b> ${esc(d.live)}</div><div class="w">Ready when ${esc(d.ready_when)}. ${esc(d.note||"")}</div></div>`).join("")}</div></details>`;
+}
+function playbook(){
+  const x = safeLev(sel), f = (C(sel).vol||{}).next_day_move_pct, c = C(sel).consensus || {};
+  const g = ((DATA.lab||{}).geometry_live||{});
+  const cards = [
+    {cls:"no", n:"YOU", t:"Decide the direction. Nothing here can", w:"Not the bot, not its AI, not the voices agreeing. Tested on 18k days and 8k decisions. Your read decides; the terminal sizes the risk."},
+    {cls:"ok", n: f!=null ? "±"+f.toFixed(1)+"%" : "–", t:`${sel}: expected move tomorrow`, w:"This IS predictable (beat the naive guess in 22/22 test periods). Plan stops and targets around it."},
+    {cls:"ok", n: ((C(sel).risk||{}).long||{}).stop_pct!=null ? (+C(sel).risk.long.stop_pct).toFixed(1)+"%" : (f!=null ? (2*f).toFixed(1)+"%" : "2× move"), t:"Put the stop about this far away", w:`2× the expected move, take profit at half that distance, close after 48h. Tight stops lost ~0.4R per trade in testing.${g.adaptive?` Live check so far: ${g.adaptive.mean_r}R vs ${g.mean_r_current}R for tight stops.`:""}`},
+    {cls: x ? "ok" : "wait", n: x ? Math.min(x.long,x.short).toFixed(1)+"×" : "–", t:`${sel}: max safe leverage now`, w: x ? `Long ${x.long.toFixed(1)}× · short ${x.short.toFixed(1)}×. Above this, a normal bad day (1-in-100) liquidates you. Halves on wild days.` : "No table for this coin yet."},
+    {cls:"wait", n: c.move_size_hint || "–", t:"Voices agreeing = bigger day, not direction", w:"When most independent voices line up, expect a bigger move either way. Size down, not up."},
+    {cls:"ok", n:"50d", t:"The 50-day average is real support. The 20-day low is not.", w:"From above, the 50-day avg breaks only 32% vs 37% for a random line. The 20-day low breaks MORE than random (42-48%) and keeps going. The 20-day high means nothing. A third of touches just stall."},
+    {cls:"no", n:"RSI", t:"\"Oversold\" is not a buy", w:"On these coins, extreme RSI has more often kept going. Treat it as a warning."},
+  ];
+  $("playbook").innerHTML = cards.map(k=>`<div class="pb ${k.cls}"><div class="n num">${k.n}</div><div class="t">${esc(k.t)}</div><div class="w">${esc(k.w)}</div></div>`).join("");
+}
+function lab(){
+  const L = DATA.lab || {}; const cards = [];
+  const ag = L.agreement || {}; const ks = Object.keys(ag).sort((a,b)=>a-b);
+  if (ks.length) cards.push(`<div class="lc"><span class="v no">No direction edge</span><div class="take">Many signals agreeing still does not tell you which way it goes.</div><h4 class="mut" style="font-size:11.5px;font-weight:600">Voices agreeing does not tell you which way</h4>
+    ${barsSvg(ks.map(k=>({l:k, v:+(+ag[k].e5).toFixed(2), lo:ag[k].e5_ci?+(+ag[k].e5_ci[0]).toFixed(2):null, hi:ag[k].e5_ci?+(+ag[k].e5_ci[1]).toFixed(2):null})), 320, 110, {unit:"%"})}
+    <p>Next-5-day result when k independent voice families agree (x-axis = k), 18k symbol-days 2020-26, <b style="color:var(--ink)">whole sample</b>, which includes the period these patterns were found in. That is why k=5-7 look good here: on the held-out period the same cells came back negative and the edge at 1/3/5 days was inside the noise. Read this chart as "what fooled us", not as a signal.</p></div>`);
+  const cal = L.vol_calibration || [], wf = L.vol_walkforward || {};
+  if (cal.length) { const w = 320, h = 110, mx = Math.max(...cal.flatMap(c=>[c.pred,c.actual]))*1.1, bw = w/cal.length;
+    const Y = v => 6 + (mx - v)/mx*(h-22);
+    let g = cal.map((c,i)=>`<rect x="${i*bw+bw*.15}" y="${Y(c.actual)}" width="${bw*.7}" height="${h-16-Y(c.actual)}" rx="2" fill="var(--pos)" opacity=".75"><title>decile ${c.decile}: forecast ${c.pred.toFixed(2)}%, actual ${c.actual.toFixed(2)}%</title></rect><text x="${i*bw+bw/2}" y="${h-3}" text-anchor="middle">${c.decile}</text>`).join("");
+    g += `<polyline points="${cal.map((c,i)=>`${i*bw+bw/2},${Y(c.pred)}`).join(" ")}" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
+    cards.push(`<div class="lc"><span class="v yes">Proven</span><div class="take">How BIG tomorrow will be can be forecast. Which WAY cannot.</div><h4 class="mut" style="font-size:11.5px;font-weight:600">Move SIZE is predictable</h4><svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}">${g}</svg>
+      <p>Bars = actual next-day move, line = forecast, from calmest (1) to wildest (10) tenth of days, on unseen data. The forecaster beat "same as recent" in <b style="color:var(--ink)">${wf.wins}/${wf.folds}</b> separate test periods since 2021. It drives the Exp. Move column and the calculator's default stop.</p></div>`); }
+  const gc = L.geometry_curve || [], gl = L.geometry_live || {};
+  if (gc.length) cards.push(`<div class="lc"><span class="v ${gl.verdict==="confirmed live"?"yes":"wait"}">${gl.verdict==="confirmed live"?"Confirmed live":"Being confirmed live"}</span><div class="take">Tight stops lose money even on random trades. Wider stops stop the bleeding.</div><h4 class="mut" style="font-size:11.5px;font-weight:600">Tight stops bleed; wider stops stop the bleeding</h4>
+    ${barsSvg([{l:"bot now", v:+(+L.geometry_default||0).toFixed(2), hl:true}, ...gc.map(([m,r])=>({l:"×"+m, v:r}))], 320, 110, {unit:"R"})}
+    <p>Average result per trade (in R, after fees) by stop width, 15.6k signals. The bot's current stop: ${(+L.geometry_default||0).toFixed(2)}R; wider stops climb to about 0R. That removes a loss but is <b style="color:var(--ink)">not</b> a profit edge.
+    Live paired test on ${gl.n||0} signals since Sep 1: current ${gl.mean_r_current??"–"}R vs wider ${gl.mean_r_proposal??"–"}R (gain ${gl.paired_diff_r??"–"}R, range ${gl.ci95?gl.ci95.join(" to "):"–"}).</p></div>`);
+  const V = L.voices || {}; const vk = Object.keys(V).filter(k=>V[k].mean!=null);
+  if (vk.length) cards.push(`<div class="lc"><span class="v wait">Graded continuously</span><div class="take">No single signal has a reliable edge. RSI "oversold/overbought" is backwards.</div><h4 class="mut" style="font-size:11.5px;font-weight:600">Each voice's track record (since 2024)</h4>
+    ${barsSvg(vk.map(k=>({l:({structure:"struct",stretch:"stretch",driver:"driver",momentum_7d:"mom 7d",rsi:"RSI",structure_4h:"4h str",stretch_4h:"4h stch",driver_4h:"4h drv"})[k]||k.slice(0,7), v:+(V[k].mean/100).toFixed(2), lo:V[k].ci?+(V[k].ci[0]/100).toFixed(2):null, hi:V[k].ci?+(V[k].ci[1]/100).toFixed(2):null})), 320, 120, {unit:"%"})}
+    <p>Average result when you follow each voice (vs the market's own drift; daily voices over 5 days, 4h voices over 1 day). Whiskers = 95% range. RSI is clearly backwards; the rest are near zero. Live readings are logged every 15 minutes and re-graded.</p></div>`);
+  const d = L.ic_drops || {};
+  cards.push(`<div class="lc"><span class="v wait">Collecting</span><div class="take">Most bot signals are being thrown away by a hidden filter. We are checking if that is right.</div><h4 class="mut" style="font-size:11.5px;font-weight:600">The silent strategy gate</h4><p>All five of the bot's busiest strategies are muted for a backwards record, so most signals are dropped before the AI sees them. Graded so far: <b style="color:var(--ink)">${d.n||0}</b> dropped signals${d.n?`, average ${pct((d.mean_bps||0)/100,2)} each if taken`:""}. Needs 30+ before it's a decision for you.</p>
+    <p style="margin-top:8px"><b style="color:var(--ink)">Disproven along the way:</b> confidence scores as a filter, the 18-filter gate stack (passed signals did worse than rejected), "avoid BTC", 4h base-rate maps, the chop filter, RSI mean-reversion, funding carry on Hyperliquid (the spot/perp hedge works, but after fees it nets ~1-2.5%/yr at small size and loses at $5k), ranking coins against each other (0 of 18 held up), every edge claimed before May 2026 (a 100x fee bug). In total ~98 direction tests on price data: none survived. What's left to test needs new data: your own trades, order flow, on-chain.</p></div>`);
+  $("lab").innerHTML = cards.join("");
+}
+function nearLevels(){
+  const out = [];
+  for (const s of SYMS) {
+    const c = C(s), p = px(s); if (!p) continue;
+    const em = (c.vol||{}).next_day_move_pct || atr(s); if (!em) continue;
+    const r = (c.market||{}).range_20d || {}, ch = c.chart || {};
+    const L = [];
+    if (r.high) L.push(["20d high", r.high]); if (r.low) L.push(["20d low", r.low]);
+    if (ch.ema50 && ch.ema50.length) L.push(["50d avg", ch.ema50[ch.ema50.length-1]]);
+    for (const k of clusters(s)) if (k.n >= 500) L.push([`liq cluster (${k.n})`, k.p]);
+    for (const [name, v] of L) { const d = (v/p-1)*100, inMoves = Math.abs(d)/em;
+      const k = name === "20d high" ? "hi20" : name === "20d low" ? "lo20" : name === "50d avg" ? "ma50" : null;
+      if (inMoves <= 0.5) out.push({s, name, v, d, m: inMoves, st: k ? levelStat(k, v, p) : null}); }
+  }
+  out.sort((a,b)=>a.m-b.m);
+  $("near").innerHTML = out.length ? `<span class="mut" style="align-self:center">Near a level (within ½ expected daily move):</span>` + out.slice(0,10).map(x=>`<span class="mv" data-c="${x.s}" title="${x.name} at ${fmt(x.v)}, ${pct(x.d,2)} away = ${x.m.toFixed(2)} expected daily moves"><b>${x.s}</b>${x.name} <span class="num ${x.d>=0?"up":"dn"}">${pct(x.d,1)}</span>${x.st?` <span class="${x.st.cls}" style="font-size:10.5px">${x.st.cls==="up"?"✔ holds":x.st.cls==="dn"?"✖ often breaks":"• no edge"}</span>`:""}</span>`).join("") : `<span class="mut">No board coin is within half an expected daily move of a key level right now.</span>`;
+  document.querySelectorAll("#near .mv").forEach(el=>el.onclick=()=>{ sel = el.dataset.c; renderBoard(); renderDetail(); });
+}
+function myPosWarn(){
+  const q = (window.MYPOS || {})[sel];
+  if (!q) { $("posbox").style.display = "none"; return; }
+  $("posbox").style.display = ""; $("pb_sym").textContent = sel;
+  const p = px(sel), long = +q.szi > 0, lev = (q.leverage||{}).value, liq = q.liquidationPx ? +q.liquidationPx : null, e = +q.entryPx;
+  const x = safeLev(sel), safe = x ? (long ? x.long : x.short) : null;
+  const rk = ((C(sel).risk||{})[long?"long":"short"]) || {};
+  const w = [];
+  if (safe && lev > safe) w.push(`Leverage ${lev}x is above the safe ${safe.toFixed(1)}x for ${sel}'s current volatility.`);
+  if (liq && p) { const dist = Math.abs(liq/p-1)*100; const worst = rk.worst_case_1d_pct;
+    if (worst && dist < worst) w.push(`Liquidation is ${dist.toFixed(1)}% away, inside a 1-in-100 bad day (${worst.toFixed(1)}%).`); }
+  if (rk.stop_pct && p) { const sp = long ? e*(1-rk.stop_pct/100) : e*(1+rk.stop_pct/100);
+    w.push(`Tested stop for this entry: ${fmt(sp)} (2x expected move), target ${fmt(long ? e*(1+rk.target_pct/100) : e*(1-rk.target_pct/100))}, 48h time limit.`); }
+  $("pb_body").innerHTML = `<div class="out num" style="margin:0"><div>Side / size</div><div class="${long?"up":"dn"}">${long?"LONG":"SHORT"} ${Math.abs(+q.szi)} @ ${fmt(e)} · ${lev}x</div><div>Unrealised</div><div class="${+q.unrealizedPnl>=0?"up":"dn"}">$${(+q.unrealizedPnl).toFixed(2)} (${(+q.returnOnEquity*100).toFixed(1)}% on margin)</div><div>Liquidation</div><div>${liq?fmt(liq):"–"}</div></div>`
+    + w.map((t,i)=>`<div class="${i < w.length-1 || !rk.stop_pct ? "warn" : "mut"}" style="font-size:12px;margin-top:4px">${esc(t)}</div>`).join("");
+  if (window.LW && LW.cs) { try { (LW.myLines||[]).forEach(l=>LW.cs.removePriceLine(l)); LW.myLines = [
+      LW.cs.createPriceLine({price: e, color: cssv("--good"), lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: "MY entry"}),
+      ...(liq ? [LW.cs.createPriceLine({price: liq, color: cssv("--bad"), lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: "MY liq"})] : [])]; } catch(err) {} }
+}
+function journalBox(){
+  const J = DATA.journal || {};
+  if (!J.enabled) { $("jr").innerHTML = `<div class="mut" style="font-size:12px">Paste your public address in the account panel. From then on every trade you make on Hyperliquid is journaled automatically, with what the hivemind said at the moment you traded, and graded.</div>`; $("jr_note").textContent = ""; return; }
+  const S = J.stats || {}; $("jr_note").textContent = `${J.address} · ${J.fills} fills · updated ${J.updated?J.updated.slice(11,16):""}Z`;
+  let h = S.n ? `<div class="out num" style="margin:0 0 6px"><div>Closed trades</div><div>${S.n}</div><div>Win rate</div><div>${(S.win_rate*100).toFixed(0)}%</div><div>Net P&L (after fees)</div><div class="${S.net_pnl>=0?"up":"dn"}">$${S.net_pnl.toFixed(2)}</div></div>` : `<div class="mut">No closed trades in the journal yet.</div>`;
+  const names = {with_structure: "Trend", chief_agreed: "Chief", range_zone: "Where in range", hold: "Hold time", side: "Side"};
+  for (const [k, g] of Object.entries(S.by || {})) { const e = Object.entries(g); if (!e.length) continue;
+    h += `<div style="font-size:11.5px;margin-top:4px"><b>${names[k]||k}:</b> ${e.map(([b,v])=>`<span class="${v.net>=0?"up":"dn"}" title="${v.n} trades, ${(v.win_rate*100).toFixed(0)}% won">${b} ${v.net>=0?"+":""}$${v.net.toFixed(0)} (${v.n})</span>`).join(" · ")}</div>`; }
+  const T = (J.trades || []).slice(-6).reverse();
+  if (T.length) h += `<div style="margin-top:6px">${T.map(t=>`<div class="num" style="display:grid;grid-template-columns:90px 60px 60px 1fr 80px;gap:6px;font-size:11.5px"><span class="mut">${(t.open||"").slice(5,16).replace("T"," ")}</span><b>${t.coin}</b><span class="${t.side==="LONG"?"up":"dn"}">${t.side}</span><span class="mut">${t.status==="open"?"open":(t.hold_h+"h")}${(t.context||{}).chief_lean?" · chief "+t.context.chief_lean:""}</span><span class="${t.net_pnl>=0?"up":"dn"}" style="text-align:right">${t.status==="open"?"":"$"+t.net_pnl.toFixed(2)}</span></div>`).join("")}</div>`;
+  $("jr").innerHTML = h;
+}
+async function poll(){
+  try {
+    const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"allMids"}'});
+    const mids = await r.json(); $("livedot").style.background = "var(--good)"; checkAlerts(mids);
+    for (const s of SYMS) { if (!mids[s]) continue; const v = +mids[s], prev = live[s]; live[s] = v;
+      const el = $("px_"+s); if (el) { el.textContent = fmt(v); if (prev && v!==prev) { el.classList.remove("flash-up","flash-dn"); void el.offsetWidth; el.classList.add(v>prev?"flash-up":"flash-dn"); } }
+      const ch = $("ch_"+s); if (ch) { const c = dayChg(s); ch.textContent = pct(c,2); ch.className = "num " + (c>=0?"up":"dn"); } }
+    $("dpx").textContent = fmt(px(sel)); liveTick();
+  } catch(e) { $("livedot").style.background = "var(--bad)"; }
+}
+
+document.querySelectorAll(".seg button[data-tf]").forEach(b=>b.onclick=()=>{tf=b.dataset.tf;document.querySelectorAll(".seg button[data-tf]").forEach(x=>x.classList.toggle("on",x===b));drawChart()});
+["c_acct","c_risk","c_side","c_lev"].forEach(id=>$(id).oninput=calc);
+["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;calc()});
+$("c_side").onchange=()=>{delete $("c_stop").dataset.touched;calc()};
+$("al_add").onclick = () => { const p = +$("al_px").value; if (!p) return; const now = px(sel);
+  const a = alerts(); a.push({c: sel, p, dir: p >= now ? 1 : -1}); saveAlerts(a); $("al_px").value = "";
+  try { if (window.Notification && Notification.permission === "default") Notification.requestPermission(); } catch(e) {} };
+renderAlerts();
+document.querySelectorAll("#mc_lean button").forEach(b => b.onclick = () => { MC.lean = b.dataset.v; document.querySelectorAll("#mc_lean button").forEach(x => x.classList.toggle("on", x === b)); });
+document.querySelectorAll("#mc_conv button").forEach(b => b.onclick = () => { MC.conv = +b.dataset.v; document.querySelectorAll("#mc_conv button").forEach(x => x.classList.toggle("on", x === b)); });
+$("mc_send").onclick = sendCall;
+$("mm_x").onclick = ev => { ev.preventDefault(); $("memebox").style.display = "none"; };
+$("search").addEventListener("change", ev=>adhoc(ev.target.value));
+$("search").addEventListener("keydown", ev=>{ if (ev.key==="Enter") adhoc(ev.target.value); });
+document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!=="INPUT"){ ev.preventDefault(); $("search").focus(); return; }
+  if (ev.target.tagName==="INPUT") return;
+  const rows=[...document.querySelectorAll("#bb tr")].map(r=>r.dataset.s); let i=rows.indexOf(sel);
+  if (ev.key==="ArrowDown"){sel=rows[Math.min(rows.length-1,i+1)];renderBoard();renderDetail();ev.preventDefault();}
+  if (ev.key==="ArrowUp"){sel=rows[Math.max(0,i-1)];renderBoard();renderDetail();ev.preventDefault();}
+  if (ev.key==="d"||ev.key==="D") document.querySelector('.seg button[data-tf="1d"]').click();
+  if (ev.key==="4") document.querySelector('.seg button[data-tf="4h"]').click(); });
+window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
+topbar(); renderBoard(); renderDetail(); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
+setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
+setTimeout(()=>location.reload(), 15*60*1000);
+</script>
+</body>
+</html>

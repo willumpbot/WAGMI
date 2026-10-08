@@ -220,12 +220,8 @@ def voice_chart(sym):
     """Last ~70 daily candles (incl. today's forming one) + EMA20/50 for the desk chart."""
     import basemap
     df = basemap._daily(sym).tail(140).reset_index(drop=True)
-    import json as _j, urllib.request as _u
-    body = _j.dumps({"type": "candleSnapshot", "req": {"coin": sym, "interval": "1d",
-                     "startTime": int((time.time() - 3 * 86400) * 1000), "endTime": int(time.time() * 1000)}}).encode()
-    req = _u.Request("https://api.hyperliquid.xyz/info", data=body, headers={"Content-Type": "application/json"})
-    with _u.urlopen(req, timeout=20) as r:
-        recent = _j.loads(r.read())
+    import hl
+    recent = hl.candles(sym, "1d", (int(time.time() // 86400) - 120) * 86_400_000)
     bars = {int(b["t"]): [float(b["o"]), float(b["h"]), float(b["l"]), float(b["c"])] for b in recent}
     rows = {int(t): [o_, h, l, c] for t, o_, h, l, c in zip(df["t"], df["o"], df["h"], df["l"], df["c"])}
     rows.update(bars)
@@ -238,9 +234,113 @@ def voice_chart(sym):
             out.append(e_)
         return out
     e20, e50 = ema(closes, 20), ema(closes, 50)
-    keep = 70
-    return {"t": ts[-keep:], "ohlc": [rows[t] for t in ts[-keep:]],
-            "ema20": [round(x, 6) for x in e20[-keep:]], "ema50": [round(x, 6) for x in e50[-keep:]]}
+    keep = 90
+    out = {"t": ts[-keep:], "ohlc": [rows[t] for t in ts[-keep:]],
+           "ema20": [round(x, 6) for x in e20[-keep:]], "ema50": [round(x, 6) for x in e50[-keep:]]}
+    b4 = hl.candles(sym, "4h", (int(time.time() // 86400) - 45) * 86_400_000)
+    c4 = [float(b["c"]) for b in b4]
+    f20, f50 = ema(c4, 20), ema(c4, 50)
+    k4 = 150
+    out["h4"] = {"t": [int(b["t"]) for b in b4][-k4:],
+                 "ohlc": [[float(b["o"]), float(b["h"]), float(b["l"]), float(b["c"])] for b in b4][-k4:],
+                 "ema20": [round(x, 6) for x in f20[-k4:]], "ema50": [round(x, 6) for x in f50[-k4:]]}
+    return out
+
+
+def voice_positioning(sym):
+    """Last 7 days of funding and open interest (hourly samples from our collector) and the latest liquidations."""
+    cut = time.time() - 7 * 86400
+    fo = []
+    for r in _tail_jsonl(DATA / "funding_oi_history.jsonl", 4_000_000):
+        if r.get("symbol") != sym:
+            continue
+        try:
+            t = datetime.fromisoformat(r["timestamp"].replace("Z", "+00:00"))
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
+            t = t.timestamp()
+        except Exception:
+            continue
+        if t >= cut:
+            fo.append((t, r.get("funding_rate"), r.get("open_interest")))
+    fo.sort()
+    hourly, last_h = [], None
+    for t, f, oi in fo:
+        h = int(t // 3600)
+        if h != last_h:
+            hourly.append([int(t), f, oi])
+            last_h = h
+    liqs = []
+    for r in _tail_jsonl(DATA / "copilot" / "liquidations" / "liq_events.jsonl", 3_000_000):
+        if r.get("symbol") == sym:
+            liqs.append({k: r.get(k) for k in ("ts_utc", "side", "price", "notional_usd", "venue")})
+    return {"series": hourly[-170:], "liqs": liqs[-25:]}
+
+
+def _btc_rv5():
+    import basemap
+    c = basemap._closed(basemap._daily("BTC"))["c"].tolist()[-6:]
+    r = [(c[i] / c[i - 1] - 1) * 100 for i in range(1, len(c))]
+    m = sum(r) / len(r)
+    return (sum((x - m) ** 2 for x in r) / (len(r) - 1)) ** 0.5
+
+
+def voice_vol(sym, disagree6=None, funding_hourly=None):
+    import basemap
+    import volforecast
+    df = basemap._closed(basemap._daily(sym))
+    fday = funding_hourly * 24 * 100 if funding_hourly is not None else None
+    try:
+        brv = _btc_rv5()
+    except Exception:
+        brv = None
+    return volforecast.forecast(df["c"].tolist()[-40:], disagree6, fday, brv)
+
+
+def _laptop_module(name):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("laptop_" + name, DATA / "laptop_mining" / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_RISK_VOICE = None
+_SQUEEZE = None
+
+
+def voice_risk(sym, vol, price, disagree=None):
+    """The laptop's risk_voice.risk_read (single source of truth for the tested stop/target/leverage numbers)
+    plus its squeeze model: P(adverse move > 2x the forecast move within 1 day), SQUEEZE.md '+ consensus'."""
+    global _RISK_VOICE, _SQUEEZE
+    import basemap
+    import math
+    if _RISK_VOICE is None:
+        _RISK_VOICE = _laptop_module("risk_voice")
+    if _SQUEEZE is None:
+        _SQUEEZE = (_load(DATA / "laptop_mining" / "squeeze.json", {}) or {}).get("sides", {})
+    df = basemap._closed(basemap._daily(sym)).tail(60)
+    out = {}
+    for side in ("long", "short"):
+        r = _RISK_VOICE.risk_read(sym, df, side)
+        f1 = r.get("expected_move_1d_pct")
+        sq = None
+        m = ((_SQUEEZE.get(side) or {}).get("models") or {}).get("+ consensus")
+        if m and f1 and disagree is not None:
+            c = m["coef"]
+            z = c[0] + c[1] * math.log(f1 + 1e-8) + c[2] * disagree   # disagree already on the 0-6 scale
+            sq = round(100 / (1 + math.exp(-z)), 1)
+        out[side] = {"stop_pct": r.get("stop_pct"), "target_pct": r.get("target_pct"),
+                     "max_leverage": r.get("max_leverage"), "worst_case_1d_pct": r.get("worst_case_1d_pct"),
+                     "vol_bucket": r.get("vol_bucket"), "expected_move_label": r.get("expected_move_label"),
+                     "squeeze_pct": sq, "squeeze_base_pct": (_SQUEEZE.get(side) or {}).get("base_rate_test")}
+        if price and r.get("stop_pct"):
+            sgn = 1 if side == "long" else -1
+            out[side]["stop_price"] = round(price * (1 - sgn * r["stop_pct"] / 100), 6)
+            out[side]["target_price"] = round(price * (1 + sgn * r["target_pct"] / 100), 6)
+    out["rule"] = "stop 2x forecast move, target 0.5R, 48h (risk_voice.py, laptop)"
+    out["notes"] = "Long-side squeeze odds over-predict mid-range: use for ranking only (SQUEEZE.md)."
+    return out
 
 
 def voice_history(sym, market):
@@ -283,7 +383,7 @@ def assemble():
         st = {"symbol": sym, "updated": _now_iso()}
         for name, fn in (("market", lambda: voice_market(client, sym)), ("context", lambda: voice_context(sym)), ("agents", lambda: voice_agents(sym, scorecard)),
                          ("bot", lambda: voice_bot(sym)), ("owner", lambda: voice_owner(sym)),
-                         ("chart", lambda: voice_chart(sym))):
+                         ("chart", lambda: voice_chart(sym)), ("positioning", lambda: voice_positioning(sym)), ("vol", lambda: voice_vol(sym)), ("tf4h", lambda: __import__("tf4h").live(sym))):
             try:
                 st[name] = fn()
             except Exception as e:
@@ -306,6 +406,20 @@ def assemble():
             st["voices"] = vz.compute(sym, st, shared, chief_c)
             st["consensus"] = vz.consensus(st["voices"])
             st["contradictions"] = vz.contradictions(st["voices"])
+            try:
+                cs_ = st.get("consensus") or {}
+                n_f = (cs_.get("bull_families") or 0) + (cs_.get("bear_families") or 0)
+                # LAPTOP_REPLY_2.md: the squeeze model was fitted on 6 families; rescale our count to that range
+                dis6 = (cs_.get("dissent_families") or 0) / n_f * 6.0 if n_f else None
+                try:   # stage-2 vol forecast needs the dissent count, so it is refined here
+                    v2 = voice_vol(sym, dis6, (st.get("market") or {}).get("funding_hourly"))
+                    if v2:
+                        st["vol"] = v2
+                except Exception:
+                    pass
+                st["risk"] = voice_risk(sym, st.get("vol"), (st.get("market") or {}).get("price"), dis6)
+            except Exception as e:
+                st["risk"] = {"error": f"{type(e).__name__}: {e}"[:200]}
             _log_voices(sym, st)
         except Exception as e:
             st["voices"] = []

@@ -19,6 +19,7 @@ BOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BOT / "tools"))
 HM = BOT / "data" / "hivemind"
 OUT = BOT.parent / "desk.html"
+TERMINAL_OUT = BOT.parent / "terminal.html"
 
 
 def e(x):
@@ -213,5 +214,62 @@ def build():
     return OUT
 
 
+def lab_data():
+    """What the research has proven, compacted for the terminal's Lab section."""
+    LM = BOT / "data" / "laptop_mining"
+    coop = _load(LM / "cooperation.json", {}) or {}
+    vol = _load(LM / "volatility_forecast.json", {}) or {}
+    wf = _load(LM / "walkforward_vol.json", {}) or {}
+    geo = _load(LM / "geometry_sweep.json", {}) or {}
+    geo2 = _load(LM / "geometry_sweep_pass2.json", {}) or {}
+    cells = {c["stop_mult"]: round(c["mean_R"], 3) for c in geo.get("cells", []) + geo2.get("cells", [])
+             if c.get("tp_mult") == 1.0}
+    curve = sorted(cells.items())
+    grades = (_load(HM / "voice_grades.json", {}) or {}).get("voices", {})
+    return {
+        "agreement": {k: {"e5": v.get("e5"), "e5_ci": v.get("e5_ci"), "n": v.get("n")}
+                      for k, v in ((coop.get("agreement") or {}).get("by_k") or {}).items()},
+        "bottom_line": coop.get("bottom_line"),
+        "vol_calibration": vol.get("y1_calibration_test"),
+        "vol_walkforward": {"folds": wf.get("n_folds"), "wins": wf.get("har_beats_naive_folds"),
+                            "har_qlike": wf.get("mean_har_qlike"), "naive_qlike": wf.get("mean_naive_qlike")},
+        "geometry_curve": curve,
+        "geometry_default": (geo.get("bot_default") or {}).get("mean_R"),
+        "geometry_live": _load(HM / "geometry_shadow.json", {}) or {},
+        "voices": {k: {"trust": v.get("trust"), "mean": v.get("mean_bps_5d"), "ci": v.get("ci95"),
+                       "horizon": v.get("horizon", "5d")} for k, v in grades.items()},
+        "ic_drops": ((_load(BOT / "data" / "agent_grades" / "live" / "live_scorecard.json", {}) or {})
+                     .get("ic_muted_drops")),
+    }
+
+
+def build_terminal():
+    """The trading terminal: one self-contained page, data embedded, live prices fetched in the browser."""
+    import voices as vz
+    allst = _load(HM / "state" / "_all.json", {}) or {}
+    chief = _load(HM / "chief_latest.json", {}) or {}
+    card_ = (_load(HM / "chief_scorecard.json", {}) or {}).get("horizons", {}).get("5d", {})
+    card_txt = (f"{card_.get('n_calls', 0)} calls graded at 5d"
+                + (f", directional right {card_['directional_hit'] * 100:.0f}%" if card_.get("directional_hit") is not None
+                   else ", still collecting"))
+    try:
+        token = (HM / "owner_token.txt").read_text(encoding="utf-8").strip()
+    except OSError:
+        token = ""
+    data = {"state": allst, "chief": chief, "chiefCard": card_txt, "info": vz.INFO, "ownerToken": token,
+            "ownerCard": _load(HM / "owner_scorecard.json", {}) or {}, "lab": lab_data(),
+            "decisions": _load(HM / "decisions.json", []) or [],
+            "journal": _load(HM / "journal.json", {}) or {},
+            "levelStats": ((_load(BOT / "data" / "laptop_mining" / "levels.json", {}) or {}).get("levels") or {}),
+            "safeLev": ((_load(BOT / "data" / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table") or {})}
+    tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")
+    page = tpl.replace("__DATA__", json.dumps(data, default=str).replace("</", "<\\/"))
+    tmp = TERMINAL_OUT.with_suffix(".tmp")
+    tmp.write_text(page, encoding="utf-8")
+    tmp.replace(TERMINAL_OUT)
+    return TERMINAL_OUT
+
+
 if __name__ == "__main__":
     print(build())
+    print(build_terminal())

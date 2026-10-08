@@ -27,12 +27,39 @@ def main():
         if "--chief" in sys.argv:
             import voice_grader
             voice_grader.main()   # refresh per-voice trust before the voices are assembled
+        try:
+            import whales
+            whales.snapshot()
+        except Exception as e:
+            log(f"whales failed: {e}")
         assemble.assemble()
         if "--chief" in sys.argv:
             out = chief.run_chief()
             log("chief: " + ", ".join(f"{s} {c.get('lean')}{c.get('conviction')}" for s, c in out.get("coins", {}).items()))
         chief.resolve()
+        chief.resolve(chief.OWNER_CALLS, chief.OWNER_CARD)
+        try:
+            import geometry_shadow
+            geometry_shadow.main()
+        except Exception as e:
+            log(f"geometry shadow failed: {e}")
+        try:
+            import phone_link
+            phone_link.main()
+        except Exception as e:
+            log(f"phone link failed: {e}")
+        try:
+            import journal
+            journal.main()
+        except Exception as e:
+            log(f"journal failed: {e}")
+        try:
+            import decisions
+            decisions.build()
+        except Exception as e:
+            log(f"decisions failed: {e}")
         desk.build()
+        desk.build_terminal()
         log("cycle ok" + (" (+chief)" if "--chief" in sys.argv else ""))
     except Exception:
         log("cycle FAILED: " + traceback.format_exc().replace("\n", " | ")[-800:])

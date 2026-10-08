@@ -35,6 +35,15 @@ report cards, not by how confident they sound. Established facts from forward gr
 - Rules-manager rules are hypotheses until "earned".
 - "history" is a base rate for today's combination of daily readings (overlapping windows; n_eff ~ n/5).
 - Liquidation clusters are path-risk context, not targets.
+- Out-of-sample study (18k symbol-days, 2020-26): voice AGREEMENT does not predict direction; stretch/range/driver
+  are one voice. What IS predictable is MOVE SIZE: when few independent voice families dissent, the next day moves
+  ~5% vs ~3% when many dissent; ATR persists (corr 0.35). consensus.move_size in each coin carries this.
+- So the most useful thing you can give a leverage trader is: expected move size, the levels that matter within it,
+  and where risk sits (liquidation clusters, stops). Direction only when the evidence is unusually clear.
+- Each coin's "risk" block carries the tested risk numbers: forecast-sized stop/target (stop 2x the forecast move,
+  0.5R target, 48h) and safe leverage (liquidation beyond the 99th-percentile 1-day adverse move, /1.5). Quote them.
+  Tight stops lost ~0.4R/trade in testing; never suggest a stop inside one expected daily move.
+- The owner is a visual learner: your "read" must lead with ONE plain sentence a trader can act on.
 Your job: for each coin, say plainly what the evidence supports for a 1-5 day SWING view, including "nothing" -
 NEUTRAL is the right answer when voices conflict or evidence is thin. Never invent data. Prefer few, specific
 statements a trader can check: levels, what would invalidate the view, which voice you leaned on and why.
@@ -43,6 +52,8 @@ Output ONLY JSON:
 {"coins": {"<SYM>": {"lean": "LONG|SHORT|NEUTRAL", "conviction": 1-5,
    "read": "<=350 chars, plain English, what the trader should know right now",
    "key_levels": "<=120 chars", "invalidation": "<=120 chars",
+   "expected_move": "<=90 chars: likely size of the next 1-2 days' move and why (ATR, move_size flag)",
+   "if_you_trade": "<=140 chars: if the owner takes a side anyway: stop, target and max leverage from the risk block",
    "leaned_on": ["voice names"], "ignored": ["voice names + why, <=60 chars each"]}},
  "market_note": "<=250 chars, the one thing that matters across all coins today"}"""
 
@@ -99,10 +110,15 @@ def run_chief():
     return out
 
 
-def resolve():
-    if not CALLS.exists():
+OWNER_CALLS = HM / "owner_calls.jsonl"
+OWNER_CARD = HM / "owner_scorecard.json"
+
+
+def resolve(calls=None, card_path=None):
+    calls, card_path = calls or CALLS, card_path or CARD
+    if not calls.exists():
         return {}
-    rows = [json.loads(l) for l in CALLS.read_text(encoding="utf-8").splitlines() if l.strip()]
+    rows = [json.loads(l) for l in calls.read_text(encoding="utf-8").splitlines() if l.strip()]
     now = time.time()
     changed = False
     for r in rows:
@@ -118,9 +134,9 @@ def resolve():
                 r[k] = round((p / r["price"] - 1) * 100, 3)
                 changed = True
     if changed:
-        tmp = CALLS.with_suffix(".tmp")
+        tmp = calls.with_suffix(".tmp")
         tmp.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
-        os.replace(tmp, CALLS)
+        os.replace(tmp, calls)
     card = {"updated": datetime.now(timezone.utc).isoformat(timespec="minutes"), "horizons": {}}
     for hz in HORIZONS:
         k = "ret_" + hz
@@ -140,7 +156,7 @@ def resolve():
                 for cv in range(1, 6) if any(r.get("conviction") == cv for r in dirn)},
         }
     card["verdict"] = ("collecting" if card["horizons"]["5d"]["n_directional"] < 30 else "graded")
-    CARD.write_text(json.dumps(card, indent=1), encoding="utf-8")
+    card_path.write_text(json.dumps(card, indent=1), encoding="utf-8")
     return card
 
 

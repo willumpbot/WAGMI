@@ -20,12 +20,21 @@ DATA = BOT / "data"
 WEIGHT = {"earned": 1.0, "promising": 0.5, "unproven": 0.25, "context": 0.0, "backwards": 0.0}
 
 # family = voices that are near-copies; the laptop's voice_families.json (mission 5) will refine this.
-FAMILY = {"structure": "trend", "stretch": "trend", "driver": "trend", "momentum_7d": "trend",
-          "rsi": "stretch", "range": "stretch", "history_5d": "base-rate",
-          "funding": "positioning", "oi": "positioning", "liq_skew": "positioning",
-          "book": "microstructure", "btc": "market", "weather": "market",
-          "copilot": "co-pilot", "strategies": "bot-strategies", "trade_agent": "bot-ai",
-          "rules": "rules", "chief": "chief", "bot_position": "bot", "owner": "owner"}
+FAMILY = {  # laptop mission 5 (voice_families.json): stretch, range and driver correlate 0.64-0.78 = ONE voice
+    "structure": "structure", "stretch": "stretch/driver", "driver": "stretch/driver", "range": "stretch/driver",
+    "momentum_7d": "momentum", "rsi": "rsi", "history_5d": "base-rate",
+    "structure_4h": "trend-4h", "stretch_4h": "trend-4h", "driver_4h": "trend-4h",
+    "funding": "funding", "oi": "positioning", "liq_skew": "positioning",
+    "book": "microstructure", "btc": "btc", "weather": "market",
+    "copilot": "co-pilot", "strategies": "bot-strategies", "trade_agent": "bot-ai",
+    "rules": "rules", "chief": "chief", "bot_position": "bot", "owner": "owner", "top_traders": "top-traders"}
+
+
+def _load_json(p):
+    try:
+        return json.loads(Path(p).read_text(encoding="utf-8"))
+    except Exception:
+        return None
 
 
 def _graded_trust():
@@ -95,6 +104,13 @@ def compute(sym, st, shared, chief):
     if di:
         add("driver", "Who's driving", 1 if di["plus"] > di["minus"] else -1,
             f"buyers {di['plus']} vs sellers {di['minus']}", "unproven")
+    f4 = st.get("tf4h") or {}
+    if f4:
+        add("structure_4h", "4h structure", f4["structure_4h"],
+            "4h 20-bar avg " + ("above" if f4["structure_4h"] > 0 else "below") + " 50-bar avg", "unproven")
+        add("stretch_4h", "4h price vs avg", f4["stretch_4h"],
+            "above its 4h 20-bar avg" if f4["stretch_4h"] > 0 else "below its 4h 20-bar avg", "unproven")
+        add("driver_4h", "4h who's driving", f4["driver_4h"], f"buyers {f4['pdi']:.0f} vs sellers {f4['mdi']:.0f}", "unproven")
     r7 = m.get("ret_7d_pct")
     if r7 is not None:
         add("momentum_7d", "7-day momentum", 1 if r7 > 5 else -1 if r7 < -5 else 0, f"{r7:+.1f}% over 7 days", "unproven")
@@ -169,6 +185,13 @@ def compute(sym, st, shared, chief):
     if names:
         add("rules", "Rules in force", (score > 0) - (score < 0), ", ".join(names),
             "earned" if any(r.get("status") == "earned" for s_ in rules.values() for r in s_) else "unproven")
+    w = ((_load_json(DATA / "hivemind" / "whales_latest.json") or {}).get("coins") or {}).get(sym)
+    if w and (w["long"] + w["short"]) >= 5:
+        L_, S_ = w["long"], w["short"]
+        rd = 1 if L_ >= 2 * max(S_, 1) else -1 if S_ >= 2 * max(L_, 1) else 0
+        add("top_traders", "Top traders' positions", rd,
+            f"{L_} long vs {S_} short among profitable HL traders (net {w['net_share']*100:+.0f}% of ${w['gross']/1e6:.0f}M)",
+            "unproven")
     c = chief or {}
     if c.get("lean"):
         add("chief", "Chief analyst", {"LONG": 1, "SHORT": -1}.get(c["lean"], 0),
@@ -187,8 +210,15 @@ def consensus(V):
     ws = sum(WEIGHT.get(v["trust"], 0) for v in bear)
     fam_b = len({v["family"] for v in bull})
     fam_s = len({v["family"] for v in bear})
+    # Move SIZE (laptop mission 5, held out of sample): the fewer independent families dissent, the bigger
+    # the next day's move (1 dissenting ~5.1% vs 4 dissenting ~3.2%, average ~3.5%). No directional content.
+    dissent = min(fam_b, fam_s)
+    # LAPTOP_REPLY.md: disagree <= 1 -> expect a ~5.1% day [4.71, 5.55]; >= 3 -> ~3.2% [3.04, 3.33].
+    size = ("bigger than usual" if dissent <= 1 and (fam_b + fam_s) >= 3 else
+            "smaller than usual" if dissent >= 3 else "normal")
+    size_hint = "~5% day" if size == "bigger than usual" else "~3.2% day" if size == "smaller than usual" else "~3.5% day"
     return {"bull": len(bull), "bear": len(bear), "neutral": sum(1 for v in V if v["reading"] == 0),
-            "bull_families": fam_b, "bear_families": fam_s,
+            "bull_families": fam_b, "bear_families": fam_s, "dissent_families": dissent, "move_size": size, "move_size_hint": size_hint,
             "trust_weighted": round(wb - ws, 2), "trust_total": round(wb + ws, 2)}
 
 
@@ -215,6 +245,13 @@ INFO = {
                 "pullback. Above it inside a downtrend = a bounce."),
     "driver": ("+DI vs -DI: over the last ~2 weeks, were the big daily pushes mostly UP (buyers) or DOWN (sellers)?",
                "Faster than structure. When it flips against the structure, the trend is being tested."),
+    "structure_4h": ("Same as daily structure but on 4-hour candles: is the 20-bar average above the 50-bar average?",
+                     "Shows the trend of the last week or so. When it disagrees with the daily, the short-term move "
+                     "is against the bigger trend. Historically ~no edge on its own; use it for timing."),
+    "stretch_4h": ("Is price above or below its 4-hour 20-bar average?", "Fast. Flips often. Below it inside a daily "
+                   "uptrend = a short-term dip."),
+    "driver_4h": ("+DI vs -DI on 4-hour candles: who has pushed harder over the last ~2 days.",
+                  "The quickest read of who's in control right now. Historically ~no edge alone."),
     "momentum_7d": ("Price change over the last 7 days. Above +5% reads bullish, below -5% bearish.",
                     "Crypto has historically tended to keep moving the way it just moved (momentum), but that edge has "
                     "faded since 2024."),
@@ -251,6 +288,9 @@ INFO = {
                     "live since the Opus upgrade."),
     "rules": ("Rules the Opus rules manager wrote that apply here right now (avoid/favor).",
               "Hypotheses until 'earned' on future data. Dashed chips on the cards."),
+    "top_traders": ("What ~60 of Hyperliquid's consistently profitable traders (not market makers or vaults) are holding "
+                    "right now: how many are long vs short this coin.", "NEW data, started 2026-10-08, so no track record yet. "
+                    "Reads bullish/bearish only when one side outnumbers the other 2 to 1. Graded forward like every voice."),
     "chief": ("The Opus chief analyst's lean after reading every other voice.",
               "Graded at 1 and 5 days. Its track record shows at the top of the desk."),
     "bot_position": ("The bot's own open trade on this coin.", "Context: what the bot is already exposed to."),
