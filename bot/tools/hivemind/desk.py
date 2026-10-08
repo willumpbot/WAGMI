@@ -188,13 +188,14 @@ def build():
          f"<p class='muted'>Everything here is measured context plus graded opinions. Nothing in the system has a proven "
          f"directional edge yet; your read decides. Data refreshed {e(_age(allst.get('updated', '')))}.</p>",
          "</div><div class='coins'>"]
+    import visuals
     for sym, st in (allst.get("coins") or {}).items():
-        p.append(card(sym, st, (chief.get("coins") or {}).get(sym)))
+        p.append(visuals.card(sym, st, (chief.get("coins") or {}).get(sym)))
     p.append("</div></div>")
     page = ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
             "<meta name='viewport' content='width=device-width,initial-scale=1'>"
             "<meta http-equiv='refresh' content='300'><title>Swing Desk</title>"
-            f"<style>{dash.CSS}{CSS_EXTRA}</style></head><body>{''.join(p)}</body></html>")
+            f"<style>{dash.CSS}{visuals.CSS}</style></head><body>{''.join(p)}</body></html>")
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(page, encoding="utf-8")
     tmp.replace(OUT)

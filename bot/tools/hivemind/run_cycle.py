@@ -20,7 +20,9 @@ def log(msg):
 
 
 def main():
-    import assemble, desk, chief
+    import assemble, desk, chief   # assemble fixes sys.path order (copilot before tools)
+    sys.path.remove(str(assemble.BOT / "tools" / "copilot"))
+    sys.path.insert(0, str(assemble.BOT / "tools" / "copilot"))
     try:
         assemble.assemble()
         if "--chief" in sys.argv:

@@ -32,7 +32,7 @@ from pathlib import Path
 BOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BOT))
 sys.path.insert(0, str(BOT / "tools"))
-sys.path.insert(0, str(BOT / "tools" / "copilot"))
+sys.path.insert(0, str(BOT / "tools" / "copilot"))   # first: tools/owner_call.py would shadow copilot/owner_call.py
 os.environ.setdefault("WAGMI_SOURCE", "tool")
 
 DATA = BOT / "data"
@@ -74,6 +74,12 @@ def _tail_jsonl(path, max_bytes=600_000):
 
 # ── voices ────────────────────────────────────────────────────────────
 
+def _di_from_note(note):
+    import re
+    m = re.search(r"\+DI (\d+) / -DI (\d+)", note or "")
+    return {"plus": int(m.group(1)), "minus": int(m.group(2))} if m else None
+
+
 def voice_market(client, sym):
     import copilot as cp
     d = cp.build_dip_read(client, sym)
@@ -85,6 +91,7 @@ def voice_market(client, sym):
     return {
         "ok": True, "price": d.price, "ret_1d_pct": _r(d.ret_1d_pct, 2), "ret_7d_pct": _r(d.ret_7d_pct, 2),
         "structure": d.structure_note, "trend_1d": d.trend_1d, "adx_1d": _r(d.adx_1d, 1),
+        "di": _di_from_note(d.structure_note),
         "range_20d": {"low": d.swing_low, "high": d.swing_high, "position": _r(rng, 3),
                       "pct_to_high": _r(d.dist_to_high_pct, 2), "pct_to_low": _r(d.dist_to_low_pct, 2)},
         "atr_pct_1d": _r(d.atr_pct_1d * 100 if d.atr_pct_1d and d.atr_pct_1d < 1 else d.atr_pct_1d, 2),
@@ -209,6 +216,33 @@ def voice_owner(sym):
             "note": "no owner calls logged yet on this coin" if not calls else ""}
 
 
+def voice_chart(sym):
+    """Last ~70 daily candles (incl. today's forming one) + EMA20/50 for the desk chart."""
+    import basemap
+    df = basemap._daily(sym).tail(140).reset_index(drop=True)
+    import json as _j, urllib.request as _u
+    body = _j.dumps({"type": "candleSnapshot", "req": {"coin": sym, "interval": "1d",
+                     "startTime": int((time.time() - 3 * 86400) * 1000), "endTime": int(time.time() * 1000)}}).encode()
+    req = _u.Request("https://api.hyperliquid.xyz/info", data=body, headers={"Content-Type": "application/json"})
+    with _u.urlopen(req, timeout=20) as r:
+        recent = _j.loads(r.read())
+    bars = {int(b["t"]): [float(b["o"]), float(b["h"]), float(b["l"]), float(b["c"])] for b in recent}
+    rows = {int(t): [o_, h, l, c] for t, o_, h, l, c in zip(df["t"], df["o"], df["h"], df["l"], df["c"])}
+    rows.update(bars)
+    ts = sorted(rows)
+    closes = [rows[t][3] for t in ts]
+    def ema(vals, span):
+        k, out, e_ = 2 / (span + 1), [], None
+        for v in vals:
+            e_ = v if e_ is None else v * k + e_ * (1 - k)
+            out.append(e_)
+        return out
+    e20, e50 = ema(closes, 20), ema(closes, 50)
+    keep = 70
+    return {"t": ts[-keep:], "ohlc": [rows[t] for t in ts[-keep:]],
+            "ema20": [round(x, 6) for x in e20[-keep:]], "ema50": [round(x, 6) for x in e50[-keep:]]}
+
+
 def voice_history(sym, market):
     import basemap
     return basemap.lookup(sym, market)
@@ -231,7 +265,8 @@ def assemble():
     for sym in SYMS:
         st = {"symbol": sym, "updated": _now_iso()}
         for name, fn in (("market", lambda: voice_market(client, sym)), ("context", lambda: voice_context(sym)), ("agents", lambda: voice_agents(sym, scorecard)),
-                         ("bot", lambda: voice_bot(sym)), ("owner", lambda: voice_owner(sym))):
+                         ("bot", lambda: voice_bot(sym)), ("owner", lambda: voice_owner(sym)),
+                         ("chart", lambda: voice_chart(sym))):
             try:
                 st[name] = fn()
             except Exception as e:
