@@ -1,0 +1,53 @@
+{
+ "folds": 22,
+ "fold_days": 90,
+ "horizons": {
+  "y1": {
+   "naive |yesterday|": {
+    "har_wins": "22/22",
+    "har_qlike": 0.52022,
+    "base_qlike": 4.79447,
+    "dm_t_mean": -3.334,
+    "clearly_better": true
+   },
+   "rolling 22d stdev": {
+    "har_wins": "18/22",
+    "har_qlike": 0.52022,
+    "base_qlike": 0.53334,
+    "dm_t_mean": -1.797,
+    "clearly_better": false
+   },
+   "EWMA": {
+    "har_wins": "7/22",
+    "har_qlike": 0.52022,
+    "base_qlike": 0.51694,
+    "dm_t_mean": 0.622,
+    "clearly_better": false
+   }
+  },
+  "y5": {
+   "naive |yesterday|": {
+    "har_wins": "22/22",
+    "har_qlike": 0.15479,
+    "base_qlike": 5.63348,
+    "dm_t_mean": -3.905,
+    "clearly_better": true
+   },
+   "rolling 22d stdev": {
+    "har_wins": "18/22",
+    "har_qlike": 0.15479,
+    "base_qlike": 0.16991,
+    "dm_t_mean": -2.6,
+    "clearly_better": false
+   },
+   "EWMA": {
+    "har_wins": "11/22",
+    "har_qlike": 0.15479,
+    "base_qlike": 0.15494,
+    "dm_t_mean": 0.083,
+    "clearly_better": false
+   }
+  }
+ },
+ "verdict": "HAR does not beat an honest baseline"
+}
