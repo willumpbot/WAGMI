@@ -287,6 +287,142 @@
       "evidence_count": 25,
       "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
       "timestamp": 1783201625.4098058
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 88% vs 'afternoon' at 45% (spread: 43%)",
+      "confidence": 0.85,
+      "evidence_count": 28,
+      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during afternoon by 5-10%.",
+      "timestamp": 1784617230.1343374
+    },
+    {
+      "category": "bias",
+      "description": "Size bias detected: larger positions (>2.0x) have 62% WR vs 79% for smaller positions. Avg PnL: $-0.89 vs $+0.08",
+      "confidence": 0.8,
+      "evidence_count": 50,
+      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
+      "timestamp": 1784617230.1343374
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'night' (0:00-6:00 UTC) wins 100% vs 'evening' at 15% (spread: 85%)",
+      "confidence": 0.7666666666666666,
+      "evidence_count": 22,
+      "actionable_suggestion": "Boost confidence for trades during night (0:00-6:00 UTC). Consider raising confidence floor during evening by 5-10%.",
+      "timestamp": 1785792280.0102508
+    },
+    {
+      "category": "weakness",
+      "description": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 15% WR over 13 trades",
+      "confidence": 0.8,
+      "evidence_count": 13,
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening (18:00-24:00 UTC).",
+      "timestamp": 1785792280.0102508
+    },
+    {
+      "category": "edge",
+      "description": "Size edge: larger positions (>2.0x) have 62% WR vs 43% for smaller. Higher conviction trades are more profitable.",
+      "confidence": 0.75,
+      "evidence_count": 41,
+      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
+      "timestamp": 1785792280.0102508
+    },
+    {
+      "category": "edge",
+      "description": "Size edge: larger positions (>2.0x) have 62% WR vs 41% for smaller. Higher conviction trades are more profitable.",
+      "confidence": 0.75,
+      "evidence_count": 40,
+      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
+      "timestamp": 1785885583.7426627
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'night' (0:00-6:00 UTC) wins 100% vs 'evening' at 17% (spread: 83%)",
+      "confidence": 0.65,
+      "evidence_count": 15,
+      "actionable_suggestion": "Boost confidence for trades during night (0:00-6:00 UTC). Consider raising confidence floor during evening by 5-10%.",
+      "timestamp": 1786167695.9055452
+    },
+    {
+      "category": "weakness",
+      "description": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 17% WR over 12 trades",
+      "confidence": 0.8,
+      "evidence_count": 12,
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening (18:00-24:00 UTC).",
+      "timestamp": 1786167695.9055452
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'night' (0:00-6:00 UTC) wins 100% vs 'evening' at 14% (spread: 86%)",
+      "confidence": 0.5666666666666667,
+      "evidence_count": 10,
+      "actionable_suggestion": "Boost confidence for trades during night (0:00-6:00 UTC). Consider raising confidence floor during evening by 5-10%.",
+      "timestamp": 1786399871.0434444
+    },
+    {
+      "category": "weakness",
+      "description": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 14% WR over 7 trades",
+      "confidence": 0.675,
+      "evidence_count": 7,
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening (18:00-24:00 UTC).",
+      "timestamp": 1786399871.0434444
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 75% vs 'evening' at 25% (spread: 50%)",
+      "confidence": 0.6000000000000001,
+      "evidence_count": 12,
+      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during evening by 5-10%.",
+      "timestamp": 1790454872.237217
+    },
+    {
+      "category": "weakness",
+      "description": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 25% WR over 8 trades",
+      "confidence": 0.7,
+      "evidence_count": 8,
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening (18:00-24:00 UTC).",
+      "timestamp": 1790454872.237217
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 83% vs 'night' at 0% (spread: 83%)",
+      "confidence": 0.55,
+      "evidence_count": 9,
+      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1790742750.943081
+    },
+    {
+      "category": "edge",
+      "description": "Size edge: larger positions (>1.5x) have 57% WR vs 30% for smaller. Higher conviction trades are more profitable.",
+      "confidence": 0.6833333333333333,
+      "evidence_count": 17,
+      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
+      "timestamp": 1790742750.943081
+    },
+    {
+      "category": "edge",
+      "description": "Size edge: larger positions (>1.5x) have 62% WR vs 30% for smaller. Higher conviction trades are more profitable.",
+      "confidence": 0.7,
+      "evidence_count": 18,
+      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
+      "timestamp": 1790967355.675504
+    },
+    {
+      "category": "edge",
+      "description": "Size edge: larger positions (>1.5x) have 67% WR vs 30% for smaller. Higher conviction trades are more profitable.",
+      "confidence": 0.6666666666666667,
+      "evidence_count": 16,
+      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
+      "timestamp": 1791237385.3870504
+    },
+    {
+      "category": "edge",
+      "description": "Size edge: larger positions (>1.5x) have 67% WR vs 33% for smaller. Higher conviction trades are more profitable.",
+      "confidence": 0.65,
+      "evidence_count": 15,
+      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
+      "timestamp": 1791318257.220944
     }
   ]
 }

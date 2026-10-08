@@ -1,5 +1,9 @@
 {
-  "equity": 4975.2631,
-  "saved_at": "2026-07-16T19:30:26.812289+00:00",
-  "peak_equity": 5000.0
+  "equity": 4788.6796,
+  "saved_at": "2026-10-08T13:45:11.730295+00:00",
+  "peak_equity": 5000.0,
+  "accumulator_equity": 4788.6796,
+  "derived_equity": 4773.45,
+  "drift": -0.0118,
+  "epoch_id": ""
 }

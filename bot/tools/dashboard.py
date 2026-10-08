@@ -566,7 +566,7 @@ def build():
                 prog += "; trades here made $%+.2f total" % ft.get("total_in", 0)
             p.append("<li><b>%s %s: %s [%s]</b><span>%s. %s</span></li>" % (
                 e(r["id"]), e(r["action"].upper()), e(sl), e("EARNED" if r["status"] == "earned" else "testing"),
-                e(r.get("thesis", "")), e(prog)))
+                e(r.get("thesis", "").rstrip(".")), e(prog)))
         p.append("</ul>")
 
     # ── scheduled jobs ───────────────────────────────────────────────

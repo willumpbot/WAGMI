@@ -1,24 +1,24 @@
 {
   "recent_outcomes": [
-    true,
-    true,
-    true,
-    true,
-    false,
-    true,
-    true,
     false,
     false,
     false,
-    true,
-    true,
+    false,
     false,
     true,
     false,
     false,
     true,
     false,
+    true,
     false,
+    true,
+    false,
+    false,
+    false,
+    false,
+    true,
+    true,
     true
   ],
   "regime_wr": {
@@ -35,12 +35,12 @@
       "total": 16
     },
     "consolidation": {
-      "wins": 41,
-      "total": 88
+      "wins": 67,
+      "total": 153
     },
     "trend": {
-      "wins": 2,
-      "total": 9
+      "wins": 3,
+      "total": 10
     },
     "range": {
       "wins": 7,
@@ -48,7 +48,7 @@
     },
     "trending_bull": {
       "wins": 1,
-      "total": 5
+      "total": 6
     },
     "trending_bear": {
       "wins": 0,

@@ -180,6 +180,74 @@
       "test_results": {},
       "created_at": 1780888263.6237566,
       "updated_at": 1780888263.6237566
+    },
+    {
+      "id": "idea_fcf06435",
+      "name": "Time-weighted confidence: boost afternoon",
+      "description": "Apply a confidence multiplier of 1.08 for trades during afternoon (12:00-18:00 UTC) based on observed time-of-day edge.",
+      "trigger_condition": "When current UTC hour is between 12 and 18",
+      "parameters": {
+        "confidence_multiplier": 1.08,
+        "time_bucket": "afternoon",
+        "utc_hours": [
+          12,
+          18
+        ]
+      },
+      "expected_edge": "~5-10% WR improvement during afternoon hours",
+      "source_pattern": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 88% vs 'afternoon' at 45% (spread: 43%)",
+      "status": "proposed",
+      "test_results": {},
+      "created_at": 1784617230.145695,
+      "updated_at": 1784617230.145695
+    },
+    {
+      "id": "idea_eede2141",
+      "name": "Confidence-proportional sizing cap",
+      "description": "Cap leverage based on confidence: max 3x below 75% confidence, max 5x at 75-85%, full leverage only above 85%.",
+      "trigger_condition": "Always active",
+      "parameters": {
+        "tiers": [
+          {
+            "confidence_below": 75,
+            "max_leverage": 3
+          },
+          {
+            "confidence_below": 85,
+            "max_leverage": 5
+          },
+          {
+            "confidence_above": 85,
+            "max_leverage": 10
+          }
+        ]
+      },
+      "expected_edge": "Reduce outsized losses from high-leverage, low-edge trades",
+      "source_pattern": "Size bias detected: larger positions (>2.0x) have 62% WR vs 79% for smaller positions. Avg PnL: $-0.89 vs $+0.08",
+      "status": "proposed",
+      "test_results": {},
+      "created_at": 1784617230.145695,
+      "updated_at": 1784617230.145695
+    },
+    {
+      "id": "idea_304ceb57",
+      "name": "Time-weighted confidence: boost evening",
+      "description": "Apply a confidence multiplier of 1.08 for trades during evening (18:00-24:00 UTC) based on observed time-of-day edge.",
+      "trigger_condition": "When current UTC hour is between 18 and 24",
+      "parameters": {
+        "confidence_multiplier": 1.08,
+        "time_bucket": "evening",
+        "utc_hours": [
+          18,
+          24
+        ]
+      },
+      "expected_edge": "~5-10% WR improvement during evening hours",
+      "source_pattern": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 15% WR over 13 trades",
+      "status": "proposed",
+      "test_results": {},
+      "created_at": 1785792280.0177722,
+      "updated_at": 1785792280.0177722
     }
   ]
 }
