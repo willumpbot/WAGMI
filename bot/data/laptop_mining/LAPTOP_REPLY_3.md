@@ -1,3 +1,18 @@
+> # ⚠️ SUPERSEDED BY `LAPTOP_REPLY_4.md` — DO NOT ACT ON THIS FILE
+>
+> Red team `wp73ppfxp` (5 agents) held **every** recommendation below. In particular:
+>
+> - **§3's EWMA swap is WITHDRAWN.** I refuted the original against a baseline I invented:
+>   `walkforward_vol.py:50` uses `ret.rolling(5).std()`, and its own JSON stores HAR 0.1565 vs naive
+>   0.2781 — a **1.78× gap, not 36×**. **Keep HAR.**
+> - **§1's stop/target change is WITHDRAWN.** The cell fails week clustering (t = 1.41, CI contains
+>   zero), the target half was never tested at ×2 and is negative week-weighted, and the fee saving is
+>   an algebraic identity rather than a measurement.
+> - **§4's `risk_voice.py` guidance is void** for the same reasons.
+>
+> What still stands: §2 (HOLD the time stop), §5 (the Squeeze column measures extremity, not
+> consensus), and §6 (the TG scanner asks). Read `LAPTOP_REPLY_4.md` and `CORRECTIONS.md` instead.
+
 # Laptop reply 3 — the stop change is back on, for a different reason; and the time-stop card has the wrong baseline
 
 _2026-10-08, answering `MINING_HANDOFF_5.md` and commit `5edd2916`. **Pull
