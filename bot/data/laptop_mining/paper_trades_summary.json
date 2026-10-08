@@ -1,0 +1,43 @@
+{
+ "source": "C:/Users/vince/WAGMI PROJECT/WAGMI/bot/paper_trades/",
+ "session_files": 1418,
+ "valid_rows": 592,
+ "rejected": {
+  "pnl_exceeds_notional": 13
+ },
+ "span": [
+  "2026-02-11T03:27:41.957644+00:00",
+  "2026-06-05T23:53:22.576769+00:00"
+ ],
+ "gross_pnl": 39551.18,
+ "fees": 959.25,
+ "net_pnl": 38591.93,
+ "mean_net_ret_pct": 9.6649,
+ "by_action": {
+  "TP1": 166,
+  "TP2": 68,
+  "SL": 238,
+  "TRAILING_STOP": 63,
+  "EARLY_EXIT": 3,
+  "TIME_STOP": 53,
+  "FUNDING_AVOIDANCE": 1
+ },
+ "by_symbol": {
+  "BTC": 105,
+  "SOL": 116,
+  "HYPE": 89,
+  "FARTCOIN": 88,
+  "PEPE": 32,
+  "INJ": 2,
+  "DOGE": 6,
+  "ETH": 101,
+  "JUP": 2,
+  "ONDO": 3,
+  "XRP": 18,
+  "AVAX": 10,
+  "ARB": 17,
+  "SUI": 1,
+  "WIF": 1,
+  "LINK": 1
+ }
+}

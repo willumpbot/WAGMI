@@ -1,0 +1,381 @@
+{
+ "files_parsed": 396,
+ "rows": 266504,
+ "degenerate_bars": 11308,
+ "bad_rows": 0,
+ "tolerances": {
+  "median_pct": 0.25,
+  "bar_pct": 1.0,
+  "min_within_pct": 95.0
+ },
+ "coverage": {
+  "AAVE_1h": {
+   "bars": 720,
+   "from": "2026-05-08",
+   "to": "2026-06-07",
+   "degenerate_pct": 99.9
+  },
+  "AAVE_6h": {
+   "bars": 361,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "AAVE_daily": {
+   "bars": 91,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "ARB_1h": {
+   "bars": 2376,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "ARB_6h": {
+   "bars": 397,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "ARB_daily": {
+   "bars": 100,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "AVAX_1h": {
+   "bars": 2376,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "AVAX_6h": {
+   "bars": 397,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "AVAX_daily": {
+   "bars": 100,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "BTC_1d": {
+   "bars": 721,
+   "from": "2024-06-17",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "BTC_1h": {
+   "bars": 5004,
+   "from": "2025-11-11",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "BTC_5m": {
+   "bars": 5007,
+   "from": "2026-05-21",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.1
+  },
+  "BTC_6h": {
+   "bars": 835,
+   "from": "2025-11-11",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "BTC_daily": {
+   "bars": 209,
+   "from": "2025-11-11",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "DOGE_1h": {
+   "bars": 720,
+   "from": "2026-05-08",
+   "to": "2026-06-07",
+   "degenerate_pct": 99.9
+  },
+  "DOGE_6h": {
+   "bars": 361,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "DOGE_daily": {
+   "bars": 100,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "ETH_1d": {
+   "bars": 730,
+   "from": "2024-06-08",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "ETH_1h": {
+   "bars": 5012,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "ETH_5m": {
+   "bars": 5007,
+   "from": "2026-05-21",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.9
+  },
+  "ETH_6h": {
+   "bars": 836,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "ETH_daily": {
+   "bars": 210,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "HYPE_1d": {
+   "bars": 550,
+   "from": "2024-12-05",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "HYPE_1h": {
+   "bars": 5013,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 14.6
+  },
+  "HYPE_5m": {
+   "bars": 5026,
+   "from": "2026-05-21",
+   "to": "2026-06-07",
+   "degenerate_pct": 5.8
+  },
+  "HYPE_6h": {
+   "bars": 836,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "HYPE_daily": {
+   "bars": 210,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "OP_1h": {
+   "bars": 720,
+   "from": "2026-05-08",
+   "to": "2026-06-07",
+   "degenerate_pct": 99.9
+  },
+  "OP_6h": {
+   "bars": 361,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "OP_daily": {
+   "bars": 91,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "PEPE_1h": {
+   "bars": 2376,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "PEPE_6h": {
+   "bars": 397,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "PEPE_daily": {
+   "bars": 100,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "SHIB_1h": {
+   "bars": 720,
+   "from": "2026-05-08",
+   "to": "2026-06-07",
+   "degenerate_pct": 99.9
+  },
+  "SHIB_6h": {
+   "bars": 361,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "SHIB_daily": {
+   "bars": 91,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "SOL_1d": {
+   "bars": 730,
+   "from": "2024-06-08",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "SOL_1h": {
+   "bars": 5012,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "SOL_5m": {
+   "bars": 5005,
+   "from": "2026-05-21",
+   "to": "2026-06-07",
+   "degenerate_pct": 1.0
+  },
+  "SOL_6h": {
+   "bars": 836,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "SOL_daily": {
+   "bars": 210,
+   "from": "2025-11-10",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "UNI_1h": {
+   "bars": 720,
+   "from": "2026-05-08",
+   "to": "2026-06-07",
+   "degenerate_pct": 99.9
+  },
+  "UNI_6h": {
+   "bars": 361,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "UNI_daily": {
+   "bars": 91,
+   "from": "2026-03-09",
+   "to": "2026-06-07",
+   "degenerate_pct": 0.0
+  },
+  "WIF_1h": {
+   "bars": 2376,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "WIF_6h": {
+   "bars": 397,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  },
+  "WIF_daily": {
+   "bars": 100,
+   "from": "2025-11-11",
+   "to": "2026-02-18",
+   "degenerate_pct": 0.0
+  }
+ },
+ "verdicts": {
+  "AAVE": {
+   "verdict": "NO_HL_REFERENCE",
+   "overlap": 0
+  },
+  "ARB": {
+   "verdict": "INSUFFICIENT_OVERLAP",
+   "overlap": 0
+  },
+  "AVAX": {
+   "verdict": "INSUFFICIENT_OVERLAP",
+   "overlap": 0
+  },
+  "BTC": {
+   "verdict": "ACCEPT",
+   "overlap": 2047,
+   "median_pct": 0.0,
+   "p90_pct": 0.0607,
+   "within_1pct": 100.0
+  },
+  "DOGE": {
+   "verdict": "REJECT",
+   "overlap": 720,
+   "median_pct": 0.3408,
+   "p90_pct": 1.1005,
+   "within_1pct": 87.9
+  },
+  "ETH": {
+   "verdict": "ACCEPT",
+   "overlap": 2047,
+   "median_pct": 0.0,
+   "p90_pct": 0.0626,
+   "within_1pct": 100.0
+  },
+  "HYPE": {
+   "verdict": "REJECT",
+   "overlap": 2049,
+   "median_pct": 0.0,
+   "p90_pct": 1.1882,
+   "within_1pct": 87.0
+  },
+  "OP": {
+   "verdict": "NO_HL_REFERENCE",
+   "overlap": 0
+  },
+  "PEPE": {
+   "verdict": "NO_HL_REFERENCE",
+   "overlap": 0
+  },
+  "SHIB": {
+   "verdict": "NO_HL_REFERENCE",
+   "overlap": 0
+  },
+  "SOL": {
+   "verdict": "ACCEPT",
+   "overlap": 2047,
+   "median_pct": 0.0,
+   "p90_pct": 0.0849,
+   "within_1pct": 100.0
+  },
+  "UNI": {
+   "verdict": "NO_HL_REFERENCE",
+   "overlap": 0
+  },
+  "WIF": {
+   "verdict": "INSUFFICIENT_OVERLAP",
+   "overlap": 0
+  }
+ },
+ "merged": {
+  "BTC": {
+   "bars": 5036,
+   "from": "2025-11-11",
+   "to": "2026-06-09"
+  },
+  "ETH": {
+   "bars": 5044,
+   "from": "2025-11-10",
+   "to": "2026-06-09"
+  },
+  "SOL": {
+   "bars": 5044,
+   "from": "2025-11-10",
+   "to": "2026-06-09"
+  }
+ }
+}

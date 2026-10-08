@@ -1,0 +1,54 @@
+{
+ "source": "C:/Users/vince/WAGMI PROJECT/WAGMI/bot/data/llm/counterfactual_resolved.jsonl",
+ "span": [
+  "2026-03-23",
+  "2026-05-01"
+ ],
+ "deduped_rows": 460,
+ "families": {
+  "confidence_floor": {
+   "n": 304,
+   "clusters": 65,
+   "mean_pnl_pct": -0.0167,
+   "ci95": [
+    -0.1736,
+    0.1404
+   ],
+   "tp1_rate": 5.3,
+   "sl_rate": 17.4,
+   "verdict": "no signal (CI spans 0)"
+  },
+  "trend_adj_floor": {
+   "n": 145,
+   "clusters": 45,
+   "mean_pnl_pct": -0.0099,
+   "ci95": [
+    -0.3146,
+    0.2996
+   ],
+   "tp1_rate": 0.0,
+   "sl_rate": 17.2,
+   "verdict": "no signal (CI spans 0)"
+  },
+  "manager_advice": {
+   "n": 11,
+   "clusters": 6,
+   "mean_pnl_pct": -0.5012,
+   "ci95": [
+    -0.9311,
+    0.4604
+   ],
+   "tp1_rate": 18.2,
+   "sl_rate": 54.5,
+   "verdict": "INSUFFICIENT (n<13)"
+  },
+  "_null_all_blocked": {
+   "n": 460,
+   "mean_pnl_pct": -0.0262,
+   "ci95": [
+    -0.1737,
+    0.132
+   ]
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "span": [
+  "2025-08-30",
+  "2025-10-11"
+ ],
+ "signal_rows": 3319,
+ "always_long_all_days_bps": -4.69,
+ "always_long_signal_days_bps": 82.17,
+ "stream_signed_mean_bps": 83.9,
+ "long_side_bps": 105.26,
+ "short_side_bps": 67.01,
+ "random_side_mean_bps": -9.3,
+ "random_side_95": [
+  -21.29,
+  3.06
+ ],
+ "selection_vs_market_bps": 1.73,
+ "inside_random_band": false
+}

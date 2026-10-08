@@ -1,0 +1,88 @@
+{
+ "tolerance_pct": 0.25,
+ "min_agree_pct": 95.0,
+ "results": {
+  "ARB": {
+   "verdict": "ACCEPT",
+   "windows": 395,
+   "agree_pct": 100.0,
+   "median_dev_pct": 0.0,
+   "h1_bars": 2376,
+   "h6_bars": 397,
+   "control": false
+  },
+  "AVAX": {
+   "verdict": "ACCEPT",
+   "windows": 395,
+   "agree_pct": 100.0,
+   "median_dev_pct": 0.0,
+   "h1_bars": 2376,
+   "h6_bars": 397,
+   "control": false
+  },
+  "PEPE": {
+   "verdict": "ACCEPT",
+   "windows": 395,
+   "agree_pct": 100.0,
+   "median_dev_pct": 0.0,
+   "h1_bars": 2376,
+   "h6_bars": 397,
+   "control": false
+  },
+  "WIF": {
+   "verdict": "ACCEPT",
+   "windows": 395,
+   "agree_pct": 100.0,
+   "median_dev_pct": 0.0,
+   "h1_bars": 2376,
+   "h6_bars": 397,
+   "control": false
+  },
+  "BTC": {
+   "verdict": "ACCEPT",
+   "windows": 833,
+   "agree_pct": 99.8,
+   "median_dev_pct": 0.0,
+   "h1_bars": 5004,
+   "h6_bars": 835,
+   "control": true
+  },
+  "ETH": {
+   "verdict": "ACCEPT",
+   "windows": 834,
+   "agree_pct": 99.8,
+   "median_dev_pct": 0.0,
+   "h1_bars": 5012,
+   "h6_bars": 836,
+   "control": true
+  },
+  "SOL": {
+   "verdict": "ACCEPT",
+   "windows": 834,
+   "agree_pct": 99.6,
+   "median_dev_pct": 0.0,
+   "h1_bars": 5012,
+   "h6_bars": 836,
+   "control": true
+  },
+  "HYPE": {
+   "verdict": "REJECT",
+   "windows": 834,
+   "agree_pct": 57.7,
+   "median_dev_pct": 0.0,
+   "h1_bars": 5013,
+   "h6_bars": 836,
+   "control": false
+  },
+  "DOGE": {
+   "verdict": "TOO_FEW_WINDOWS",
+   "windows": 0
+  }
+ },
+ "newly_admissible": [
+  "ARB",
+  "AVAX",
+  "PEPE",
+  "WIF"
+ ]
+}
