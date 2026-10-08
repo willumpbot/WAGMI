@@ -1,3 +1,27 @@
+# ⚠️ WITHDRAWN — I refuted the original against a baseline I invented
+
+_Red team `wp73ppfxp`, 2026-10-08. Verified by me before accepting._
+
+**Do NOT swap HAR for EWMA. Keep `volforecast.py` as it is.** The core of this document is a straw
+man I built myself:
+
+| my claim | the truth |
+|---|---|
+| "the original beat a degenerate `naive \|yesterday\|` proxy, QLIKE 4.79" | `walkforward_vol.py:50` defines **`"naive5": ret.rolling(5).std()`** and `:117` scores against it. `walkforward_vol.json` stores **HAR 0.1565 vs naive 0.2781 — a 1.78× gap, not 36×.** |
+| evidence: "`grep -o y1 walkforward_vol.json` returns 0" | true, but **`grep -o y5` also returns 0** — the JSON stores no horizon label at all, so the grep proves nothing either way |
+| "HAR earns nothing over EWMA" | holds **only** under QLIKE-on-level, and I capped HAR at 22 days while `ewma_pred` recursed over 120 returns. Under **MSE-on-variance at y5, HAR beats EWMA 19/22 (p = 0.0008)**; QLIKE-on-variance favours HAR at both horizons |
+| — | **HAR is better on the axis the live code uses:** stop-exceedance at a nominal 5% stop is **6.30% (HAR) vs 7.25% (EWMA)**, and the swap moves over half of all coin-days into a different leverage decile |
+
+My verdict gate also could not fire: `beats = (w == n and tmean < -1.96)` averages 22 per-fold
+t-statistics, which is not a test statistic. A wild cluster bootstrap puts the true 5% critical value
+at −0.34 to −0.73 — my −1.96 was **2.7–5.7× too strict.**
+
+**What survives:** the 1-day horizon genuinely was never walk-forwarded — but the evidence is the
+three `fit(tr,"y5")` call sites at lines 114/159/168, not the void grep. Everything below is kept as
+the working record of a wrong analysis.
+
+---
+
 # Volatility, corrected — forecastable, but HAR earns nothing over an EWMA
 
 _2026-10-08. 20,444 coin-days, 11 coins, 2020-09-19 → 2026-10-01, 22 walk-forward folds.

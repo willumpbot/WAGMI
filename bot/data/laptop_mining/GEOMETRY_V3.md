@@ -1,8 +1,48 @@
-# Geometry v3 — I over-retracted. Half the original finding is real, and it is a fee effect.
+# Geometry v3 — FINAL VERDICT: HOLD. Nothing here is statistically actionable.
+
+> ## 🔴 READ THIS BEFORE ANY OF THE BODY
+>
+> This document went through **two** red teams and was cut down twice. The body below is the working
+> record of an evolving — and partly wrong — analysis. **The conclusion is at the top here.**
+>
+> | claim | status |
+> |---|---|
+> | v2's null was `(geometry) − (direction)` and could not detect geometry | **STANDS** — verified to 5.6e-17; v2's refutation was wrong |
+> | the direction-free decomposition `(real+flip)/2` is the right estimator | **STANDS** |
+> | tightening the stop to ×0.5 is harmful | **STANDS** (−0.13R to −0.20R) |
+> | target-only changes at ×1 are null | **STANDS** |
+> | **+0.1187R for `×2 \| 0.5R`** | **WITHDRAWN** — week-mean t = 1.41, CI [−0.0392, +0.1858] contains zero; pooled figure was 62% inflated by unequal week sizes |
+> | **target `1.5R → 0.5R`** | **WITHDRAWN** — never tested at ×2; week-weighted it is **−0.0312R**, 6/14 weeks positive |
+> | **the fee table (0.1272R at ×1)** | **WRONG BASE** — I used the *median* stop width. The simulation's **mean** `feeR` is **0.1483R at ×1, 0.0741R at ×2** |
+> | **"71% fee / 46% something else"** | **WITHDRAWN** — fee share is 62% at ×2 and 82% at ×32; there is no unexplained 46% |
+> | **"TIE_RULE means the remainder is understated"** | **WRONG THREE WAYS** — see below. It was my only argument for the non-fee half |
+> | **"×4 never binds"** | **FALSE** — it binds on **44.3%** of trades. `BIND_FLOOR = 0.50` chose the answer |
+> | **the synthetic control** | **COULD NOT FAIL** — `h0 = ds - ds.mean()` pins the mean to zero, then the CI is built around that same mean. 0/400 seeds reject |
+> | **the +0.0741R fee saving** | **arithmetic, not evidence.** `feeR(m) = feeR(1)/m` by construction — positive on every trade on any data, including a random walk |
+>
+> **The TIE_RULE citation was wrong three ways, and it was load-bearing:**
+> 1. **Zero exposure.** The sim applies the tie rule only to bars touching *both* levels — that is
+>    **0 of 15,663 trades** at `2.0|0.5` and 2 of 15,663 at the default. It has *no effect* on the
+>    comparison I used it to defend.
+> 2. **Wrong sign.** `TIE_RULE.md` concludes correcting it would *shrink* the advantage. I cited it as
+>    making the advantage *understated*. I wrote both documents.
+> 3. **Wrong sample.** The 75–81% figures are synthetic brackets from 2026-09-21→10-08, a different
+>    period that `TIE_RULE.md` itself flags as untested travel.
+>
+> **A driftless-GBM placebo reproduces ~95% of the whole surface** (+0.1131R at `2.0|0.5` vs +0.1187R
+> measured). The effect is mechanical. There is no edge content in it.
+>
+> **What to do: nothing to the bot.** The one real thing is an *operational* question for the owner —
+> fees per unit of risk halve if the stop doubles **and position size halves** to hold dollar risk
+> constant. Hold notional constant and the dollar fee is unchanged while dollar risk doubles, so the
+> "saving" is only a change of units. That is a sizing preference, not a result.
+
+---
 
 _2026-10-08. Red team `wj68xvlf8`, two independent reviewers + synthesiser, on `geometry_v2.py`.
-Verdict: **NEGATIVE_TOO_STRONG**, high confidence. Every number below re-derived by me from
-`geometry_v2.json` before accepting it. Supersedes `GEOMETRY_V2.md` and §2 of `RETRACTION.md`._
+Verdict: **NEGATIVE_TOO_STRONG**, high confidence. Then red team `wp73ppfxp` (5 agents) cut this
+document down in turn. Body kept as the working record. Supersedes `GEOMETRY_V2.md` and §2 of
+`RETRACTION.md`; superseded in its conclusions by the box above._
 
 ---
 
@@ -175,7 +215,46 @@ is harmful", and "target-only at ×1 is null". All reproduce.
    where it is **negative** week-weighted. And the fee saving is *identical* across tp 0.5/1.0/1.5 at
    a given stop (0.0636R in all three), so the target half **cannot inherit any of the fee argument.**
 
-## The surviving recommendation: widen the stop, nothing else
+## FINAL: HOLD. Nothing here is statistically actionable.
+
+The full 5-agent review went further than the two fatal items above. Three more, all verified:
+
+1. **The fee saving is an algebraic identity, not a measurement.** `feeR = 2×9bps×entry/(m×base)`
+   gives `feeR(m) = feeR(1)/m` exactly, per trade. It is positive on **every** trade on **any** data,
+   including a driftless random walk — so "positive in all 14 weeks, t = +8.84" is a property of
+   arithmetic, not evidence. And my figures were off base: the simulation's **mean** `feeR` is
+   **0.1483R at ×1 and 0.0741R at ×2** (I used the median stop width, 1.4151%, giving 0.1272/0.0636).
+   The saving is therefore **+0.0741R**, mean-exact — and the fee share of the headline is 62%, not
+   54%, which **destroys my "46% comes from somewhere else" argument.**
+2. **The non-fee remainder is not significant anywhere that matters.** At `2.0|0.5` it is +0.0445R,
+   week-block CI **[−0.0308, +0.0935]**. Across all 24 cells it is significantly positive in exactly
+   **one** cell — `8.0|0.5` — which I reject for not binding.
+3. **`BIND_FLOOR = 0.50` chose the answer, and my reason for rejecting ×4 was false.**
+   `sym_adv` is monotone in stop width until saturation, so the floor *is* the recommendation:
+   ≤0.143 → `8.0|0.5`; 0.143–0.443 → `4.0|0.5`; 0.443–0.791 → `2.0|0.5`; >0.791 → **nothing
+   qualifies.** I wrote that ×4 "never binds" — **it binds on 44.3% of trades.** `saturated_cells` is
+   just the floor relabelled. Requiring a bracket to resolve most trades leaves nothing actionable,
+   and that is the finding the floor concealed.
+4. **My synthetic control's zero arm could not fail.** `h0 = ds - ds.mean()` pins the sample mean to
+   exactly zero and `boot_ci` then builds a percentile CI around that same mean; 0 of 400 seeds
+   reject. "No false positive at zero" was guaranteed by construction. The power curve also ran only
+   at `8.0|0.5` — a cell this document says must not be read — and the recommended effect sits
+   **below** the 0.08R detection floor it reported.
+5. **A driftless-GBM placebo reproduces ~95% of the surface** (+0.1131R at `2.0|0.5` vs +0.1187R
+   measured). That confirms the effect is mechanical, and confirms there is no edge content in it.
+
+### So the only thing left is an operational choice, not a finding
+
+Fees per unit of risk halve if the stop doubles **and position size halves** to hold dollar risk
+constant. Hold notional constant instead and the dollar fee is unchanged while dollar risk doubles —
+the "saving" is then just a change of units. That is a question for the owner about how he wants to
+size, not a result this analysis established.
+
+**Withdrawn:** the +0.1187R headline, the `target 1.5R → 0.5R` change, the TIE_RULE support argument
+(see below), and the ×2 recommendation itself.
+
+<details>
+<summary>Superseded intermediate position (kept for the record)</summary>
 
 **Stop ×1 → ×2, worth +0.0636R per trade, on deterministic fee arithmetic.**
 
@@ -188,6 +267,8 @@ fee_R = 2 × 9bps / (m × base)
 
 This is not a statistical claim, so clustering does not bite it. It requires position size to halve
 so dollar risk is unchanged — at a fixed \$100 risk per trade, \$12.72 of fees becomes \$6.36.
+
+</details>
 
 **Withdrawn:** the +0.1187R headline, and the `target 1.5R → 0.5R` change. **Everything below this
 line is the original write-up, kept for the working — read its "Recommendation" section as superseded
