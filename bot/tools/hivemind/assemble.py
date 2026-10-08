@@ -284,6 +284,25 @@ def voice_vol(sym):
     return volforecast.forecast(df["c"].tolist()[-40:])
 
 
+def voice_risk(sym, vol, price):
+    """Laptop missions 8+9: forecast-sized stop and safe leverage for the coin's current vol quintile."""
+    t = (_load(DATA / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table", {}).get(sym)
+    f = (vol or {}).get("next_day_move_pct")
+    out = {}
+    if f and price:
+        d = 2 * f / 100 * price
+        out["stop_long"], out["stop_short"] = round(price - d, 6), round(price + d, 6)
+        out["target_long"], out["target_short"] = round(price + 0.5 * d, 6), round(price - 0.5 * d, 6)
+        out["rule"] = "stop 2x forecast move, target 0.5R, 48h time stop (ADAPTIVE_STOPS.md)"
+    if t and f:
+        q, v = min(t["quintiles"].items(), key=lambda kv: abs(kv[1]["fcast_median"] - f))
+        h1 = v["horizons"]["1d"]
+        out.update({"vol_quintile": q, "safe_lev_long": round(v["max_lev_long_1d_p99"] / 1.5, 1),
+                    "safe_lev_short": round(v["max_lev_short_1d_p99"] / 1.5, 1),
+                    "worst_1d_long_p99": h1["long"]["p99"], "worst_1d_short_p99": h1["short"]["p99"]})
+    return out
+
+
 def voice_history(sym, market):
     import basemap
     return basemap.lookup(sym, market)
@@ -329,6 +348,10 @@ def assemble():
                 st[name] = fn()
             except Exception as e:
                 st[name] = {"error": f"{type(e).__name__}: {e}"[:200]}
+        try:
+            st["risk"] = voice_risk(sym, st.get("vol"), (st.get("market") or {}).get("price"))
+        except Exception as e:
+            st["risk"] = {"error": f"{type(e).__name__}: {e}"[:200]}
         try:
             st["deep"] = voice_deep(sym, (st.get("market") or {}).get("price") or 0)
         except Exception as e:

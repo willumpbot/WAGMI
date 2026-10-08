@@ -419,7 +419,7 @@ function renderDetail(){
   $("dsym").textContent = sel; $("dpx").textContent = fmt(px(sel));
   const c = chief(sel);
   $("dchief").innerHTML = c.lean ? `<span class="pill ${c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt"}">${c.lean} · ${c.conviction}/5</span>` : "";
-  $("dread").innerHTML = c.read ? `${esc(c.read)}<div class="mut" style="margin-top:6px"><b>Levels:</b> ${esc(c.key_levels)}<br><b>View changes if:</b> ${esc(c.invalidation)}${c.expected_move?`<br><b>Expected move:</b> ${esc(c.expected_move)}`:""}</div><div class="dim" style="margin-top:4px;font-size:11px">${esc(DATA.chief.ts||"")} · track record: ${esc(DATA.chiefCard)}</div>` : "<span class='mut'>No read yet.</span>";
+  $("dread").innerHTML = c.read ? `${esc(c.read)}<div class="mut" style="margin-top:6px"><b>Levels:</b> ${esc(c.key_levels)}<br><b>View changes if:</b> ${esc(c.invalidation)}${c.expected_move?`<br><b>Expected move:</b> ${esc(c.expected_move)}`:""}${c.if_you_trade?`<br><b>If you trade it:</b> ${esc(c.if_you_trade)}`:""}</div><div class="dim" style="margin-top:4px;font-size:11px">${esc(DATA.chief.ts||"")} · track record: ${esc(DATA.chiefCard)}</div>` : "<span class='mut'>No read yet.</span>";
   drawChart(); levels(); voices(); hist(); calc(); book(); positioning(); myCalls(); playbook();
 }
 

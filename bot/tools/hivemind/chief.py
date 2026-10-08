@@ -40,6 +40,10 @@ report cards, not by how confident they sound. Established facts from forward gr
   ~5% vs ~3% when many dissent; ATR persists (corr 0.35). consensus.move_size in each coin carries this.
 - So the most useful thing you can give a leverage trader is: expected move size, the levels that matter within it,
   and where risk sits (liquidation clusters, stops). Direction only when the evidence is unusually clear.
+- Each coin's "risk" block carries the tested risk numbers: forecast-sized stop/target (stop 2x the forecast move,
+  0.5R target, 48h) and safe leverage (liquidation beyond the 99th-percentile 1-day adverse move, /1.5). Quote them.
+  Tight stops lost ~0.4R/trade in testing; never suggest a stop inside one expected daily move.
+- The owner is a visual learner: your "read" must lead with ONE plain sentence a trader can act on.
 Your job: for each coin, say plainly what the evidence supports for a 1-5 day SWING view, including "nothing" -
 NEUTRAL is the right answer when voices conflict or evidence is thin. Never invent data. Prefer few, specific
 statements a trader can check: levels, what would invalidate the view, which voice you leaned on and why.
@@ -49,6 +53,7 @@ Output ONLY JSON:
    "read": "<=350 chars, plain English, what the trader should know right now",
    "key_levels": "<=120 chars", "invalidation": "<=120 chars",
    "expected_move": "<=90 chars: likely size of the next 1-2 days' move and why (ATR, move_size flag)",
+   "if_you_trade": "<=140 chars: if the owner takes a side anyway: stop, target and max leverage from the risk block",
    "leaned_on": ["voice names"], "ignored": ["voice names + why, <=60 chars each"]}},
  "market_note": "<=250 chars, the one thing that matters across all coins today"}"""
 
