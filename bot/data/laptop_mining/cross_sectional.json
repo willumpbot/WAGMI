@@ -1,0 +1,320 @@
+{
+ "k": 3,
+ "fee_pct_per_leg_side": 0.09,
+ "cutoff": "2025-06-01",
+ "coins": [
+  "ARB",
+  "AVAX",
+  "BTC",
+  "DOGE",
+  "ETH",
+  "HYPE",
+  "LINK",
+  "NEAR",
+  "SOL",
+  "SUI",
+  "XRP"
+ ],
+ "signals": [
+  "mom7",
+  "mom30",
+  "rev3",
+  "stretch",
+  "trend",
+  "rsi",
+  "bb",
+  "rangepos",
+  "vol22"
+ ],
+ "results": {
+  "mom7|1d": {
+   "train_pct": -0.1762,
+   "train_ci": [
+    -0.4343,
+    0.0471
+   ],
+   "test_pct": -0.2999,
+   "test_ci": [
+    -0.5205,
+    -0.0645
+   ],
+   "shuffled_null_pct": -0.3637,
+   "sign_stable": true,
+   "test_significant": true,
+   "verdict": "significantly NEGATIVE"
+  },
+  "mom30|1d": {
+   "train_pct": -0.0827,
+   "train_ci": [
+    -0.3331,
+    0.1631
+   ],
+   "test_pct": -0.2501,
+   "test_ci": [
+    -0.4856,
+    -0.021
+   ],
+   "shuffled_null_pct": -0.3236,
+   "sign_stable": true,
+   "test_significant": true,
+   "verdict": "significantly NEGATIVE"
+  },
+  "rev3|1d": {
+   "train_pct": -0.5127,
+   "train_ci": [
+    -0.738,
+    -0.2663
+   ],
+   "test_pct": -0.4074,
+   "test_ci": [
+    -0.6605,
+    -0.1466
+   ],
+   "shuffled_null_pct": -0.4251,
+   "sign_stable": true,
+   "test_significant": true,
+   "verdict": "significantly NEGATIVE"
+  },
+  "stretch|1d": {
+   "train_pct": -0.1391,
+   "train_ci": [
+    -0.3948,
+    0.0828
+   ],
+   "test_pct": -0.1499,
+   "test_ci": [
+    -0.3889,
+    0.0764
+   ],
+   "shuffled_null_pct": -0.321,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "trend|1d": {
+   "train_pct": -0.123,
+   "train_ci": [
+    -0.3907,
+    0.1108
+   ],
+   "test_pct": -0.2685,
+   "test_ci": [
+    -0.4904,
+    -0.0414
+   ],
+   "shuffled_null_pct": -0.36,
+   "sign_stable": true,
+   "test_significant": true,
+   "verdict": "significantly NEGATIVE"
+  },
+  "rsi|1d": {
+   "train_pct": -0.09,
+   "train_ci": [
+    -0.3346,
+    0.1261
+   ],
+   "test_pct": -0.1285,
+   "test_ci": [
+    -0.3724,
+    0.1183
+   ],
+   "shuffled_null_pct": -0.3291,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "bb|1d": {
+   "train_pct": -0.0607,
+   "train_ci": [
+    -0.3082,
+    0.1574
+   ],
+   "test_pct": -0.1491,
+   "test_ci": [
+    -0.3665,
+    0.0827
+   ],
+   "shuffled_null_pct": -0.3617,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "rangepos|1d": {
+   "train_pct": -0.1694,
+   "train_ci": [
+    -0.4189,
+    0.0499
+   ],
+   "test_pct": -0.1994,
+   "test_ci": [
+    -0.4214,
+    0.0406
+   ],
+   "shuffled_null_pct": -0.3727,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "vol22|1d": {
+   "train_pct": -0.4538,
+   "train_ci": [
+    -0.6715,
+    -0.1982
+   ],
+   "test_pct": -0.4849,
+   "test_ci": [
+    -0.7416,
+    -0.2511
+   ],
+   "shuffled_null_pct": -0.3722,
+   "sign_stable": true,
+   "test_significant": true,
+   "verdict": "significantly NEGATIVE"
+  },
+  "mom7|5d": {
+   "train_pct": 0.3695,
+   "train_ci": [
+    -0.4686,
+    1.2928
+   ],
+   "test_pct": 0.1471,
+   "test_ci": [
+    -0.6136,
+    1.0232
+   ],
+   "shuffled_null_pct": -0.5371,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "mom30|5d": {
+   "train_pct": 1.1179,
+   "train_ci": [
+    0.1227,
+    2.1402
+   ],
+   "test_pct": -0.0767,
+   "test_ci": [
+    -0.941,
+    0.8699
+   ],
+   "shuffled_null_pct": -0.2369,
+   "sign_stable": false,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "rev3|5d": {
+   "train_pct": -0.7277,
+   "train_ci": [
+    -1.5262,
+    -0.006
+   ],
+   "test_pct": -0.5583,
+   "test_ci": [
+    -1.3894,
+    0.2086
+   ],
+   "shuffled_null_pct": -0.308,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "stretch|5d": {
+   "train_pct": 0.979,
+   "train_ci": [
+    0.02,
+    1.99
+   ],
+   "test_pct": 0.4371,
+   "test_ci": [
+    -0.4077,
+    1.4226
+   ],
+   "shuffled_null_pct": -0.2244,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "trend|5d": {
+   "train_pct": 1.2998,
+   "train_ci": [
+    0.3812,
+    2.3562
+   ],
+   "test_pct": -0.1621,
+   "test_ci": [
+    -1.0337,
+    0.6976
+   ],
+   "shuffled_null_pct": -0.3704,
+   "sign_stable": false,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "rsi|5d": {
+   "train_pct": 1.0897,
+   "train_ci": [
+    0.1693,
+    2.0795
+   ],
+   "test_pct": 0.5948,
+   "test_ci": [
+    -0.2594,
+    1.5307
+   ],
+   "shuffled_null_pct": -0.3309,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "bb|5d": {
+   "train_pct": 0.9643,
+   "train_ci": [
+    -0.0159,
+    1.9113
+   ],
+   "test_pct": 0.4237,
+   "test_ci": [
+    -0.4661,
+    1.3532
+   ],
+   "shuffled_null_pct": -0.3477,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "rangepos|5d": {
+   "train_pct": 0.2296,
+   "train_ci": [
+    -0.6346,
+    1.0186
+   ],
+   "test_pct": 0.3517,
+   "test_ci": [
+    -0.4794,
+    1.3468
+   ],
+   "shuffled_null_pct": -0.432,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  },
+  "vol22|5d": {
+   "train_pct": -0.9814,
+   "train_ci": [
+    -2.0373,
+    -0.0776
+   ],
+   "test_pct": -0.7784,
+   "test_ci": [
+    -1.7892,
+    0.1508
+   ],
+   "shuffled_null_pct": -0.1905,
+   "sign_stable": true,
+   "test_significant": false,
+   "verdict": "no edge"
+  }
+ },
+ "verdict": "no cross-sectional edge"
+}

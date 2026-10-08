@@ -53,3 +53,6 @@ Curated by the overseer (Claude). External evidence, each item with its source a
   - 50d avg from ABOVE holds: breaks 32% vs 36.5% null; from below it is random.
   - 20d high: no information.
   - Break rate is flat across vol quintiles, and about a third of touches stall.
+- 2026-10-08, laptop proposal B: cross-sectional (long top 3 / short bottom 3 of 11 coins, 9 signals) has 0 of 18 cells sig+stable. Five are significantly NEGATIVE at 1d (fees: four legs = 36 bps/day); the 5d train winners vanish on test.
+  DIRECTION IS CLOSED for anything derived from price history (~98 tests, 4 datasets). New data is needed: owner fills, order flow, on-chain.
+  Do not propose price-derived directional rules.
