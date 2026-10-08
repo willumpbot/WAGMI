@@ -76,6 +76,7 @@ Use the grammar in `bot/tools/rules_manager.py`: symbol, side, agree (1 / 2 / 3+
 ## Output and sync
 - Put results only under `bot/data/laptop_mining/`. Keep committed files small (summaries, JSON <5 MB).
   Never commit raw multi-MB dumps, and never commit secrets or `.env`.
+- `bot/data/**` is gitignored: add results with `git add -f bot/data/laptop_mining/` (plain `git add` silently skips them).
 - Work on branch `laptop-mining-2026-10` from the current branch. Commit as you finish each mission, then
   push so the server can pull it.
 - Ask the owner nothing unless you're blocked. Finish with a ≤10-line plain-language summary for the owner:
