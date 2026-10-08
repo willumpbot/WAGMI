@@ -189,7 +189,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     </div>
     <div class="tabp" id="t_plans"><div id="plans"></div></div>
     <div class="tabp" id="t_pos">
-      <div class="box"><h3>Bot's open positions (paper) <span class="sp"></span><span class="mut" id="botnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="botpos"></div></div>
+      <div class="box"><h3>Bot's open positions (paper, the bot manages these itself) <span class="sp"></span><span class="mut" id="botnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="botpos"></div></div>
       <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
       <div class="box"><h3>My Hyperliquid account <span class="sp"></span><span class="mut" id="acctnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="acct"></div></div>
     </div>
@@ -222,7 +222,8 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
   </main>
   <aside class="right">
     <div class="box"><h3>Chief analyst <span class="sp"></span><span id="dchief"></span></h3><div class="read" id="dread"></div></div>
-    <div class="box"><h3>Position calculator</h3>
+    <div class="box" style="border-color:var(--accent)"><h3>My trade planner <span class="sp"></span><span class="pill nt" style="text-transform:none;letter-spacing:0">you, not the bot</span></h3>
+      <div class="mut" style="font-size:11px;margin:-4px 0 6px">For trades YOU would take. The bot runs its own trades and stops separately and never sees this.</div>
       <div class="calc">
         <label>Account $<input id="c_acct" type="number" value="5000"></label>
         <label>Risk %<input id="c_risk" type="number" value="1" step="0.25"></label>
@@ -236,8 +237,8 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         <label style="grid-column:1/-1">Why<input id="c_reason" placeholder="your read, in a few words"></label>
       </div>
       <div class="out num" id="c_out"></div><div class="warn" id="c_warn"></div>
-      <button id="c_plan" style="margin-top:8px;width:100%;background:var(--accent);border:0;border-radius:6px;color:var(--bg);font-weight:700;padding:7px;cursor:pointer">Plan this trade</button>
-      <div id="c_msg" class="mut" style="font-size:11px;margin-top:4px">Logs it, sets alerts at entry / stop / target, and grades it against real prices. No wallet needed.</div>
+      <button id="c_plan" style="margin-top:8px;width:100%;background:var(--accent);border:0;border-radius:6px;color:var(--bg);font-weight:700;padding:7px;cursor:pointer">Save my plan</button>
+      <div id="c_msg" class="mut" style="font-size:11px;margin-top:4px">Saves YOUR plan, sets alerts at your entry / stop / target, and grades it against real prices. Doesn't place an order or affect the bot.</div>
       <div class="mut" style="font-size:10.5px;margin-top:5px">Defaults = the laptop's tested setup: stop 2&times; forecast move, target 0.5R, 48h max hold.</div>
     </div>
     <div class="box"><h3>Order book <span class="sp"></span><span class="mut num" id="obspread" style="text-transform:none;letter-spacing:0"></span></h3><div id="ob" class="num"></div></div>
@@ -872,7 +873,7 @@ function renderPlans(){
   const act = PLANS.filter(isAct).slice().reverse(), done = PLANS.filter(q => !isAct(q)).slice().reverse().slice(0, 40);
   const S = PSTATS || {}, grp = (o) => Object.entries(o||{}).filter(([k,v]) => v.n).map(([k,v]) => `<span class="chip" title="${v.n} plans, ${(v.win_rate*100).toFixed(0)}% won">${esc(k)} <span class="num ${v.avg_r>=0?"up":"dn"}">${v.avg_r>=0?"+":""}${v.avg_r.toFixed(2)}R</span> (${v.n})</span>`).join("");
   const when = t => new Date(t*1000).toLocaleString(undefined, {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
-  $("plans").innerHTML = `<div class="box"><h3>My plan track record <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">graded on real prices: stop or target first (stop if both in one 5-min candle), 48h limit, after fees</span></h3>
+  $("plans").innerHTML = `<div class="box"><h3>My plans (my reads, not the bot's): track record <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">graded on real prices: stop or target first (stop if both in one 5-min candle), 48h limit, after fees</span></h3>
       <div style="font-size:13px">${statBox(S.all)}</div>
       <div class="chips">${grp(S.by_setup)}</div><div class="chips">${grp(S.by_side)}${grp(S.by_chief)}</div>
       ${(S.all||{}).n ? "" : `<div class="mut" style="font-size:11.5px;margin-top:6px">Plan trades with the calculator on the right. After ~20 graded plans this shows which of YOUR setups actually work, which is the one edge source nothing else here can test.</div>`}</div>
@@ -988,7 +989,7 @@ function renderSituation(){
   const it = [`<span class="s-sym">${s}</span><span class="num" style="font-size:15px;font-weight:700" id="sit_px">${fmt(p)}</span><span class="num ${c>=0?"up":"dn"}" id="sit_ch">${pct(c,2)}</span>`,
     I("Trend", `<span class="${t.up?"up":"dn"}">${t.up?"▲":"▼"} 1D</span> <span class="mut">${t.sub}</span>${f4.structure_4h!=null?` · <span class="${f4.structure_4h>0?"up":"dn"}">${f4.structure_4h>0?"▲":"▼"} 4H</span>`:""}`, "Context only: trend direction has no proven edge on its own."),
     I("Exp. move", f!=null?`<b class="num">±${f.toFixed(1)}%</b>`:"–", "Forecast size of tomorrow's move. Size IS predictable (22/22 test periods); direction is not."),
-    I("Stop", stop!=null?`<b class="num">${(+stop).toFixed(1)}%</b> <span class="mut">· tgt 0.5R · 48h</span>`:"–", "The tested setup: stop 2x the expected move, take profit at half the stop distance, close after 48h."),
+    I("If I trade it", stop!=null?`<span class="mut">stop</span> <b class="num">${(+stop).toFixed(1)}%</b> <span class="mut">away · target half that · 48h</span>`:"–", "Suggested for YOUR trade (tested setup): stop 2x the expected move, take profit at half the stop distance, close after 48h. The bot sets its own stops."),
     I("Safe lev", x?`<b class="num">${lvx(x.long)}×</b> <span class="mut">L</span> <b class="num">${lvx(x.short)}×</b> <span class="mut">S</span>`:"–", "Above this, a 1-in-100 bad day liquidates you."),
     L.squeeze_pct!=null ? I("Squeeze", `<span class="num ${L.squeeze_pct>=L.squeeze_base_pct*1.4?"dn":""}">${L.squeeze_pct}%</span><span class="mut"> L </span><span class="num ${S.squeeze_pct>=S.squeeze_base_pct*1.4?"dn":""}">${S.squeeze_pct}%</span><span class="mut"> S</span>`, `Chance of a move more than 2x expected AGAINST you within a day. Normal: long ${L.squeeze_base_pct}% / short ${S.squeeze_base_pct}%.`) : "",
     r.position!=null ? I("20D range", `<span class="rb"><i style="left:${Math.max(0,Math.min(1,r.position))*100}%"></i></span> <span class="num">${(r.position*100).toFixed(0)}%</span>`, `Low ${fmt(r.low)} · high ${fmt(r.high)}. The 20d low breaks MORE than chance; the 50d avg holds from above.`) : "",
