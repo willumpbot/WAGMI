@@ -1,0 +1,341 @@
+{
+ "fixes": [
+  "entry=open of next bar",
+  "stop=bot's own distance",
+  "side-flip null",
+  "all cells printed",
+  "ISO-week blocks",
+  "calendar folds",
+  "grid extended past the plateau"
+ ],
+ "n": 15663,
+ "cells": {
+  "0.5|0.5": {
+   "real_R": -0.4435,
+   "flip_R": -0.3055,
+   "real_minus_flip": -0.138,
+   "vs_default_R": -0.0957,
+   "ci": [
+    -0.3635,
+    0.1066
+   ],
+   "significant": false
+  },
+  "0.5|1.0": {
+   "real_R": -0.4548,
+   "flip_R": -0.1778,
+   "real_minus_flip": -0.277,
+   "vs_default_R": -0.1071,
+   "ci": [
+    -0.355,
+    0.1578
+   ],
+   "significant": false
+  },
+  "0.5|1.5": {
+   "real_R": -0.4585,
+   "flip_R": -0.1628,
+   "real_minus_flip": -0.2957,
+   "vs_default_R": -0.1108,
+   "ci": [
+    -0.2914,
+    0.1297
+   ],
+   "significant": false
+  },
+  "1.0|0.5": {
+   "real_R": -0.2178,
+   "flip_R": -0.0545,
+   "real_minus_flip": -0.1632,
+   "vs_default_R": 0.1299,
+   "ci": [
+    -0.0145,
+    0.2728
+   ],
+   "significant": false
+  },
+  "1.0|1.0": {
+   "real_R": -0.2808,
+   "flip_R": -0.016,
+   "real_minus_flip": -0.2648,
+   "vs_default_R": 0.0669,
+   "ci": [
+    0.0046,
+    0.1275
+   ],
+   "significant": true
+  },
+  "1.0|1.5": {
+   "real_R": -0.3477,
+   "flip_R": -0.0105,
+   "real_minus_flip": -0.3372,
+   "vs_default_R": 0.0,
+   "ci": [
+    0.0,
+    0.0
+   ],
+   "significant": false
+  },
+  "2.0|0.5": {
+   "real_R": -0.1571,
+   "flip_R": 0.0362,
+   "real_minus_flip": -0.1934,
+   "vs_default_R": 0.1906,
+   "ci": [
+    0.0313,
+    0.3175
+   ],
+   "significant": true
+  },
+  "2.0|1.0": {
+   "real_R": -0.199,
+   "flip_R": 0.0508,
+   "real_minus_flip": -0.2498,
+   "vs_default_R": 0.1487,
+   "ci": [
+    0.0037,
+    0.3004
+   ],
+   "significant": true
+  },
+  "2.0|1.5": {
+   "real_R": -0.2,
+   "flip_R": 0.0057,
+   "real_minus_flip": -0.2058,
+   "vs_default_R": 0.1477,
+   "ci": [
+    -0.0096,
+    0.3152
+   ],
+   "significant": false
+  },
+  "4.0|0.5": {
+   "real_R": -0.0463,
+   "flip_R": 0.0344,
+   "real_minus_flip": -0.0807,
+   "vs_default_R": 0.3014,
+   "ci": [
+    0.0151,
+    0.5927
+   ],
+   "significant": true
+  },
+  "4.0|1.0": {
+   "real_R": -0.0396,
+   "flip_R": -0.0346,
+   "real_minus_flip": -0.005,
+   "vs_default_R": 0.3081,
+   "ci": [
+    -0.0087,
+    0.6058
+   ],
+   "significant": false
+  },
+  "4.0|1.5": {
+   "real_R": -0.0432,
+   "flip_R": -0.0874,
+   "real_minus_flip": 0.0443,
+   "vs_default_R": 0.3045,
+   "ci": [
+    0.0144,
+    0.6163
+   ],
+   "significant": true
+  },
+  "8.0|0.5": {
+   "real_R": 0.0146,
+   "flip_R": -0.0063,
+   "real_minus_flip": 0.0209,
+   "vs_default_R": 0.3623,
+   "ci": [
+    0.0333,
+    0.6993
+   ],
+   "significant": true,
+   "null_vs_default_R": 0.0042,
+   "null_ci": [
+    -0.2877,
+    0.3245
+   ],
+   "geometry_survives_null": false
+  },
+  "8.0|1.0": {
+   "real_R": 0.0035,
+   "flip_R": -0.0406,
+   "real_minus_flip": 0.0441,
+   "vs_default_R": 0.3513,
+   "ci": [
+    0.0264,
+    0.6659
+   ],
+   "significant": true
+  },
+  "8.0|1.5": {
+   "real_R": -0.005,
+   "flip_R": -0.0464,
+   "real_minus_flip": 0.0414,
+   "vs_default_R": 0.3427,
+   "ci": [
+    0.0118,
+    0.6415
+   ],
+   "significant": true
+  },
+  "12.0|0.5": {
+   "real_R": 0.0126,
+   "flip_R": -0.0167,
+   "real_minus_flip": 0.0293,
+   "vs_default_R": 0.3603,
+   "ci": [
+    0.0278,
+    0.673
+   ],
+   "significant": true,
+   "null_vs_default_R": -0.0062,
+   "null_ci": [
+    -0.3067,
+    0.3174
+   ],
+   "geometry_survives_null": false
+  },
+  "12.0|1.0": {
+   "real_R": 0.0005,
+   "flip_R": -0.0252,
+   "real_minus_flip": 0.0257,
+   "vs_default_R": 0.3482,
+   "ci": [
+    0.0184,
+    0.6553
+   ],
+   "significant": true,
+   "null_vs_default_R": -0.0147,
+   "null_ci": [
+    -0.3125,
+    0.3349
+   ],
+   "geometry_survives_null": false
+  },
+  "12.0|1.5": {
+   "real_R": 0.0005,
+   "flip_R": -0.0253,
+   "real_minus_flip": 0.0258,
+   "vs_default_R": 0.3482,
+   "ci": [
+    0.0293,
+    0.6528
+   ],
+   "significant": true
+  },
+  "20.0|0.5": {
+   "real_R": 0.0005,
+   "flip_R": -0.0146,
+   "real_minus_flip": 0.0151,
+   "vs_default_R": 0.3482,
+   "ci": [
+    0.0216,
+    0.6594
+   ],
+   "significant": true,
+   "null_vs_default_R": -0.0041,
+   "null_ci": [
+    -0.2983,
+    0.3349
+   ],
+   "geometry_survives_null": false
+  },
+  "20.0|1.0": {
+   "real_R": 0.0003,
+   "flip_R": -0.0152,
+   "real_minus_flip": 0.0155,
+   "vs_default_R": 0.348,
+   "ci": [
+    0.031,
+    0.646
+   ],
+   "significant": true
+  },
+  "20.0|1.5": {
+   "real_R": 0.0003,
+   "flip_R": -0.0152,
+   "real_minus_flip": 0.0155,
+   "vs_default_R": 0.348,
+   "ci": [
+    0.0359,
+    0.6469
+   ],
+   "significant": true
+  },
+  "32.0|0.5": {
+   "real_R": 0.0002,
+   "flip_R": -0.0095,
+   "real_minus_flip": 0.0097,
+   "vs_default_R": 0.3479,
+   "ci": [
+    0.0371,
+    0.6457
+   ],
+   "significant": true,
+   "null_vs_default_R": 0.001,
+   "null_ci": [
+    -0.2897,
+    0.3613
+   ],
+   "geometry_survives_null": false
+  },
+  "32.0|1.0": {
+   "real_R": 0.0002,
+   "flip_R": -0.0095,
+   "real_minus_flip": 0.0097,
+   "vs_default_R": 0.3479,
+   "ci": [
+    0.0266,
+    0.6541
+   ],
+   "significant": true
+  },
+  "32.0|1.5": {
+   "real_R": 0.0002,
+   "flip_R": -0.0095,
+   "real_minus_flip": 0.0097,
+   "vs_default_R": 0.3479,
+   "ci": [
+    0.0239,
+    0.6439
+   ],
+   "significant": true
+  }
+ },
+ "cheap_alternative": {
+  "1.0|0.5": {
+   "R": -0.2178,
+   "vs_default": 0.1299
+  },
+  "1.0|1.0": {
+   "R": -0.2808,
+   "vs_default": 0.0669
+  }
+ },
+ "folds": [
+  {
+   "from": "2026-04-08",
+   "to": "2026-04-29",
+   "n": 5997,
+   "weeks": 4,
+   "picked": "32.0|0.5",
+   "real_adv": 0.4499,
+   "null_adv": -0.1274,
+   "argmax_at_grid_edge": true
+  },
+  {
+   "from": "2026-04-29",
+   "to": "2026-05-20",
+   "n": 4438,
+   "weeks": 3,
+   "picked": "8.0|0.5",
+   "real_adv": 0.1346,
+   "null_adv": 0.4007,
+   "argmax_at_grid_edge": false
+  }
+ ],
+ "verdict": "advantage is directional de-levering, not geometry"
+}
