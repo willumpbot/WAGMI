@@ -39,6 +39,9 @@ def build():
     sc = _load(BOT / "data" / "agent_grades" / "live" / "live_scorecard.json", {}) or {}
     d = sc.get("ic_muted_drops") or {}
     flip = _load(BOT / "data" / "laptop_mining" / "muted_flip.json", None)
+    if flip is not None and not flip.get("verdict"):
+        flip["verdict"] = ("keep the gate: no muted strategy works inverted; bollinger_squeeze's proxy looked positive "
+                           "but the bot's real BB signals flip sign between halves (server check, n=664)")
     out.append({
         "id": "ic-gate",
         "title": "The silent strategy gate",

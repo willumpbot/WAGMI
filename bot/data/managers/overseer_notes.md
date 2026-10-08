@@ -45,3 +45,6 @@ Curated by the overseer (Claude). External evidence, each item with its source a
   - Would change with cross-venue spot for majors or maker-only fills.
 - 2026-10-08, BASIS_TRADE final (with the wrapped majors): the hedge works (basis wipes a cycle only 5% of the time), but it loses on test: +0.07%/cycle at $1k (CI spans 0), -0.17% at $5k (significantly negative).
   Funding decayed 68% between halves. Maker fees lift it to ~4–5%/yr at best. Settled NO.
+- 2026-10-08, laptop mission 13: KEEP the IC gate. Inverted regime_trend and bollinger are significantly negative; mean_reversion is n.s.
+  The laptop's PROXY of bollinger_squeeze run un-inverted was +17 bps on test (sign-stable). The server checked the bot's REAL BB signals (May–Oct, n=664):
+  4h is worse than other signals in both halves; 24h flips sign (H1 +45.6, H2 -13.1 vs others). Not confirmed. Keep it muted and keep watching.
