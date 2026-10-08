@@ -1,0 +1,77 @@
+[
+ {
+  "id": "R001",
+  "action": "favor",
+  "slice": {
+   "side": "SHORT",
+   "agree": "1"
+  },
+  "status": "shadow",
+  "created": 1791477692.1531239,
+  "created_iso": "2026-10-08T16:41+00:00",
+  "thesis": "Single-strategy shorts catch early downside before consensus forms. Multi-agree entries come late into the move and pay for the crowding.",
+  "evidence": "A: n=110, +$6.85/trade, +$753 vs negative rest. C: n=722, -4.4bps vs about -16bps for all other signals. Caveat: trades are concentrated in trending_bear (+$749, n=14).",
+  "expected_n_per_week": 39,
+  "forward": {
+   "signals_bps": {
+    "n_in": 0,
+    "n_out": 0
+   },
+   "trades_usd": {
+    "n_in": 0,
+    "n_out": 0
+   },
+   "scored_at": "2026-10-08T17:46+00:00"
+  }
+ },
+ {
+  "id": "R002",
+  "action": "favor",
+  "slice": {
+   "symbol": "BTC",
+   "side": "SHORT"
+  },
+  "status": "shadow",
+  "created": 1791477692.1531239,
+  "created_iso": "2026-10-08T16:41+00:00",
+  "thesis": "BTC shorts lose the least of any liquid slice. Downside moves follow through more cleanly than other majors, with less squeeze noise.",
+  "evidence": "A: n=37, +$6.65/trade, +$246. C: n=460, -5.0bps vs about -15.6bps for the rest. Trades and signals agree. ETH/SOL shorts are positive in A but not in C, so no rule there.",
+  "expected_n_per_week": 25,
+  "forward": {
+   "signals_bps": {
+    "n_in": 0,
+    "n_out": 0
+   },
+   "trades_usd": {
+    "n_in": 0,
+    "n_out": 0
+   },
+   "scored_at": "2026-10-08T17:46+00:00"
+  }
+ },
+ {
+  "id": "R003",
+  "action": "avoid",
+  "slice": {
+   "side": "LONG",
+   "agree": "1"
+  },
+  "status": "shadow",
+  "created": 1791477692.1531239,
+  "created_iso": "2026-10-08T16:41+00:00",
+  "thesis": "Lone-strategy longs mostly buy into the chop/consolidation regimes where long entries lose. With no confirmation, the 4h drift plus fees overwhelms them.",
+  "evidence": "A: n=57, 23% win, -$11.38/trade, -$649 (worst trade slice). C: n=552, -16.2bps vs about -14.3bps for the rest. Weaker in C but same direction. B: little recent long volume.",
+  "expected_n_per_week": 30,
+  "forward": {
+   "signals_bps": {
+    "n_in": 0,
+    "n_out": 0
+   },
+   "trades_usd": {
+    "n_in": 0,
+    "n_out": 0
+   },
+   "scored_at": "2026-10-08T17:46+00:00"
+  }
+ }
+]
