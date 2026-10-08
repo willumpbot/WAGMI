@@ -124,6 +124,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
   <span class="tk"><span class="k">Data</span><span class="num mut" id="age"></span></span>
 </div>
 <div class="wrap">
+  <div id="decisions" style="margin-bottom:8px;font-size:12px"></div>
   <div class="playbook" id="playbook"></div>
   <div id="movers" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;font-size:12px"></div>
   <div id="near" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-size:12px"></div>
@@ -578,6 +579,12 @@ function barsSvg(items, w, h, opt){
     g += `<text x="${cx}" y="${h - 3}" text-anchor="middle">${x.l}</text>`; });
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}">${g}</svg>`;
 }
+function decisionsStrip(){
+  const D = DATA.decisions || []; if (!D.length) return;
+  const ready = D.filter(d=>d.ready);
+  $("decisions").innerHTML = `<details${ready.length?" open":""}><summary style="cursor:pointer"><b>Decisions for you:</b> <span class="${ready.length?"up":"mut"}">${ready.length} ready</span> · <span class="mut">${D.length-ready.length} still gathering evidence</span></summary>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:8px;margin-top:6px">${D.map(d=>`<div class="pb ${d.ready?"ok":"wait"}"><div class="t">${d.ready?"READY: ":""}${esc(d.title)}</div><div class="w"><b style="color:var(--ink)">Ask:</b> ${esc(d.ask)}</div><div class="w"><b style="color:var(--ink)">Why:</b> ${esc(d.why)}</div><div class="w"><b style="color:var(--ink)">So far:</b> ${esc(d.live)}</div><div class="w">Ready when ${esc(d.ready_when)}. ${esc(d.note||"")}</div></div>`).join("")}</div></details>`;
+}
 function playbook(){
   const x = safeLev(sel), f = (C(sel).vol||{}).next_day_move_pct, c = C(sel).consensus || {};
   const g = ((DATA.lab||{}).geometry_live||{});
@@ -667,7 +674,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   if (ev.key==="d"||ev.key==="D") document.querySelector('.seg button[data-tf="1d"]').click();
   if (ev.key==="4") document.querySelector('.seg button[data-tf="4h"]').click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderBoard(); renderDetail(); lab(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+topbar(); renderBoard(); renderDetail(); lab(); decisionsStrip(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);

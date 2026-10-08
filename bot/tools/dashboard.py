@@ -575,6 +575,10 @@ def build():
         todo.append(("The bot's AI hasn't made a decision in %s." % human_dur(bot["last_ai_decision_age"]),
                      "It normally decides a few times an hour. Its calls may be failing "
                      "quietly. Tell Claude \"the AI is quiet\"."))
+    for d in (read_json(BOT / "data" / "hivemind" / "decisions.json", []) or []):
+        if d.get("ready"):
+            todo.append(("Decision ready: " + d["title"] + ".", d["ask"] + " Evidence: " + d["live"]
+                         + " Open the WAGMI Terminal for details, or tell Claude yes/no."))
     for t in tasks:
         if t["status"] == "attn":
             todo.append((t["name"] + " needs attention.", t["msg"]))

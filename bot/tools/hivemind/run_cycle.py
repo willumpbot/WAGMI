@@ -38,6 +38,11 @@ def main():
             geometry_shadow.main()
         except Exception as e:
             log(f"geometry shadow failed: {e}")
+        try:
+            import decisions
+            decisions.build()
+        except Exception as e:
+            log(f"decisions failed: {e}")
         desk.build()
         desk.build_terminal()
         log("cycle ok" + (" (+chief)" if "--chief" in sys.argv else ""))
