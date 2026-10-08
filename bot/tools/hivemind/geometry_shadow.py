@@ -102,6 +102,27 @@ def play(bars, side, entry, stop, target, d):
     return (last - entry) * side / d - fee_r
 
 
+_DAILY = {}
+
+
+def _forecast_at(sym, ts):
+    """Next-day move forecast (%) from daily closes strictly before the signal's UTC day (no lookahead)."""
+    import basemap
+    import volforecast
+    if sym not in _DAILY:
+        try:
+            _DAILY[sym] = basemap._daily(sym)
+        except Exception:
+            _DAILY[sym] = None
+    df = _DAILY[sym]
+    if df is None:
+        return None
+    day0 = int(ts // 86400) * 86_400_000
+    closes = df[df["t"] < day0]["c"].tolist()[-40:]
+    f = volforecast.forecast(closes)
+    return f and f.get("next_day_move_pct")
+
+
 def resolve(st):
     import hl
     now = time.time()
@@ -124,7 +145,14 @@ def resolve(st):
         stop1 = p["entry"] - p["side"] * d1
         tgt1 = p["entry"] + p["side"] * TP_R * d1
         prop = play(bars, p["side"], p["entry"], stop1, tgt1, d1)
-        done.append({**p, "r_current": round(cur, 3), "r_proposal": round(prop, 3)})
+        row = {**p, "r_current": round(cur, 3), "r_proposal": round(prop, 3)}
+        fc = _forecast_at(p["sym"], p["ts"])
+        if fc:   # ADAPTIVE_STOPS.md: stop = 2x forecast move, target 0.5R, 48h
+            d2 = 2 * fc / 100 * p["entry"]
+            row["r_adaptive"] = round(play(bars, p["side"], p["entry"], p["entry"] - p["side"] * d2,
+                                           p["entry"] + p["side"] * 0.5 * d2, d2), 3)
+            row["fc"] = fc
+        done.append(row)
     if done:
         with open(HM / "geometry_shadow_results.jsonl", "a", encoding="utf-8") as f:
             for r in done:
@@ -153,6 +181,16 @@ def scorecard():
                     "paired_diff_r": round(float(diff.mean()), 3), "ci95": [round(boots[25], 3), round(boots[974], 3)],
                     "n_days": int(len(u)),
                     "laptop_backtest": "+0.542R paired diff, CI [+0.300, +0.799] out of sample (GEOMETRY.md)"})
+        ad = [r for r in rows if "r_adaptive" in r]
+        if len(ad) >= 2:
+            a = np.array([r["r_adaptive"] for r in ad]); c2 = np.array([r["r_current"] for r in ad])
+            dd = np.array([int(r["ts"] // 86400) for r in ad]); u2 = np.unique(dd); df2 = a - c2
+            g2 = {d: df2[dd == d] for d in u2}
+            b2 = sorted(float(np.concatenate([g2[d] for d in rnd.choice(u2, len(u2))]).mean()) for _ in range(1000))
+            out["adaptive"] = {"rule": "stop 2x forecast move, 0.5R target, 48h", "n": len(ad),
+                               "mean_r": round(float(a.mean()), 3), "paired_diff_vs_current": round(float(df2.mean()), 3),
+                               "ci95": [round(b2[25], 3), round(b2[974], 3)],
+                               "laptop_test": "+0.093R vs bot -0.431R (ADAPTIVE_STOPS.md)"}
         lo, hi = out["ci95"]
         out["verdict"] = ("collecting" if len(rows) < 30 else "confirmed live" if lo > 0 else
                           "contradicted live" if hi < 0 else "inconclusive so far")
