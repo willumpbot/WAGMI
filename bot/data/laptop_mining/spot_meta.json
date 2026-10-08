@@ -1,0 +1,2988 @@
+{
+ "fetched": 1791490487.8951344,
+ "n_tokens": 503,
+ "n_pairs": 330,
+ "n_perps": 234,
+ "pairs": [
+  {
+   "pair_name": "PURR/USDC",
+   "index": 0,
+   "base": "PURR",
+   "quote": "USDC",
+   "base_has_perp": true,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@1",
+   "index": 1,
+   "base": "HFUN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@2",
+   "index": 2,
+   "base": "LICK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@3",
+   "index": 3,
+   "base": "MANLET",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@4",
+   "index": 4,
+   "base": "JEFF",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@5",
+   "index": 5,
+   "base": "SIX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@6",
+   "index": 6,
+   "base": "WAGMI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@7",
+   "index": 7,
+   "base": "CAPPY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@8",
+   "index": 8,
+   "base": "POINTS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@9",
+   "index": 9,
+   "base": "TRUMP",
+   "quote": "USDC",
+   "base_has_perp": true,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@10",
+   "index": 10,
+   "base": "GMEOW",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@11",
+   "index": 11,
+   "base": "PEPE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@12",
+   "index": 12,
+   "base": "XULIAN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@13",
+   "index": 13,
+   "base": "RUG",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@14",
+   "index": 14,
+   "base": "ILIENS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@15",
+   "index": 15,
+   "base": "FUCKY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@16",
+   "index": 16,
+   "base": "CZ",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@17",
+   "index": 17,
+   "base": "BAGS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@18",
+   "index": 18,
+   "base": "ANSEM",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@19",
+   "index": 19,
+   "base": "TATE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@20",
+   "index": 20,
+   "base": "PUMP",
+   "quote": "USDC",
+   "base_has_perp": true,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@21",
+   "index": 21,
+   "base": "KOBE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@22",
+   "index": 22,
+   "base": "HAPPY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@23",
+   "index": 23,
+   "base": "SCHIZO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@24",
+   "index": 24,
+   "base": "SELL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@25",
+   "index": 25,
+   "base": "BIGBEN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@26",
+   "index": 26,
+   "base": "CATNIP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@27",
+   "index": 27,
+   "base": "HBOOST",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@28",
+   "index": 28,
+   "base": "SUCKY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@29",
+   "index": 29,
+   "base": "GUP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@30",
+   "index": 30,
+   "base": "FARMED",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@31",
+   "index": 31,
+   "base": "GPT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@32",
+   "index": 32,
+   "base": "PURRPS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@33",
+   "index": 33,
+   "base": "BID",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@34",
+   "index": 34,
+   "base": "HODL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@35",
+   "index": 35,
+   "base": "VEGAS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@36",
+   "index": 36,
+   "base": "ASI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@37",
+   "index": 37,
+   "base": "VAPOR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@38",
+   "index": 38,
+   "base": "PANDA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@39",
+   "index": 39,
+   "base": "PILL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@40",
+   "index": 40,
+   "base": "ADHD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@41",
+   "index": 41,
+   "base": "FUN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@42",
+   "index": 42,
+   "base": "LADY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@43",
+   "index": 43,
+   "base": "MOG",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@44",
+   "index": 44,
+   "base": "HPEPE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@45",
+   "index": 45,
+   "base": "JEET",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@46",
+   "index": 46,
+   "base": "DROP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@47",
+   "index": 47,
+   "base": "MBAPPE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@48",
+   "index": 48,
+   "base": "TEST",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@49",
+   "index": 49,
+   "base": "RAGE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@50",
+   "index": 50,
+   "base": "FRAC",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@51",
+   "index": 51,
+   "base": "ATEHUN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@52",
+   "index": 52,
+   "base": "COZY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@53",
+   "index": 53,
+   "base": "ARI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@54",
+   "index": 54,
+   "base": "WASH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@55",
+   "index": 55,
+   "base": "ANT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@56",
+   "index": 56,
+   "base": "NFT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@57",
+   "index": 57,
+   "base": "RICH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@58",
+   "index": 58,
+   "base": "LORA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@59",
+   "index": 59,
+   "base": "CATBAL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@60",
+   "index": 60,
+   "base": "TJIF",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@61",
+   "index": 61,
+   "base": "GUESS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@62",
+   "index": 62,
+   "base": "MAXI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@63",
+   "index": 63,
+   "base": "NMTD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@64",
+   "index": 64,
+   "base": "HPUMP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@65",
+   "index": 65,
+   "base": "PIGEON",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@66",
+   "index": 66,
+   "base": "RISE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@67",
+   "index": 67,
+   "base": "CINDY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@68",
+   "index": 68,
+   "base": "CHINA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@69",
+   "index": 69,
+   "base": "STACK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@70",
+   "index": 70,
+   "base": "FRIED",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@72",
+   "index": 72,
+   "base": "NOCEX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@73",
+   "index": 73,
+   "base": "RANK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@74",
+   "index": 74,
+   "base": "OMNIX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@75",
+   "index": 75,
+   "base": "RIP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@76",
+   "index": 76,
+   "base": "G",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@77",
+   "index": 77,
+   "base": "BOZO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@78",
+   "index": 78,
+   "base": "SPH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@79",
+   "index": 79,
+   "base": "SHOE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@80",
+   "index": 80,
+   "base": "MONAD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@81",
+   "index": 81,
+   "base": "HOPE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@82",
+   "index": 82,
+   "base": "BUSSY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@83",
+   "index": 83,
+   "base": "FATCAT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@84",
+   "index": 84,
+   "base": "SHREK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@85",
+   "index": 85,
+   "base": "PIP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@86",
+   "index": 86,
+   "base": "LQNA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@87",
+   "index": 87,
+   "base": "NASDAQ",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@88",
+   "index": 88,
+   "base": "YEETI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@89",
+   "index": 89,
+   "base": "SYLVI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@90",
+   "index": 90,
+   "base": "FEIT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@91",
+   "index": 91,
+   "base": "FRUDO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@92",
+   "index": 92,
+   "base": "VIZN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@93",
+   "index": 93,
+   "base": "STRICT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@94",
+   "index": 94,
+   "base": "AUTIST",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@95",
+   "index": 95,
+   "base": "MAGA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@96",
+   "index": 96,
+   "base": "HGOD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@97",
+   "index": 97,
+   "base": "LIQUID",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@99",
+   "index": 99,
+   "base": "EARTH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@100",
+   "index": 100,
+   "base": "UP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@101",
+   "index": 101,
+   "base": "NIGGO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@102",
+   "index": 102,
+   "base": "HOP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@103",
+   "index": 103,
+   "base": "LUCKY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@104",
+   "index": 104,
+   "base": "COPE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@105",
+   "index": 105,
+   "base": "HPYH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@106",
+   "index": 106,
+   "base": "YAP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@107",
+   "index": 107,
+   "base": "HYPE",
+   "quote": "USDC",
+   "base_has_perp": true,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@108",
+   "index": 108,
+   "base": "CHEF",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@109",
+   "index": 109,
+   "base": "WOW",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@110",
+   "index": 110,
+   "base": "STEEL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@111",
+   "index": 111,
+   "base": "RETARD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@112",
+   "index": 112,
+   "base": "MEOW",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@113",
+   "index": 113,
+   "base": "NEIRO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@114",
+   "index": 114,
+   "base": "PEAR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@115",
+   "index": 115,
+   "base": "HOLD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@116",
+   "index": 116,
+   "base": "MUNCH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@117",
+   "index": 117,
+   "base": "BERA",
+   "quote": "USDC",
+   "base_has_perp": true,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@118",
+   "index": 118,
+   "base": "GENESY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@119",
+   "index": 119,
+   "base": "BUBZ",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@120",
+   "index": 120,
+   "base": "PICKL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@121",
+   "index": 121,
+   "base": "SHEEP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@122",
+   "index": 122,
+   "base": "LAUNCH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@123",
+   "index": 123,
+   "base": "FARM",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@124",
+   "index": 124,
+   "base": "FLASK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@125",
+   "index": 125,
+   "base": "VAULT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@126",
+   "index": 126,
+   "base": "CAT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@127",
+   "index": 127,
+   "base": "HYENA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@128",
+   "index": 128,
+   "base": "DEPIN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@129",
+   "index": 129,
+   "base": "MON",
+   "quote": "USDC",
+   "base_has_perp": true,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@130",
+   "index": 130,
+   "base": "BEATS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@131",
+   "index": 131,
+   "base": "ORA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@132",
+   "index": 132,
+   "base": "LIQD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@133",
+   "index": 133,
+   "base": "H",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@134",
+   "index": 134,
+   "base": "STAR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@135",
+   "index": 135,
+   "base": "SENT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@136",
+   "index": 136,
+   "base": "SOLV",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@137",
+   "index": 137,
+   "base": "FLY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@138",
+   "index": 138,
+   "base": "TIME",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@139",
+   "index": 139,
+   "base": "SOVRN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@140",
+   "index": 140,
+   "base": "HWTR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@141",
+   "index": 141,
+   "base": "GOD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@142",
+   "index": 142,
+   "base": "UBTC",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 5,
+   "weiDecimals": 10
+  },
+  {
+   "pair_name": "@143",
+   "index": 143,
+   "base": "HEAD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@144",
+   "index": 144,
+   "base": "NEKO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@145",
+   "index": 145,
+   "base": "VORTX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@146",
+   "index": 146,
+   "base": "DEFIN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@147",
+   "index": 147,
+   "base": "JPEG",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@148",
+   "index": 148,
+   "base": "WHYPI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@150",
+   "index": 150,
+   "base": "USDE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@151",
+   "index": 151,
+   "base": "UETH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@152",
+   "index": 152,
+   "base": "USDXL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@153",
+   "index": 153,
+   "base": "FEUSD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@155",
+   "index": 155,
+   "base": "QUANT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@156",
+   "index": 156,
+   "base": "USOL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 3,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@157",
+   "index": 157,
+   "base": "RAT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@158",
+   "index": 158,
+   "base": "TILT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@159",
+   "index": 159,
+   "base": "TREND",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@160",
+   "index": 160,
+   "base": "BUDDY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@161",
+   "index": 161,
+   "base": "PRFI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@162",
+   "index": 162,
+   "base": "UFART",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@163",
+   "index": 163,
+   "base": "FUND",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@164",
+   "index": 164,
+   "base": "DIABLO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@165",
+   "index": 165,
+   "base": "PENIS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@166",
+   "index": 166,
+   "base": "USDT0",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@170",
+   "index": 170,
+   "base": "PEG",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@171",
+   "index": 171,
+   "base": "USH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@172",
+   "index": 172,
+   "base": "COOK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@173",
+   "index": 173,
+   "base": "RUB",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 5,
+   "weiDecimals": 10
+  },
+  {
+   "pair_name": "@174",
+   "index": 174,
+   "base": "ANON",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@175",
+   "index": 175,
+   "base": "FRCT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@176",
+   "index": 176,
+   "base": "PERP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@177",
+   "index": 177,
+   "base": "PURRO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@178",
+   "index": 178,
+   "base": "USR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@179",
+   "index": 179,
+   "base": "OTTI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@180",
+   "index": 180,
+   "base": "USDHL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@182",
+   "index": 182,
+   "base": "XAUT0",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@183",
+   "index": 183,
+   "base": "HORSY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@184",
+   "index": 184,
+   "base": "HPENGU",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@185",
+   "index": 185,
+   "base": "ISLAND",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@187",
+   "index": 187,
+   "base": "LICKO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@188",
+   "index": 188,
+   "base": "UPUMP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@189",
+   "index": 189,
+   "base": "USPYX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@190",
+   "index": 190,
+   "base": "STLOOP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@191",
+   "index": 191,
+   "base": "TRADE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@192",
+   "index": 192,
+   "base": "ANZ",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@193",
+   "index": 193,
+   "base": "UUUSPX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@194",
+   "index": 194,
+   "base": "UBONK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@195",
+   "index": 195,
+   "base": "LATINA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@196",
+   "index": 196,
+   "base": "APU",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@198",
+   "index": 198,
+   "base": "WOULD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@199",
+   "index": 199,
+   "base": "EX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@200",
+   "index": 200,
+   "base": "UMOG",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@201",
+   "index": 201,
+   "base": "HREKT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@202",
+   "index": 202,
+   "base": "KITTY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@203",
+   "index": 203,
+   "base": "DBLN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@204",
+   "index": 204,
+   "base": "VSN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@205",
+   "index": 205,
+   "base": "THBILL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@206",
+   "index": 206,
+   "base": "UENA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@207",
+   "index": 207,
+   "base": "HYPE",
+   "quote": "USDT0",
+   "base_has_perp": true,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@208",
+   "index": 208,
+   "base": "LTHREE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@209",
+   "index": 209,
+   "base": "XAUT0",
+   "quote": "USDT0",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@210",
+   "index": 210,
+   "base": "UXPL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@211",
+   "index": 211,
+   "base": "BAYC",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@212",
+   "index": 212,
+   "base": "LINK0",
+   "quote": "USDT0",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@213",
+   "index": 213,
+   "base": "LINK0",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@214",
+   "index": 214,
+   "base": "WMNT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@215",
+   "index": 215,
+   "base": "SLAY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@216",
+   "index": 216,
+   "base": "REI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@217",
+   "index": 217,
+   "base": "RZR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@218",
+   "index": 218,
+   "base": "REX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@219",
+   "index": 219,
+   "base": "BRIDGE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@223",
+   "index": 223,
+   "base": "PUP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@224",
+   "index": 224,
+   "base": "UWLD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@225",
+   "index": 225,
+   "base": "FLR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@226",
+   "index": 226,
+   "base": "AVAX0",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@227",
+   "index": 227,
+   "base": "AAVE0",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@228",
+   "index": 228,
+   "base": "UDZ",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@230",
+   "index": 230,
+   "base": "USDH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@231",
+   "index": 231,
+   "base": "UPHL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@232",
+   "index": 232,
+   "base": "HYPE",
+   "quote": "USDH",
+   "base_has_perp": true,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@233",
+   "index": 233,
+   "base": "UXPL",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@234",
+   "index": 234,
+   "base": "UBTC",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 5,
+   "weiDecimals": 10
+  },
+  {
+   "pair_name": "@235",
+   "index": 235,
+   "base": "UETH",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@236",
+   "index": 236,
+   "base": "KEI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@237",
+   "index": 237,
+   "base": "WAR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@238",
+   "index": 238,
+   "base": "XION",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@240",
+   "index": 240,
+   "base": "KITTEN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@241",
+   "index": 241,
+   "base": "HWAVE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@242",
+   "index": 242,
+   "base": "SWAP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@243",
+   "index": 243,
+   "base": "UMON",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@244",
+   "index": 244,
+   "base": "USDXL",
+   "quote": "USDT0",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@245",
+   "index": 245,
+   "base": "NBT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@246",
+   "index": 246,
+   "base": "IZEC",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@247",
+   "index": 247,
+   "base": "FI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@248",
+   "index": 248,
+   "base": "BZEC",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@249",
+   "index": 249,
+   "base": "RISK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@250",
+   "index": 250,
+   "base": "KHYPE",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@251",
+   "index": 251,
+   "base": "MMOVE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@252",
+   "index": 252,
+   "base": "AXL",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@253",
+   "index": 253,
+   "base": "CREAM",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@254",
+   "index": 254,
+   "base": "KNTQ",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@255",
+   "index": 255,
+   "base": "HYPE",
+   "quote": "USDE",
+   "base_has_perp": true,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@256",
+   "index": 256,
+   "base": "SEDA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@257",
+   "index": 257,
+   "base": "UMEGA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@258",
+   "index": 258,
+   "base": "STABLE",
+   "quote": "USDC",
+   "base_has_perp": true,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@259",
+   "index": 259,
+   "base": "CASH",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@260",
+   "index": 260,
+   "base": "XMR1",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@261",
+   "index": 261,
+   "base": "HAR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@263",
+   "index": 263,
+   "base": "CRCL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@264",
+   "index": 264,
+   "base": "TSLA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@265",
+   "index": 265,
+   "base": "SLV",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@266",
+   "index": 266,
+   "base": "GOOGL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@267",
+   "index": 267,
+   "base": "FXRP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@268",
+   "index": 268,
+   "base": "AAPL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@269",
+   "index": 269,
+   "base": "BNB1",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@270",
+   "index": 270,
+   "base": "SOON",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@271",
+   "index": 271,
+   "base": "HOOD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@272",
+   "index": 272,
+   "base": "UZEC",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@273",
+   "index": 273,
+   "base": "RUBT",
+   "quote": "USDT0",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@274",
+   "index": 274,
+   "base": "NYAN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@275",
+   "index": 275,
+   "base": "FXRP",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@276",
+   "index": 276,
+   "base": "GLD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@277",
+   "index": 277,
+   "base": "BNB0",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@278",
+   "index": 278,
+   "base": "HMT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@279",
+   "index": 279,
+   "base": "SPY",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@280",
+   "index": 280,
+   "base": "AMZN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@281",
+   "index": 281,
+   "base": "WWB",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@282",
+   "index": 282,
+   "base": "WOWBIT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@283",
+   "index": 283,
+   "base": "CFX0",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@284",
+   "index": 284,
+   "base": "QONE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@285",
+   "index": 285,
+   "base": "AZTEC",
+   "quote": "USDC",
+   "base_has_perp": true,
+   "szDecimals": 0,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@286",
+   "index": 286,
+   "base": "HSEI",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@287",
+   "index": 287,
+   "base": "META",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@288",
+   "index": 288,
+   "base": "QQQ",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@289",
+   "index": 289,
+   "base": "MSFT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@290",
+   "index": 290,
+   "base": "UVIRT",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@292",
+   "index": 292,
+   "base": "ZAMA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@293",
+   "index": 293,
+   "base": "HIP",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@294",
+   "index": 294,
+   "base": "HPL",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@295",
+   "index": 295,
+   "base": "SIGN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@296",
+   "index": 296,
+   "base": "LMTS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@297",
+   "index": 297,
+   "base": "STHYPE",
+   "quote": "USDH",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@298",
+   "index": 298,
+   "base": "BRLA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@299",
+   "index": 299,
+   "base": "RAM",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@300",
+   "index": 300,
+   "base": "DIME",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 5
+  },
+  {
+   "pair_name": "@301",
+   "index": 301,
+   "base": "RIVER",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@302",
+   "index": 302,
+   "base": "USDUC",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@303",
+   "index": 303,
+   "base": "TAO1",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 3,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@304",
+   "index": 304,
+   "base": "LAMA",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@305",
+   "index": 305,
+   "base": "BASED",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@306",
+   "index": 306,
+   "base": "UAVAX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 3,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@307",
+   "index": 307,
+   "base": "HTAO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@308",
+   "index": 308,
+   "base": "QQQM",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@309",
+   "index": 309,
+   "base": "TRX1",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@310",
+   "index": 310,
+   "base": "KITE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@331",
+   "index": 331,
+   "base": "ORCL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@332",
+   "index": 332,
+   "base": "AVGO",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@333",
+   "index": 333,
+   "base": "MU",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@334",
+   "index": 334,
+   "base": "KNTQ",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@335",
+   "index": 335,
+   "base": "HPL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@336",
+   "index": 336,
+   "base": "KHYPE",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@367",
+   "index": 367,
+   "base": "WARS",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@370",
+   "index": 370,
+   "base": "CFX0",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@465",
+   "index": 465,
+   "base": "SPCXD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@496",
+   "index": 496,
+   "base": "ONEAR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@497",
+   "index": 497,
+   "base": "MGW",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@590",
+   "index": 590,
+   "base": "SPCX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@591",
+   "index": 591,
+   "base": "MAX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@698",
+   "index": 698,
+   "base": "HNIL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@699",
+   "index": 699,
+   "base": "UANSEM",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 6
+  },
+  {
+   "pair_name": "@700",
+   "index": 700,
+   "base": "DRV",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@701",
+   "index": 701,
+   "base": "WBRL",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@702",
+   "index": 702,
+   "base": "NVDAX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@703",
+   "index": 703,
+   "base": "SPYX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@704",
+   "index": 704,
+   "base": "QQQX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@705",
+   "index": 705,
+   "base": "SKHYX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@706",
+   "index": 706,
+   "base": "MUX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@707",
+   "index": 707,
+   "base": "FLOCK",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@708",
+   "index": 708,
+   "base": "FXMR",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@709",
+   "index": 709,
+   "base": "SNDKX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@710",
+   "index": 710,
+   "base": "SPCXX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@711",
+   "index": 711,
+   "base": "AIW3",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@712",
+   "index": 712,
+   "base": "TSLAX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@713",
+   "index": 713,
+   "base": "AAPLX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@714",
+   "index": 714,
+   "base": "CRCLX",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@715",
+   "index": 715,
+   "base": "XAUM",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 3,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@716",
+   "index": 716,
+   "base": "RAIN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 0,
+   "weiDecimals": 7
+  },
+  {
+   "pair_name": "@719",
+   "index": 719,
+   "base": "TREAD",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@720",
+   "index": 720,
+   "base": "SYN",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 2,
+   "weiDecimals": 8
+  },
+  {
+   "pair_name": "@867",
+   "index": 867,
+   "base": "ZEC1",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 4,
+   "weiDecimals": 9
+  },
+  {
+   "pair_name": "@868",
+   "index": 868,
+   "base": "NAV",
+   "quote": "USDC",
+   "base_has_perp": false,
+   "szDecimals": 1,
+   "weiDecimals": 8
+  }
+ ],
+ "basis_candidates": [
+  "PURR",
+  "TRUMP",
+  "PUMP",
+  "HYPE",
+  "BERA",
+  "MON",
+  "STABLE",
+  "AZTEC"
+ ]
+}
