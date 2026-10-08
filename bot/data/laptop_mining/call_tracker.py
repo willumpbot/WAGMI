@@ -50,11 +50,16 @@ def get(url, tries=2):
     return {"__err__": "unreachable"}
 
 
+GT = "https://api.geckoterminal.com/api/v2"
+NETMAP = {"ethereum": "eth", "solana": "solana", "base": "base", "bsc": "bsc",
+          "arbitrum": "arbitrum", "polygon": "polygon_pos", "avalanche": "avax"}
+
+
 def price_now(ca):
-    """Deepest LIVE pair's price for a contract address, plus liquidity."""
+    """Deepest LIVE pair's price for a contract address, plus liquidity and pool id."""
     d = get(DS + urllib.parse.quote(ca))
     if "__err__" in d:
-        return None, None, d["__err__"]
+        return None, None, None, None, d["__err__"]
     best = None
     for p in (d.get("pairs") or []):
         try:
@@ -65,11 +70,40 @@ def price_now(ca):
         if px <= 0:
             continue
         if best is None or liq > best[1]:
-            best = (px, liq)
+            best = (px, liq, p.get("chainId"), p.get("pairAddress"))
     if best is None:
         # no live pair: the token is gone. That IS the outcome, not an error.
-        return 0.0, 0.0, "no_live_pair"
-    return best[0], best[1], None
+        return 0.0, 0.0, None, None, "no_live_pair"
+    return best[0], best[1], best[2], best[3], None
+
+
+def high_water(chain, pool, since_ts):
+    """Highest price TOUCHED since the call.
+
+    A ladder rung fills the moment price trades through it, so point-in-time
+    snapshots are the wrong measurement -- a call can touch 3x between two
+    snapshots and be back under 1x by the time we look. This pulls minute and
+    hourly candle HIGHS and returns the running maximum since the call, which is
+    what decides how many rungs filled.
+    """
+    net = NETMAP.get(chain, chain)
+    if not net or not pool:
+        return None
+    best = None
+    for tf, limit in (("minute?aggregate=15&limit=300", None), ("hour?limit=300", None)):
+        d = get(f"{GT}/networks/{net}/pools/{pool}/ohlcv/{tf}")
+        if "__err__" in d:
+            continue
+        for r in (((d.get("data") or {}).get("attributes") or {}).get("ohlcv_list") or []):
+            try:
+                t, hi = int(r[0]), float(r[2])
+            except (IndexError, TypeError, ValueError):
+                continue
+            if t >= since_ts - 60 and hi > 0:
+                best = hi if best is None else max(best, hi)
+        if best is not None:
+            break
+    return best
 
 
 def load_jsonl(p):
@@ -114,7 +148,8 @@ def track():
                 done.add((ca, name))
                 skipped += 1
                 continue
-            px, liq, err = price_now(ca)
+            px, liq, chain, pool, err = price_now(ca)
+            hw = high_water(chain, pool, ts) if (chain and pool) else None
             p0 = c.get("price_usd")
             try:
                 p0 = float(p0)
@@ -124,7 +159,12 @@ def track():
                    "price_usd": px, "liq": liq, "err": err,
                    "chat": c.get("chat"), "sender": c.get("sender"),
                    "p0": p0,
-                   "mult": (px / p0 if (p0 and p0 > 0 and px is not None) else None)}
+                   "mult": (px / p0 if (p0 and p0 > 0 and px is not None) else None),
+                   # high-water multiple: what a LADDER would actually have filled.
+                   # A rung fills the moment price trades through it, so a spot
+                   # snapshot is the wrong measurement -- a call can touch 3x
+                   # between two snapshots and be back under 1x when we look.
+                   "peak_mult": (hw / p0 if (p0 and p0 > 0 and hw) else None)}
             with io.open(TRACK, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
             done.add((ca, name))
@@ -172,9 +212,30 @@ def report():
             print(f"  {str(chat)[:22]+' / '+str(snd)[:15]:<40}{len(v):>5}{med(v):>9.3f}"
                   f"{sum(v)/len(v):>9.3f}{100*sum(1 for x in v if x>1)/len(v):>7.0f}%"
                   f"{100*dead/len(v):>7.0f}%")
-    print("\n  NOTE: median, not mean. Meme outcomes are violently skewed and the mean is")
-    print("  decided by one or two survivors. A caller with a 0.6x median and a 3.0x mean")
-    print("  is not profitable -- they are lottery tickets.")
+    print("\n=== LADDER VIEW: P(peak >= k) per caller ===")
+    print("  This is the number that decides how many rungs fill. For a ladder the TAIL is")
+    print("  the point, so this is reported alongside the median rather than instead of it.")
+    RUNGS = [1.5, 2.0, 3.0, 5.0, 10.0]
+    byp = collections.defaultdict(list)
+    for s_ in ok:
+        if s_.get("peak_mult"):
+            byp[(s_.get("chat"), s_.get("sender"))].append(s_["peak_mult"])
+    rows2 = [(k, v) for k, v in byp.items() if len(v) >= 10]
+    if not rows2:
+        print("  not enough per-caller peak data yet (need >=10 calls with a high-water mark)")
+    else:
+        print("  " + "caller".ljust(34) + "n".rjust(4)
+              + "".join(f"P>={r}x".rjust(9) for r in RUNGS))
+        for (chat, snd), v in sorted(
+                rows2, key=lambda x: -sum(1 for y in x[1] if y >= 2) / len(x[1])):
+            cells = "".join(f"{100*sum(1 for y in v if y >= r)/len(v):>8.0f}%" for r in RUNGS)
+            print(f"  {(str(chat)[:18] + ' / ' + str(snd)[:12]):<34}{len(v):>4}{cells}")
+        print("\n  A 25%-per-rung ladder at 1.5/2/3/5 earns roughly")
+        print("  0.25*(1.5*P>=1.5 + 2*P>=2 + 3*P>=3 + 5*P>=5), plus whatever the remainder does.")
+
+    print("\n  MEDIAN vs MEAN: for a SINGLE all-or-nothing exit use the median -- one 50x you")
+    print("  did not hold does not pay rent. For a LADDER the mean and the tail ARE the point,")
+    print("  because the ladder is the mechanism that harvests them. Read both.")
 
 
 if __name__ == "__main__":
