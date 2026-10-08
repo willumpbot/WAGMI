@@ -1,0 +1,117 @@
+{
+ "fee_bps": 9.0,
+ "data_limit": "only multi_tier_quality has a real label in laptop data; confidence_scorer and mean_reversion appear nowhere; bollinger_squeeze / regime_trend / mean_reversion tested via price proxies",
+ "strategies": {
+  "multi_tier_quality": {
+   "source": "real label",
+   "results": {}
+  },
+  "regime_trend": {
+   "source": "price proxy",
+   "results": {
+    "train": {
+     "n": 10872,
+     "as_is_bps": 13.87,
+     "as_is_ci": [
+      1.17,
+      27.97
+     ],
+     "inverted_bps": -31.87,
+     "inverted_ci": [
+      -45.81,
+      -18.99
+     ],
+     "as_is_sig": true,
+     "inverted_sig": true
+    },
+    "test": {
+     "n": 9342,
+     "as_is_bps": -1.43,
+     "as_is_ci": [
+      -10.13,
+      7.48
+     ],
+     "inverted_bps": -16.57,
+     "inverted_ci": [
+      -26.14,
+      -7.55
+     ],
+     "as_is_sig": false,
+     "inverted_sig": true
+    }
+   }
+  },
+  "bollinger_squeeze": {
+   "source": "price proxy",
+   "results": {
+    "train": {
+     "n": 3826,
+     "as_is_bps": 7.7,
+     "as_is_ci": [
+      -7.5,
+      23.15
+     ],
+     "inverted_bps": -25.7,
+     "inverted_ci": [
+      -41.13,
+      -10.42
+     ],
+     "as_is_sig": false,
+     "inverted_sig": true
+    },
+    "test": {
+     "n": 3297,
+     "as_is_bps": 17.31,
+     "as_is_ci": [
+      3.28,
+      31.81
+     ],
+     "inverted_bps": -35.31,
+     "inverted_ci": [
+      -49.61,
+      -20.27
+     ],
+     "as_is_sig": true,
+     "inverted_sig": true
+    }
+   }
+  },
+  "mean_reversion": {
+   "source": "price proxy",
+   "results": {
+    "train": {
+     "n": 1271,
+     "as_is_bps": -73.52,
+     "as_is_ci": [
+      -126.05,
+      -24.23
+     ],
+     "inverted_bps": 55.52,
+     "inverted_ci": [
+      7.19,
+      107.34
+     ],
+     "as_is_sig": true,
+     "inverted_sig": true
+    },
+    "test": {
+     "n": 911,
+     "as_is_bps": -35.5,
+     "as_is_ci": [
+      -76.29,
+      4.28
+     ],
+     "inverted_bps": 17.5,
+     "inverted_ci": [
+      -22.73,
+      58.88
+     ],
+     "as_is_sig": false,
+     "inverted_sig": false
+    }
+   }
+  }
+ },
+ "verdict": "keep the gate: no inversion is significantly positive out of sample",
+ "note_confidence_scorer": "no label and no faithful price proxy exists; untested"
+}
