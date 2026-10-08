@@ -1,0 +1,34 @@
+{
+ "rows": 27187,
+ "coins": 17,
+ "cutoff": "2025-06-01",
+ "threshold_mult": 2.0,
+ "confound": {
+  "corr_disagree_n_active": -0.749,
+  "corr_disagree_dissent_active": 0.7857,
+  "r2_disagree_on_extremity_and_activity": 0.7055
+ },
+ "sides": {
+  "long": {
+   "forecast only": 0.5699,
+   "+ disagree (ORIGINAL)": 0.5982,
+   "+ extremity": 0.598,
+   "+ extremity + disagree": 0.5956,
+   "+ extremity + TRUE dissent": 0.5963,
+   "disagree_gain_over_extremity": -0.0024,
+   "perm_p": 0.965,
+   "perm_null_mean": -0.0003
+  },
+  "short": {
+   "forecast only": 0.5073,
+   "+ disagree (ORIGINAL)": 0.5596,
+   "+ extremity": 0.5693,
+   "+ extremity + disagree": 0.5681,
+   "+ extremity + TRUE dissent": 0.5673,
+   "disagree_gain_over_extremity": -0.0012,
+   "perm_p": 0.89,
+   "perm_null_mean": -0.0001
+  }
+ },
+ "verdict": "disagree adds nothing once extremity is controlled"
+}
