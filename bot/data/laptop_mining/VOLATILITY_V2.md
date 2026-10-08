@@ -2,8 +2,28 @@
 
 _Red team `wp73ppfxp`, 2026-10-08. Verified by me before accepting._
 
-**Do NOT swap HAR for EWMA. Keep `volforecast.py` as it is.** The core of this document is a straw
-man I built myself:
+**Do NOT swap HAR for EWMA. Keep `volforecast.py` as it is.**
+
+> ### Precision note added 2026-10-09 — the degenerate baseline is real, but it lives elsewhere
+>
+> I wrote below that I "invented" the degenerate baseline. That is too strong and, more importantly,
+> inaccurate. It exists in the project — in a **different artifact** than the one I attributed it to:
+>
+> | artifact | baseline | QLIKE | honest? |
+> |---|---|---|---|
+> | `volatility_forecast.json` → `y1_naive` | **"naive persistence"** | **4.1202** vs HAR 0.5126 | **no — degenerate**, and this is the y1 calibration work |
+> | `walkforward_vol.json` → `naive5` | `ret.rolling(5).std()` | **0.2781** vs HAR 0.1565 | **yes** — and HAR wins 1.78× |
+>
+> So the correct statement is: **the "beats naive by a huge margin" problem is real for the y1
+> calibration numbers, and false for the y5 walk-forward.** I found the degenerate baseline in the
+> first artifact, then attributed it to the second and generalised the refutation to both. The y5
+> walk-forward result stands as the original reported it.
+>
+> This does not revive the EWMA recommendation — that still fails for the loss-specification and
+> unfair-window reasons below. **Keep HAR.** But the charge against the original is narrower than I
+> stated: *y1 was never walk-forwarded, and its in-sample comparison used a degenerate baseline.*
+
+The rest of this document overstates the case:
 
 | my claim | the truth |
 |---|---|
