@@ -212,6 +212,51 @@ def owner_calls(x_owner_token: Optional[str] = Header(default=None)):
     return {"ok": True, "calls": rows[-200:]}
 
 
+_PLANS_CACHE: list = [0.0, None]
+
+
+def _plans_mod():
+    _PLANS_CACHE[1] = None   # any create/cancel/read path re-resolves on the next read
+    import sys as _sys
+    hm = str(Path(__file__).resolve().parent / "tools" / "hivemind")
+    if hm not in _sys.path:
+        _sys.path.append(hm)
+    import plans
+    return plans
+
+
+@app.post("/v1/owner_plan")
+def owner_plan(payload: dict, x_owner_token: Optional[str] = Header(default=None)):
+    """A planned trade from the terminal (tools/hivemind/plans.py grades it against real candles)."""
+    if not _owner_token_ok(x_owner_token):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    try:
+        row = _plans_mod().create(payload)
+    except ValueError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+    return {"ok": True, "plan": row}
+
+
+@app.post("/v1/owner_plan/cancel")
+def owner_plan_cancel(payload: dict, x_owner_token: Optional[str] = Header(default=None)):
+    if not _owner_token_ok(x_owner_token):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    _plans_mod().cancel(payload.get("id", ""))
+    return {"ok": True}
+
+
+@app.get("/v1/owner_plans")
+def owner_plans(x_owner_token: Optional[str] = Header(default=None)):
+    if not _owner_token_ok(x_owner_token):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    if _PLANS_CACHE[1] is None or time.time() - _PLANS_CACHE[0] > 30:
+        try:
+            _PLANS_CACHE[:] = [time.time(), _plans_mod().resolve()]
+        except Exception as e:
+            return JSONResponse({"ok": False, "error": f"{type(e).__name__}: {e}"[:200]}, status_code=500)
+    return dict(_PLANS_CACHE[1], ok=True)
+
+
 # ─── Trade History ───────────────────────────────────────────────────────────
 
 @app.get("/v1/trades/history")

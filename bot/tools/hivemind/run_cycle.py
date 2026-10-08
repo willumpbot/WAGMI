@@ -53,6 +53,11 @@ def main():
             journal.main()
         except Exception as e:
             log(f"journal failed: {e}")
+        for mod, fn in (("scanner", "run"), ("plans", "resolve")):
+            try:
+                getattr(__import__(mod), fn)()
+            except Exception as e:
+                log(f"{mod} failed: {e}")
         try:
             import decisions
             decisions.build()

@@ -114,6 +114,7 @@ table.pos{width:100%;border-collapse:collapse;font-size:12px} .pos td,.pos th{pa
 @media (min-width:1101px){body{height:100vh;display:flex;flex-direction:column;overflow:hidden}.app{flex:1;min-height:0}.foot{padding:3px 14px}}
 .app>aside,.app>main{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:8px}
 .app .box{padding:8px 10px}
+.app>aside>*,.app>main>*{flex-shrink:0}
 .chartbox{flex:0 0 auto;display:flex;flex-direction:column;height:56vh;min-height:340px}
 .chartbox #lw{flex:1}
 .sit{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line);font-size:12.5px}
@@ -135,6 +136,9 @@ table.pos{width:100%;border-collapse:collapse;font-size:12px} .pos td,.pos th{pa
 .tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
 .tabp{display:none;flex-direction:column;gap:8px} .tabp.on{display:flex}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip.tested{border:1px solid var(--good);color:var(--good)}
+.rbar{position:relative;display:inline-block;width:70px;height:8px;border-radius:3px;background:var(--panel2);vertical-align:middle}
+.rbar i{position:absolute;top:0;bottom:0;border-radius:3px}.rbar b{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--soft)}
 .chip.f{cursor:pointer;border:1px solid var(--line)} .chip.f.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 @media (max-width:1100px){.app{grid-template-columns:1fr;height:auto}.app>aside,.app>main{overflow:visible}.chartbox{height:60vh}.two{grid-template-columns:1fr}}
 .right .out{font-size:11.5px;grid-template-columns:auto 1fr}.right .out div:nth-child(even){text-align:right}
@@ -157,6 +161,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
   <aside class="left">
     <div class="pane-h">Watchlist <span class="sp"></span><span class="mut" id="wl_note"></span></div>
     <div id="wl"></div>
+    <div class="pane-h">Setups now <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">tested only</span></div><div id="setups" class="stack"></div>
     <div class="pane-h">Near a level</div><div id="near" class="stack"></div>
     <div class="pane-h">Biggest movers (HL, 24h)</div><div id="movers" class="stack"></div>
   </aside>
@@ -170,13 +175,19 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     </div>
     <div class="box" id="memebox" style="display:none"><h3>Token risk card <span id="mm_q" style="color:var(--ink);text-transform:none;letter-spacing:0"></span><span class="sp"></span><a href="#" id="mm_x" style="color:var(--soft)">close</a></h3><div id="mm_body"></div></div>
     <div class="tabs" id="tabs">
-      <button data-tab="t_scr" class="on">Screener</button><button data-tab="t_pos">Positions</button><button data-tab="t_jr">Journal</button>
+      <button data-tab="t_scr" class="on">Screener</button><button data-tab="t_scan">Scanner <span id="scan_badge" class="mut"></span></button><button data-tab="t_plans">Plans <span id="plan_badge"></span></button><button data-tab="t_pos">Positions</button><button data-tab="t_jr">Journal</button>
       <button data-tab="t_calls">Calls &amp; chief</button><button data-tab="t_lv">Levels</button><button data-tab="t_vox">Voices</button><button data-tab="t_lab">Lab <span id="dec_badge"></span></button>
     </div>
     <div class="tabp on" id="t_scr">
       <div id="filters" class="chips" style="margin:0 0 6px"></div>
       <div style="overflow-x:auto"><table class="board" id="board"><thead><tr id="bh"></tr></thead><tbody id="bb"></tbody></table></div>
     </div>
+    <div class="tabp" id="t_scan">
+      <div class="mut" style="font-size:11.5px" id="scan_note"></div>
+      <div id="scanf" class="chips" style="margin:0"></div>
+      <div style="overflow-x:auto"><table class="board" id="scan"></table></div>
+    </div>
+    <div class="tabp" id="t_plans"><div id="plans"></div></div>
     <div class="tabp" id="t_pos">
       <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
       <div class="box"><h3>My Hyperliquid account <span class="sp"></span><span class="mut" id="acctnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="acct"></div></div>
@@ -218,8 +229,14 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         <label>Leverage<input id="c_lev" type="number" value="3" step="1"></label>
         <label>Entry<input id="c_entry" type="number" step="any"></label>
         <label>Stop<input id="c_stop" type="number" step="any"></label>
+        <label>Target<input id="c_tgt" type="number" step="any"></label>
+        <label>Entry type<select id="c_etype"><option value="limit">Limit at entry</option><option value="market">Market now</option></select></label>
+        <label style="grid-column:1/-1">Setup<select id="c_setup"><option>50d pullback</option><option>breakout</option><option>breakdown</option><option>range fade</option><option>liq magnet</option><option>trend continuation</option><option>other</option></select></label>
+        <label style="grid-column:1/-1">Why<input id="c_reason" placeholder="your read, in a few words"></label>
       </div>
       <div class="out num" id="c_out"></div><div class="warn" id="c_warn"></div>
+      <button id="c_plan" style="margin-top:8px;width:100%;background:var(--accent);border:0;border-radius:6px;color:var(--bg);font-weight:700;padding:7px;cursor:pointer">Plan this trade</button>
+      <div id="c_msg" class="mut" style="font-size:11px;margin-top:4px">Logs it, sets alerts at entry / stop / target, and grades it against real prices. No wallet needed.</div>
       <div class="mut" style="font-size:10.5px;margin-top:5px">Defaults = the laptop's tested setup: stop 2&times; forecast move, target 0.5R, 48h max hold.</div>
     </div>
     <div class="box"><h3>Order book <span class="sp"></span><span class="mut num" id="obspread" style="text-transform:none;letter-spacing:0"></span></h3><div id="ob" class="num"></div></div>
@@ -398,6 +415,10 @@ function drawLW(){
   const bp = (C(sel).bot||{}).position;
   if (bp && OV.lv) { cs.createPriceLine({price: bp.entry, color: cssv("--accent"), lineWidth: 1, lineStyle: 0, axisLabelVisible: true, title: "bot entry"});
             if (bp.sl) cs.createPriceLine({price: bp.sl, color: cssv("--bad"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "bot stop"}); }
+  if (OV.lv) for (const q of PLANS.filter(q => q.coin === sel && ["waiting","open"].includes((q.result||{}).status))) {
+    cs.createPriceLine({price: q.entry, color: cssv("--accent"), lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: "plan entry"});
+    cs.createPriceLine({price: q.stop, color: cssv("--bad"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "plan stop"});
+    cs.createPriceLine({price: q.target, color: cssv("--good"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "plan target"}); }
   chart.timeScale().fitContent();
   chart.subscribeCrosshairMove(p => {
     const b = p && p.seriesData ? p.seriesData.get(cs) : null;
@@ -508,6 +529,8 @@ function calc(){
   if (!$("c_stop").dataset.touched) { const rk = ((C(sel).risk||{})[side.toLowerCase()]||{}); const sp = rk.stop_pct ?? 2*a;
     $("c_stop").value = p ? +(p*(1 - (side==="LONG"?1:-1)*sp/100)).toPrecision(6) : ""; }
   const acct = +$("c_acct").value, risk = +$("c_risk").value/100, e = +$("c_entry").value, st = +$("c_stop").value, lev = Math.max(1,+$("c_lev").value);
+  if (!$("c_tgt").dataset.touched) $("c_tgt").value = e && st ? +(e + (side==="LONG"?1:-1)*0.5*Math.abs(e-st)).toPrecision(6) : "";
+  const tg = +$("c_tgt").value, tgR = e && st ? (tg-e)*(side==="LONG"?1:-1)/Math.abs(e-st) : 0;
   const dist = Math.abs(e-st)/e, riskUsd = acct*risk, notional = dist ? riskUsd/dist : 0, qty = e ? notional/e : 0, margin = notional/lev;
   const mm = 0.005, liq = side==="LONG" ? e*(1-1/lev+mm) : e*(1+1/lev-mm);
   const fee = notional*0.00045*2;
@@ -515,15 +538,16 @@ function calc(){
   const tgts = []; const r = (C(sel).market||{}).range_20d||{};
   for (const [n,v] of [["20d high",r.high],["20d low",r.low],...clusters(sel).map(c=>["liq "+fmt(c.p),c.p])]) if (v && (side==="LONG"?v>e:v<e)) tgts.push([n,v,Math.abs(v-e)/Math.abs(e-st)]);
   tgts.sort((x,y)=>x[2]-y[2]);
-  $("c_out").innerHTML = `<div>Risk</div><div>$${riskUsd.toFixed(2)}</div><div>Stop distance</div><div>${(dist*100).toFixed(2)}% (${(dist*100/a).toFixed(1)}× expected daily move)</div>
+  $("c_out").innerHTML = `<div>Risk</div><div>$${riskUsd.toFixed(2)}</div><div>Stop distance</div><div>${(dist*100).toFixed(2)}% (${(dist*100/a).toFixed(1)}× exp. move)</div>
     <div>Position</div><div>${qty?qty.toPrecision(4):"–"} ${sel} · $${notional.toFixed(0)}</div><div>Margin at ${lev}x</div><div>$${margin.toFixed(0)}</div>
     <div>Liquidation (approx.)</div><div>${fmt(liq)}</div><div>Round-trip fees</div><div>$${fee.toFixed(2)} (${(fee/riskUsd*100||0).toFixed(0)}% of risk)</div>
-    <div>Target at 0.5R</div><div>${fmt(e + (side==="LONG"?1:-1)*0.5*Math.abs(e-st))}</div>
+    <div>Target</div><div>${fmt(tg)} (${tgR.toFixed(2)}R, tested default 0.5R)</div>
     ${(()=>{const x=safeLev(sel);if(!x)return"";const sl=side==="LONG"?x.long:x.short;const a1=((x.adv["1d"]||{})[side.toLowerCase()]||{});
       return `<div>Safe leverage now</div><div class="${lev>sl?"dn":"up"}">${sl.toFixed(1)}× (vol quintile ${x.q})</div><div>Worst 1-day move against you</div><div>${a1.p95!=null?a1.p95.toFixed(1)+"% (95% of days) · "+a1.p99.toFixed(1)+"% (99%)":"–"}</div>`;})()}
     ${tgts.slice(0,3).map(t=>`<div>To ${t[0]}</div><div>${t[2].toFixed(1)}R</div>`).join("")}`;
   const w = [];
   if (wrongSide) w.push("Stop is on the wrong side of entry.");
+  if (tgR <= 0) w.push("Target is on the wrong side of entry.");
   if (side==="LONG" ? liq>=st : liq<=st) w.push("Liquidation comes before your stop: lower the leverage.");
   if (margin > acct) w.push("Margin exceeds the account.");
   { const x = safeLev(sel); if (x) { const sl = side==="LONG" ? x.long : x.short; if (lev > sl) w.push(`Leverage ${lev}× is above the safe ${sl.toFixed(1)}× for this coin's current volatility.`); } }
@@ -532,6 +556,7 @@ function calc(){
 }
 
 function renderDetail(){
+  if (renderDetail.last !== sel) { ["c_entry","c_stop","c_tgt"].forEach(id => delete $(id).dataset.touched); renderDetail.last = sel; }
   $("dsym").textContent = sel; $("dpx").textContent = fmt(px(sel));
   const c = chief(sel);
   $("dchief").innerHTML = c.lean ? `<span class="pill ${c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt"}">${c.lean} · ${c.conviction}/5</span>` : "";
@@ -676,7 +701,7 @@ function alerts(){ try { return JSON.parse(localStorage.getItem("alerts")||"[]")
 function saveAlerts(a){ try { localStorage.setItem("alerts", JSON.stringify(a)); } catch(e) {} renderAlerts(); }
 function renderAlerts(){
   const a = alerts();
-  $("al_list").innerHTML = a.length ? a.map((x,i)=>`<div class="alrow num"><b>${x.c}</b> ${x.dir>0?"rises above":"falls below"} ${fmt(x.p)} ${x.hit?'<span class="pill up">HIT '+new Date(x.hit).toLocaleTimeString()+'</span>':""}<button data-i="${i}">✕</button></div>`).join("") : "<div class='mut' style='font-size:11.5px'>No alerts.</div>";
+  $("al_list").innerHTML = a.length ? a.map((x,i)=>`<div class="alrow num"><b>${x.c}</b> ${x.l?`<span class="mut">${esc(x.l)}</span> `:""}${x.dir>0?"rises above":"falls below"} ${fmt(x.p)} ${x.hit?'<span class="pill up">HIT '+new Date(x.hit).toLocaleTimeString()+'</span>':""}<button data-i="${i}">✕</button></div>`).join("") : "<div class='mut' style='font-size:11.5px'>No alerts.</div>";
   document.querySelectorAll("#al_list button").forEach(b=>b.onclick=()=>{ const a=alerts(); a.splice(+b.dataset.i,1); saveAlerts(a); });
 }
 function chime(){ try { const ac = new (window.AudioContext||window.webkitAudioContext)(); [0,0.18,0.36].forEach(t=>{ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=880; o.connect(g); g.connect(ac.destination); g.gain.setValueAtTime(.15, ac.currentTime+t); g.gain.exponentialRampToValueAtTime(.001, ac.currentTime+t+.15); o.start(ac.currentTime+t); o.stop(ac.currentTime+t+.16); }); } catch(e) {} }
@@ -823,6 +848,92 @@ function journalBox(){
   if (T.length) h += `<div style="margin-top:6px">${T.map(t=>`<div class="num" style="display:grid;grid-template-columns:90px 60px 60px 1fr 80px;gap:6px;font-size:11.5px"><span class="mut">${(t.open||"").slice(5,16).replace("T"," ")}</span><b>${t.coin}</b><span class="${t.side==="LONG"?"up":"dn"}">${t.side}</span><span class="mut">${t.status==="open"?"open":(t.hold_h+"h")}${(t.context||{}).chief_lean?" · chief "+t.context.chief_lean:""}</span><span class="${t.net_pnl>=0?"up":"dn"}" style="text-align:right">${t.status==="open"?"":"$"+t.net_pnl.toFixed(2)}</span></div>`).join("")}</div>`;
   $("jr").innerHTML = h;
 }
+let PLANS = (DATA.plans||{}).plans || [], PSTATS = (DATA.plans||{}).stats || {};
+const SCAN = DATA.scan || {}; let SCANF = new Set(), scanSort = null, scanDir = -1;
+function midOf(c){ const m = window.MIDS || {}; return m[c] != null ? +m[c] : (live[c] ?? null); }
+function planR(q){ const now = midOf(q.coin); if (!now) return null; return (now-q.entry)*(q.side==="LONG"?1:-1)/Math.abs(q.entry-q.stop); }
+function rBar(q){
+  const st = (q.result||{}).status, tR = Math.abs(q.target-q.entry)/Math.abs(q.entry-q.stop);
+  if (st === "waiting") { const now = midOf(q.coin); return now ? `<span class="mut">entry ${pct((q.entry/now-1)*100,2)} away</span>` : "waiting"; }
+  const r = planR(q); if (r == null) return "–";
+  const lo = -1, hi = Math.max(tR, 0.5), X = v => (Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*100;
+  return `<span class="rbar" title="stop = -1R, target = ${tR.toFixed(2)}R"><b style="left:${X(0)}%"></b><i style="left:${Math.min(X(0),X(r))}%;width:${Math.abs(X(r)-X(0))}%;background:var(${r>=0?"--pos":"--neg"})"></i></span> <span class="num ${r>=0?"up":"dn"}">${r>=0?"+":""}${r.toFixed(2)}R</span>`;
+}
+async function loadPlans(){
+  try { const r = await fetch(API + "/v1/owner_plans", {headers: {"X-Owner-Token": DATA.ownerToken}}); const j = await r.json();
+    if (j.ok) { PLANS = j.plans || []; PSTATS = j.stats || {}; } } catch(e) {}
+  renderPlans();
+}
+function statBox(a){ return a && a.n ? `<b class="num">${a.n}</b> <span class="mut">plans</span> · <b class="num">${(a.win_rate*100).toFixed(0)}%</b> <span class="mut">won</span> · <b class="num ${a.avg_r>=0?"up":"dn"}">${a.avg_r>=0?"+":""}${a.avg_r.toFixed(2)}R</b> <span class="mut">avg</span> · <b class="num ${a.total_r>=0?"up":"dn"}">${a.total_r>=0?"+":""}${a.total_r.toFixed(1)}R</b> <span class="mut">total</span>` : `<span class="mut">none yet</span>`; }
+function renderPlans(){
+  const isAct = q => ["waiting","open"].includes((q.result||{}).status);
+  const act = PLANS.filter(isAct).slice().reverse(), done = PLANS.filter(q => !isAct(q)).slice().reverse().slice(0, 40);
+  const S = PSTATS || {}, grp = (o) => Object.entries(o||{}).filter(([k,v]) => v.n).map(([k,v]) => `<span class="chip" title="${v.n} plans, ${(v.win_rate*100).toFixed(0)}% won">${esc(k)} <span class="num ${v.avg_r>=0?"up":"dn"}">${v.avg_r>=0?"+":""}${v.avg_r.toFixed(2)}R</span> (${v.n})</span>`).join("");
+  const when = t => new Date(t*1000).toLocaleString(undefined, {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
+  $("plans").innerHTML = `<div class="box"><h3>My plan track record <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">graded on real prices: stop or target first (stop if both in one 5-min candle), 48h limit, after fees</span></h3>
+      <div style="font-size:13px">${statBox(S.all)}</div>
+      <div class="chips">${grp(S.by_setup)}</div><div class="chips">${grp(S.by_side)}${grp(S.by_chief)}</div>
+      ${(S.all||{}).n ? "" : `<div class="mut" style="font-size:11.5px;margin-top:6px">Plan trades with the calculator on the right. After ~20 graded plans this shows which of YOUR setups actually work, which is the one edge source nothing else here can test.</div>`}</div>
+    <div class="box"><h3>Active (${act.length})</h3>${act.length ? `<table class="pos num"><tr><th>Coin</th><th>Setup</th><th>Entry</th><th>Stop</th><th>Target</th><th>Now</th><th></th></tr>${act.map(q => `<tr data-c="${q.coin}" style="cursor:pointer"><td><b>${q.coin}</b> <span class="${q.side==="LONG"?"up":"dn"}">${q.side}</span> <span class="mut">${q.result.status}</span></td><td class="mut">${esc(q.setup)}</td><td>${fmt(q.entry)}</td><td class="dn">${fmt(q.stop)}</td><td class="up">${fmt(q.target)}</td><td id="pr_${q.id}">${rBar(q)}</td><td><button class="pcx" data-id="${q.id}" title="cancel this plan" style="background:none;border:0;color:var(--soft);cursor:pointer">✕</button></td></tr>`).join("")}</table>` : `<div class="mut" style="font-size:12px">No active plans.</div>`}</div>
+    <div class="box"><h3>Finished</h3>${done.length ? `<table class="pos num"><tr><th>Made</th><th>Coin</th><th>Setup</th><th>Result</th><th>R</th><th>Best / worst</th><th>Chief then</th></tr>${done.map(q => { const r = q.result || {}; return `<tr data-c="${q.coin}" style="cursor:pointer"><td class="mut">${when(q.ts)}</td><td><b>${q.coin}</b> <span class="${q.side==="LONG"?"up":"dn"}">${q.side[0]}</span></td><td class="mut">${esc(q.setup)}</td><td class="${r.status==="won"?"up":r.status==="lost"?"dn":"mut"}">${r.status}${r.hold_h!=null?` · ${r.hold_h}h`:""}</td><td class="${(r.r||0)>=0?"up":"dn"}">${r.r!=null?(r.r>=0?"+":"")+r.r.toFixed(2):""}</td><td class="mut">${r.best_r!=null?`+${r.best_r} / ${r.worst_r}`:""}</td><td class="mut">${esc((q.context||{}).chief_lean||"–")}</td></tr>`; }).join("")}</table>` : `<div class="mut" style="font-size:12px">Nothing finished yet.</div>`}</div>`;
+  $("plan_badge").innerHTML = act.length ? `<span class="pill nt">${act.length}</span>` : "";
+  document.querySelectorAll("#plans tr[data-c]").forEach(tr => tr.onclick = ev => { if (ev.target.closest(".pcx")) return; adhoc(tr.dataset.c); });
+  document.querySelectorAll("#plans .pcx").forEach(b => b.onclick = async () => {
+    try { await fetch(API + "/v1/owner_plan/cancel", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken}, body: JSON.stringify({id: b.dataset.id})}); } catch(e) {}
+    loadPlans(); });
+}
+async function makePlan(){
+  const side = $("c_side").value, et = $("c_etype").value, now = px(sel);
+  const body = {coin: sel, side, entry: +$("c_entry").value, stop: +$("c_stop").value, target: +$("c_tgt").value, entry_type: et, price: now,
+    leverage: +$("c_lev").value, risk_usd: +$("c_acct").value * +$("c_risk").value / 100, setup: $("c_setup").value, reason: $("c_reason").value};
+  try {
+    const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken}, body: JSON.stringify(body)});
+    const j = await r.json(); if (!j.ok) throw new Error(j.error || "rejected");
+    const a = alerts(), add = (p, l) => a.push({c: sel, p, dir: p >= now ? 1 : -1, l});
+    if (et === "limit") add(j.plan.entry, "plan entry"); add(j.plan.stop, "plan stop"); add(j.plan.target, "plan target"); saveAlerts(a);
+    $("c_msg").innerHTML = `<span class="up">Planned: ${sel} ${side} ${et === "market" ? "at market " + fmt(j.plan.entry) : "limit " + fmt(j.plan.entry)}, stop ${fmt(j.plan.stop)}, target ${fmt(j.plan.target)}. Alerts set. See the Plans tab.</span>`;
+    $("c_reason").value = "";
+    try { if (window.Notification && Notification.permission === "default") Notification.requestPermission(); } catch(e) {}
+    await loadPlans(); drawChart();
+  } catch(e) { $("c_msg").innerHTML = `<span class="warn">Not planned: ${esc(e.message)}${/fetch/i.test(e.message) ? " (the local API on this PC isn't reachable)" : ""}</span>`; }
+}
+const SCOLS = [
+  ["coin", "Coin", r => r.coin, r => `<b>${r.coin}</b>`],
+  ["flags", "Setups", r => r.n_tested*10 + r.flags.length, r => r.flags.map(k => { const f = (SCAN.flags||{})[k] || {}; return `<span class="chip ${f.evidence==="tested"?"tested":""}" title="${esc(f.why||"")}">${esc(f.label||k)}</span>`; }).join(" ")],
+  ["spark", "30D", null, r => `<span style="display:inline-block;width:80px">${miniSpark(r.spark||[])}</span>`],
+  ["px", "Last", r => r.px, r => `<span class="num" id="sp_${r.coin}">${fmt(midOf(r.coin) || r.px)}</span>`],
+  ["chg_24h", "24h", r => r.chg_24h, r => `<span class="num ${r.chg_24h>=0?"up":"dn"}">${pct(r.chg_24h,1)}</span>`],
+  ["ret_7d", "7D", r => r.ret_7d, r => `<span class="num ${r.ret_7d>=0?"up":"dn"}">${pct(r.ret_7d,1)}</span>`],
+  ["exp_move", "Exp. move", r => r.exp_move, r => r.exp_move!=null ? `<span class="num" title="5d vol ${r.rv5}% vs 22d ${r.rv22}%">±${r.exp_move.toFixed(1)}%</span>` : "–"],
+  ["trend_up", "Trend", r => r.trend_up ? 1 : -1, r => `<span class="${r.trend_up?"up":"dn"}">${r.trend_up?"▲":"▼"}</span>`],
+  ["d50_moves", "To 50d avg", r => r.d50_moves, r => r.d50_moves!=null ? `<span class="num ${Math.abs(r.d50_moves)<=0.5?"":"mut"}" title="${pct(r.d50_pct,2)} = ${r.d50_moves} expected daily moves (+ = price above)">${r.d50_moves>0?"+":""}${r.d50_moves.toFixed(1)}×</span>` : "–"],
+  ["range_pos", "20D range", r => r.range_pos, r => r.range_pos!=null ? `<span class="rb" title="low ${fmt(r.lo20)} · high ${fmt(r.hi20)}"><i style="left:${Math.max(0,Math.min(1,r.range_pos))*100}%"></i></span>` : "–"],
+  ["funding_h", "Funding/h", r => r.funding_h, r => `<span class="num ${r.funding_h>2.5e-5?"dn":r.funding_h<0?"up":"mut"}">${(r.funding_h*100).toFixed(4)}%</span>`],
+  ["oi_usd", "OI", r => r.oi_usd, r => `<span class="num mut">${usd(r.oi_usd)}</span>`],
+  ["vol_ratio", "Vol ×20d", r => r.vol_ratio, r => r.vol_ratio!=null ? `<span class="num ${r.vol_ratio>2.5?"up":"mut"}">${r.vol_ratio.toFixed(1)}×</span>` : "–"],
+  ["safe_lev_long", "Safe lev L/S", r => Math.min(r.safe_lev_long||0, r.safe_lev_short||0), r => `<span class="num" title="rough: liquidation beyond this coin's worst 1-in-100 day of the last year, ÷1.5; capped at HL max ${r.max_lev}×">${r.safe_lev_long}× / ${r.safe_lev_short}×</span>`],
+];
+function renderScan(){
+  const F = SCAN.flags || {}, all = SCAN.coins || [];
+  if (!all.length) { $("scan_note").textContent = "Scanner hasn't run yet (it runs with every 15-min hivemind cycle)."; return; }
+  const age = Math.round((Date.now() - Date.parse(SCAN.updated))/60000);
+  $("scan_note").innerHTML = `Top ${all.length} Hyperliquid perps by volume, scanned ${age}m ago. <span class="chip tested">green</span> = backed by an out-of-sample test; grey = context only. Click a coin to chart it.`;
+  $("scanf").innerHTML = Object.entries(F).map(([k,f]) => `<span class="chip f ${f.evidence==="tested"?"tested":""} ${SCANF.has(k)?"on":""}" data-k="${k}" title="${esc(f.why)}">${esc(f.label)} <span class="num">${all.filter(r=>r.flags.includes(k)).length}</span></span>`).join("")
+    + (SCANF.size ? `<span class="chip f" data-k="_clear">clear</span>` : "");
+  let rows = all.filter(r => [...SCANF].every(k => r.flags.includes(k)));
+  if (scanSort) { const c = SCOLS.find(x => x[0] === scanSort); rows = rows.slice().sort((a,b) => ((c[2](a) ?? -1e18) > (c[2](b) ?? -1e18) ? 1 : -1) * scanDir); }
+  $("scan").innerHTML = `<thead><tr>${SCOLS.map(c => `<th data-k="${c[0]}">${c[1]}${scanSort===c[0]?(scanDir>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr data-c="${r.coin}" class="${r.coin===sel?"sel":""}">${SCOLS.map(c => `<td>${c[3](r)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  $("scan_badge").textContent = all.filter(r => r.n_tested).length || "";
+  document.querySelectorAll("#scanf .chip.f").forEach(el => el.onclick = () => { const k = el.dataset.k; if (k === "_clear") SCANF.clear(); else SCANF.has(k) ? SCANF.delete(k) : SCANF.add(k); renderScan(); });
+  document.querySelectorAll("#scan th").forEach(th => th.onclick = () => { const k = th.dataset.k; if (!SCOLS.find(c => c[0] === k)[2]) return; scanDir = scanSort === k ? -scanDir : -1; scanSort = k; renderScan(); });
+  document.querySelectorAll("#scan tbody tr").forEach(tr => tr.onclick = () => adhoc(tr.dataset.c));
+}
+function setupsNow(){
+  const F = SCAN.flags || {}, rows = (SCAN.coins || []).filter(r => r.n_tested > 0).slice(0, 8);
+  $("setups").innerHTML = rows.length ? rows.map(r => `<span class="mv" data-c="${r.coin}" title="${esc(r.flags.map(k => (F[k]||{}).why).join(" "))}"><b>${r.coin}</b><span class="mut" style="flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis">${r.flags.filter(k => (F[k]||{}).evidence === "tested").map(k => F[k].label).join(", ")}</span></span>`).join("")
+    : `<span class="mut" style="font-size:11.5px">No coin is on a tested setup right now.</span>`;
+  document.querySelectorAll("#setups .mv").forEach(el => el.onclick = () => adhoc(el.dataset.c));
+}
 function pick(s){ if (!s) return; sel = s; renderBoard(); renderDetail(); }
 function lvx(v){ return v < 10 ? v.toFixed(1) : v.toFixed(0); }
 function sparkVals(s){ const ch = C(s).chart || {}, h = (ch.h4||{}).ohlc; return h && h.length ? h.slice(-42).map(b=>b[3]) : (ch.ohlc||[]).slice(-8).map(b=>b[3]); }
@@ -886,7 +997,9 @@ function showTab(id){
 async function poll(){
   try {
     const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"allMids"}'});
-    const mids = await r.json(); $("livedot").style.background = "var(--good)"; checkAlerts(mids);
+    const mids = await r.json(); window.MIDS = mids; $("livedot").style.background = "var(--good)"; checkAlerts(mids);
+    for (const x of (SCAN.coins||[])) { const el = $("sp_"+x.coin); if (el && mids[x.coin]) el.textContent = fmt(+mids[x.coin]); }
+    for (const q of PLANS) { const el = $("pr_"+q.id); if (el) el.innerHTML = rBar(q); }
     for (const s of SYMS) { if (!mids[s]) continue; const v = +mids[s], prev = live[s]; live[s] = v;
       const el = $("px_"+s); if (el) { el.textContent = fmt(v); if (prev && v!==prev) { el.classList.remove("flash-up","flash-dn"); void el.offsetWidth; el.classList.add(v>prev?"flash-up":"flash-dn"); } }
       const ch = $("ch_"+s); if (ch) { const c = dayChg(s); ch.textContent = pct(c,2); ch.className = "num " + (c>=0?"up":"dn"); } }
@@ -901,8 +1014,8 @@ document.querySelectorAll("#ovseg button").forEach(b=>{ b.classList.toggle("on",
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 try { showTab(localStorage.getItem("tab") || "t_scr"); const t0 = localStorage.getItem("tf"); if (t0 && TF_MS[t0]) { tf = t0; document.querySelectorAll(".seg button[data-tf]").forEach(x=>x.classList.toggle("on", x.dataset.tf===tf)); } } catch(e) {}
 ["c_acct","c_risk","c_side","c_lev"].forEach(id=>$(id).oninput=calc);
-["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;calc()});
-$("c_side").onchange=()=>{delete $("c_stop").dataset.touched;calc()};
+["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;if(id==="c_stop")delete $("c_tgt").dataset.touched;calc()});
+$("c_side").onchange=()=>{delete $("c_stop").dataset.touched;delete $("c_tgt").dataset.touched;calc()};
 $("al_add").onclick = () => { const p = +$("al_px").value; if (!p) return; const now = px(sel);
   const a = alerts(); a.push({c: sel, p, dir: p >= now ? 1 : -1}); saveAlerts(a); $("al_px").value = "";
   try { if (window.Notification && Notification.permission === "default") Notification.requestPermission(); } catch(e) {} };
@@ -910,6 +1023,8 @@ renderAlerts();
 document.querySelectorAll("#mc_lean button").forEach(b => b.onclick = () => { MC.lean = b.dataset.v; document.querySelectorAll("#mc_lean button").forEach(x => x.classList.toggle("on", x === b)); });
 document.querySelectorAll("#mc_conv button").forEach(b => b.onclick = () => { MC.conv = +b.dataset.v; document.querySelectorAll("#mc_conv button").forEach(x => x.classList.toggle("on", x === b)); });
 $("mc_send").onclick = sendCall;
+$("c_plan").onclick = makePlan;
+$("c_tgt").oninput = () => { $("c_tgt").dataset.touched = 1; calc(); };
 $("mm_x").onclick = ev => { ev.preventDefault(); $("memebox").style.display = "none"; };
 $("search").addEventListener("change", ev=>adhoc(ev.target.value));
 $("search").addEventListener("keydown", ev=>{ if (ev.key==="Enter") adhoc(ev.target.value); });
@@ -921,7 +1036,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   const tfk = {"1":"15m","2":"1h","3":"4h","4":"1d","5":"1w","d":"1d","D":"1d"}[ev.key];
   if (tfk) document.querySelector(`.seg button[data-tf="${tfk}"]`).click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderBoard(); renderDetail(); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+topbar(); renderScan(); setupsNow(); renderPlans(); renderBoard(); renderDetail(); loadPlans(); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);
