@@ -1,0 +1,124 @@
+{
+ "coins": 16,
+ "rows": 14344,
+ "span": [
+  "2023-08-12",
+  "2026-10-07"
+ ],
+ "fee_bps_round_trip": 26.0,
+ "hedge": "BTC",
+ "cutoff": "2025-06-01",
+ "persistence": {
+  "thresholds": {
+   "p80": 0.07847,
+   "p95": 0.22859
+  },
+  "unconditional_p_pos": 83.2,
+  "by_condition": {
+   "trailing > 0": {
+    "n": 11938,
+    "p_fwd1_pos": 92.7,
+    "p_fwd3_pos": 92.0,
+    "mean_fwd1_pct": 0.0457,
+    "mean_fwd3_pct": 0.13145
+   },
+   "trailing >= 80th pct": {
+    "n": 1662,
+    "p_fwd1_pos": 99.3,
+    "p_fwd3_pos": 99.2,
+    "mean_fwd1_pct": 0.1515,
+    "mean_fwd3_pct": 0.41745
+   },
+   "trailing >= 95th pct": {
+    "n": 350,
+    "p_fwd1_pos": 99.7,
+    "p_fwd3_pos": 99.4,
+    "mean_fwd1_pct": 0.28133,
+    "mean_fwd3_pct": 0.74708
+   },
+   "trailing < 0": {
+    "n": 2406,
+    "p_fwd1_pos": 36.2,
+    "p_fwd3_pos": 41.0,
+    "mean_fwd1_pct": -0.04084,
+    "mean_fwd3_pct": -0.09702
+   }
+  }
+ },
+ "carry": {
+  "trailing >= 80th pct|train": {
+   "n": 1321,
+   "funding_pct": 0.16524,
+   "hedge_drift_pct": -0.10374,
+   "net_pct": -0.1985,
+   "ci": [
+    -0.60306,
+    0.1972
+   ],
+   "significant": false
+  },
+  "trailing >= 80th pct|test": {
+   "n": 341,
+   "funding_pct": 0.09828,
+   "hedge_drift_pct": -0.02103,
+   "net_pct": -0.18275,
+   "ci": [
+    -1.2895,
+    0.96693
+   ],
+   "significant": false
+  },
+  "trailing >= 95th pct|train": {
+   "n": 331,
+   "funding_pct": 0.28846,
+   "hedge_drift_pct": -0.56371,
+   "net_pct": -0.53525,
+   "ci": [
+    -1.46667,
+    0.35166
+   ],
+   "significant": false
+  },
+  "trailing >= 95th pct|test": {
+   "n": 19,
+   "funding_pct": 0.15719,
+   "hedge_drift_pct": 0.60725,
+   "net_pct": 0.50445,
+   "ci": [
+    -4.67565,
+    5.00103
+   ],
+   "significant": false
+  }
+ },
+ "tail": {
+  "all days": {
+   "n": 14328,
+   "median_sq1": 2.523,
+   "p95_sq1": 12.26,
+   "p99_sq1": 21.555,
+   "p99_sq3": 39.766,
+   "worst_sq1": 74.276
+  },
+  "trailing >= 80th pct": {
+   "n": 1662,
+   "median_sq1": 3.288,
+   "p95_sq1": 15.651,
+   "p99_sq1": 27.585,
+   "p99_sq3": 53.087,
+   "worst_sq1": 70.243
+  },
+  "trailing >= 95th pct": {
+   "n": 350,
+   "median_sq1": 4.25,
+   "p95_sq1": 20.428,
+   "p99_sq1": 28.959,
+   "p99_sq3": 50.832,
+   "worst_sq1": 39.681
+  }
+ },
+ "verdict": [
+  "top 5% funding, hedged, 1-day hold, on TEST: net +0.5044% [-4.67565, 5.00103] -> NOT an edge after costs",
+  "top 20% funding, hedged, 1-day hold, on TEST: net -0.1827% [-1.2895, 0.96693] -> NOT an edge after costs"
+ ]
+}
