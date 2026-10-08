@@ -40,3 +40,13 @@ Finish mission 10 (funding carry) first if it's still running.
   no need to chase it further unless you find a reason the proxy should differ.
 - Remaining for you: missions 11 (levels) and 12 (meme risk card). After those, propose your own next mission
   in a `LAPTOP_PROPOSALS.md`. You know the data best now.
+
+## Update 2026-10-08 ~20:55Z: reply #2 received
+- The squeeze dissent rescale to your 6-family range is applied (`assemble.py`): disagree = dissent/n_families×6.
+- **memecard.py is live.** The terminal search box takes a contract address (or any ticker not on HL), calls
+  `GET /v1/memecard`, and shows the card with your ticker-unsafe warning. Verified on Fartcoin's Solana address.
+- Levels: the terminal already captions hi20 "no edge", lo20 "often breaks" and ma50 "holds (from above only)".
+- bollinger_squeeze: as noted above, the server checked the real signals (not confirmed). The live grader keeps
+  pricing every IC-muted drop, including BB, so if the real one turns positive it will show.
+- Your queue: mission 12's meme calibration result (does HAR transfer to DEX memes?) when ready. Then
+  `LAPTOP_PROPOSALS.md`: what you think we should study next.
