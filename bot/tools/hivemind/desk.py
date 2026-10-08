@@ -187,15 +187,26 @@ def build():
          + f". Bot strategies currently muted for a backwards record: {e(', '.join(muted) or 'none')}.</p>",
          f"<p class='muted'>Everything here is measured context plus graded opinions. Nothing in the system has a proven "
          f"directional edge yet; your read decides. Data refreshed {e(_age(allst.get('updated', '')))}.</p>",
-         "</div><div class='coins'>"]
+         "</div>"]
     import visuals
+    import voices as vz
+    import web
+    p.append("<div class='sec'>Signal web: every voice on every coin</div>"
+             "<p class='muted'>▲ blue = favors up, ▼ red = favors down, ● gray = neutral. Faded = context only; "
+             "striped = track record is backwards (shown so you see it, not to follow). Hover any cell for the "
+             "detail. The grade next to each voice comes from checking it against what price did afterwards.</p>")
+    p.append(web.signal_web(allst))
+    p.append("<div class='sec'>Coins</div><div class='coins'>")
     for sym, st in (allst.get("coins") or {}).items():
         p.append(visuals.card(sym, st, (chief.get("coins") or {}).get(sym)))
-    p.append("</div></div>")
+    p.append("</div>")
+    p.append("<div class='sec'>Voice guide: what each one is and how to read it</div>")
+    p.append(web.voice_guide(vz.INFO, _load(HM / "voice_grades.json", {})))
+    p.append("</div>")
     page = ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
             "<meta name='viewport' content='width=device-width,initial-scale=1'>"
             "<meta http-equiv='refresh' content='300'><title>Swing Desk</title>"
-            f"<style>{dash.CSS}{visuals.CSS}</style></head><body>{''.join(p)}</body></html>")
+            f"<style>{dash.CSS}{visuals.CSS}{web.CSS}</style></head><body>{''.join(p)}</body></html>")
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(page, encoding="utf-8")
     tmp.replace(OUT)

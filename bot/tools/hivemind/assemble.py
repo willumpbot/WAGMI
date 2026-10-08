@@ -248,6 +248,23 @@ def voice_history(sym, market):
     return basemap.lookup(sym, market)
 
 
+VOICE_LOG = DATA / "hivemind" / "voice_log.jsonl"
+
+
+def _log_voices(sym, st):
+    """One row per voice per cycle: the raw material for grading every voice forward."""
+    px = (st.get("market") or {}).get("price")
+    if not px:
+        return
+    now = round(time.time())
+    with open(VOICE_LOG, "a", encoding="utf-8") as f:
+        for v in st.get("voices") or []:
+            if v["reading"] is None:
+                continue
+            f.write(json.dumps({"ts": now, "sym": sym, "px": px, "voice": v["voice"],
+                                "r": v["reading"], "trust": v["trust"]}) + "\n")
+
+
 # ── assemble ──────────────────────────────────────────────────────────
 
 def assemble():
@@ -283,6 +300,16 @@ def assemble():
             st["history"] = voice_history(sym, st.get("market") or {})
         except Exception as e:
             st["history"] = {"error": f"{type(e).__name__}: {e}"[:200]}
+        try:
+            import voices as vz
+            chief_c = ((_load(DATA / "hivemind" / "chief_latest.json", {}) or {}).get("coins") or {}).get(sym)
+            st["voices"] = vz.compute(sym, st, shared, chief_c)
+            st["consensus"] = vz.consensus(st["voices"])
+            st["contradictions"] = vz.contradictions(st["voices"])
+            _log_voices(sym, st)
+        except Exception as e:
+            st["voices"] = []
+            st["voices_error"] = f"{type(e).__name__}: {e}"[:200]
         (OUT / f"{sym}.json").write_text(json.dumps(st, indent=1, default=str), encoding="utf-8")
         allstate["coins"][sym] = st
     tmp = OUT / "_all.json.tmp"

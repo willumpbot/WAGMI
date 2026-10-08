@@ -180,6 +180,8 @@ def card(sym, st, chief):
              "<span><i class='lg band'></i>20-day range</span><span><i class='lg liq'></i>liquidation cluster</span></div>")
     o.append(f"<div class='gauges'>{gauge_trend(m)}{gauge_control(m.get('di'))}{gauge_range(m.get('range_20d') or {})}</div>")
     o.append(history_viz(h))
+    from web import contradictions_html
+    o.append(contradictions_html(st))
     o.append("<div class='cond'>")
     for side in ("LONG", "SHORT"):
         hits = rules.get(side) or []

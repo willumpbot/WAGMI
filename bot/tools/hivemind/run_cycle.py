@@ -24,6 +24,9 @@ def main():
     sys.path.remove(str(assemble.BOT / "tools" / "copilot"))
     sys.path.insert(0, str(assemble.BOT / "tools" / "copilot"))
     try:
+        if "--chief" in sys.argv:
+            import voice_grader
+            voice_grader.main()   # refresh per-voice trust before the voices are assembled
         assemble.assemble()
         if "--chief" in sys.argv:
             out = chief.run_chief()
