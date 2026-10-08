@@ -199,10 +199,12 @@ def consensus(V):
     # Move SIZE (laptop mission 5, held out of sample): the fewer independent families dissent, the bigger
     # the next day's move (1 dissenting ~5.1% vs 4 dissenting ~3.2%, average ~3.5%). No directional content.
     dissent = min(fam_b, fam_s)
+    # LAPTOP_REPLY.md: disagree <= 1 -> expect a ~5.1% day [4.71, 5.55]; >= 3 -> ~3.2% [3.04, 3.33].
     size = ("bigger than usual" if dissent <= 1 and (fam_b + fam_s) >= 3 else
-            "smaller than usual" if dissent >= 4 else "normal")
+            "smaller than usual" if dissent >= 3 else "normal")
+    size_hint = "~5% day" if size == "bigger than usual" else "~3.2% day" if size == "smaller than usual" else "~3.5% day"
     return {"bull": len(bull), "bear": len(bear), "neutral": sum(1 for v in V if v["reading"] == 0),
-            "bull_families": fam_b, "bear_families": fam_s, "dissent_families": dissent, "move_size": size,
+            "bull_families": fam_b, "bear_families": fam_s, "dissent_families": dissent, "move_size": size, "move_size_hint": size_hint,
             "trust_weighted": round(wb - ws, 2), "trust_total": round(wb + ws, 2)}
 
 

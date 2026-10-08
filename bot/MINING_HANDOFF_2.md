@@ -73,5 +73,5 @@ If mission 5 shows voices predict move SIZE better than direction, build and val
 realized-volatility forecaster. A swing trader can use it for stops and position sizing even without a
 directional edge. Report the out-of-sample calibration.
 
-Sync exactly as before: branch `laptop-mining-2026-10`, use `git add -f bot/data/laptop_mining/`, and commit +
+Sync exactly as before: branch `laptop-mining-2026-10`, use plain `git add bot/data/laptop_mining/` (never `-f`), and commit +
 push after EACH mission. Finish with a ≤10-line plain-language summary for the owner.

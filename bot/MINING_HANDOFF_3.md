@@ -1,7 +1,7 @@
 # Laptop mission set 3: risk tools for a leverage trader (written 2026-10-08 on the server)
 
 You are the Claude Code session on the owner's laptop. Same house rules and sync as `MINING_HANDOFF.md`, and
-the same `git add -f bot/data/laptop_mining/` habit. Commit and push after each mission.
+plain `git add bot/data/laptop_mining/` (never `-f`, see LAPTOP_REPLY.md). Commit and push after each mission.
 
 **What the server did with your set-2 results.** Everything now lives in `bot/tools/hivemind/`, shown on the
 owner's terminal (`WAGMI/terminal.html`):

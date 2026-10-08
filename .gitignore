@@ -62,6 +62,15 @@ bot/data/**
 !bot/data/*.py
 !bot/data/**/*.py
 
+# Re-include the laptop mining deliverables (mission reports + small compressed
+# datasets the server pulls). `bot/data/**` above would otherwise silently drop
+# them -- exactly the trap the comment further up describes, which bit again on
+# 2026-10-08. Raw candle stores stay ignored via bot/data/laptop_mining/.gitignore.
+!bot/data/laptop_mining/
+!bot/data/laptop_mining/*.md
+!bot/data/laptop_mining/*.json
+!bot/data/laptop_mining/*.jsonl.gz
+
 # Re-include frontend fallback snapshots (the broad `data/` rule above also caught
 # web/public/data). These JSONs are the CDN-served last-known-data fallback for the
 # site when the bot PC / ngrok tunnel is offline — they ARE deployable content.
