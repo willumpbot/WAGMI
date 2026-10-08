@@ -130,6 +130,7 @@ def signals(path, since=0.0):
             out.append({"ts": r["ts"], "symbol": r["sym"], "side": "LONG" if sgn > 0 else "SHORT",
                         "agree": _agree_bucket(r.get("sig_agree")),
                         "regimes": {x for x in (r.get("sig_regime"),) if x},
+                        "feat": r.get("feat") or {},
                         "e": sgn * r["r4h"] - FEE})
     return out
 
@@ -144,6 +145,10 @@ def matches(rule, row):
         return False
     if s.get("regime") and s["regime"] not in row["regimes"]:
         return False
+    feat = row.get("feat") or {}
+    for k in FEAT_KEYS:
+        if s.get(k) and feat.get(k) != s[k]:
+            return False   # rows without the feature (e.g. ledger trades) never match
     return True
 
 
@@ -221,6 +226,21 @@ def _slice_table(rows, key, since=0.0):
     return lines
 
 
+def _waves_lines():
+    try:
+        d = json.loads((DATA / "data_waves" / "data_waves.json").read_text(encoding="utf-8"))
+    except Exception:
+        return ["(unavailable)"]
+    lines = []
+    for dim in d.get("slice_dimensions", []):
+        for b, st in (dim.get("bucket_stats") or {}).items():
+            if not isinstance(st, dict) or st.get("n", 0) < 30:
+                continue
+            lines.append(f"{dim['name'][:34]:34s} {b[:34]:34s} n={st.get('n'):4d} mean={st.get('mean_bps', 0):+.1f}bps"
+                         f" (all-signal baseline -14.6)")
+    return lines or ["(none)"]
+
+
 def brief(rules, tr, sg_hist, sg_live):
     now = _now()
     active = [r for r in rules if r["status"] != "retired"]
@@ -246,6 +266,10 @@ def brief(rules, tr, sg_hist, sg_live):
         "## D. Same grading, live since the 2026-10-07 model upgrade:",
         *(_slice_table(sg_live, "e") or ["(too few rows yet)"]),
         "",
+        "## G. EXPLORATORY context slices (2026-10-08 data-waves study, May-Oct signals, ~36 tests run, so ~2 would"
+        " pass |t|>2 by chance; treat as hypotheses only):",
+        *_waves_lines(),
+        "",
         "## E. Your active rules and their FORWARD scores (only data after each rule was written):",
         *(act_lines or ["(none yet)"]),
         "",
@@ -267,6 +291,11 @@ Facts established by audit (do not re-litigate):
 
 Rule grammar - a slice is any combination of:
   symbol: BTC|ETH|SOL|HYPE|XRP|NEAR   side: LONG|SHORT   agree: "1"|"2"|"3+"   regime: a regime label seen in the evidence
+  Decision-time context (signal-level only; real-trade rows don't carry it, so these rules are graded on signals):
+  book: supports|balanced|against   (L2 order-book imbalance within 1% of mid, relative to the signal's side)
+  funding: side_pays|neutral|side_paid   (does the signal's side pay funding right now)
+  session: asia (00-08 UTC)|eu (08-13)|us (13-20)|late (20-24)
+  btc4h: with|flat|against   (BTC's last-4h move relative to the signal's side, +/-0.5%)
 action: "avoid" (slice will do worse than the rest) or "favor" (better than the rest).
 
 Guidance:
@@ -294,13 +323,16 @@ def ask_manager(text):
     return json.loads(raw[i:j + 1])
 
 
-VALID = {"symbol": set(SYMS), "side": {"LONG", "SHORT"}, "agree": {"1", "2", "3+"}}
+FEAT_KEYS = ("book", "funding", "session", "btc4h")
+VALID = {"symbol": set(SYMS), "side": {"LONG", "SHORT"}, "agree": {"1", "2", "3+"},
+         "book": {"supports", "balanced", "against"}, "funding": {"side_pays", "neutral", "side_paid"},
+         "session": {"asia", "eu", "us", "late"}, "btc4h": {"with", "flat", "against"}}
 
 
 def _clean_slice(s):
     out = {}
     for k, v in (s or {}).items():
-        if k not in ("symbol", "side", "agree", "regime") or v in (None, ""):
+        if k not in ("symbol", "side", "agree", "regime") + FEAT_KEYS or v in (None, ""):
             continue
         v = str(v)
         if k in VALID and v not in VALID[k]:

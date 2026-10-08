@@ -21,7 +21,7 @@
     "n_in": 0,
     "n_out": 0
    },
-   "scored_at": "2026-10-08T17:46+00:00"
+   "scored_at": "2026-10-08T18:22+00:00"
   }
  },
  {
@@ -46,7 +46,7 @@
     "n_in": 0,
     "n_out": 0
    },
-   "scored_at": "2026-10-08T17:46+00:00"
+   "scored_at": "2026-10-08T18:22+00:00"
   }
  },
  {
@@ -71,7 +71,34 @@
     "n_in": 0,
     "n_out": 0
    },
-   "scored_at": "2026-10-08T17:46+00:00"
+   "scored_at": "2026-10-08T18:22+00:00"
   }
+ },
+ {
+  "id": "R004",
+  "action": "avoid",
+  "slice": {
+   "side": "LONG",
+   "agree": "2"
+  },
+  "status": "shadow",
+  "created": 1791483759.2905715,
+  "created_iso": "2026-10-08T18:22+00:00",
+  "thesis": "Two-strategy long agreement seems to come from late trend-chasing in a market where longs bleed. Agreement adds no edge on the long side.",
+  "evidence": "A: agree=2 LONG n=44, -$3.29/trade (-$145), vs all-trade avg about -$0.70. C: n=218, -18.5bps vs -14.6 baseline. B (n=6, flat) neither confirms nor refutes. Complements R003, not a duplicate.",
+  "expected_n_per_week": 12
+ },
+ {
+  "id": "R005",
+  "action": "favor",
+  "slice": {
+   "book": "supports"
+  },
+  "status": "shadow",
+  "created": 1791483759.2905715,
+  "created_iso": "2026-10-08T18:22+00:00",
+  "thesis": "Resting L2 depth on the signal's side absorbs adverse flow and helps follow-through. A book leaning against the side leaves the entry exposed.",
+  "evidence": "G: supports +9.4bps (n=220), balanced -7.3 (n=963), against -22.2 (n=192), baseline -14.6. The steady drop across the three buckets lowers the odds this is chance among about 36 tests. No trade data exists for this field, so it is signal-only and unconfirmed.",
+  "expected_n_per_week": 10
  }
 ]
