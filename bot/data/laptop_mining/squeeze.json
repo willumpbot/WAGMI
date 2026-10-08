@@ -1,0 +1,266 @@
+{
+ "threshold_mult": 2.0,
+ "rows": 27170,
+ "coins": 17,
+ "cutoff": "2025-06-01",
+ "sides": {
+  "long": {
+   "base_rate_train": 10.89,
+   "base_rate_test": 8.27,
+   "models": {
+    "forecast only": {
+     "test_auc": 0.5748,
+     "top_decile_rate_pct": 9.98,
+     "calibration_slope": 1.128,
+     "coef": [
+      -1.5056,
+      -0.4495
+     ],
+     "features": [
+      "lfc"
+     ]
+    },
+    "+ funding": {
+     "test_auc": 0.5804,
+     "top_decile_rate_pct": 10.82,
+     "calibration_slope": 1.049,
+     "coef": [
+      -1.5028,
+      -0.463,
+      1.8964,
+      -0.0623
+     ],
+     "features": [
+      "lfc",
+      "f_tr_f",
+      "has_f"
+     ]
+    },
+    "+ consensus": {
+     "test_auc": 0.6068,
+     "top_decile_rate_pct": 15.02,
+     "calibration_slope": 1.036,
+     "coef": [
+      -0.9613,
+      -0.5067,
+      -0.2114
+     ],
+     "features": [
+      "lfc",
+      "disagree"
+     ]
+    },
+    "all three": {
+     "test_auc": 0.6046,
+     "top_decile_rate_pct": 15.26,
+     "calibration_slope": 1.034,
+     "coef": [
+      -0.9832,
+      -0.5174,
+      1.5295,
+      -0.039,
+      -0.2025
+     ],
+     "features": [
+      "lfc",
+      "f_tr_f",
+      "has_f",
+      "disagree"
+     ]
+    }
+   },
+   "best_model": "+ consensus",
+   "calibration_test": [
+    {
+     "decile": 1,
+     "n": 832,
+     "pred_pct": 6.99,
+     "actual_pct": 5.65
+    },
+    {
+     "decile": 2,
+     "n": 832,
+     "pred_pct": 8.27,
+     "actual_pct": 6.37
+    },
+    {
+     "decile": 3,
+     "n": 832,
+     "pred_pct": 9.08,
+     "actual_pct": 5.17
+    },
+    {
+     "decile": 4,
+     "n": 832,
+     "pred_pct": 9.8,
+     "actual_pct": 6.25
+    },
+    {
+     "decile": 5,
+     "n": 832,
+     "pred_pct": 10.45,
+     "actual_pct": 5.53
+    },
+    {
+     "decile": 6,
+     "n": 832,
+     "pred_pct": 11.11,
+     "actual_pct": 8.29
+    },
+    {
+     "decile": 7,
+     "n": 832,
+     "pred_pct": 11.84,
+     "actual_pct": 8.65
+    },
+    {
+     "decile": 8,
+     "n": 832,
+     "pred_pct": 12.71,
+     "actual_pct": 11.06
+    },
+    {
+     "decile": 9,
+     "n": 832,
+     "pred_pct": 14.0,
+     "actual_pct": 10.7
+    },
+    {
+     "decile": 10,
+     "n": 832,
+     "pred_pct": 16.66,
+     "actual_pct": 15.02
+    }
+   ]
+  },
+  "short": {
+   "base_rate_train": 11.72,
+   "base_rate_test": 12.04,
+   "models": {
+    "forecast only": {
+     "test_auc": 0.5071,
+     "top_decile_rate_pct": 12.14,
+     "calibration_slope": 0.679,
+     "coef": [
+      -1.9274,
+      -0.0678
+     ],
+     "features": [
+      "lfc"
+     ]
+    },
+    "+ funding": {
+     "test_auc": 0.5073,
+     "top_decile_rate_pct": 13.46,
+     "calibration_slope": 0.157,
+     "coef": [
+      -1.8974,
+      -0.0704,
+      1.683,
+      -0.1595
+     ],
+     "features": [
+      "lfc",
+      "f_tr_f",
+      "has_f"
+     ]
+    },
+    "+ consensus": {
+     "test_auc": 0.559,
+     "top_decile_rate_pct": 20.07,
+     "calibration_slope": 1.06,
+     "coef": [
+      -1.3571,
+      -0.1292,
+      -0.2208
+     ],
+     "features": [
+      "lfc",
+      "disagree"
+     ]
+    },
+    "all three": {
+     "test_auc": 0.5533,
+     "top_decile_rate_pct": 19.47,
+     "calibration_slope": 1.003,
+     "coef": [
+      -1.35,
+      -0.1288,
+      1.2997,
+      -0.1357,
+      -0.2128
+     ],
+     "features": [
+      "lfc",
+      "f_tr_f",
+      "has_f",
+      "disagree"
+     ]
+    }
+   },
+   "best_model": "+ consensus",
+   "calibration_test": [
+    {
+     "decile": 1,
+     "n": 832,
+     "pred_pct": 8.1,
+     "actual_pct": 8.77
+    },
+    {
+     "decile": 2,
+     "n": 832,
+     "pred_pct": 9.23,
+     "actual_pct": 11.06
+    },
+    {
+     "decile": 3,
+     "n": 832,
+     "pred_pct": 9.99,
+     "actual_pct": 11.18
+    },
+    {
+     "decile": 4,
+     "n": 832,
+     "pred_pct": 10.36,
+     "actual_pct": 10.94
+    },
+    {
+     "decile": 5,
+     "n": 832,
+     "pred_pct": 11.18,
+     "actual_pct": 11.9
+    },
+    {
+     "decile": 6,
+     "n": 832,
+     "pred_pct": 11.97,
+     "actual_pct": 10.1
+    },
+    {
+     "decile": 7,
+     "n": 832,
+     "pred_pct": 12.3,
+     "actual_pct": 9.25
+    },
+    {
+     "decile": 8,
+     "n": 832,
+     "pred_pct": 12.79,
+     "actual_pct": 12.74
+    },
+    {
+     "decile": 9,
+     "n": 832,
+     "pred_pct": 14.4,
+     "actual_pct": 14.42
+    },
+    {
+     "decile": 10,
+     "n": 832,
+     "pred_pct": 17.01,
+     "actual_pct": 20.07
+    }
+   ]
+  }
+ }
+}
