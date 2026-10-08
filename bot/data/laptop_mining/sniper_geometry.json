@@ -1,0 +1,43 @@
+{
+ "source": "C:/Users/vince/WAGMI PROJECT/WAGMI/bot/data/manual/sniper_signals.jsonl",
+ "usable": 2449,
+ "simulated": 1842,
+ "span": [
+  "2026-03-24",
+  "2026-06-05"
+ ],
+ "dropped": {
+  "duplicate": 38442,
+  "unparseable": 1
+ },
+ "per_symbol": {
+  "BTC": {
+   "n": 251,
+   "diff_R": 0.0099,
+   "ci": [
+    -0.2419,
+    0.258
+   ],
+   "significant": false
+  },
+  "HYPE": {
+   "n": 814,
+   "diff_R": 0.0356,
+   "ci": [
+    -0.2066,
+    0.2656
+   ],
+   "significant": false
+  },
+  "SOL": {
+   "n": 741,
+   "diff_R": 0.2946,
+   "ci": [
+    -0.0674,
+    0.6227
+   ],
+   "significant": false
+  }
+ },
+ "monotonicity_rho": 1.0
+}
