@@ -1,0 +1,157 @@
+{
+ "stop_mult": 8.0,
+ "baseline": "target_0.5R",
+ "cutoff": "2026-04-16",
+ "n": 15663,
+ "policies": {
+  "breakeven_after_0.5R": {
+   "train_R": -0.0847,
+   "test_R": 0.0586,
+   "vs_baseline_R": -0.0101,
+   "ci": [
+    -0.0511,
+    0.0306
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "breakeven_after_1.0R": {
+   "train_R": -0.0828,
+   "test_R": 0.0595,
+   "vs_baseline_R": -0.0093,
+   "ci": [
+    -0.0576,
+    0.0429
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "scaleout_half_0.5R": {
+   "train_R": -0.074,
+   "test_R": 0.065,
+   "vs_baseline_R": -0.0038,
+   "ci": [
+    -0.0193,
+    0.0135
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "target_0.5R": {
+   "train_R": -0.0653,
+   "test_R": 0.0688,
+   "baseline": true
+  },
+  "target_1.0R": {
+   "train_R": -0.0782,
+   "test_R": 0.0654,
+   "vs_baseline_R": -0.0033,
+   "ci": [
+    -0.0279,
+    0.022
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "target_1.5R": {
+   "train_R": -0.0823,
+   "test_R": 0.0644,
+   "vs_baseline_R": -0.0044,
+   "ci": [
+    -0.0393,
+    0.03
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "target_2.0R": {
+   "train_R": -0.083,
+   "test_R": 0.0623,
+   "vs_baseline_R": -0.0064,
+   "ci": [
+    -0.044,
+    0.033
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "time_12h": {
+   "train_R": -0.0298,
+   "test_R": -0.0251,
+   "vs_baseline_R": -0.0939,
+   "ci": [
+    -0.1639,
+    -0.0209
+   ],
+   "significant": true,
+   "verdict": "worse"
+  },
+  "time_24h": {
+   "train_R": -0.0747,
+   "test_R": -0.0126,
+   "vs_baseline_R": -0.0813,
+   "ci": [
+    -0.15,
+    -0.007
+   ],
+   "significant": true,
+   "verdict": "worse"
+  },
+  "time_48h": {
+   "train_R": -0.0818,
+   "test_R": 0.0542,
+   "vs_baseline_R": -0.0146,
+   "ci": [
+    -0.0657,
+    0.0382
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "time_4h": {
+   "train_R": -0.0148,
+   "test_R": -0.047,
+   "vs_baseline_R": -0.1158,
+   "ci": [
+    -0.1899,
+    -0.044
+   ],
+   "significant": true,
+   "verdict": "worse"
+  },
+  "trail_after_0.25R": {
+   "train_R": -0.0831,
+   "test_R": 0.0598,
+   "vs_baseline_R": -0.009,
+   "ci": [
+    -0.038,
+    0.0229
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "trail_after_0.5R": {
+   "train_R": -0.0818,
+   "test_R": 0.0641,
+   "vs_baseline_R": -0.0046,
+   "ci": [
+    -0.037,
+    0.0281
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  },
+  "trail_after_1.0R": {
+   "train_R": -0.0806,
+   "test_R": 0.0675,
+   "vs_baseline_R": -0.0012,
+   "ci": [
+    -0.0345,
+    0.0394
+   ],
+   "significant": false,
+   "verdict": "no difference"
+  }
+ },
+ "verdict": "no exit policy beats the flat 0.5R target"
+}
