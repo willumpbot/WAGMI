@@ -3,6 +3,9 @@
 Runs as the OWNER's Telegram account (Telegram's official user API via Telethon), because bots cannot read
 groups they were not added to. It only READS the chosen chats and only WRITES to the owner's own
 "Saved Messages". It never posts in groups, never sends to anyone else, and never trades.
+Invisible to other group members: it never sends read receipts (messages stay unread exactly as before) and it
+re-asserts OFFLINE status every 2 minutes so the session never shows the owner as "online". The only trace is
+the session in the owner's own Settings -> Devices, visible to them alone.
 
 Setup (one time, by the owner):
   1. https://my.telegram.org -> API development tools -> create an app -> copy api_id and api_hash
@@ -204,6 +207,19 @@ async def run():
                 pass
             await asyncio.sleep(300)
 
+    async def stay_invisible():
+        """Keep the owner's account showing OFFLINE: a connected session can otherwise flip the account to
+        'online' for anyone allowed to see last-seen. Messages are never marked as read (no read receipts are
+        ever sent), and nothing is ever posted outside the owner's own Saved Messages."""
+        from telethon.tl.functions.account import UpdateStatusRequest
+        while True:
+            try:
+                await client(UpdateStatusRequest(offline=True))
+            except Exception:
+                pass
+            await asyncio.sleep(120)
+
+    client.loop.create_task(stay_invisible())
     client.loop.create_task(link_watch())
     print(f"{datetime.now(timezone.utc):%H:%M}Z listening ({'all groups' if wanted is None else len(wanted)} chats)")
     await client.run_until_disconnected()
