@@ -9094,7 +9094,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # with the laptop-tested geometry -- stop 2x the forecast next-day move,
         # target 0.5R -- read from the hivemind's risk block (laptop_mining/
         # risk_voice.py via tools/hivemind/assemble.py), and scale qty down so the
-        # dollar risk is unchanged. Tight stops lost ~-0.43R/setup; this geometry
+        # dollar risk is unchanged. Pair with TIME_STOP_HOURS=48: the tested
+        # geometry holds up to 48h, and earlier time stops cost ~0.1R/trade
+        # (laptop EXITS.md). Tight stops lost ~-0.43R/setup; this geometry
         # was +0.09R on held-out data and wider stops won 4/4 walk-forward folds
         # (bot/data/laptop_mining/ADAPTIVE_STOPS.md, GEOMETRY.md). Falls back to
         # the existing stop if the hivemind reading is missing or stale.
