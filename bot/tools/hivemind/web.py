@@ -5,7 +5,7 @@ TRUST_WORD = {"earned": "earned", "promising": "promising", "unproven": "unprove
               "backwards": "backwards"}
 
 ORDER = ["structure", "stretch", "driver", "structure_4h", "stretch_4h", "driver_4h", "momentum_7d", "rsi", "history_5d", "range", "funding", "oi",
-         "liq_skew", "book", "btc", "weather", "copilot", "strategies", "trade_agent", "rules", "chief", "bot_position"]
+         "liq_skew", "book", "btc", "top_traders", "weather", "copilot", "strategies", "trade_agent", "rules", "chief", "bot_position"]
 
 
 def _cell(v):

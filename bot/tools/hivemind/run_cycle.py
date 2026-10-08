@@ -27,6 +27,11 @@ def main():
         if "--chief" in sys.argv:
             import voice_grader
             voice_grader.main()   # refresh per-voice trust before the voices are assembled
+        try:
+            import whales
+            whales.snapshot()
+        except Exception as e:
+            log(f"whales failed: {e}")
         assemble.assemble()
         if "--chief" in sys.argv:
             out = chief.run_chief()

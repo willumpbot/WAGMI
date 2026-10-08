@@ -27,7 +27,14 @@ FAMILY = {  # laptop mission 5 (voice_families.json): stretch, range and driver 
     "funding": "funding", "oi": "positioning", "liq_skew": "positioning",
     "book": "microstructure", "btc": "btc", "weather": "market",
     "copilot": "co-pilot", "strategies": "bot-strategies", "trade_agent": "bot-ai",
-    "rules": "rules", "chief": "chief", "bot_position": "bot", "owner": "owner"}
+    "rules": "rules", "chief": "chief", "bot_position": "bot", "owner": "owner", "top_traders": "top-traders"}
+
+
+def _load_json(p):
+    try:
+        return json.loads(Path(p).read_text(encoding="utf-8"))
+    except Exception:
+        return None
 
 
 def _graded_trust():
@@ -178,6 +185,13 @@ def compute(sym, st, shared, chief):
     if names:
         add("rules", "Rules in force", (score > 0) - (score < 0), ", ".join(names),
             "earned" if any(r.get("status") == "earned" for s_ in rules.values() for r in s_) else "unproven")
+    w = ((_load_json(DATA / "hivemind" / "whales_latest.json") or {}).get("coins") or {}).get(sym)
+    if w and (w["long"] + w["short"]) >= 5:
+        L_, S_ = w["long"], w["short"]
+        rd = 1 if L_ >= 2 * max(S_, 1) else -1 if S_ >= 2 * max(L_, 1) else 0
+        add("top_traders", "Top traders' positions", rd,
+            f"{L_} long vs {S_} short among profitable HL traders (net {w['net_share']*100:+.0f}% of ${w['gross']/1e6:.0f}M)",
+            "unproven")
     c = chief or {}
     if c.get("lean"):
         add("chief", "Chief analyst", {"LONG": 1, "SHORT": -1}.get(c["lean"], 0),
@@ -274,6 +288,9 @@ INFO = {
                     "live since the Opus upgrade."),
     "rules": ("Rules the Opus rules manager wrote that apply here right now (avoid/favor).",
               "Hypotheses until 'earned' on future data. Dashed chips on the cards."),
+    "top_traders": ("What ~60 of Hyperliquid's consistently profitable traders (not market makers or vaults) are holding "
+                    "right now: how many are long vs short this coin.", "NEW data, started 2026-10-08, so no track record yet. "
+                    "Reads bullish/bearish only when one side outnumbers the other 2 to 1. Graded forward like every voice."),
     "chief": ("The Opus chief analyst's lean after reading every other voice.",
               "Graded at 1 and 5 days. Its track record shows at the top of the desk."),
     "bot_position": ("The bot's own open trade on this coin.", "Context: what the bot is already exposed to."),
