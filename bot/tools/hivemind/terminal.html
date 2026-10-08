@@ -22,6 +22,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 "Segoe UI",sy
 .num{font-variant-numeric:tabular-nums;font-family:"Cascadia Mono","Consolas",ui-monospace,monospace}
 .top{display:flex;flex-wrap:wrap;gap:18px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
 .brand{font-weight:800;letter-spacing:.12em;font-size:12px}
+.extra{color:var(--warn);font-size:11px;margin-left:6px}
 .tk{display:flex;gap:6px;align-items:baseline}.tk .k{color:var(--soft);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 .note{flex:1 1 360px;color:var(--soft);font-size:12px;min-width:0}
 .dotlive{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;margin-right:4px;animation:p 2s infinite}
@@ -85,6 +86,8 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
 <body>
 <div class="top">
   <span class="brand">WAGMI TERMINAL</span>
+  <input id="search" list="universe" placeholder="Any HL coin…  /" autocomplete="off" style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font:inherit;padding:4px 8px;width:170px">
+  <datalist id="universe"></datalist>
   <span class="tk num"><span class="dotlive" id="livedot"></span><span class="k">UTC</span><span id="clock"></span></span>
   <span class="tk"><span class="k">Weather</span><b id="weather"></b></span>
   <span class="tk"><span class="k">Breadth</span><b class="num" id="breadth"></b></span>
@@ -124,6 +127,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
 <div class="foot">Measured context and graded opinions only. No voice in this system has a proven directional edge yet; the decision is yours. Live prices from Hyperliquid every 3s; analysis refreshed every 15 min, chief every 4h.</div>
 <script>
 const DATA = __DATA__;
+const ADHOC = {};   // coins looked up from the search box: chart + price + risk only (not in the hivemind)
 const SYMS = Object.keys(DATA.state.coins || {});
 const live = {};
 let sel = SYMS[0], tf = "1d", sortKey = null, sortDir = -1;
@@ -131,7 +135,7 @@ const $ = id => document.getElementById(id);
 const fmt = v => v == null || isNaN(v) ? "–" : (Math.abs(v) >= 1000 ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(4));
 const pct = (v,d=1) => v == null || isNaN(v) ? "–" : (v>=0?"+":"") + v.toFixed(d) + "%";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const C = s => DATA.state.coins[s];
+const C = s => DATA.state.coins[s] || ADHOC[s] || {};
 const chief = s => (DATA.chief.coins || {})[s] || {};
 
 function clusters(s){
@@ -160,7 +164,7 @@ function nearestLiq(s, dir){
 function oi(s){ for (const l of ((C(s).deep||{}).funding_oi||[])) { const m = l.match(/\(([+-]?\d+)%, last ~(\d+)d/); if (m) return {v:+m[1], d:+m[2]}; } return null; }
 
 const COLS = [
-  {k:"sym", h:"Coin", v:s=>s, r:s=>`<span class="sym">${s}</span>${(C(s).bot||{}).position ? ` <span class="pill ${(C(s).bot.position.side==="SHORT")?"dn":"up"}">BOT ${C(s).bot.position.side[0]}</span>`:""}`},
+  {k:"sym", h:"Coin", v:s=>s, r:s=>`<span class="sym">${s}</span>${C(s).adhoc?'<span class="extra" title="Looked up from search: chart, price and risk only. Not analysed by the hivemind.">chart only</span>':""}${(C(s).bot||{}).position ? ` <span class="pill ${(C(s).bot.position.side==="SHORT")?"dn":"up"}">BOT ${C(s).bot.position.side[0]}</span>`:""}`},
   {k:"px", h:"Last", v:px, r:s=>`<span class="num" id="px_${s}">${fmt(px(s))}</span>`},
   {k:"chg", h:"Day", v:dayChg, r:s=>{const c=dayChg(s);return `<span class="num ${c>=0?"up":"dn"}" id="ch_${s}">${pct(c,2)}</span>`}},
   {k:"wk", h:"7D", v:s=>(C(s).market||{}).ret_7d_pct, r:s=>{const c=(C(s).market||{}).ret_7d_pct;return `<span class="num ${c>=0?"up":"dn"}">${pct(c)}</span>`}},
@@ -357,6 +361,40 @@ function topbar(){
   $("clock").textContent = new Date().toISOString().slice(11,19);
 }
 
+async function hlPost(body){ const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.json(); }
+function emaArr(v, n){ const k = 2/(n+1); let e = null; return v.map(x => e = e === null ? x : x*k + e*(1-k)); }
+async function loadUniverse(){
+  try { const [meta, ctx] = await hlPost({type:"metaAndAssetCtxs"});
+    const rows = meta.universe.map((u,i)=>({n:u.name, v:+((ctx[i]||{}).dayNtlVlm||0), d:u.isDelisted})).filter(x=>!x.d).sort((a,b)=>b.v-a.v);
+    $("universe").innerHTML = rows.map(x=>`<option value="${x.n}">`).join(""); window.UNIVERSE = new Set(rows.map(x=>x.n)); } catch(e) {}
+}
+async function adhoc(sym){
+  sym = sym.trim(); if (!sym) return;
+  const match = window.UNIVERSE ? [...window.UNIVERSE].find(x=>x.toUpperCase()===sym.toUpperCase()) : sym;
+  if (!match) { $("search").style.borderColor = "var(--bad)"; return; }
+  $("search").style.borderColor = "";
+  sym = match;
+  if (!DATA.state.coins[sym] && !ADHOC[sym]) {
+    const now = Date.now();
+    const [d1, h4] = await Promise.all([
+      hlPost({type:"candleSnapshot",req:{coin:sym,interval:"1d",startTime:now-160*864e5,endTime:now}}),
+      hlPost({type:"candleSnapshot",req:{coin:sym,interval:"4h",startTime:now-45*864e5,endTime:now}})]);
+    const mk = raw => { const o = raw.map(b=>[+b.o,+b.h,+b.l,+b.c]); const c = o.map(b=>b[3]);
+      return {t: raw.map(b=>b.t), ohlc: o, ema20: emaArr(c,20), ema50: emaArr(c,50)}; };
+    const D = mk(d1), H = mk(h4), o = D.ohlc, n = o.length;
+    const tr = o.slice(-15).map((b,i,a)=> i ? Math.max(b[1]-b[2], Math.abs(b[1]-a[i-1][3]), Math.abs(b[2]-a[i-1][3])) : b[1]-b[2]);
+    const atrp = tr.slice(1).reduce((x,y)=>x+y,0)/14 / o[n-1][3] * 100;
+    const last20 = o.slice(-20), hi = Math.max(...last20.map(b=>b[1])), lo = Math.min(...last20.map(b=>b[2]));
+    const p = o[n-1][3];
+    ADHOC[sym] = {chart: {...D, h4: H}, market: {price: p, atr_pct_1d: atrp,
+      ret_1d_pct: (p/o[n-2][3]-1)*100, ret_7d_pct: n>7 ? (p/o[n-8][3]-1)*100 : null,
+      range_20d: {low: lo, high: hi, position: (p-lo)/(hi-lo)},
+      structure: (D.ema20[n-1] > D.ema50[n-1] ? "structure UP" : "structure DOWN") + (p < D.ema20[n-1] ? " | price BELOW" : " | price above")},
+      voices: [], consensus: {}, history: {}, rules: {}, adhoc: true};
+    SYMS.push(sym);
+  }
+  sel = sym; renderBoard(); renderDetail();
+}
 async function poll(){
   try {
     const r = await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"allMids"}'});
@@ -372,14 +410,17 @@ document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{tf=b.dataset.
 ["c_acct","c_risk","c_side","c_lev"].forEach(id=>$(id).oninput=calc);
 ["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;calc()});
 $("c_side").onchange=()=>{delete $("c_stop").dataset.touched;calc()};
-document.addEventListener("keydown",ev=>{ if (ev.target.tagName==="INPUT") return;
+$("search").addEventListener("change", ev=>adhoc(ev.target.value));
+$("search").addEventListener("keydown", ev=>{ if (ev.key==="Enter") adhoc(ev.target.value); });
+document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!=="INPUT"){ ev.preventDefault(); $("search").focus(); return; }
+  if (ev.target.tagName==="INPUT") return;
   const rows=[...document.querySelectorAll("#bb tr")].map(r=>r.dataset.s); let i=rows.indexOf(sel);
   if (ev.key==="ArrowDown"){sel=rows[Math.min(rows.length-1,i+1)];renderBoard();renderDetail();ev.preventDefault();}
   if (ev.key==="ArrowUp"){sel=rows[Math.max(0,i-1)];renderBoard();renderDetail();ev.preventDefault();}
   if (ev.key==="d"||ev.key==="D") document.querySelector('.seg button[data-tf="1d"]').click();
   if (ev.key==="4") document.querySelector('.seg button[data-tf="4h"]').click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderBoard(); renderDetail(); poll();
+topbar(); renderBoard(); renderDetail(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000);
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);
