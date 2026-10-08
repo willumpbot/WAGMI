@@ -99,6 +99,7 @@ def trades():
                     "agree": _agree_bucket(r.get("agreement_level")),
                     "regimes": {x for x in (r.get("regime_1h"), r.get("regime_4h")) if x},
                     "pnl": float(r["net_pnl"] or 0), "exit": r.get("exit_type"),
+                    "strats": {x.strip() for x in (r.get("contributing_factors") or "").split(",") if x.strip()},
                 })
             except Exception:
                 continue
@@ -131,6 +132,7 @@ def signals(path, since=0.0):
                         "agree": _agree_bucket(r.get("sig_agree")),
                         "regimes": {x for x in (r.get("sig_regime"),) if x},
                         "feat": r.get("feat") or {},
+                        "strats": set(r.get("sig_strats") or []),
                         "e": sgn * r["r4h"] - FEE})
     return out
 
@@ -144,6 +146,8 @@ def matches(rule, row):
     if s.get("agree") and row["agree"] != s["agree"]:
         return False
     if s.get("regime") and s["regime"] not in row["regimes"]:
+        return False
+    if s.get("with_strategy") and s["with_strategy"] not in (row.get("strats") or set()):
         return False
     feat = row.get("feat") or {}
     for k in FEAT_KEYS:
@@ -296,6 +300,8 @@ Rule grammar - a slice is any combination of:
   funding: side_pays|neutral|side_paid   (does the signal's side pay funding right now)
   session: asia (00-08 UTC)|eu (08-13)|us (13-20)|late (20-24)
   btc4h: with|flat|against   (BTC's last-4h move relative to the signal's side, +/-0.5%)
+  with_strategy: a strategy name that must be among those agreeing (confidence_scorer, multi_tier_quality,
+    bollinger_squeeze, regime_trend, mean_reversion, funding_rate, oi_delta, liquidation_cascade, probability_engine)
 action: "avoid" (slice will do worse than the rest) or "favor" (better than the rest).
 
 Guidance:
@@ -326,13 +332,15 @@ def ask_manager(text):
 FEAT_KEYS = ("book", "funding", "session", "btc4h")
 VALID = {"symbol": set(SYMS), "side": {"LONG", "SHORT"}, "agree": {"1", "2", "3+"},
          "book": {"supports", "balanced", "against"}, "funding": {"side_pays", "neutral", "side_paid"},
-         "session": {"asia", "eu", "us", "late"}, "btc4h": {"with", "flat", "against"}}
+         "session": {"asia", "eu", "us", "late"}, "btc4h": {"with", "flat", "against"},
+         "with_strategy": {"confidence_scorer", "multi_tier_quality", "bollinger_squeeze", "regime_trend",
+                           "mean_reversion", "funding_rate", "oi_delta", "liquidation_cascade", "probability_engine"}}
 
 
 def _clean_slice(s):
     out = {}
     for k, v in (s or {}).items():
-        if k not in ("symbol", "side", "agree", "regime") + FEAT_KEYS or v in (None, ""):
+        if k not in ("symbol", "side", "agree", "regime", "with_strategy") + FEAT_KEYS or v in (None, ""):
             continue
         v = str(v)
         if k in VALID and v not in VALID[k]:
