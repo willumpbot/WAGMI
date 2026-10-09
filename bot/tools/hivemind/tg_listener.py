@@ -89,7 +89,23 @@ def _usd(v):
     return f"${v / 1e6:.2f}M" if v >= 1e6 else f"${v / 1e3:.1f}k" if v >= 1e3 else f"${v:.0f}"
 
 
+def _caller_line(sender):
+    """Caller's record from tg_track.py / caller_grade.py (local). ★ = 2x hit rate above the chat's, n>=8: watch, not proof."""
+    try:
+        R = json.loads((TG / "track.json").read_text(encoding="utf-8")).get("callers") or {}
+    except Exception:
+        return None
+    r = R.get(sender)
+    if not r or r.get("hist_hit") is None:
+        return None
+    base = R.get("_base_hit") or 0
+    fwd = f" · since tracking {r.get('fwd_2x', 0)}/{r.get('fwd_n', 0)} hit 2x" if r.get("fwd_n") else ""
+    return (("★ WATCHED CALLER · " if r.get("watch") else "") +
+            f"{sender}: {r['hist_hit'] * 100:.0f}% of {r.get('hist_n')} past calls hit 2x (chat {base * 100:.0f}%){fwd}")
+
+
 def format_card(c, chat, sender, ca):
+    rec = _caller_line(sender)
     if not c.get("ok"):
         return f"🔎 {chat} · {sender}\n{ca}\nNot found on DexScreener (too new, dead, or not a token)."
     h = c.get("history") or {}
@@ -105,6 +121,8 @@ def format_card(c, chat, sender, ca):
         lines.append(f"down {abs(h['drawdown_from_ath_pct']):.0f}% from ATH")
     if flags:
         lines.append("⚠ " + " · ".join(flags))
+    if rec:
+        lines.insert(0 if rec.startswith("★") else 1, rec)
     lines.append(c.get("url") or "")
     lines.append(ca)
     return "\n".join(lines)
