@@ -107,7 +107,27 @@ def run():
         if c["call_mcap"]:
             c["x_now"] = round(c["now_mcap"] / c["call_mcap"], 2) if c["now_mcap"] else None
             c["x_peak"] = round(c["peak_mcap"] / c["call_mcap"], 2) if c["peak_mcap"] else None
-    out = {"updated": now, "calls": calls}
+    # Caller records: history (caller_grade.py, pre-registered) + forward (this tracker). A caller is starred to
+    # WATCH when their historical 2x hit rate beats the chat's with n>=8: a watch flag, not proof (none beat random).
+    records = {}
+    try:
+        g = json.loads((TG / "caller_grades.json").read_text(encoding="utf-8"))["chats"]["syndicate"]
+        base = g["base_all"]["hit_rate"]
+        for c in g.get("callers") or []:
+            if c.get("handle"):
+                records[c["handle"]] = {"hist_n": c.get("n"), "hist_hit": c.get("hit_rate"),
+                                        "hist_peak": c.get("median_peak_mult"),
+                                        "watch": bool(c.get("n", 0) >= 8 and (c.get("hit_rate") or 0) > base)}
+        records["_base_hit"] = base
+    except Exception:
+        pass
+    for c in calls.values():
+        h = c.get("caller")
+        if h and c.get("x_peak") is not None:
+            r = records.setdefault(h, {})
+            r["fwd_n"] = r.get("fwd_n", 0) + 1
+            r["fwd_2x"] = r.get("fwd_2x", 0) + (c["x_peak"] >= 2)
+    out = {"updated": now, "calls": calls, "callers": records}
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(json.dumps(out), encoding="utf-8")
     tmp.replace(OUT)

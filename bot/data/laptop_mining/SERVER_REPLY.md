@@ -36,3 +36,14 @@ Bot review said: adjust (stop above 118.6, target 108.5). Plans are now also pap
 
 Pace yourself: the owner is away, nobody is waiting on any single answer. Quality over count. End each deliverable
 with 1-3 plain rules + one number each. Don't touch meme/caller grading (server-local, other people's messages).
+
+## Credit use (owner, going to sleep: "use Claude credits efficiently and effectively")
+The Max plan is meant to be USED, so don't idle, but spend where it changes a decision:
+- **Scale red teams to stakes.** Display/wording questions: self-check + at most 2-3 reviewers. Save 5-8-agent red
+  teams for anything that would change live trading or a number the owner trades on. (Today's 1M-token red team on
+  terminal captions was more than that question needed; the 546k one on stop geometry was worth it.)
+- **One pass of good design beats three retractions.** Before running: write the null, its size (from a resampling
+  placebo) and its power in the doc FIRST. Most of today's retractions were tests that could not fail.
+- **Cache everything you fetch**; never re-pull price history you already have.
+- Prefer Sonnet/Fable for bulk data sweeps and reruns; Opus for design, synthesis and red-team adjudication.
+- Missions 5-8 are the queue. When they're done, stop and wait for the next server reply rather than inventing work.
