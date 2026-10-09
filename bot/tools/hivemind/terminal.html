@@ -156,6 +156,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
   <span class="note" id="chiefnote"></span>
   <span class="tk"><span class="k">Data</span><span class="num mut" id="age"></span></span>
 </div>
+<div id="away" style="display:none;padding:8px 12px;background:var(--panel2);border-bottom:1px solid var(--line);font-size:12.5px"></div>
 <div id="situation" class="sit"></div>
 <div class="app">
   <aside class="left">
@@ -990,6 +991,32 @@ function tgTrack(){
   $("tgtrack").innerHTML = `<table class="pos num"><tr><th>Called</th><th>Coin</th><th>Caller</th><th>MC at call</th><th>Now</th><th>Now ×</th><th>Peak ×</th></tr>${C0.map(c => `<tr data-ca="${c.ca}" style="cursor:pointer" title="click for the risk card"><td class="mut">${ago(c.call_ts)} ago</td><td><b>${esc(c.sym||c.name||c.ca.slice(0,6))}</b></td><td class="mut">${callerCell(c.caller)}</td><td>${c.call_mcap?usd(c.call_mcap):"–"}</td><td>${c.now_mcap?usd(c.now_mcap):"–"}</td><td>${xc(c.x_now)}</td><td>${xc(c.x_peak)}</td></tr>`).join("")}</table>`;
   document.querySelectorAll("#tgtrack tr[data-ca]").forEach(tr => tr.onclick = () => memeCard(tr.dataset.ca));
 }
+function awayStrip(){
+  let last = 0; try { last = +localStorage.getItem("lastSeen") || 0; } catch(e) {}
+  const now = Date.now()/1000, save = () => { try { localStorage.setItem("lastSeen", String(Date.now()/1000)); } catch(e) {} };
+  if (!last) { save(); return; }
+  const hrs = (now - last)/3600; if (hrs < 2) return;
+  const A = DATA.away || {}, it = [], when = t => new Date(t*1000).toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit"});
+  const bc = (A.bot_closes||[]).filter(t => Date.parse(t.ts)/1000 > last);
+  const net = bc.reduce((a,t) => a + t.pnl, 0);
+  it.push(bc.length ? `<b>Bot (paper):</b> ${bc.length} trade${bc.length>1?"s":""} closed, <span class="num ${net>=0?"up":"dn"}">${net>=0?"+":""}$${net.toFixed(2)}</span> <span class="mut">(${bc.map(t => `${t.sym} ${t.side} ${t.pnl>=0?"+":""}$${t.pnl.toFixed(2)}`).join(", ")})</span>` : `<b>Bot:</b> no trades closed`);
+  const pl = PLANS.map(q => { const r = q.result||{}, x = q.exec_result||{};
+    if (r.closed_at > last) return `${q.coin} ${q.side} <span class="${r.r>=0?"up":"dn"}">${r.status} ${r.r>=0?"+":""}${(+r.r).toFixed(2)}R</span>`;
+    if (r.filled_at > last && r.status === "open") return `${q.coin} ${q.side} <span class="up">filled, open now</span>`;
+    if (r.status === "expired" && q.ts + (q.entry_window_h||24)*3600 > last) return `${q.coin} ${q.side} <span class="mut">expired (entry never reached)</span>`;
+    return null; }).filter(Boolean);
+  const act = PLANS.filter(q => ["waiting","open"].includes((q.result||{}).status));
+  it.push(`<b>Your plans:</b> ${pl.length ? pl.join(" · ") : "no changes"}${act.length ? ` <span class="mut">(${act.length} still active)</span>` : ""}`);
+  const T = DATA.tgTrack || {}, R = T.callers || {}, nc = Object.values(T.calls||{}).filter(c => c.call_ts > last);
+  if (nc.length) { const best = nc.filter(c => c.x_peak).sort((a,b) => b.x_peak - a.x_peak)[0], stars = nc.filter(c => (R[c.caller]||{}).watch);
+    it.push(`<b>Syndicate:</b> ${nc.length} new call${nc.length>1?"s":""}${best?`, best so far ${esc(best.sym||"?")} ${best.x_peak.toFixed(1)}× (${esc(best.caller||"?")})`:""}${stars.length?`, <span style="color:var(--warn)">★</span> ${stars.length} from watched callers`:""} <span class="mut">(Calls tab)</span>`); }
+  const lp = (A.laptop||[]).filter(c => c.ts > last);
+  it.push(lp.length ? `<b>Laptop:</b> ${lp.length} new result${lp.length>1?"s":""}, latest: ${esc(lp[0].msg)}` : `<b>Laptop:</b> <span class="warn" style="margin:0">nothing new since ${A.laptop && A.laptop[0] ? when(A.laptop[0].ts) : "?"}; its session may have stopped</span>`);
+  if (DATA.chief && DATA.chief.market_note) it.push(`<b>Chief now:</b> ${esc(DATA.chief.market_note)}`);
+  $("away").innerHTML = `<div style="display:flex;align-items:center;gap:10px"><b style="font-size:13px">While you were away</b><span class="mut">${hrs<48?hrs.toFixed(0)+"h":(hrs/24).toFixed(1)+" days"}</span><span style="flex:1"></span><button id="away_ok" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:3px 10px;cursor:pointer">Got it</button></div><ul style="margin:4px 0 0 18px;padding:0;line-height:1.6">${it.map(x => `<li>${x}</li>`).join("")}</ul>`;
+  $("away").style.display = "";
+  $("away_ok").onclick = () => { save(); $("away").style.display = "none"; };
+}
 function pick(s){ if (!s) return; sel = s; renderBoard(); renderDetail(); }
 function lvx(v){ return v < 10 ? v.toFixed(1) : v.toFixed(0); }
 function sparkVals(s){ const ch = C(s).chart || {}, h = (ch.h4||{}).ohlc; return h && h.length ? h.slice(-42).map(b=>b[3]) : (ch.ohlc||[]).slice(-8).map(b=>b[3]); }
@@ -1095,7 +1122,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   const tfk = {"1":"15m","2":"1h","3":"4h","4":"1d","5":"1w","d":"1d","D":"1d"}[ev.key];
   if (tfk) document.querySelector(`.seg button[data-tf="${tfk}"]`).click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); tgTrack(); renderBoard(); renderDetail(); loadPlans(); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); tgTrack(); renderBoard(); renderDetail(); loadPlans().then(awayStrip); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);

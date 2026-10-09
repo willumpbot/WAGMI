@@ -243,6 +243,31 @@ def lab_data():
     }
 
 
+def _away_data():
+    """Inputs for the terminal's "While you were away" strip: bot closes, laptop activity."""
+    import csv
+    import subprocess
+    out = {"bot_closes": [], "laptop": []}
+    try:
+        rows = list(csv.DictReader(open(BOT / "data" / "trades.csv", encoding="utf-8")))
+        for r in rows[-30:]:
+            try:
+                pnl = float(r.get("pnl") or r.get("net_pnl") or 0)
+            except ValueError:
+                pnl = 0.0
+            out["bot_closes"].append({"ts": r.get("timestamp"), "sym": r.get("symbol"), "side": r.get("side"),
+                                      "pnl": pnl, "reason": r.get("exit_type") or ""})
+    except Exception:
+        pass
+    try:
+        log = subprocess.run(["git", "log", "-8", "--format=%ct|%s", "origin/laptop-mining-2026-10"], cwd=BOT,
+                             capture_output=True, text=True, timeout=20).stdout
+        out["laptop"] = [{"ts": int(l.split("|", 1)[0]), "msg": l.split("|", 1)[1]} for l in log.splitlines() if "|" in l]
+    except Exception:
+        pass
+    return out
+
+
 def build_terminal():
     """The trading terminal: one self-contained page, data embedded, live prices fetched in the browser."""
     import voices as vz
@@ -262,6 +287,7 @@ def build_terminal():
             "journal": _load(HM / "journal.json", {}) or {},
             "scan": _load(HM / "scan.json", {}) or {}, "plans": _load(HM / "plans.json", {}) or {},
             "tgTrack": _load(HM / "tg" / "track.json", {}) or {},
+            "away": _away_data(),
             "levelStats": ((_load(BOT / "data" / "laptop_mining" / "levels.json", {}) or {}).get("levels") or {}),
             "safeLev": ((_load(BOT / "data" / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table") or {})}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")
