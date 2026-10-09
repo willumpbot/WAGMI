@@ -1,0 +1,121 @@
+{
+ "n": 15663,
+ "weeks": 14,
+ "adx_period": 14,
+ "horizon_h": 48,
+ "current_setting": 10.0,
+ "swarm_proposal": 60.0,
+ "share_kept_pct": {
+  "10": 100.0,
+  "15": 98.79,
+  "20": 87.6,
+  "25": 77.67,
+  "40": 38.33,
+  "60": 7.45
+ },
+ "power": {
+  "0.0": 0.0,
+  "0.05": 0.007,
+  "0.1": 0.007,
+  "0.2": 0.113,
+  "0.4": 0.44
+ },
+ "size": 0.0,
+ "mde80_R": null,
+ "design_valid": false,
+ "buckets": {
+  "10-15": {
+   "n": 190,
+   "mean_r": -0.4201,
+   "week_mean": -0.6196,
+   "week_se": 0.2987,
+   "week_t": -2.07,
+   "weeks": 4
+  },
+  "15-20": {
+   "n": 1752,
+   "mean_r": -0.688,
+   "week_mean": 0.1506,
+   "week_se": 0.2973,
+   "week_t": 0.51,
+   "weeks": 10
+  },
+  "20-25": {
+   "n": 1556,
+   "mean_r": -0.3816,
+   "week_mean": -0.1143,
+   "week_se": 0.2225,
+   "week_t": -0.51,
+   "weeks": 13
+  },
+  "25-40": {
+   "n": 6162,
+   "mean_r": -0.3321,
+   "week_mean": -0.1995,
+   "week_se": 0.1573,
+   "week_t": -1.27,
+   "weeks": 14
+  },
+  "40+": {
+   "n": 6003,
+   "mean_r": -0.2604,
+   "week_mean": -0.3153,
+   "week_se": 0.1373,
+   "week_t": -2.3,
+   "weeks": 11
+  }
+ },
+ "gates": {
+  "15": {
+   "n_kept": 15473,
+   "n_blocked": 190,
+   "mean_r_kept": -0.2961,
+   "mean_r_blocked": -0.6196,
+   "difference": 0.3235,
+   "week_se": 0.3199,
+   "week_t": 1.01,
+   "significant": false
+  },
+  "20": {
+   "n_kept": 13721,
+   "n_blocked": 1942,
+   "mean_r_kept": -0.307,
+   "mean_r_blocked": 0.1316,
+   "difference": -0.4386,
+   "week_se": 0.3236,
+   "week_t": -1.36,
+   "significant": false
+  },
+  "25": {
+   "n_kept": 12165,
+   "n_blocked": 3498,
+   "mean_r_kept": -0.2778,
+   "mean_r_blocked": -0.0942,
+   "difference": -0.1836,
+   "week_se": 0.2509,
+   "week_t": -0.73,
+   "significant": false
+  },
+  "40": {
+   "n_kept": 6003,
+   "n_blocked": 9660,
+   "mean_r_kept": -0.3153,
+   "mean_r_blocked": -0.2209,
+   "difference": -0.0944,
+   "week_se": 0.1891,
+   "week_t": -0.5,
+   "significant": false
+  },
+  "60": {
+   "n_kept": 1167,
+   "n_blocked": 14496,
+   "mean_r_kept": -0.55,
+   "mean_r_blocked": -0.2825,
+   "difference": -0.2675,
+   "week_se": 0.2526,
+   "week_t": -1.06,
+   "significant": false
+  }
+ },
+ "verdict": "design void (placebo size miscalibrated)"
+}
