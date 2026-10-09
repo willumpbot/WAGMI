@@ -55,6 +55,16 @@ def build():
         "note": ("Recommendation: KEEP the gate. The dropped signals would have lost money; letting some through only buys "
                  "losing trades. Doing nothing = keeping it." if d.get("n", 0) >= 30 and (d.get("mean_bps") or 0) < 0 else ""),
     })
+    out.append({
+        "id": "exit-credit-saver",
+        "title": "Exit-agent credit saver",
+        "ask": "Once a bot trade's stop already locks in profit, ask the AI exit agent at most once an hour instead of every ~10 minutes?",
+        "why": "On Oct 8-9 the exit agent was asked 61 times about a ~$4 NEAR leftover whose stop already locked profit. Mechanical stops still run every tick either way.",
+        "live": "Built and tested (EXIT_AGENT_LOCKED_COOLDOWN_S, default off; 4 tests).",
+        "ready_when": "you say yes",
+        "ready": True,
+        "note": "Saying yes = set EXIT_AGENT_LOCKED_COOLDOWN_S=3600 in .env and restart the bot. Fully reversible.",
+    })
     rules = _load(BOT / "data" / "managers" / "rules.json", []) or []
     earned = [r for r in rules if r.get("status") == "earned"]
     out.append({

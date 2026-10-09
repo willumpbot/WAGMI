@@ -2504,6 +2504,17 @@ class AgentCoordinator:
             logger.warning(f"[OVERRIDE] Evaluation error: {e}")
             return None
 
+    @staticmethod
+    def _exit_profit_locked(p: Dict[str, Any]) -> bool:
+        """True when the stop sits on the profitable side of entry (a hit still closes in profit)."""
+        try:
+            sl, entry = float(p.get("sl") or 0), float(p.get("entry") or 0)
+        except (TypeError, ValueError):
+            return False
+        if sl <= 0 or entry <= 0:
+            return False
+        return sl > entry if str(p.get("side", "")).upper() == "LONG" else sl < entry
+
     def get_exit_intelligence(
         self,
         position_data: Dict[str, Any],
@@ -2523,6 +2534,20 @@ class AgentCoordinator:
         """
         if not self.configs.get(AgentRole.EXIT, AgentConfig(role=AgentRole.EXIT)).enabled:
             return None
+
+        # Credit saver (2026-10-09, default OFF): once the stop already locks profit (trailing past entry),
+        # re-asking the LLM every ~10 min buys little: mechanical stops still run every tick. With
+        # EXIT_AGENT_LOCKED_COOLDOWN_S > 0, a profit-locked position is re-evaluated at most that often;
+        # in between this returns None (= no recommendation, callers hold). Revert: unset / 0.
+        _locked_cd = int(os.getenv("EXIT_AGENT_LOCKED_COOLDOWN_S", "0") or 0)
+        _lk_key = (position_data.get("symbol"), position_data.get("side"))
+        if _locked_cd > 0 and self._exit_profit_locked(position_data):
+            _cache = getattr(self, "_exit_locked_last", None)
+            if _cache is None:
+                _cache = self._exit_locked_last = {}
+            if time.time() - _cache.get(_lk_key, 0.0) < _locked_cd:
+                return None
+            _cache[_lk_key] = time.time()
 
         exit_input = self._build_exit_input(position_data, market_data)
         out = self._call_agent(AgentRole.EXIT, exit_input, model_for_trigger)
