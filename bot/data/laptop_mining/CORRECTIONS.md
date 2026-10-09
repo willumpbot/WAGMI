@@ -115,28 +115,47 @@ sample mean to zero and then testing that mean is circular. The correct form res
 
 ---
 
-## Server missions 1-4 (2026-10-09) — all four provisional, red team `wkqz8m3br` running
+## Server missions 1-4 (2026-10-09) — RED TEAM DONE. Three of four recommendations changed.
 
-The PC acted on everything above (`a315cd55`: terminal no longer calls the withdrawn recipe
-"tested"; squeeze relabelled as stretch; HAR kept; adaptive-stops branch held) and sent four
-missions. Done and pushed:
+The PC acted on everything above (`a315cd55`) and sent four missions. All four delivered, then
+red-teamed (`wkqz8m3br`, 8 reviewers + synthesiser, 1.01M tokens). **Read `MISSIONS_REVISED.md` and
+`SCANNER_FLAGS_V2.md` — the four original mission docs are stamped superseded.**
 
-| # | question | answer | doc |
-|---|---|---|---|
-| 1 | do the two "tested" scanner flags earn the label? | **No — demote both.** Median excess = **−0.180%** = exactly the fee, at every flag and horizon. Win rates within **1.1pp** of the panel base rate. Null p 0.231/0.492 and 0.560/0.928 | `SCANNER_FLAGS.md` |
-| 2 | the owner's SOL short into the 50-day average | **No edge** — 41.0% break vs a 39.1% null, CI covers it; the 4h filter makes it *worse*. **And a bug: `levels.py` validated the SIMPLE 50d, `scanner.py` flags the EMA** (−5.1 vs −0.5 against null) | `SOL_50D_SHORT.md` |
-| 3 | does consensus predict move size? | **No — remove the caption.** Controlling for forecast *and* date leaves **+0.9%, t = 0.17** | `CONSENSUS_SIZE.md` |
-| 4 | audit the plan grader | **Don't build 1m** (the tie rule decides **0.115%**). **Do fix the fill candle** — it can decide **9.62%** of limit plans on pre-fill range, **51.9%** on tight brackets | `PLANS_AUDIT.md` |
+| # | my first answer | **final answer** |
+|---|---|---|
+| 1 | demote both flags, both null | **demote both — but `on_20d_low` is UNMEASURABLE, not null** (my test's size was 0.000). Label it "untested" |
+| 2 | *"a bug — switch the scanner to the simple average"* | **RETRACTED.** SMA vs EMA is not distinguishable in any era (best z = −1.90) and the SMA's own effect decayed −9.4 → −2.1 pts. **Don't change the code** |
+| 3 | remove the caption, effect is +0.9% | **Don't remove on my evidence.** My test had no power (MDE ~+10% vs a true effect of ~+4%). Effect is **+4.0%, t = 0.97** — small, unestablished, not zero |
+| 4 | don't build 1m; fix the fill candle | **Fix the fill candle — confirmed, and adverse-side-only rather than a blanket skip.** *"Don't build 1m"* **withdrawn** — measured on market fills, which never see a limit fill candle |
 
-**Mission 3 is the one worth studying.** It produced three different answers depending on what was
-controlled: +17.6% with 10/10 deciles and t = 6.46 (forecast only), 19% of the spread (date only),
-and **+0.9%, t = 0.17** (both). The impressive-looking middle result was the wrong one — `em` is a
-*per-coin* forecast and cannot absorb *market-wide* surprise. A fourth instance of controlling the
-wrong thing.
+**Exactly one recommendation survived: fix the fill candle.** Net for the PC today: one code change,
+everything else is wording.
 
-**Two bugs found in my own code along the way**, both the same class as the published errors:
-`move/em` blew up to 229,859× when `em` neared zero (switched to the log ratio), and a CRLF-vs-LF
-anchor made a patch silently no-op because I didn't assert on the replace.
+### Three fatal defects in Mission 1, all mine
+- **7 of my "24 perps" were spot series** with up to **70.5% stale bars** (`o=h=l=c`). A stale run
+  makes `px == min(low[-20:])` exactly, so `on_20d_low` fires every day of it — **63% of its firings
+  came from those 7 series**, and all 13 rows in my "top 1%" were **denomination jumps**, not meme
+  explosions (`MON_spot` 0.000543 → 0.0069 → 0.000565).
+- **My power table was an identity**: `DETECTED ⟺ delta > −ci_low`, and the "zero arm must not
+  detect" *is* the null verdict. **In the script whose docstring boasted of avoiding `geometry_v3`'s
+  version of the same error.**
+- **The "−0.180% = exactly the fee" headline was forced** — subtracting the per-date median makes
+  `median(x) == 0` identically, for the full panel too.
+
+### The pattern, fifth time — and a new variant
+| mission | the test that could not fail |
+|---|---|
+| 1 | a power table that was the CI bound restated |
+| 2 | a difference-of-differences asserted without testing the difference |
+| 3 | a control so strict it discarded 94% of the data and all the power |
+| 4 | a rate measured on a geometry the question doesn't apply to |
+
+**Three of these are a new variant: I kept making controls stricter to be rigorous, and strictness
+destroyed power.** A null is only evidence of absence if you state what it *could* have detected —
+and that figure must come from a placebo that resamples, not arithmetic on the CI.
+
+**New standing rule: report SIZE and POWER for every null, from a placebo that can fail. If size
+isn't near 5%, the design is void and the answer is "unmeasurable", not "nothing".**
 
 ## Still open
 
