@@ -52,7 +52,8 @@ def build():
                  + ("; laptop's flip test: " + str((flip or {}).get("verdict", "in")) if flip else "; laptop's flip test (mission 13) pending.")),
         "ready_when": "30+ dropped signals graded and the laptop's flip test is in",
         "ready": d.get("n", 0) >= 30 and flip is not None,
-        "note": "",
+        "note": ("Recommendation: KEEP the gate. The dropped signals would have lost money; letting some through only buys "
+                 "losing trades. Doing nothing = keeping it." if d.get("n", 0) >= 30 and (d.get("mean_bps") or 0) < 0 else ""),
     })
     rules = _load(BOT / "data" / "managers" / "rules.json", []) or []
     earned = [r for r in rules if r.get("status") == "earned"]
