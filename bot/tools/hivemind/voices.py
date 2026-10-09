@@ -216,7 +216,8 @@ def consensus(V):
     # LAPTOP_REPLY.md: disagree <= 1 -> expect a ~5.1% day [4.71, 5.55]; >= 3 -> ~3.2% [3.04, 3.33].
     size = ("bigger than usual" if dissent <= 1 and (fam_b + fam_s) >= 3 else
             "smaller than usual" if dissent >= 3 else "normal")
-    size_hint = "~5% day" if size == "bigger than usual" else "~3.2% day" if size == "smaller than usual" else "~3.5% day"
+    # laptop MISSIONS_REVISED #3: the old "~5% / ~3.2% day" caption overstated the effect ~4.5x (+4%, t=0.97 with controls)
+    size_hint = "voices aligned" if size == "bigger than usual" else "voices split" if size == "smaller than usual" else "mixed"
     return {"bull": len(bull), "bear": len(bear), "neutral": sum(1 for v in V if v["reading"] == 0),
             "bull_families": fam_b, "bear_families": fam_s, "dissent_families": dissent, "move_size": size, "move_size_hint": size_hint,
             "trust_weighted": round(wb - ws, 2), "trust_total": round(wb + ws, 2)}

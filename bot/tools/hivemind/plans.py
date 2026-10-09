@@ -81,7 +81,8 @@ the coin. Be honest and specific; you are graded forward against real prices, an
 Known facts from forward grading: no single voice or AI agent has proven directional skill; move SIZE is
 forecastable; safe leverage = liquidation beyond the 99th-percentile 1-day adverse move /1.5; stops TIGHTER than the
 bot's current ones lost 0.13-0.20R/trade, while wider stops only save fees (no edge); no target size or time limit
-tested better than another; the 50-day average holds from above more than chance; the 20-day low breaks MORE.
+tested better than another; the 50-day SIMPLE average held from above more than chance pre-2024 but the effect
+is mostly gone since; the 20-day low breaks more than chance; no scanner flag has a proven trading edge.
 Judge: is the stop survivable (vs expected move and liquidation clusters), is the target reachable, is leverage safe,
 does the evidence conflict with the direction. Suggest your own stop outside a normal day's move and a target at a
 real level; do not claim any target size is proven. Write for a visual learner: lead with one plain sentence.
@@ -225,12 +226,18 @@ def _walk(pl, bars, now):
                 fill_t = t0
             else:
                 continue
+        # Limit fill candle (laptop MISSIONS_REVISED, mission 4): its favourable extreme was usually reached on the
+        # approach, BEFORE the fill, so target hits / best excursion there are spurious; adverse-side (stop) hits are
+        # genuine post-fill events and are kept.
+        fill_bar = pl["entry_type"] != "market" and t0 == fill_t
         best, worst = (h - e) * sg / risk, (l - e) * sg / risk
         if sg < 0:
             best, worst = (e - l) / risk, (e - h) / risk
+        if fill_bar:
+            best = 0.0
         hi_x, lo_x = max(hi_x, best), min(lo_x, worst)
         hit_stop = (l <= st) if sg > 0 else (h >= st)
-        hit_tgt = (h >= tg) if sg > 0 else (l <= tg)
+        hit_tgt = False if fill_bar else ((h >= tg) if sg > 0 else (l <= tg))
         if hit_stop or hit_tgt:
             exit_px = st if hit_stop else tg
             return _close(pl, "lost" if hit_stop else "won", exit_px, t0, fill_t, hi_x, lo_x)

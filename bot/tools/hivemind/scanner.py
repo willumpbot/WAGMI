@@ -25,12 +25,12 @@ OUT = BOT / "data" / "hivemind" / "scan.json"
 TOP_N = 60
 
 FLAGS = {
-    "ma50_pullback": ("50d avg pullback", "tested",
-                      "Price is above the 50-day average and within half an expected daily move of it. From above, "
-                      "the 50-day average held more often than a random line (LEVELS.md, 2,955 touches)."),
-    "on_20d_low": ("On the 20d low", "tested",
-                   "Within half an expected move above the 20-day low. That low breaks MORE often than chance and "
-                   "keeps going (LEVELS.md): a breakdown watch, not a bounce buy."),
+    "ma50_pullback": ("50d avg pullback", "context",
+                      "Price is above the 50-day average and within half an expected daily move of it. Tested as a "
+                      "long trade on 724 cases (laptop SCANNER_FLAGS_V2): no edge, random dates did as well."),
+    "on_20d_low": ("On the 20d low", "untested",
+                   "Within half an expected move above the 20-day low. The low breaks more often than chance "
+                   "(LEVELS.md), but as a short trade there were too few clean cases to measure anything."),
     "vol_expanding": ("Moves getting bigger", "tested",
                       "Recent 5-day volatility is well above its 22-day level. Move size is forecastable (beat the "
                       "naive forecast 22/22 periods): expect bigger days, size down."),

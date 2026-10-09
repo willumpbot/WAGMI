@@ -161,7 +161,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
   <aside class="left">
     <div class="pane-h">Watchlist <span class="sp"></span><span class="mut" id="wl_note"></span></div>
     <div id="wl"></div>
-    <div class="pane-h">Setups now <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">tested only</span></div><div id="setups" class="stack"></div>
+    <div class="pane-h">Scanner now <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">no proven edge</span></div><div id="setups" class="stack"></div>
     <div class="pane-h">Near a level</div><div id="near" class="stack"></div>
     <div class="pane-h">Biggest movers (HL, 24h)</div><div id="movers" class="stack"></div>
   </aside>
@@ -344,7 +344,7 @@ const COLS = [
   {k:"lu", h:"Liq ↑", v:s=>(nearestLiq(s,1)||{}).d, r:s=>{const l=nearestLiq(s,1);return l?`<span class="num">${fmt(l.p)}</span> <span class="num mut">${pct(l.d)}</span>`:"–"}},
   {k:"ld", h:"Liq ↓", v:s=>(nearestLiq(s,-1)||{}).d, r:s=>{const l=nearestLiq(s,-1);return l?`<span class="num">${fmt(l.p)}</span> <span class="num mut">${pct(l.d)}</span>`:"–"}},
   {k:"hist", h:"Hist 5D ▲", v:s=>(((C(s).history||{}).next_5d)||{}).up_pct, r:s=>{const a=((C(s).history||{}).next_5d)||{};if(!a.n)return"–";return `<span class="num ${a.up_pct>=55?"up":a.up_pct<=45?"dn":"mut"}" title="${a.n} past cases, ~${a.n_eff} independent">${a.up_pct.toFixed(0)}%</span>`}},
-  {k:"vox", h:"Agreement → size", v:s=>(C(s).consensus||{}).dissent_families, r:s=>{const c=C(s).consensus||{};const b=c.bull_families||0,r=c.bear_families||0,t=(b+r)||1;const z=c.move_size;return `<span class="mb" title="Independent voice families leaning up ${b} / down ${r}. Agreement does NOT predict direction (out of sample); it predicts the SIZE of the next move: ${c.dissent_families??"?"} families disagree → ${c.move_size_hint||""}."><i style="width:${b/t*100}%;background:var(--pos)"></i><i style="width:${r/t*100}%;background:var(--neg)"></i></span> <span class="num ${z==="bigger than usual"?"up":"mut"}">${c.move_size_hint||""}</span>`}},
+  {k:"vox", h:"Voices agree", v:s=>(C(s).consensus||{}).dissent_families, r:s=>{const c=C(s).consensus||{};const b=c.bull_families||0,r=c.bear_families||0,t=(b+r)||1;const z=c.move_size;return `<span class="mb" title="Independent voice families leaning up ${b} / down ${r}. Agreement does NOT predict direction; its link to bigger moves is small and unproven (+4%, laptop Oct 9). ${c.dissent_families??"?"} families disagree."><i style="width:${b/t*100}%;background:var(--pos)"></i><i style="width:${r/t*100}%;background:var(--neg)"></i></span> <span class="num ${z==="bigger than usual"?"up":"mut"}">${c.move_size_hint||""}</span>`}},
   {k:"chief", h:"Chief", v:s=>({LONG:1,SHORT:-1}[chief(s).lean]||0)*(chief(s).conviction||0), r:s=>{const c=chief(s);if(!c.lean)return"–";const cl=c.lean==="LONG"?"up":c.lean==="SHORT"?"dn":"nt";return `<span class="pill ${cl}">${c.lean}<span class="dots">${[0,1,2,3,4].map(i=>`<i class="${i<(c.conviction||0)?"on":""}"></i>`).join("")}</span></span>`}},
 ];
 
@@ -800,8 +800,8 @@ function lab(){
     card("yes", String(wf.wins||"22/22").includes("/") ? wf.wins||"22/22" : `${wf.wins}/${wf.folds}`, "How BIG tomorrow's move will be IS predictable.", "That's the ± Exp. move number everywhere. Put your stop outside it.", calSvg),
     card("yes", "½×", "Don't put your stop closer than a normal day's move.", "Stops tighter than the bot's current ones lost 0.13-0.20R per trade (tested). Going wider than a normal day only saves fees: it is not an edge. No target size and no time limit tested better than another.",
       `<p>Laptop GEOMETRY_V3, after two red-team reviews (Oct 8): the earlier "2× stop / 0.5R target / 48h" recipe was withdrawn. Its gain was fee arithmetic (a random-walk placebo reproduced ~95% of it). Live paired check of the bot's stops still running: current ${gl.mean_r_current??"–"}R vs wider ${gl.mean_r_proposal??"–"}R per trade (${gl.n||0} signals).</p>`),
-    card("yes", "50d", "The 50-day average is real support. The 20-day low is not.", "From above, the 50-day average holds more than a random line. The 20-day low breaks MORE than chance, so treat it as a breakdown level. The 20-day high means nothing.",
-      `<p>2,955 touches, 2020-26, each compared with a random line at the same distance (LEVELS.md). About a third of touches just stall.</p>`),
+    card("no", "0", "No scanner setup has a proven edge.", "Pullbacks to the 50-day average were tested as trades (724 cases): random dates did as well. The 50-day average acted as support before 2024; since then the effect is mostly gone. The 20-day low breaks more often than chance, but shorting it couldn't be measured yet.",
+      `<p>Laptop SCANNER_FLAGS_V2 + MISSIONS_REVISED (Oct 9), after an 8-reviewer red team. About a third of level touches just stall. The scanner keeps grading every flag live; it needs ~300 cases per flag before a verdict means anything.</p>`),
     card("wait", d.n||0, "Is the bot's hidden filter right?", "Most of the bot's signals are thrown away before its AI sees them, because those strategies had a backwards record. We're grading the thrown-away signals to see if that's correct." + prog(d.n||0, 30), ""),
   ].join("");
 }
@@ -934,7 +934,7 @@ function renderScan(){
   const F = SCAN.flags || {}, all = SCAN.coins || [];
   if (!all.length) { $("scan_note").textContent = "Scanner hasn't run yet (it runs with every 15-min hivemind cycle)."; return; }
   const age = Math.round((Date.now() - Date.parse(SCAN.updated))/60000);
-  $("scan_note").innerHTML = `Top ${all.length} Hyperliquid perps by volume, scanned ${age}m ago. <span class="chip tested">green</span> = backed by an out-of-sample test; grey = context only. Click a coin to chart it.`;
+  $("scan_note").innerHTML = `Top ${all.length} Hyperliquid perps by volume, scanned ${age}m ago. <span class="chip tested">green</span> = the number itself is tested (e.g. move size); none of these flags has a proven trading edge yet, each is being graded live. Click a coin to chart it.`;
   $("scanf").innerHTML = Object.entries(F).map(([k,f]) => `<span class="chip f ${f.evidence==="tested"?"tested":""} ${SCANF.has(k)?"on":""}" data-k="${k}" title="${esc(f.why)}">${esc(f.label)} <span class="num">${all.filter(r=>r.flags.includes(k)).length}</span></span>`).join("")
     + (SCANF.size ? `<span class="chip f" data-k="_clear">clear</span>` : "");
   let rows = all.filter(r => [...SCANF].every(k => r.flags.includes(k)));
@@ -946,9 +946,9 @@ function renderScan(){
   document.querySelectorAll("#scan tbody tr").forEach(tr => tr.onclick = () => adhoc(tr.dataset.c));
 }
 function setupsNow(){
-  const F = SCAN.flags || {}, rows = (SCAN.coins || []).filter(r => r.n_tested > 0).slice(0, 8);
-  $("setups").innerHTML = rows.length ? rows.map(r => `<span class="mv" data-c="${r.coin}" title="${esc(r.flags.map(k => (F[k]||{}).why).join(" "))}"><b>${r.coin}</b><span class="mut" style="flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis">${r.flags.filter(k => (F[k]||{}).evidence === "tested").map(k => F[k].label).join(", ")}</span></span>`).join("")
-    : `<span class="mut" style="font-size:11.5px">No coin is on a tested setup right now.</span>`;
+  const F = SCAN.flags || {}, rows = (SCAN.coins || []).filter(r => r.flags.some(k => k !== "funding_cold")).slice(0, 8);
+  $("setups").innerHTML = rows.length ? rows.map(r => `<span class="mv" data-c="${r.coin}" title="${esc(r.flags.map(k => (F[k]||{}).why).join(" "))}"><b>${r.coin}</b><span class="mut" style="flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis">${r.flags.filter(k => k !== "funding_cold").map(k => (F[k]||{}).label || k).join(", ")}</span></span>`).join("")
+    : `<span class="mut" style="font-size:11.5px">Nothing flagged right now.</span>`;
   document.querySelectorAll("#setups .mv").forEach(el => el.onclick = () => adhoc(el.dataset.c));
 }
 function botState(st){ return ({OPEN:"open, first target not hit yet", TP1_HIT:"first target hit, part banked", TRAILING:"first target hit, rest riding on a trailing stop"})[st] || (st||"").toLowerCase(); }
@@ -1017,7 +1017,7 @@ function renderSituation(){
     r.position!=null ? I("20D range", `<span class="rb"><i style="left:${Math.max(0,Math.min(1,r.position))*100}%"></i></span> <span class="num">${(r.position*100).toFixed(0)}%</span>`, `Low ${fmt(r.low)} · high ${fmt(r.high)}. The 20d low breaks MORE than chance; the 50d avg holds from above.`) : "",
     I("Liq", `${lu?`<span class="num up">↑${pct(lu.d,1)}</span>`:""} ${ld?`<span class="num dn">↓${pct(ld.d,1)}</span>`:""}`, "Nearest liquidation clusters above and below (7 days)."),
     fu!=null ? I("Funding", `<span class="num ${fu>2.5e-5?"dn":fu<0?"up":"mut"}">${(fu*100).toFixed(4)}%/h</span>`, "Red = longs paying shorts (crowded long).") : "",
-    I("Voices", `<span class="${cs.move_size==="bigger than usual"?"up":"mut"}">${esc(cs.move_size_hint||"–")}</span>`, "Agreement predicts the SIZE of the next move, not its direction."),
+    I("Voices", `<span class="${cs.move_size==="bigger than usual"?"up":"mut"}">${esc(cs.move_size_hint||"–")}</span>`, "How aligned the independent voices are. Alignment has not proven to predict direction, and its link to bigger moves is small and unproven (laptop, Oct 9)."),
     ch.lean ? I("Chief", `<span class="pill ${ch.lean==="LONG"?"up":ch.lean==="SHORT"?"dn":"nt"}">${ch.lean} ${ch.conviction||""}/5</span>`, ch.read||"") : "",
     botPos(s) ? (b => I("Bot", `<span class="pill ${b.side==="SHORT"?"dn":"up"}">${b.side}</span> <span class="mut">${["TP1_HIT","TRAILING"].includes(b.state)?"target 1 hit, trailing":"open"}</span> <span class="num ${b.total>=0?"up":"dn"}">${b.total>=0?"+":""}$${b.total.toFixed(2)}</span>`, `Bot (paper): entry ${fmt(b.entry)}, stop ${fmt(b.sl)}, banked $${(b.realized_pnl||0).toFixed(2)}. Details in the Positions tab.`))(botPos(s)) : "",
     mp ? I("Mine", `<span class="pill ${+mp.szi>0?"up":"dn"}">${+mp.szi>0?"LONG":"SHORT"} ${(mp.leverage||{}).value||""}×</span> <span class="num ${+mp.unrealizedPnl>=0?"up":"dn"}">$${(+mp.unrealizedPnl).toFixed(2)}</span>`, "Your live Hyperliquid position") : ""];

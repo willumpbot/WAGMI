@@ -7,7 +7,7 @@ the same window (so a market-wide rally/dump doesn't count), signed by the flag'
   on_20d_low     -> short (the 20d low breaks more than chance)
   everything else -> unsigned (graded on |excess move|, i.e. does it flag bigger-than-usual moves)
 Writes data/hivemind/scan_grades.json: per flag n, mean excess %, hit rate, bootstrap 95% CI, verdict.
-A flag needs n>=30 graded and a CI clear of zero before it is called "earned". Never trades anything.
+A flag needs n>=300 graded (laptop: n=30 can only detect edges 4-12x any plausible one) and a CI clear of zero before it is called "earned". Never trades anything.
 """
 import json
 import random
@@ -111,8 +111,8 @@ def resolve():
                 continue
             ci = _ci(ys)
             if sg:
-                verdict = ("earned" if len(ys) >= 30 and ci and ci[0] > 0 else
-                           "backwards" if len(ys) >= 30 and ci and ci[1] < 0 else "collecting" if len(ys) < 30 else "no edge")
+                verdict = ("earned" if len(ys) >= 300 and ci and ci[0] > 0 else
+                           "backwards" if len(ys) >= 300 and ci and ci[1] < 0 else "collecting" if len(ys) < 300 else "no edge")
             else:
                 verdict = "size-only flag (graded on move size, not direction)"
             out["flags"][f][h] = {"n": len(ys), "mean_pct": round(statistics.mean(ys), 3), "ci95": ci,
