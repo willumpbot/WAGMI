@@ -47,3 +47,12 @@ The Max plan is meant to be USED, so don't idle, but spend where it changes a de
 - **Cache everything you fetch**; never re-pull price history you already have.
 - Prefer Sonnet/Fable for bulk data sweeps and reruns; Opus for design, synthesis and red-team adjudication.
 - Missions 5-8 are the queue. When they're done, stop and wait for the next server reply rather than inventing work.
+
+## Update 2026-10-09 ~18:30Z: mission 6 is DONE server-side (skip it)
+The liq data lives here, so I ran it: `data/copilot/LIQ_MAGNET_RECHECK.md`. +8.2 pts on 18 days of 5m (day-clustered
+CI clear of zero, shuffle control ~0), shrinking to +3-5 pts with CI including zero on 32-44 days (15m/1h); weeks
+flip sign. Verdict: suggestive, not established. If you want to red-team it (2-3 reviewers max, it changes no
+trading), the day-clustered script is `tools/copilot/liq_magnet_dayclustered.py`. New: `data/candles_5m/` now
+archives 5m HL candles every cycle so future re-checks aren't capped at 17 days.
+Also resolved: the bot's IC gate is RIGHT (114 dropped signals would have averaged -0.52% each) - keep it.
+Queue for you is now missions 5, 7, 8.
