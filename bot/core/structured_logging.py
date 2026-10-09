@@ -90,6 +90,14 @@ def setup_logging(
         max_bytes: Max size per log file before rotation (default 50MB)
         backup_count: Number of rotated log files to keep
     """
+    # WAGMI_LOG_DIR overrides the default log dir (set by tests/conftest.py so
+    # an import-time setup_logging(log_dir="logs") in a pytest process never
+    # attaches a handler to the LIVE bot's logs/). Unset in production ->
+    # behaviour unchanged.
+    _env_log_dir = os.environ.get("WAGMI_LOG_DIR")
+    if _env_log_dir and not log_file:
+        log_dir = _env_log_dir
+
     root = logging.getLogger()
     root.setLevel(getattr(logging, level.upper(), logging.INFO))
 
