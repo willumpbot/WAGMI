@@ -803,7 +803,9 @@ function lab(){
       `<p>Laptop GEOMETRY_V3, after two red-team reviews (Oct 8): the earlier "2× stop / 0.5R target / 48h" recipe was withdrawn. Its gain was fee arithmetic (a random-walk placebo reproduced ~95% of it). Live paired check of the bot's stops still running: current ${gl.mean_r_current??"–"}R vs wider ${gl.mean_r_proposal??"–"}R per trade (${gl.n||0} signals).</p>`),
     card("no", "0", "No scanner setup has a proven edge.", "Pullbacks to the 50-day average were tested as trades (724 cases): random dates did as well. The 50-day average acted as support before 2024; since then the effect is mostly gone. The 20-day low breaks more often than chance, but shorting it couldn't be measured yet.",
       `<p>Laptop SCANNER_FLAGS_V2 + MISSIONS_REVISED (Oct 9), after an 8-reviewer red team. About a third of level touches just stall. The scanner keeps grading every flag live; it needs ~300 cases per flag before a verdict means anything.</p>`),
-    card("wait", d.n||0, "Is the bot's hidden filter right?", "Most of the bot's signals are thrown away before its AI sees them, because those strategies had a backwards record. We're grading the thrown-away signals to see if that's correct." + prog(d.n||0, 30), ""),
+    (d.n||0) >= 30 && (d.mean_bps||0) < 0
+      ? card("yes", pct((d.mean_bps||0)/100,2), "The bot's hidden filter is RIGHT. Keep it.", `It silently throws away most of the bot's signals. The ${d.n} thrown-away signals we graded would have lost about ${Math.abs((d.mean_bps||0)/100).toFixed(2)}% each if taken. No change needed.`, `<p>Signals dropped by the IC gate (strategies with a backwards track record), each graded 4h later net of fees. The laptop's flip test agrees: no inversion of those strategies is positive out of sample.</p>`)
+      : card("wait", d.n||0, "Is the bot's hidden filter right?", "Most of the bot's signals are thrown away before its AI sees them, because those strategies had a backwards record. We're grading the thrown-away signals to see if that's correct." + prog(d.n||0, 30), ""),
   ].join("");
 }
 function nearLevels(){
