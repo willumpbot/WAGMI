@@ -12,13 +12,13 @@ that `COMMAND_CENTER.md` has been telling the owner to change._
 live floor is `AdaptiveConfidenceFloor`, bounded [20, 80], starting at 30. And the documented current
 value (55) has been wrong since July — it is 20.
 
-Of the three knobs the July swarm flagged, **two are now closed and one is still unchecked.**
+**All three knobs the July swarm flagged are now closed. None is a pending action.**
 
 | knob | documented | actual | status |
 |---|---|---|---|
 | `ENSEMBLE_CONFIDENCE_FLOOR` | `:412`, now 55.0, target 80 | **`:476`, now 20.0** | **backtest-only — cannot affect live** |
 | `TIME_STOP_HOURS` | `:241`, now 2, target 48 | `:283`, now 2 | **leave alone** (`EXITS_V2.md`) |
-| `ADX_MIN_TRENDING` | `:227`, now 10.0, gate >60 | `:263`, now 10.0 | **still unverified** — the only live candidate |
+| `ADX_MIN_TRENDING` | `:227`, now 10.0, gate >60 | `:263`, now 10.0 | **UNMEASURABLE** — 14 weeks of signals cannot resolve it (`ADX_GATE.md`). Leave at 10 |
 
 Every line number in the inherited table had drifted. The values are what matter, and one of those was
 wrong too.
@@ -90,9 +90,11 @@ install it.
    answerable from `trade_ledger.csv` + the floor's own state files, both of which live on the
    desktop. **Can you dump them to `bot/data/laptop_mining/` or report the current per-strategy
    floors?**
-3. **`ADX_MIN_TRENDING` is the only one of the three still live and unexamined.** If you want one more
-   mining target, that is the highest-value one left — and unlike the others it is a genuine live
-   gate, not a backtest parameter.
+3. **`ADX_MIN_TRENDING` is now examined and the answer is "unmeasurable".** See `ADX_GATE.md`: the
+   test declared its own design void (placebo size 0.000, 80%-power MDE not reached even at 0.40R).
+   Leave it at 10 — raising it to 60 would discard **92.5%** of signal flow to buy an effect this
+   sample cannot measure at any size. Every ADX bucket has negative mean R, so the gate rearranges
+   losses rather than creating a winner.
 
 ## Caveat on my own claim
 I verified the *wiring* (which modules read which field) by grep and by reading the call sites. I did
