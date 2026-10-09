@@ -1,4 +1,4 @@
-# Config audit — two of the three "validated fix" knobs don't say what we thought
+# Config audit — all three "validated fix" knobs are now closed. None says what we thought.
 
 _2026-10-08. Verified by reading `bot/trading_config.py`, `bot/feedback/`, `bot/backtest/` and
 `bot/.env` directly. Not a mining result — a fact-check of the knobs the July swarm recommended and
