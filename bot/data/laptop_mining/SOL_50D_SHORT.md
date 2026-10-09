@@ -1,3 +1,9 @@
+> # ⚠️ SUPERSEDED by `MISSIONS_REVISED.md` (red team `wkqz8m3br`)
+>
+> **Mission 2 v1.** The "SMA vs EMA is a bug" claim is RETRACTED -- the two levels are not statistically distinguishable in any era (best z = -1.90) and the SMA's own effect decayed from -9.4 to -2.1 points. Do not change the scanner code.
+>
+> Kept as the working record. **Read `MISSIONS_REVISED.md` instead.**
+
 # Mission 2 — your SOL short into the 50-day average: the setup has no edge, and I found a bug
 
 _2026-10-09. 418 touches, 17 HL perps, 2024-07-14 → 2026-09-17. Script: `sol_50d_short.py`.

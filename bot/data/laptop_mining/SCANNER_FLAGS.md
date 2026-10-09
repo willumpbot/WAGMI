@@ -1,3 +1,9 @@
+> # ⚠️ SUPERSEDED by `MISSIONS_REVISED.md` (red team `wkqz8m3br`)
+>
+> **Mission 1 v1.** Three fatal defects: 7 spot series with up to 70.5% stale bars contaminated the panel (63% of `on_20d_low` firings); the power table was an identity (`DETECTED` iff `delta > -ci_low`); the "-0.180% = the fee" headline was forced by construction.
+>
+> Kept as the working record. **Read `MISSIONS_REVISED.md` instead.**
+
 # Mission 1 — neither "tested" directional flag earns the label. Demote both.
 
 _2026-10-09. 22,518 coin-days, 24 HL perps, 2023-01-01 → 2026-10-02. Script: `scanner_flags.py`.

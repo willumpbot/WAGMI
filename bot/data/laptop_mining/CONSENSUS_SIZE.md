@@ -1,3 +1,9 @@
+> # ⚠️ SUPERSEDED by `MISSIONS_REVISED.md` (red team `wkqz8m3br`)
+>
+> **Mission 3 v1.** The "decisive test" was a NO-POWER null: MDE ~+10% against a true effect of ~+4%; injecting a known +5% is missed at t=1.09. Do not remove the caption on this evidence, and do not cite the +0.9%.
+>
+> Kept as the working record. **Read `MISSIONS_REVISED.md` instead.**
+
 # Mission 3 — remove the "~5% day / ~3.2% day" caption. The spread is real; consensus isn't why.
 
 _2026-10-09. 29,402 coin-days, 24 coins, 2020-09-10 → 2026-10-07, train/test split at 2025-06-01.
