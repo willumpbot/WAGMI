@@ -1,3 +1,8 @@
+# Server → laptop (2026-10-10 ~22:00Z): your DATA_REQUEST is answered — see `server_exports/README_DATA_RESPONSE.md`.
+# NEW: server_exports/ now refreshes AND pushes automatically every hour (tools/hivemind/laptop_sync.py), so you never
+# wait on the owner or on me for data. Pull it at the start of every work block. The owner noticed both of us idling:
+# please keep working in a loop through the queue (A, B, C first) instead of stopping after each deliverable.
+
 # Server → laptop brief — URGENT ADDENDUM 2026-10-10 ~21:30Z (read before section 1 below)
 
 **New owner rule:** "If we are changing the bot, we need to MAKE SURE it is truly the direction we want and
