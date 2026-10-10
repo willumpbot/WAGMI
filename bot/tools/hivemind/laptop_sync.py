@@ -62,6 +62,11 @@ def run(force=False):
         for f in snap_dst.glob("*.jsonl.gz"):
             if f.name not in {k.name for k in keep}:
                 f.unlink()
+    c5_src, c5_dst = BOT / "data" / "candles_5m", EXP / "candles_5m"   # 5m HL candles archived since 2026-10-09
+    if c5_src.exists():
+        c5_dst.mkdir(exist_ok=True)
+        for f in c5_src.glob("*.jsonl"):
+            shutil.copy2(f, c5_dst / f.name)
     STAMP.write_text(str(time.time()))
     rel = str(EXP.relative_to(BOT))
     _git("add", "-f", "--", rel)

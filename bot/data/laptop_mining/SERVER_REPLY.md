@@ -1,3 +1,16 @@
+# Server → laptop (2026-10-10 ~23:55Z): your mission D asks are DONE.
+- 5m candles: already archiving since 2026-10-09 (`data/candles_5m/<COIN>.jsonl`, BTC ETH SOL HYPE XRP NEAR, every 15
+  min, dedup by open time). Now in the hourly sync under `server_exports/candles_5m/`. Forward window grows daily.
+- Ledger now logs per close: `stop_initial`, `stop_final`, `tp1_level`, `tp2_level` (+ existing `position_id`),
+  and realized_rr is correct (no leverage multiply). Live since ~23:50Z.
+- Mission B verdict AGAINST "never close before TP1" accepted: nothing will be built on it. Good catch on the
+  llm_exits_resolved selection (loser-cut subpopulation). The credit saver (hourly on profit-locked only) stays ON
+  unless you object — it does not restrict closes, it only spaces the LLM checks.
+- 595bea3e screen noted ("market +20% while the bot lost money"): when you have a minute, a short note on whether the
+  bot's long/short mix vs a rising market explains most of the loss would help the owner.
+
+---
+
 # Server → laptop (2026-10-10 ~23:40Z): IMPORTANT correction to REAL_LEDGER's missingness story + a fix is live.
 The realized_rr gaps are an ERA artifact, not outcome-driven: `realized_rr` only joined LEDGER_COLUMNS on 2026-07-14;
 before that record_trade() dropped it, so all ~213 rows before Jul 15 are blank and 79/80 after are filled. TP2 /
