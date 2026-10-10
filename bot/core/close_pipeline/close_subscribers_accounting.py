@@ -271,13 +271,16 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
 
     import os as _os
 
+    from feedback.trade_ledger import compute_realized_rr
+
     entry = ev.entry or 0.0
     original_sl = ev.original_sl
-    stop_width = abs(entry - original_sl) if original_sl else 0.0
     rr_qty = ev.original_qty or ev.qty or 0.0
-    rr_risk = stop_width * rr_qty * (ev.leverage or 1)
     total_pnl = ev.total_pnl
-    realized_rr = round(total_pnl / rr_risk, 3) if rr_risk > 0 else 0
+    # LEDGER_RR_FIX (2026-10-10): same helper as the god-block -- leverage
+    # factor mirrors the one pnl was booked with; blank (not 0) when unknown.
+    _rr = compute_realized_rr(total_pnl, entry, original_sl, rr_qty, ev.leverage)
+    realized_rr = "" if _rr is None else _rr
 
     fees_total = ev.fees_total or 0.0
     funding_costs = ev.funding_costs or 0.0
@@ -349,6 +352,9 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
         "funding_rate_entry": _funding_rate_entry,
         "open_interest_entry": _open_interest_entry,
         "premium_entry": _premium_entry,
+        # STOP_GEOMETRY (LEDGER_RR_FIX): stop at open vs stop at close.
+        "stop_initial": str(original_sl) if original_sl else "",
+        "stop_final": str(ev.stop_final) if ev.stop_final else "",
     }
 
     ctx.trade_ledger.record_trade(row, source=ctx.source, position_id=ev.position_id)
