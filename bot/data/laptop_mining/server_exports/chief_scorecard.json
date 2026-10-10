@@ -1,0 +1,24 @@
+{
+ "updated": "2026-10-10T17:21+00:00",
+ "horizons": {
+  "1d": {
+   "n_calls": 44,
+   "n_directional": 0,
+   "directional_hit": null,
+   "directional_mean_pct": null,
+   "always_long_mean_pct": null,
+   "neutral_quiet_rate": 1.0,
+   "by_conviction": {}
+  },
+  "5d": {
+   "n_calls": 0,
+   "n_directional": 0,
+   "directional_hit": null,
+   "directional_mean_pct": null,
+   "always_long_mean_pct": null,
+   "neutral_quiet_rate": null,
+   "by_conviction": {}
+  }
+ },
+ "verdict": "collecting"
+}
