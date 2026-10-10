@@ -289,6 +289,7 @@ def build_terminal():
             "tgTrack": _load(HM / "tg" / "track.json", {}) or {},
             "away": _away_data(),
             "aiPlans": _load(HM / "ai_plans.json", {}) or {},
+            "history": _load(HM / "history.json", {}) or {},
             "levelStats": ((_load(BOT / "data" / "laptop_mining" / "levels.json", {}) or {}).get("levels") or {}),
             "safeLev": ((_load(BOT / "data" / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table") or {})}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")

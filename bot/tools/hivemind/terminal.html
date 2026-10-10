@@ -177,7 +177,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     <div class="box" id="memebox" style="display:none"><h3>Token risk card <span id="mm_q" style="color:var(--ink);text-transform:none;letter-spacing:0"></span><span class="sp"></span><a href="#" id="mm_x" style="color:var(--soft)">close</a></h3><div id="mm_body"></div></div>
     <div class="tabs" id="tabs">
       <button data-tab="t_scr" class="on">Screener</button><button data-tab="t_scan">Scanner <span id="scan_badge" class="mut"></span></button><button data-tab="t_plans">Plans <span id="plan_badge"></span></button><button data-tab="t_pos">Positions <span id="pos_badge"></span></button><button data-tab="t_jr">Journal</button>
-      <button data-tab="t_calls">Calls &amp; chief</button><button data-tab="t_lv">Levels</button><button data-tab="t_vox">Voices</button><button data-tab="t_lab">Lab <span id="dec_badge"></span></button>
+      <button data-tab="t_calls">Calls &amp; chief</button><button data-tab="t_lv">Levels</button><button data-tab="t_vox">Voices</button><button data-tab="t_hist">History</button><button data-tab="t_lab">Lab <span id="dec_badge"></span></button>
     </div>
     <div class="tabp on" id="t_scr">
       <div id="filters" class="chips" style="margin:0 0 6px"></div>
@@ -216,6 +216,11 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
       </div>
     </div>
     <div class="tabp" id="t_vox"><div class="box"><h3>Voices on this coin <span class="sp"></span><span id="dcons" class="mut" style="text-transform:none;letter-spacing:0"></span></h3><div class="vs" id="dvoices"></div><div class="chips" id="drules"></div></div></div>
+    <div class="tabp" id="t_hist">
+      <div class="two"><div class="box"><h3>What we're grading, over time</h3><div id="hcurves"></div></div>
+        <div class="box"><h3>How hard we worked <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">code changes per day</span></h3><div id="hcommits"></div></div></div>
+      <div class="box"><h3>Timeline: what we built, proved and threw out <span class="sp"></span><span id="hfilt" class="chips" style="margin:0"></span></h3><div id="htime"></div></div>
+    </div>
     <div class="tabp" id="t_lab">
       <div id="decisions" style="margin-bottom:8px;font-size:12px"></div>
       <div class="playbook" id="playbook" style="display:none"></div>
@@ -999,6 +1004,20 @@ function aiPlans(){
         body: JSON.stringify({coin:q.coin, side:q.side, entry:q.entry, stop:q.stop, target:q.target, entry_type:"limit", price:midOf(q.coin)||q.price_at_plan, leverage:q.leverage, setup:"ai idea", reason:"adopted Claude idea "+q.id+": "+q.reason.slice(0,200)})});
       const j = await r.json(); b.textContent = j.ok ? "Added to my plans ✔" : "Couldn't add"; b.disabled = true; loadPlans(); } catch(e) { b.textContent = "API not reachable"; } });
 }
+let HF = null;
+function historyTab(){
+  const H = DATA.history || {}, KC = {proven:"var(--good)", refuted:"var(--bad)", fixed:"var(--accent)", built:"var(--pos)", found:"var(--warn)", open:"var(--soft)", decision:"var(--ink)"};
+  const line = (pts, label, unit) => { if (!pts || pts.length < 2) return `<div class="mut" style="font-size:12px;margin:6px 0">${label}: ${pts&&pts.length?`${pts[pts.length-1][1]>=0?"+":""}${pts[pts.length-1][1]}${unit}`:"nothing graded yet"}</div>`;
+    const w = 320, h = 60, v = pts.map(p => p[1]), lo = Math.min(0, ...v), hi = Math.max(0, ...v), rg = (hi-lo)||1, X = i => i/(pts.length-1)*w, Y = x => h-4-(x-lo)/rg*(h-8), last = v[v.length-1];
+    return `<div style="margin:6px 0"><div style="font-size:12px"><b>${label}</b> <span class="num ${last>=0?"up":"dn"}">${last>=0?"+":""}${last}${unit}</span> <span class="mut">since ${pts[0][0]}</span></div><svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none"><line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/><polyline points="${pts.map((p,i)=>`${X(i).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(" ")}" fill="none" stroke="var(${last>=0?"--pos":"--neg"})" stroke-width="1.6" vector-effect="non-scaling-stroke"><title>${pts.map(p=>p[0]+": "+p[1]).join(" · ")}</title></polyline></svg></div>`; };
+  $("hcurves").innerHTML = line(H.bot_pnl, "Bot paper P&L (after the Jul 24 accounting fix)", " $") + line(H.ai_r, "Claude's trade ideas", "R") + line(H.owner_r, "Your plans", "R");
+  const C = (H.commits||[]).slice(-45), mx = Math.max(1, ...C.map(c=>c[1]));
+  $("hcommits").innerHTML = C.length ? `<svg viewBox="0 0 450 90" width="100%" height="90" preserveAspectRatio="none">${C.map((c,i)=>`<rect x="${i*10}" y="${86-c[1]/mx*80}" width="8" height="${Math.max(1,c[1]/mx*80)}" rx="2" fill="var(--accent)"><title>${c[0]}: ${c[1]} changes</title></rect>`).join("")}</svg><div class="mut" style="font-size:11px">${C[0][0]} → ${C[C.length-1][0]} · ${C.reduce((a,c)=>a+c[1],0)} changes</div>` : "";
+  const M = (H.milestones||[]).slice().reverse(), kinds = [...new Set(M.map(m=>m.kind))];
+  $("hfilt").innerHTML = kinds.map(k => `<span class="chip f ${HF===k?"on":""}" data-k="${k}" style="border-color:${KC[k]||"var(--line)"}">${k} ${M.filter(m=>m.kind===k).length}</span>`).join("");
+  $("htime").innerHTML = M.filter(m => !HF || m.kind === HF).map(m => `<div style="display:grid;grid-template-columns:86px 80px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px"><span class="mut num">${m.date}</span><span><span class="pill" style="background:var(--panel2);color:${KC[m.kind]||"var(--soft)"}">${m.kind}</span></span><span><b>${esc(m.title)}</b> <span class="mut">${esc(m.what)}</span></span></div>`).join("");
+  document.querySelectorAll("#hfilt .chip").forEach(el => el.onclick = () => { HF = HF === el.dataset.k ? null : el.dataset.k; historyTab(); });
+}
 function callerCell(h){
   const R = ((DATA.tgTrack||{}).callers||{})[h]; if (!h) return "–"; if (!R) return esc(h);
   const B = (DATA.tgTrack.callers||{})._base_15x || {};
@@ -1145,7 +1164,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   const tfk = {"1":"15m","2":"1h","3":"4h","4":"1d","5":"1w","d":"1d","D":"1d"}[ev.key];
   if (tfk) document.querySelector(`.seg button[data-tf="${tfk}"]`).click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); tgTrack(); aiPlans(); renderBoard(); renderDetail(); loadPlans().then(awayStrip); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); tgTrack(); aiPlans(); historyTab(); renderBoard(); renderDetail(); loadPlans().then(awayStrip); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);

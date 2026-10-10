@@ -133,6 +133,82 @@ def _ai_stats(calls):
     return out
 
 
+_GT = "https://api.geckoterminal.com/api/v2/networks/solana"
+
+
+def _gt(url):
+    req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "wagmi-hivemind/1.0"})
+    for i in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return json.loads(r.read())
+        except Exception:
+            time.sleep(3 * (i + 1))
+    return None
+
+
+def _exact_peaks(calls, prev, now, budget=24):
+    """Exact peak since the call from GeckoTerminal 5-minute highs (the 15-min DexScreener snapshots miss spikes:
+    MASSIMO read 1.6x but really hit 2.16x). Price multiple from the first 5m bar at/after the call. Rate-limited:
+    calls <24h old refresh every cycle, older ones every 2h, at most `budget` requests per cycle."""
+    used = 0
+    for c in sorted(calls.values(), key=lambda c: -c["call_ts"]):
+        old = prev.get(c["ca"]) or {}
+        for k in ("gt_pool", "gt_entry", "gt_peak_x", "gt_now_x", "gt_peak_ts", "gt_checked", "gt_min_to_15x",
+                  "gt_min_to_2x", "gt_dd_first_hour", "gt_min_done"):
+            if old.get(k) is not None:
+                c[k] = old[k]
+        age = now - c["call_ts"]
+        if age > 7 * 86400 or now - (c.get("gt_checked") or 0) < (840 if age < 86400 else 7200) or used >= budget:
+            continue
+        if not c.get("gt_pool"):
+            d = _gt(f"{_GT}/tokens/{c['ca']}/pools?page=1"); used += 1; time.sleep(2.1)
+            try:
+                c["gt_pool"] = d["data"][0]["attributes"]["address"]
+            except Exception:
+                c["gt_checked"] = now
+                continue
+        e = c.get("gt_entry")
+        if e is None or (c.get("gt_min_done") is None and age < 17 * 3600):
+            # 1-minute bars ANCHORED at the call (memes move in minutes): entry, speed to 1.5x/2x, first-hour dip
+            o = _gt(f"{_GT}/pools/{c['gt_pool']}/ohlcv/minute?aggregate=1&limit=1000&currency=usd"
+                    f"&before_timestamp={int(c['call_ts']) + 1000 * 60}"); used += 1; time.sleep(2.1)
+            if not o:
+                continue   # rate-limited / failed: retry next cycle
+            bars = sorted(((o.get("data") or {}).get("attributes", {}) or {}).get("ohlcv_list") or [])
+            after = [b for b in bars if b[0] >= c["call_ts"] - 60]
+            if not after or after[0][0] > c["call_ts"] + 120:
+                c["gt_checked"] = now   # no trading right at the call: can't price it exactly
+                continue
+            e = c["gt_entry"] = after[0][4] if after[0][0] < c["call_ts"] else after[0][1]
+            c["gt_peak_x"] = round(max(c.get("gt_peak_x") or 0, max(b[2] for b in after) / e), 3)
+            for m, k in ((1.5, "gt_min_to_15x"), (2.0, "gt_min_to_2x")):
+                hit = next((b for b in after if b[2] >= m * e), None)
+                c[k] = round(max(0, hit[0] + 60 - c["call_ts"]) / 60) if hit else None
+            first = [b for b in after if b[0] <= c["call_ts"] + 3600]
+            c["gt_dd_first_hour"] = round((min(b[3] for b in first) / e - 1) * 100, 1) if first else None
+            if age >= 16 * 3600:
+                c["gt_min_done"] = True
+        # later peaks: hourly highs after the call (exact highs, 8 days back per request)
+        o = _gt(f"{_GT}/pools/{c['gt_pool']}/ohlcv/hour?aggregate=1&limit=200&currency=usd"); used += 1; time.sleep(2.1)
+        if not o:
+            continue
+        hb = [b for b in sorted(((o.get("data") or {}).get("attributes", {}) or {}).get("ohlcv_list") or [])
+              if b[0] >= c["call_ts"]]
+        c["gt_checked"] = now
+        if hb:
+            hi = max(hb, key=lambda b: b[2])
+            if hi[2] / e > (c.get("gt_peak_x") or 0):
+                c["gt_peak_x"], c["gt_peak_ts"] = round(hi[2] / e, 3), hi[0]
+                for m, k in ((1.5, "gt_min_to_15x"), (2.0, "gt_min_to_2x")):
+                    if c.get(k) is None and hi[2] >= m * e:
+                        c[k] = round((next(b for b in hb if b[2] >= m * e)[0] + 3600 - c["call_ts"]) / 60)
+            c["gt_now_x"] = round(hb[-1][4] / e, 3)
+    for c in calls.values():   # prefer the exact peak wherever we have it
+        if c.get("gt_peak_x"):
+            c["x_peak"] = round(max(c.get("x_peak") or 0, c["gt_peak_x"]), 2)
+
+
 def run():
     now = time.time()
     rows = []
@@ -177,6 +253,7 @@ def run():
         if c["call_mcap"]:
             c["x_now"] = round(c["now_mcap"] / c["call_mcap"], 2) if c["now_mcap"] else None
             c["x_peak"] = round(c["peak_mcap"] / c["call_mcap"], 2) if c["peak_mcap"] else None
+    _exact_peaks(calls, prev, now)
     # Caller records: history (caller_grade.py, pre-registered) + forward (this tracker). A caller is starred to
     # WATCH when their historical 2x hit rate beats the chat's with n>=8: a watch flag, not proof (none beat random).
     records = {}
