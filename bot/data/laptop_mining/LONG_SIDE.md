@@ -120,3 +120,51 @@ not have found a moderate version of it.
 The `hold` and `partial` arms are reported in the script output but are **selected states** (the agent
 holds when things go well), and the SHORT hold arm returns **+26R**, which is that selection, not an
 effect. They are not evidence about anything.
+
+---
+
+# Update 2: candidate 1 is **UNTESTED, not refuted.** The test I built for it was positive by construction.
+
+_`ic_dropped_resolved.jsonl`, 998 dropped signals — attractive because nothing the bot did to a position
+can contaminate them._
+
+**What it appeared to show:** scoring each proposal by its own favourable minus adverse 12-bar excursion,
+**LONG proposals +47.1 bps against SHORT −44.4 bps, a +91.5 bps gap, naive t = 8.27**, comfortably past an
+MDE of 30.2 bps. Written up naively that reads "the long *signals* were actually the better ones."
+
+**It is drift, and the design guarantees the sign.** Two checks killed it:
+
+| check | result |
+|---|---|
+| time covered by the file | **1.9 days** (2026-10-08 → 10-10), **1 ISO week** |
+| up12 / dn12 ratio, **LONG** proposals | **1.73** |
+| up12 / dn12 ratio, **SHORT** proposals | **1.82** |
+| up12 / dn12 ratio, **all 998 rows** | **1.80** |
+
+Up-excursions exceed down-excursions by ~1.8× **equally in both groups** — the market rose across the
+whole window. Scoring a LONG by (up − dn) and a SHORT by (dn − up) during a rising window **cannot return
+anything but a positive gap for the longs.** The short group's ratio is even marginally *higher*, so if
+anything those proposals sat in slightly more upward conditions.
+
+**And the clustering was degenerate.** One ISO week means the "week-clustered 95% CI" came back as
+**[+91.5, +91.5]** — a point, not an interval. There was never any clustering protection to fail.
+
+This is the rule from the project's own research standard doing its job: *ask whether the result could ever
+have come out negative.* This one could not. It is the eleventh time that question has caught something,
+and the first time it caught it **before** the writeup rather than after.
+
+**What would actually test candidate 1:** the same `ic_dropped` resolution over **many weeks**, so drift
+varies across blocks and a side effect can separate from it. 1.9 days of it cannot. The alternative is a
+drift-neutral score — for each proposal compare its excursion to the *same symbol's* move over the same
+window — which removes the common market term instead of hoping it averages out.
+
+## Where the long-side question now stands
+
+| candidate | status |
+|---|---|
+| 1. late / worse long entries | **untested** — needs multi-week `ic_dropped`, or a drift-neutral score |
+| 2. exit agent specifically bad on longs | **unsupported and underpowered** (diff −0.253R, t = −1.81, MDE 0.391R) |
+| 3. mechanical asymmetry in the long trail / TP1 path | **open — server-side code read** |
+
+The observation itself is untouched: **longs −$795, shorts +$605, identical win rates, best long trade ever
++$6.29, and longs reach the profitable exits at 3.4% against 11.9%.** What is not yet established is why.
