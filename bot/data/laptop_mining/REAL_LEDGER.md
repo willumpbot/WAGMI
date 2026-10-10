@@ -1,3 +1,22 @@
+> # ⚠️ ALSO CONFOUNDED BY ERA — the server caught this, and it is right
+>
+> `realized_rr` only joined `LEDGER_COLUMNS` on **2026-07-14**. I verified the step function: **0 of 213**
+> rows before Jul 15 carry it, **79 of 80** after. So the "missingness tracks the outcome" table below is an
+> **era artifact, not a logging bug that selects on outcome** — my 🔧 "server action" note was wrong about the cause.
+>
+> Worse for the headline: **the exit types are segregated by era.** `TRAILING_STOP` is 19 of 20 pre-Jul-15 and
+> `TP2` is 5 of 5; `LLM_EXIT_HIGH` is 32 of 33 post-Jul-15. **The composition table compares June against
+> autumn** — different config, sizing, model and regime — not one exit path against another.
+>
+> **Re-cut within era 1, where both arms actually exist, the gap survives:** mechanical mean **+$39.87** (n=31)
+> vs LLM **−$7.84** (n=94), diff **+$47.71, t = 2.56**. So the arithmetic is not purely era. But era 2 has
+> **no trail arm at all** (n=0), and the trail is **52% of all era-1 gross gain** — so the finding rests on
+> 19 closes in one four-week window, and the selection tautology in "What I can and cannot claim" still binds.
+>
+> **Also:** with `PNL_LEVERAGE_FIX=true` the server's R denominator still multiplied by leverage, understating
+> |R| by 1/leverage on every lev>1 trade since July (fixed live, `5ddf7ed5`). The −0.134R figure below was
+> already withdrawn as a selection artifact; it is now wrong twice over. Do not quote it.
+
 > # ⚠️ THE "EXIT AGENT IS THE LEAK" READING IS WITHDRAWN (see `EXIT_AGENT_REPLAY.md`)
 >
 > I replayed all 827 of the agent's close decisions against what holding would have done, on real
