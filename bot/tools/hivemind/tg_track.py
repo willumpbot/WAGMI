@@ -68,12 +68,17 @@ def _dex(addrs):
 
 
 VERDICT_SYSTEM = """You judge a meme-coin call just posted in a Telegram group the owner follows (Solana memes).
-Facts for this chat (graded history, pre-registered): 41% of called coins touch 2x at some point, but the median is
--73% after 7 days, and no caller has beaten random calls from the same week. So "coin flip" is the honest default.
-You see the token's on-chain market data and the caller's graded record. Say whether THIS call looks more likely than
+Facts for this chat (graded history): 62% of called coins touch 1.5x and 41% touch 2x at some point, but the median
+is -73% after 7 days. Following every call and selling all at 1.5x roughly breaks even (+2%/call); a few callers
+(starred in caller_record, e.g. 90%+ hitting 1.5x) did much better, found after looking, being confirmed forward.
+Today's winners took 4-5 hours to peak; losers often dumped in the first hour. So "coin flip" is the honest default.
+You see the token's market data, LIVE order flow (buys/sells, unique buyers/sellers, volume, price change over
+5m/15m/1h/6h from the pool), the price path since the call, and the caller's graded record. Say whether THIS call looks more likely than
 the chat's 41% base rate to reach 2x from the call within 24h ("runner"), about base rate ("coin flip"), or clearly
 worse / dangerous ("avoid": churn, tiny liquidity, rug flags, already ran). You are graded on this, so don't be a hype
-machine. Output ONLY JSON: {"verdict": "runner|coin flip|avoid", "p_2x": 0-100, "why": "<=160 chars plain"}"""
+machine. Output ONLY JSON: {"verdict": "runner|coin flip|avoid", "p_15x": 0-100, "p_2x": 0-100,
+ "plan": "<=90 chars: if someone takes it, how to sell (e.g. 'sell all at 1.5x; out if it loses -35% first hour')",
+ "why": "<=160 chars plain, cite the flow numbers"}"""
 
 
 def _ai_verdicts(calls, prev, records, now):
@@ -89,6 +94,7 @@ def _ai_verdicts(calls, prev, records, now):
             c["ai"] = old
             if "ran_2x" not in old and now - c["call_ts"] >= 24 * 3600 and c.get("x_peak") is not None:
                 old["ran_2x"] = c["x_peak"] >= 2
+                old["ran_15x"] = c["x_peak"] >= 1.5
                 with open(TG / "ai_verdict_log.jsonl", "a", encoding="utf-8") as f:   # permanent record beyond the 7-day window
                     f.write(json.dumps({"ca": c["ca"], "caller": c.get("caller"), "call_ts": c["call_ts"], **old,
                                         "x_peak_24h": c["x_peak"]}) + chr(10))
@@ -106,7 +112,16 @@ def _ai_verdicts(calls, prev, records, now):
             card = {"ok": False, "error": str(e)[:100]}
         keep = ("name", "market_cap", "liquidity_usd", "volume_24h_usd", "pair_age_days", "price_change", "risk_flags",
                 "position_cap_usd_for_2pct_slip", "dex")
-        prompt = json.dumps({"token": {k: card.get(k) for k in keep}, "mcap_at_call": c["call_mcap"],
+        flow = {}
+        if c.get("gt_pool"):
+            d = _gt(f"{_GT}/pools/{c['gt_pool']}")
+            a = ((d or {}).get("data") or {}).get("attributes") or {}
+            flow = {k: a.get(k) for k in ("transactions", "volume_usd", "price_change_percentage", "reserve_in_usd",
+                                          "pool_created_at")}
+            flow["transactions"] = {w: v for w, v in (flow.get("transactions") or {}).items() if w in ("m5", "m15", "h1", "h6")}
+        path = {k: c.get(k) for k in ("gt_peak_x", "gt_now_x", "gt_min_to_15x", "gt_min_to_2x", "gt_dd_first_hour")}
+        prompt = json.dumps({"token": {k: card.get(k) for k in keep}, "order_flow": flow, "path_since_call": path,
+                             "mcap_at_call": c["call_mcap"],
                              "minutes_since_call": round((now - c["call_ts"]) / 60),
                              "caller": c.get("caller"), "caller_record": records.get(c.get("caller"))}, default=str)
         try:
@@ -114,7 +129,8 @@ def _ai_verdicts(calls, prev, records, now):
                               max_budget_usd=float(os.getenv("CLI_MAX_BUDGET_USD", "5.00")), timeout=180)
             raw = (getattr(resp, "text", None) or getattr(resp, "content", "")).strip()
             v = json.loads(raw[raw.find("{"): raw.rfind("}") + 1])
-            c["ai"] = {"verdict": v.get("verdict"), "p_2x": v.get("p_2x"), "why": str(v.get("why") or "")[:200], "ts": now}
+            c["ai"] = {"verdict": v.get("verdict"), "p_15x": v.get("p_15x"), "p_2x": v.get("p_2x"),
+                       "plan": str(v.get("plan") or "")[:120], "why": str(v.get("why") or "")[:200], "ts": now}
         except Exception:
             continue
 
@@ -127,9 +143,10 @@ def _ai_stats(calls):
         graded = []
     for a in graded:
         if "ran_2x" in a:
-            s = out.setdefault(a.get("verdict") or "?", {"n": 0, "ran": 0})
+            s = out.setdefault(a.get("verdict") or "?", {"n": 0, "ran": 0, "ran15": 0})
             s["n"] += 1
             s["ran"] += bool(a["ran_2x"])
+            s["ran15"] += bool(a.get("ran_15x"))
     return out
 
 
