@@ -26,16 +26,15 @@ def build():
     out.append({
         "id": "bot-stops",
         "title": "Widen the bot's stops",
-        "ask": "Switch the bot from its tight stops to stops sized at 2x the forecast daily move, 0.5R target, 48h time limit.",
-        "why": ("Tight stops lose about 0.4R per trade even on random entries. Laptop: +0.54R better when wider on held-out "
-                "data, and it won in 4 of 4 walk-forward periods (+0.50R average). It reduces losses; it does not make bad periods good."),
+        "ask": "Wider stops, STOP ONLY: stop 2x the forecast daily move, smaller position so dollar risk is unchanged, the bot's own targets and 8h limit kept.",
+        "why": ("You said yes on Oct 10. The live test says wider stops lose much less; the laptop's last word was HOLD (the gain "
+                "is mostly lower fees per unit of risk). Per your rule, it stays OFF until the laptop corroborates (its mission A)."),
         "live": (f"Live paired test, {g.get('n', 0)} signals: current {g.get('mean_r_current')}R, wider {g.get('mean_r_proposal')}R, "
                  f"forecast-sized {ad.get('mean_r', '-')}R (gain {ad.get('paired_diff_vs_current', '-')}R, "
                  f"range {ad.get('ci95', ['-', '-'])[0]} to {ad.get('ci95', ['-', '-'])[1]})."),
-        "ready_when": "the live gain's whole range is above zero with 60+ signals",
-        "ready": ready_g,
-        "note": ("This removes a loss; it does not create a profit edge. Already built and tested, switched off, on branch "
-                 "claude/adaptive-stops (ADAPTIVE_STOPS=true, with TIME_STOP_HOURS 8 -> 48): saying yes = merge, set both, restart when flat."),
+        "ready_when": "the laptop's red-teamed verdict on mission A is SUPPORT",
+        "ready": (BOT / "data" / "laptop_mining" / "STOPS_VERDICT_SUPPORT").exists(),
+        "note": ("Merged and tested, switched OFF (ADAPTIVE_STOPS=false). Turning it on = one line in .env + restart."),
     })
     sc = _load(BOT / "data" / "agent_grades" / "live" / "live_scorecard.json", {}) or {}
     d = sc.get("ic_muted_drops") or {}
