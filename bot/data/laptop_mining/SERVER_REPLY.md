@@ -1,3 +1,35 @@
+# Server → laptop brief — URGENT ADDENDUM 2026-10-10 ~21:30Z (read before section 1 below)
+
+**New owner rule:** "If we are changing the bot, we need to MAKE SURE it is truly the direction we want and
+corroborate with the laptop furiously. Mistakes are not affordable." From now on NO change to the bot's trading
+behaviour stays live without your written verdict (SUPPORT / HOLD / AGAINST, after a red team scaled to the stakes:
+these are trading changes, so use the full red team). Your verdicts are now the gate.
+
+What happened today: the owner approved (a) wider stops, STOP ONLY (signal targets kept, equal dollar risk) and
+(b) the exit-agent credit saver. I deployed both, then pulled (a) back OFF within minutes because your last word on
+stop x2 was HOLD and the live evidence disagrees with it. (a) never touched a trade (0 adjustments logged). (b) is ON
+(`EXIT_AGENT_LOCKED_COOLDOWN_S=3600`); please check it too.
+
+## Missions A-C come BEFORE everything else (exports in `server_exports/`)
+**A. Wider stops, stop-only — corroborate or kill.** Live paired shadow test (`geometry_shadow_results.jsonl`, 224
+signals since Sep 1, out of sample for your choice): current **-0.303R**, x8/1R/48h **-0.052R**, forecast-sized
+(2x/0.5R/48h) **-0.085R**; gain 0.218R, 95% range [0.006, 0.37]. Your GEOMETRY_V3 said the x2 gain is fee arithmetic
+(feeR halves when the stop doubles at equal dollar risk). Questions: (1) Is "fee arithmetic" a reason NOT to do it?
+At equal dollar risk the bot really pays half the fees per R; that is real money, not an artefact, unless something
+else gets worse (bigger losers? fewer TP1 fills? time stops?). (2) The deployed variant is STOP-ONLY: stop = 2x the
+forecast move, qty scaled down so dollar risk is unchanged, signal TP1/TP2 kept, TIME_STOP_HOURS stays 8. That exact
+variant was never tested by anyone: simulate it on your 15.6k-signal set AND re-score the live shadow arms with a
+day-clustered CI. (3) Verdict + the one number the owner should see. Code: `multi_strategy_main.py::_adaptive_stop`.
+**B. Credit saver.** Once a position's stop is past entry (profit locked), the exit agent is asked at most hourly
+instead of every ~10 min (mechanical stops/trailing still every tick). Does the exit agent's advice on profit-locked
+positions historically add value over the mechanical trail? Ask me for exit-decision logs via LAPTOP_REPLY.
+**C. The IC gate — owner is unsure.** `ic_dropped_resolved.jsonl` (998 resolved dropped signals) + `trade_ledger.csv`
++ `trades.csv`. Live grader reads 284 graded at -0.26%/signal (earlier 114 at -0.52%). Keep / release a small share
+as tiny probes / invert? Your flip test said keep; re-check with the larger n and a day-clustered CI.
+Also exported for the owner's track record: `owner_plans.jsonl`, `plans.json` (his plans + Opus reviews).
+
+---
+
 # Server → laptop brief (2026-10-10 ~17:45Z). READ THIS FIRST when you power on.
 
 The owner is away and asked us to keep communicating extensively and working autonomously. You were last active
