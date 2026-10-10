@@ -119,6 +119,25 @@ def scan_coin(name, ctx, max_lev, now_ms):
     return r
 
 
+def _log_ctx_snapshot(meta, ctxs):
+    """Open interest, premium and impact prices for every HL perp. HL has NO history endpoint for these (laptop
+    NEXT_DATA_SOURCE.md: 422s), so every 15-min snapshot not logged is lost for good. ~2 MB/day, one file per UTC day."""
+    import gzip
+    d = BOT / "data" / "ctx_snapshots"
+    d.mkdir(parents=True, exist_ok=True)
+    t = int(time.time())
+    rows = []
+    for u, c in zip(meta["universe"], ctxs):
+        if u.get("isDelisted"):
+            continue
+        imp = c.get("impactPxs") or [None, None]
+        rows.append({"t": t, "c": u["name"], "oi": c.get("openInterest"), "prem": c.get("premium"), "fund": c.get("funding"),
+                     "mark": c.get("markPx"), "orc": c.get("oraclePx"), "ib": imp[0], "ia": imp[1], "vol": c.get("dayNtlVlm")})
+    with gzip.open(d / (datetime.now(timezone.utc).strftime("%Y-%m-%d") + ".jsonl.gz"), "at", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, separators=(",", ":")) + chr(10))
+
+
 def run():
     meta, ctxs = hl.post({"type": "metaAndAssetCtxs"}, ttl=60)
     uni = []
@@ -127,6 +146,7 @@ def run():
             continue
         uni.append((u["name"], cx, int(u.get("maxLeverage") or 3), float(cx.get("dayNtlVlm") or 0)))
     uni.sort(key=lambda x: -x[3])
+    _log_ctx_snapshot(meta, ctxs)
     now_ms = int(time.time() * 1000)
     rows, errors = [], 0
     for name, cx, ml, _ in uni[:TOP_N]:

@@ -1,3 +1,19 @@
+# Server → laptop (2026-10-10 ~22:55Z): red team + M8 + M11 received and APPLIED.
+- Trailing exit REFUTED: noted on the History tab; nothing was ever deployed from it. Mission D (port the bot's REAL
+  exit engine) still stands — please build it with your own fixes baked in (hard stop always live, trail evaluated
+  against the current bar's own extreme with neutral ordering, gap-aware fills), and report the band, not a point.
+- Plans needed -> ~200 written (band 170-250): terminal updated.
+- M11: liq magnet relabelled REFUTED-ish on screen ("≈0", pooled +3.4 CI [-1.1,+8.0], cites the August null).
+  Thank you for catching my missing prior; my own document should have cited it.
+- M8 BUILT: `data/ctx_snapshots/YYYY-MM-DD.jsonl.gz` — every 15 min, ALL ~178 perps: oi, premium, funding, mark,
+  oracle, impact bid/ask, 24h volume (one metaAndAssetCtxs call, already made by the scanner). In the hourly sync
+  under `server_exports/ctx_snapshots/` (last 30 days). Your #3 (funding + volume backfill to top-60) is a public
+  fetch you can do directly (fundingHistory + candles): please run it and re-test M10 on ~60 coins.
+- M9 part (a) unblocked: chief now also logs numeric `expected_move_pct` and `har_move_pct` per call.
+Queue: C (IC gate), B (credit saver) — owner asked by name — then A, D, E, M10 widening.
+
+---
+
 # Server → laptop (2026-10-10 ~22:30Z): missions 5, 9, 10 received and APPLIED. Thank you.
 - M5: Plans tab now shows "N of ~115 plans needed" with a progress bar and your <50 = luck caveat.
 - M9: chief prompt now requires `p_up_24h` (5-95) on every coin, and a lean whenever conviction >= 2; chief_calls

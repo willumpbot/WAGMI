@@ -55,7 +55,7 @@ So for EVERY coin also give "p_up_24h": your honest probability (5-95) that the 
 50 is allowed and honest when you truly have nothing; it is Brier-scored on every call, so calibration matters,
 not boldness. And if conviction >= 2 you MUST pick LONG or SHORT (NEUTRAL only at conviction 1).
 Output ONLY JSON:
-{"coins": {"<SYM>": {"lean": "LONG|SHORT|NEUTRAL", "conviction": 1-5, "p_up_24h": 5-95,
+{"coins": {"<SYM>": {"lean": "LONG|SHORT|NEUTRAL", "conviction": 1-5, "p_up_24h": 5-95, "expected_move_pct": <number, your forecast of tomorrow's absolute % move>,
    "read": "<=350 chars, plain English, what the trader should know right now",
    "key_levels": "<=120 chars", "invalidation": "<=120 chars",
    "expected_move": "<=90 chars: likely size of the next 1-2 days' move and why (ATR, move_size flag)",
@@ -123,7 +123,8 @@ def run_chief():
             px = (st.get("market") or {}).get("price") or _price(sym)
             atr = (st.get("market") or {}).get("atr_pct_1d")
             f.write(json.dumps({"ts": now, "symbol": sym, "lean": c.get("lean"), "conviction": c.get("conviction"),
-                                "price": px, "atr_pct_1d": atr, "read": c.get("read"), "p_up_24h": c.get("p_up_24h"),
+                                "price": px, "atr_pct_1d": atr, "read": c.get("read"), "p_up_24h": c.get("p_up_24h"), "expected_move_pct": c.get("expected_move_pct"),
+                                "har_move_pct": (st.get("vol") or {}).get("next_day_move_pct"),
                                 "invalidation": c.get("invalidation")}) + "\n")
     out["ts"] = datetime.fromtimestamp(now, timezone.utc).isoformat(timespec="minutes")
     READS.write_text(json.dumps(out, indent=1), encoding="utf-8")

@@ -1,28 +1,182 @@
 [
- {"date": "2026-05-30", "kind": "built", "title": "Bot restarted on this PC", "what": "Paper bot back online with Task Scheduler + heartbeat watchdog."},
- {"date": "2026-06-29", "kind": "decision", "title": "Selective beats volume", "what": "Pushing trade volume broke the bot; target became ~2 selective trades/day."},
- {"date": "2026-07-14", "kind": "fixed", "title": "6 close-handler data bugs fixed", "what": "Trades were being recorded wrong on close; fixed and verified with a swarm."},
- {"date": "2026-07-24", "kind": "fixed", "title": "Leverage double-count bug", "what": "P&L was multiplied by leverage twice for months. Corrected: the bot was actually net negative, shorts +$667 vs longs -$796."},
- {"date": "2026-07-24", "kind": "fixed", "title": "Website back live", "what": "crazyonsol.online had been frozen 3 months by one build error."},
- {"date": "2026-07-25", "kind": "found", "title": "Fees + early exits were the leak", "what": "~9 bps round trip on large notionals ate ~13% of the risk budget per trade."},
- {"date": "2026-07-27", "kind": "refuted", "title": "Tailwind gate", "what": "Looked like 70% win rate; on entry-time-safe data it was a coin flip. Not built."},
- {"date": "2026-08-06", "kind": "built", "title": "Co-pilot analyst suite", "what": "eye / call / scan tools that instrument the owner's own reads instead of predicting."},
- {"date": "2026-09-07", "kind": "built", "title": "Plain-language dashboard", "what": "Headline-first status page; 278 GB of junk removed from this PC."},
- {"date": "2026-09-12", "kind": "found", "title": "45-day zero-trade drought explained", "what": "The entry gate blocked 100% of trades. It was right on the evidence, but froze learning; probes added."},
- {"date": "2026-09-27", "kind": "proven", "title": "Liquidation clustering is real (BTC/SOL)", "what": "Survives a local-rate null at ~1/4 of the naive headline. It signals cascade RISK, not direction."},
- {"date": "2026-10-07", "kind": "proven", "title": "No AI agent predicts price", "what": "8,340 bot decisions graded forward: skipping everything beat every agent. Value is only in risk vetoes and exits."},
- {"date": "2026-10-07", "kind": "fixed", "title": "2-day AI outage", "what": "Login expired + a $1 per-call cap silently degraded the bot. Now alarmed on the dashboard."},
- {"date": "2026-10-08", "kind": "built", "title": "Hivemind + chief analyst", "what": "Every voice per coin with report cards; Opus chief reads every 4h; all graded forward."},
- {"date": "2026-10-08", "kind": "proven", "title": "Move SIZE is forecastable", "what": "Volatility forecast beat the naive guess in 22/22 test periods. Direction is not forecastable (0 of ~98 tests)."},
- {"date": "2026-10-08", "kind": "built", "title": "WAGMI Terminal v2", "what": "Hyperliquid-style trading terminal: watchlist, chart 15m-1W, planner, scanner, tabs."},
- {"date": "2026-10-08", "kind": "built", "title": "Your plans graded 3 ways", "what": "Plan as written, the bot's suggested levels (Opus review), and the bot paper-managing it."},
- {"date": "2026-10-08", "kind": "refuted", "title": "2x stop / 0.5R target / 48h recipe", "what": "Laptop red team withdrew it: the gain was fee arithmetic. Only 'tighter stops hurt' stands."},
- {"date": "2026-10-09", "kind": "refuted", "title": "50-day pullback as a trade", "what": "724 cases: random dates did as well. The 50d average stopped acting as support after 2024."},
- {"date": "2026-10-09", "kind": "proven", "title": "The bot's hidden filter is right", "what": "Signals it silently drops would have lost money. Keep it."},
- {"date": "2026-10-09", "kind": "open", "title": "Liquidation clusters as magnets", "what": "+8 pts on 18 days, +3-5 pts on longer windows, not yet significant. Re-test as 5m history builds."},
- {"date": "2026-10-09", "kind": "fixed", "title": "Tests were writing into the live bot", "what": "~4,000 writes, including wiping the bot's memory file. Now blocked."},
- {"date": "2026-10-09", "kind": "found", "title": "Following every Syndicate call loses", "what": "188 graded calls with a strict exit: median -53%. Nobody beat random under that rule."},
- {"date": "2026-10-10", "kind": "open", "title": "Some Syndicate callers stand out at 1.5x", "what": "Selling all at 1.5x: @DUBI_CH 17/18 hit, +40%/call, beats random. Found after looking, so a forward test is running."},
- {"date": "2026-10-10", "kind": "built", "title": "Claude trade ideas + call verdicts", "what": "Opus proposes swing trades twice a day; Sonnet judges every Syndicate call; both graded."},
- {"date": "2026-10-10", "kind": "decision", "title": "Laptop must corroborate bot changes", "what": "Owner rule: no trading change stays live without the laptop's red-teamed verdict."}
+ {
+  "date": "2026-05-30",
+  "kind": "built",
+  "title": "Bot restarted on this PC",
+  "what": "Paper bot back online with Task Scheduler + heartbeat watchdog."
+ },
+ {
+  "date": "2026-06-29",
+  "kind": "decision",
+  "title": "Selective beats volume",
+  "what": "Pushing trade volume broke the bot; target became ~2 selective trades/day."
+ },
+ {
+  "date": "2026-07-14",
+  "kind": "fixed",
+  "title": "6 close-handler data bugs fixed",
+  "what": "Trades were being recorded wrong on close; fixed and verified with a swarm."
+ },
+ {
+  "date": "2026-07-24",
+  "kind": "fixed",
+  "title": "Leverage double-count bug",
+  "what": "P&L was multiplied by leverage twice for months. Corrected: the bot was actually net negative, shorts +$667 vs longs -$796."
+ },
+ {
+  "date": "2026-07-24",
+  "kind": "fixed",
+  "title": "Website back live",
+  "what": "crazyonsol.online had been frozen 3 months by one build error."
+ },
+ {
+  "date": "2026-07-25",
+  "kind": "found",
+  "title": "Fees + early exits were the leak",
+  "what": "~9 bps round trip on large notionals ate ~13% of the risk budget per trade."
+ },
+ {
+  "date": "2026-07-27",
+  "kind": "refuted",
+  "title": "Tailwind gate",
+  "what": "Looked like 70% win rate; on entry-time-safe data it was a coin flip. Not built."
+ },
+ {
+  "date": "2026-08-06",
+  "kind": "built",
+  "title": "Co-pilot analyst suite",
+  "what": "eye / call / scan tools that instrument the owner's own reads instead of predicting."
+ },
+ {
+  "date": "2026-09-07",
+  "kind": "built",
+  "title": "Plain-language dashboard",
+  "what": "Headline-first status page; 278 GB of junk removed from this PC."
+ },
+ {
+  "date": "2026-09-12",
+  "kind": "found",
+  "title": "45-day zero-trade drought explained",
+  "what": "The entry gate blocked 100% of trades. It was right on the evidence, but froze learning; probes added."
+ },
+ {
+  "date": "2026-09-27",
+  "kind": "proven",
+  "title": "Liquidation clustering is real (BTC/SOL)",
+  "what": "Survives a local-rate null at ~1/4 of the naive headline. It signals cascade RISK, not direction."
+ },
+ {
+  "date": "2026-10-07",
+  "kind": "proven",
+  "title": "No AI agent predicts price",
+  "what": "8,340 bot decisions graded forward: skipping everything beat every agent. Value is only in risk vetoes and exits."
+ },
+ {
+  "date": "2026-10-07",
+  "kind": "fixed",
+  "title": "2-day AI outage",
+  "what": "Login expired + a $1 per-call cap silently degraded the bot. Now alarmed on the dashboard."
+ },
+ {
+  "date": "2026-10-08",
+  "kind": "built",
+  "title": "Hivemind + chief analyst",
+  "what": "Every voice per coin with report cards; Opus chief reads every 4h; all graded forward."
+ },
+ {
+  "date": "2026-10-08",
+  "kind": "proven",
+  "title": "Move SIZE is forecastable",
+  "what": "Volatility forecast beat the naive guess in 22/22 test periods. Direction is not forecastable (0 of ~98 tests)."
+ },
+ {
+  "date": "2026-10-08",
+  "kind": "built",
+  "title": "WAGMI Terminal v2",
+  "what": "Hyperliquid-style trading terminal: watchlist, chart 15m-1W, planner, scanner, tabs."
+ },
+ {
+  "date": "2026-10-08",
+  "kind": "built",
+  "title": "Your plans graded 3 ways",
+  "what": "Plan as written, the bot's suggested levels (Opus review), and the bot paper-managing it."
+ },
+ {
+  "date": "2026-10-08",
+  "kind": "refuted",
+  "title": "2x stop / 0.5R target / 48h recipe",
+  "what": "Laptop red team withdrew it: the gain was fee arithmetic. Only 'tighter stops hurt' stands."
+ },
+ {
+  "date": "2026-10-09",
+  "kind": "refuted",
+  "title": "50-day pullback as a trade",
+  "what": "724 cases: random dates did as well. The 50d average stopped acting as support after 2024."
+ },
+ {
+  "date": "2026-10-09",
+  "kind": "proven",
+  "title": "The bot's hidden filter is right",
+  "what": "Signals it silently drops would have lost money. Keep it."
+ },
+ {
+  "date": "2026-10-09",
+  "kind": "refuted",
+  "title": "Liquidation clusters as magnets",
+  "what": "Aug study: reached LESS than random; Oct: +8 pts. Pooled +3.4, CI spans zero. Proximity, not magnetism."
+ },
+ {
+  "date": "2026-10-09",
+  "kind": "fixed",
+  "title": "Tests were writing into the live bot",
+  "what": "~4,000 writes, including wiping the bot's memory file. Now blocked."
+ },
+ {
+  "date": "2026-10-09",
+  "kind": "found",
+  "title": "Following every Syndicate call loses",
+  "what": "188 graded calls with a strict exit: median -53%. Nobody beat random under that rule."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "open",
+  "title": "Some Syndicate callers stand out at 1.5x",
+  "what": "Selling all at 1.5x: @DUBI_CH 17/18 hit, +40%/call, beats random. Found after looking, so a forward test is running."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "built",
+  "title": "Claude trade ideas + call verdicts",
+  "what": "Opus proposes swing trades twice a day; Sonnet judges every Syndicate call; both graded."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "decision",
+  "title": "Laptop must corroborate bot changes",
+  "what": "Owner rule: no trading change stays live without the laptop's red-teamed verdict."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "proven",
+  "title": "Two size flags are real",
+  "what": "Volume surge (+12.5%) and longs paying a lot (+7.7%) predict BIGGER next-day moves beyond the forecast. Provisional."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "refuted",
+  "title": "Trailing exit beats a fixed target",
+  "what": "Laptop's own simulation had two bugs; done right, trailing is not better (-0.02 to -0.04R)."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "found",
+  "title": "~200 plans to judge a trader",
+  "what": "Below ~50 plans a winning streak can't be told from luck."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "built",
+  "title": "Logging open interest for all perps",
+  "what": "HL keeps no history of OI/premium/impact prices; every 15-min snapshot is now saved."
+ }
 ]

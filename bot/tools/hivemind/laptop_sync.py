@@ -53,6 +53,15 @@ def run(force=False):
     for name, src in FILES.items():
         if src.exists():
             shutil.copy2(src, EXP / name)
+    snap_src, snap_dst = BOT / "data" / "ctx_snapshots", EXP / "ctx_snapshots"   # OI/premium/impact, all perps (30 days)
+    if snap_src.exists():
+        snap_dst.mkdir(exist_ok=True)
+        keep = sorted(snap_src.glob("*.jsonl.gz"))[-30:]
+        for f in keep:
+            shutil.copy2(f, snap_dst / f.name)
+        for f in snap_dst.glob("*.jsonl.gz"):
+            if f.name not in {k.name for k in keep}:
+                f.unlink()
     STAMP.write_text(str(time.time()))
     rel = str(EXP.relative_to(BOT))
     _git("add", "-f", "--", rel)
