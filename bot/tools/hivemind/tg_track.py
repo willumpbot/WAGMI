@@ -67,6 +67,72 @@ def _dex(addrs):
     return out
 
 
+VERDICT_SYSTEM = """You judge a meme-coin call just posted in a Telegram group the owner follows (Solana memes).
+Facts for this chat (graded history, pre-registered): 41% of called coins touch 2x at some point, but the median is
+-73% after 7 days, and no caller has beaten random calls from the same week. So "coin flip" is the honest default.
+You see the token's on-chain market data and the caller's graded record. Say whether THIS call looks more likely than
+the chat's 41% base rate to reach 2x from the call within 24h ("runner"), about base rate ("coin flip"), or clearly
+worse / dangerous ("avoid": churn, tiny liquidity, rug flags, already ran). You are graded on this, so don't be a hype
+machine. Output ONLY JSON: {"verdict": "runner|coin flip|avoid", "p_2x": 0-100, "why": "<=160 chars plain"}"""
+
+
+def _ai_verdicts(calls, prev, records, now):
+    """Sonnet verdict on each fresh call (<3h old), graded at 24h on whether it touched 2x from the call."""
+    import importlib.util
+    import os
+    import sys
+    fresh = [c for c in calls.values() if now - c["call_ts"] < 3 * 3600 and not (prev.get(c["ca"]) or {}).get("ai")
+             and c.get("call_mcap")]
+    for c in calls.values():   # carry forward + grade
+        old = (prev.get(c["ca"]) or {}).get("ai")
+        if old:
+            c["ai"] = old
+            if "ran_2x" not in old and now - c["call_ts"] >= 24 * 3600 and c.get("x_peak") is not None:
+                old["ran_2x"] = c["x_peak"] >= 2
+                with open(TG / "ai_verdict_log.jsonl", "a", encoding="utf-8") as f:   # permanent record beyond the 7-day window
+                    f.write(json.dumps({"ca": c["ca"], "caller": c.get("caller"), "call_ts": c["call_ts"], **old,
+                                        "x_peak_24h": c["x_peak"]}) + chr(10))
+    if not fresh:
+        return
+    sys.path.insert(0, str(BOT))
+    from llm.claude_cli_client import call_agent
+    spec = importlib.util.spec_from_file_location("memecard", BOT / "data" / "laptop_mining" / "memecard.py")
+    mc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mc)
+    for c in fresh[:6]:
+        try:
+            card = mc.card(c["ca"])
+        except Exception as e:
+            card = {"ok": False, "error": str(e)[:100]}
+        keep = ("name", "market_cap", "liquidity_usd", "volume_24h_usd", "pair_age_days", "price_change", "risk_flags",
+                "position_cap_usd_for_2pct_slip", "dex")
+        prompt = json.dumps({"token": {k: card.get(k) for k in keep}, "mcap_at_call": c["call_mcap"],
+                             "minutes_since_call": round((now - c["call_ts"]) / 60),
+                             "caller": c.get("caller"), "caller_record": records.get(c.get("caller"))}, default=str)
+        try:
+            resp = call_agent(user_prompt=prompt, system_prompt=VERDICT_SYSTEM, model="sonnet",
+                              max_budget_usd=float(os.getenv("CLI_MAX_BUDGET_USD", "5.00")), timeout=180)
+            raw = (getattr(resp, "text", None) or getattr(resp, "content", "")).strip()
+            v = json.loads(raw[raw.find("{"): raw.rfind("}") + 1])
+            c["ai"] = {"verdict": v.get("verdict"), "p_2x": v.get("p_2x"), "why": str(v.get("why") or "")[:200], "ts": now}
+        except Exception:
+            continue
+
+
+def _ai_stats(calls):
+    out = {}
+    try:
+        graded = [json.loads(l) for l in (TG / "ai_verdict_log.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    except OSError:
+        graded = []
+    for a in graded:
+        if "ran_2x" in a:
+            s = out.setdefault(a.get("verdict") or "?", {"n": 0, "ran": 0})
+            s["n"] += 1
+            s["ran"] += bool(a["ran_2x"])
+    return out
+
+
 def run():
     now = time.time()
     rows = []
@@ -131,7 +197,8 @@ def run():
             r = records.setdefault(h, {})
             r["fwd_n"] = r.get("fwd_n", 0) + 1
             r["fwd_2x"] = r.get("fwd_2x", 0) + (c["x_peak"] >= 2)
-    out = {"updated": now, "calls": calls, "callers": records}
+    _ai_verdicts(calls, prev, records, now)
+    out = {"updated": now, "calls": calls, "callers": records, "ai_stats": _ai_stats(calls)}
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(json.dumps(out), encoding="utf-8")
     tmp.replace(OUT)

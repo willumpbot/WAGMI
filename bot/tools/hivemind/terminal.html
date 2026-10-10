@@ -188,7 +188,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
       <div id="scanf" class="chips" style="margin:0"></div>
       <div style="overflow-x:auto"><table class="board" id="scan"></table></div>
     </div>
-    <div class="tabp" id="t_plans"><div id="plans"></div></div>
+    <div class="tabp" id="t_plans"><div class="box" style="border-color:var(--accent)"><h3>Claude's trade ideas <span class="sp"></span><span class="mut" id="ai_note" style="text-transform:none;letter-spacing:0"></span></h3><div id="aiplans"></div></div><div id="plans"></div></div>
     <div class="tabp" id="t_pos">
       <div class="box"><h3>Bot's open positions (paper, the bot manages these itself) <span class="sp"></span><span class="mut" id="botnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="botpos"></div></div>
       <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
@@ -196,7 +196,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     </div>
     <div class="tabp" id="t_jr"><div class="box"><h3>My trading journal <span class="sp"></span><span class="mut" id="jr_note" style="text-transform:none;letter-spacing:0"></span></h3><div id="jr"></div></div></div>
     <div class="tabp" id="t_calls">
-      <div class="box"><h3>Syndicate calls, tracked <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">market cap at the call → now · peak since we started watching (15-min checks, so short spikes are missed)</span></h3><div id="tgtrack"></div></div>
+      <div class="box"><h3>Syndicate calls, tracked <span id="ai_vstats" class="mut" style="text-transform:none;letter-spacing:0"></span><span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">market cap at the call → now · peak since we started watching (15-min checks, so short spikes are missed)</span></h3><div id="tgtrack"></div></div>
       <div class="box"><h3>My call on <span id="mc_sym" style="color:var(--ink)"></span> <span class="sp"></span><span class="mut" id="mc_card" style="text-transform:none;letter-spacing:0"></span></h3>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <span class="seg" id="mc_lean"><button data-v="LONG">&#9650; LONG</button><button data-v="SHORT">&#9660; SHORT</button><button data-v="NEUTRAL">&#9679; NEUTRAL</button></span>
@@ -982,6 +982,23 @@ function renderBotPos(){
     : `<div class="mut" style="font-size:12px">The bot has no open positions.</div>`;
   document.querySelectorAll("#botpos [data-c]").forEach(el => el.onclick = () => pick(el.dataset.c));
 }
+function aiPlans(){
+  const A = DATA.aiPlans || {}, I = (A.ideas || []).slice().reverse(), S = A.stats || {};
+  $("ai_note").textContent = S.n ? `track record: ${S.n} finished, ${(S.win_rate*100).toFixed(0)}% won, ${S.avg_r>=0?"+":""}${S.avg_r}R avg` : "graded the same way as your plans; new ideas twice a day";
+  const act = I.filter(q => ["waiting","open"].includes((q.result||{}).status)), done = I.filter(q => !["waiting","open"].includes((q.result||{}).status)).slice(0, 8);
+  const row = q => { const r = q.result || {}, sg = q.side==="LONG"?"up":"dn";
+    return `<div style="border-bottom:1px solid var(--line);padding:6px 0"><div><b>${q.coin}</b> <span class="pill ${sg}">${q.side}</span> <span class="mut">${q.entry_type} ${fmt(q.entry)} · stop ${fmt(q.stop)} · target ${fmt(q.target)} · ${q.leverage}× · confidence ${q.confidence}/5</span>
+      <span style="float:right">${r.r!=null?`<span class="num ${r.r>=0?"up":"dn"}">${r.status} ${r.r>=0?"+":""}${(+r.r).toFixed(2)}R</span>`:`<span class="mut">${r.status||""}${r.status==="open"&&r.live_r!=null?" "+(r.live_r>=0?"+":"")+r.live_r+"R":""}</span>`}
+      ${r.status==="waiting"?` <button class="aiadopt" data-id="${q.id}" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:2px 9px;cursor:pointer" title="Copy into MY plans (graded as yours too)">I'd take it</button>`:""}</span></div>
+      <div style="font-size:12px;margin-top:2px">${esc(q.reason)}</div><div class="mut" style="font-size:11px">Wrong if: ${esc(q.invalidation||"–")} · ${new Date(q.ts*1000).toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit"})}</div></div>`; };
+  $("aiplans").innerHTML = (act.length ? act.map(row).join("") : `<div class="mut" style="font-size:12px">No open ideas. ${esc(A.last_note||"")}</div>`)
+    + (done.length ? `<details style="margin-top:6px"><summary class="mut" style="cursor:pointer;font-size:11.5px">Finished ideas (${done.length})</summary>${done.map(row).join("")}</details>` : "");
+  document.querySelectorAll(".aiadopt").forEach(b => b.onclick = async () => {
+    const q = I.find(x => x.id === b.dataset.id); if (!q) return;
+    try { const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken},
+        body: JSON.stringify({coin:q.coin, side:q.side, entry:q.entry, stop:q.stop, target:q.target, entry_type:"limit", price:midOf(q.coin)||q.price_at_plan, leverage:q.leverage, setup:"ai idea", reason:"adopted Claude idea "+q.id+": "+q.reason.slice(0,200)})});
+      const j = await r.json(); b.textContent = j.ok ? "Added to my plans ✔" : "Couldn't add"; b.disabled = true; loadPlans(); } catch(e) { b.textContent = "API not reachable"; } });
+}
 function callerCell(h){
   const R = ((DATA.tgTrack||{}).callers||{})[h]; if (!h) return "–"; if (!R) return esc(h);
   const tip = `History (graded): ${R.hist_n??0} calls, ${R.hist_hit!=null?(R.hist_hit*100).toFixed(0):"–"}% hit 2x (chat ${(((DATA.tgTrack.callers||{})._base_hit||0)*100).toFixed(0)}%). Tracked since: ${R.fwd_2x||0} of ${R.fwd_n||0} hit 2x. Starred = worth watching; no caller has beaten random picks yet.`;
@@ -989,10 +1006,11 @@ function callerCell(h){
 }
 function tgTrack(){
   const C0 = Object.values((DATA.tgTrack||{}).calls || {}).sort((a,b) => b.call_ts - a.call_ts).slice(0, 15);
+  const VS = (DATA.tgTrack||{}).ai_stats || {}; $("ai_vstats").textContent = Object.keys(VS).length ? "Claude's verdicts so far: " + Object.entries(VS).map(([k,v]) => `${k} ${v.ran}/${v.n} hit 2x`).join(" · ") : "Claude verdict on each new call, graded at 24h";
   if (!C0.length) { $("tgtrack").innerHTML = `<span class="mut" style="font-size:12px">No Syndicate calls in the last 7 days yet.</span>`; return; }
   const ago = t => { const h = (Date.now()/1000 - t)/3600; return h < 1 ? Math.round(h*60)+"m" : h < 48 ? h.toFixed(0)+"h" : (h/24).toFixed(0)+"d"; };
   const xc = x => x == null ? "–" : `<span class="${x>=2?"up":x<1?"dn":""}">${x.toFixed(x>=10?0:1)}×</span>`;
-  $("tgtrack").innerHTML = `<table class="pos num"><tr><th>Called</th><th>Coin</th><th>Caller</th><th>MC at call</th><th>Now</th><th>Now ×</th><th>Peak ×</th></tr>${C0.map(c => `<tr data-ca="${c.ca}" style="cursor:pointer" title="click for the risk card"><td class="mut">${ago(c.call_ts)} ago</td><td><b>${esc(c.sym||c.name||c.ca.slice(0,6))}</b></td><td class="mut">${callerCell(c.caller)}</td><td title="${c.call_mcap_approx?"no price stats were posted with the call: first market cap we saw, within 30 min":""}">${c.call_mcap?(c.call_mcap_approx?"≈":"")+usd(c.call_mcap):"–"}</td><td>${c.now_mcap?usd(c.now_mcap):"–"}</td><td>${xc(c.x_now)}</td><td>${xc(c.x_peak)}</td></tr>`).join("")}</table>`;
+  $("tgtrack").innerHTML = `<table class="pos num"><tr><th>Called</th><th>Coin</th><th>Caller</th><th>MC at call</th><th>Now</th><th>Now ×</th><th>Peak ×</th><th>Claude</th></tr>${C0.map(c => `<tr data-ca="${c.ca}" style="cursor:pointer" title="click for the risk card"><td class="mut">${ago(c.call_ts)} ago</td><td><b>${esc(c.sym||c.name||c.ca.slice(0,6))}</b></td><td class="mut">${callerCell(c.caller)}</td><td title="${c.call_mcap_approx?"no price stats were posted with the call: first market cap we saw, within 30 min":""}">${c.call_mcap?(c.call_mcap_approx?"≈":"")+usd(c.call_mcap):"–"}</td><td>${c.now_mcap?usd(c.now_mcap):"–"}</td><td>${xc(c.x_now)}</td><td>${xc(c.x_peak)}</td><td>${c.ai?`<span class="pill ${c.ai.verdict==="runner"?"up":c.ai.verdict==="avoid"?"dn":"nt"}" title="${esc(c.ai.why||"")} (graded at 24h: did it touch 2x?)">${esc(c.ai.verdict||"?")} ${c.ai.p_2x??""}%${"ran_2x" in c.ai?(c.ai.ran_2x?" ✔":" ✖"):""}</span>`:'<span class="dim">–</span>'}</td></tr>`).join("")}</table>`;
   document.querySelectorAll("#tgtrack tr[data-ca]").forEach(tr => tr.onclick = () => memeCard(tr.dataset.ca));
 }
 function awayStrip(){
@@ -1126,7 +1144,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   const tfk = {"1":"15m","2":"1h","3":"4h","4":"1d","5":"1w","d":"1d","D":"1d"}[ev.key];
   if (tfk) document.querySelector(`.seg button[data-tf="${tfk}"]`).click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); tgTrack(); renderBoard(); renderDetail(); loadPlans().then(awayStrip); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); tgTrack(); aiPlans(); renderBoard(); renderDetail(); loadPlans().then(awayStrip); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);
