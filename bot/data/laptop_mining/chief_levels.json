@@ -1,0 +1,30 @@
+{
+ "levels": 165,
+ "calls": 86,
+ "time_matched": {
+  "12": {
+   "n": 152,
+   "real": 6.6,
+   "null": 7.5,
+   "diff": -0.9,
+   "mde": 6.2,
+   "informative": false
+  },
+  "24": {
+   "n": 126,
+   "real": 11.9,
+   "null": 15.2,
+   "diff": -3.3,
+   "mde": 9.0,
+   "informative": false
+  },
+  "48": {
+   "n": 79,
+   "real": 20.3,
+   "null": 21.8,
+   "diff": -1.5,
+   "mde": 13.9,
+   "informative": false
+  }
+ }
+}
