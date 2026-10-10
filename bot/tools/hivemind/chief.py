@@ -50,8 +50,12 @@ Your job: for each coin, say plainly what the evidence supports for a 1-5 day SW
 NEUTRAL is the right answer when voices conflict or evidence is thin. Never invent data. Prefer few, specific
 statements a trader can check: levels, what would invalidate the view, which voice you leaned on and why.
 
+GRADING (laptop CHIEF_GRADEABLE, 2026-10-10): 86/86 of your past calls were NEUTRAL, which can never be scored.
+So for EVERY coin also give "p_up_24h": your honest probability (5-95) that the coin is HIGHER than now in 24h.
+50 is allowed and honest when you truly have nothing; it is Brier-scored on every call, so calibration matters,
+not boldness. And if conviction >= 2 you MUST pick LONG or SHORT (NEUTRAL only at conviction 1).
 Output ONLY JSON:
-{"coins": {"<SYM>": {"lean": "LONG|SHORT|NEUTRAL", "conviction": 1-5,
+{"coins": {"<SYM>": {"lean": "LONG|SHORT|NEUTRAL", "conviction": 1-5, "p_up_24h": 5-95,
    "read": "<=350 chars, plain English, what the trader should know right now",
    "key_levels": "<=120 chars", "invalidation": "<=120 chars",
    "expected_move": "<=90 chars: likely size of the next 1-2 days' move and why (ATR, move_size flag)",
@@ -119,7 +123,7 @@ def run_chief():
             px = (st.get("market") or {}).get("price") or _price(sym)
             atr = (st.get("market") or {}).get("atr_pct_1d")
             f.write(json.dumps({"ts": now, "symbol": sym, "lean": c.get("lean"), "conviction": c.get("conviction"),
-                                "price": px, "atr_pct_1d": atr, "read": c.get("read"),
+                                "price": px, "atr_pct_1d": atr, "read": c.get("read"), "p_up_24h": c.get("p_up_24h"),
                                 "invalidation": c.get("invalidation")}) + "\n")
     out["ts"] = datetime.fromtimestamp(now, timezone.utc).isoformat(timespec="minutes")
     READS.write_text(json.dumps(out, indent=1), encoding="utf-8")
@@ -171,6 +175,12 @@ def resolve(calls=None, card_path=None):
                 [(1 if r["lean"] == "LONG" else -1) * r[k] for r in dirn if r.get("conviction") == cv])
                 for cv in range(1, 6) if any(r.get("conviction") == cv for r in dirn)},
         }
+    # Brier score of p_up_24h vs "higher after 1d" (0 = perfect, 0.25 = always saying 50%). Lower than 0.25 = skill.
+    bp = [((r["p_up_24h"] or 50) / 100, 1.0 if r["ret_1d"] > 0 else 0.0) for r in rows
+          if r.get("p_up_24h") is not None and "ret_1d" in r]
+    card["brier_24h"] = ({"n": len(bp), "brier": round(sum((p - o) ** 2 for p, o in bp) / len(bp), 4),
+                          "always_50": 0.25, "skill": None if len(bp) < 100 else
+                          round(1 - (sum((p - o) ** 2 for p, o in bp) / len(bp)) / 0.25, 3)} if bp else {"n": 0})
     card["verdict"] = ("collecting" if card["horizons"]["5d"]["n_directional"] < 30 else "graded")
     card_path.write_text(json.dumps(card, indent=1), encoding="utf-8")
     return card
