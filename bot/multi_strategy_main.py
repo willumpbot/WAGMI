@@ -8299,7 +8299,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             return sl, tp1, qty   # never tighten: the finding is that tight stops bleed
         sgn = 1 if side == "LONG" else -1
         new_sl = entry - sgn * d_new
-        new_tp1 = entry + sgn * entry * float(tgt_pct) / 100.0
+        # Owner 2026-10-10: STOP ONLY. The 0.5R target (and 48h hold) were withdrawn by the laptop's red team
+        # (GEOMETRY_V3 / CORRECTIONS), so the signal's own TP1 is kept unless ADAPTIVE_STOPS_TARGET=true.
+        if os.getenv("ADAPTIVE_STOPS_TARGET", "false").lower() in ("1", "true", "yes"):
+            new_tp1 = entry + sgn * entry * float(tgt_pct) / 100.0
+        else:
+            new_tp1 = tp1
         new_qty = qty * d_old / d_new   # equal dollar risk
         logger.info(
             f"[{trace_id}][{symbol}] ADAPTIVE_STOPS: SL {sl:.6g}->{new_sl:.6g} ({stop_pct:.2f}%), "
