@@ -36,10 +36,10 @@ FLAGS = {
                       "includes this (laptop SIZE_FLAGS: adds +1%, t=0.24): use the expected move instead."),
     "funding_hot": ("Longs paying a lot", "tested",
                     "Funding in the top of the scanned coins: longs are crowded. Next day's move is ~8% BIGGER than "
-                    "the forecast says (laptop SIZE_FLAGS, 19,853 coin-days, t=3.3; provisional). Size down. Not direction."),
+                    "the forecast says (laptop SIZE_FLAGS, 19,853 coin-days, t=3.3; SURVIVED a 3-reviewer red team). Size down. Not direction."),
     "funding_cold": ("Shorts paying", "context", "Negative funding: shorts are paying longs. Context only."),
-    "volume_surge": ("Volume surge", "tested", "24h volume over 2.5x its 20-day average. Next day's move is ~12% BIGGER "
-                     "than the forecast says (laptop SIZE_FLAGS, t=2.1; provisional). Size down. Not direction."),
+    "volume_surge": ("Volume surge", "context", "24h volume over 2.5x its 20-day average. Suggestive: next day's move "
+                     "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),
     "squeeze": ("Tight range", "context", "The 20-day range is under 4 expected daily moves wide: coiled. "
                 "Breakout direction is not predictable from this."),
     "above_20d_high": ("Above 20d high", "context", "Trading above the 20-day high. In testing the 20-day high "

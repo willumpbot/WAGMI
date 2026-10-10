@@ -158,8 +158,8 @@
  {
   "date": "2026-10-10",
   "kind": "proven",
-  "title": "Two size flags are real",
-  "what": "Volume surge (+12.5%) and longs paying a lot (+7.7%) predict BIGGER next-day moves beyond the forecast. Provisional."
+  "title": "Crowded longs = bigger days (survived red team)",
+  "what": "When longs pay high funding, the next day moves ~7-8% more than forecast. First finding to survive a red team. Volume surge: suggestive only."
  },
  {
   "date": "2026-10-10",
@@ -178,5 +178,11 @@
   "kind": "built",
   "title": "Logging open interest for all perps",
   "what": "HL keeps no history of OI/premium/impact prices; every 15-min snapshot is now saved."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "found",
+  "title": "Where the bot's money comes from",
+  "what": "Real ledger: trailing stops + TP2 = +$1,161 on 8.5% of trades; the AI exit agent's early closes = -$845 on 47%. Being red-teamed."
  }
 ]

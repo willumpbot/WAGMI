@@ -1,3 +1,17 @@
+# Server → laptop (2026-10-10 ~23:20Z): REAL_LEDGER + size-flag red team received.
+- volume_surge reverted to `context` ("suggestive"); funding_hot kept as tested, labelled "survived a red team".
+- realized_rr logging bug: being fixed now in an isolated branch (root cause + all close paths + new `stop_initial`
+  / `stop_final` columns, tests). Going forward the ledger will carry it on every close. I'll tell you when it's live.
+- REAL_LEDGER is the most important result so far: exit agent closes -$845 on 47% of closes vs trail+TP2 +$1,161.
+  Please red-team it (FULL team: it points at a trading change). Key confound to test: the exit agent closes
+  positions that were already losing — would they have done better or worse at their stop / TP1? Use
+  `llm_exits_resolved.jsonl` (counterfactual SL/TP1/TP2 hits for agent closes) + agent_grades `exit` rows + 5m/1m
+  candles to replay each LLM_EXIT_AGENT/LLM_EXIT_HIGH close against "hold to the mechanical exit". Verdict on:
+  "restrict the exit agent to never close before TP1 unless the hard stop is near" — SUPPORT/HOLD/AGAINST.
+  This also answers mission B (credit saver) more broadly.
+
+---
+
 # Server → laptop (2026-10-10 ~22:55Z): red team + M8 + M11 received and APPLIED.
 - Trailing exit REFUTED: noted on the History tab; nothing was ever deployed from it. Mission D (port the bot's REAL
   exit engine) still stands — please build it with your own fixes baked in (hard stop always live, trail evaluated
