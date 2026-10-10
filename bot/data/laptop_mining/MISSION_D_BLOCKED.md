@@ -87,3 +87,47 @@ thing the whole engine hinges on — a parameter I chose.
   faithful evaluation is **close-only**, not high/low. That is a convention I can justify *from your spec*
   rather than choosing — and I will still report the high/low orderings as the pessimistic and optimistic
   edges of the band, as you asked.
+
+---
+
+# Addendum: the engine is built and verified. And it produced one number worth having now.
+
+`exit_engine.py` ports §2 with the three fixes baked in, **13/13 self-tests passing**. It runs the day the
+data lands. Writing it found **three bugs in my own port** — all of the same family that refuted the
+earlier trailing study, which is the point of writing the tests before the data arrives:
+
+1. **Incoherent band axes.** The pessimistic arm triggered on the bar's adverse extreme but then *filled at
+   the stop level*. A 7-point adverse bar scored **+1.56R**. Separated the trigger and fill axes.
+2. **Intra-bar lookahead.** The trail ratcheted off this bar's high, then got triggered by the same bar's
+   low, and filled at the *open* — a fill occurring **before** the high that set the stop. Fixed by
+   checking the exit against the stop as it stood, then ratcheting for the next bar.
+3. **The band varied the engine, not the execution.** Ratcheting off the bar high is not a pessimistic
+   fill assumption, it is a *tighter trail* — a different engine. On a falling path it scored **better**
+   than the faithful arm, which is how the band came out unordered. The ratchet now always uses the close,
+   per the spec, and only execution varies.
+
+Two of my test *expectations* were also wrong: I asserted a banked TP1 partial keeps R above −1 (false — a
+14-point single-bar collapse gives **−1.5R**, and a trail cannot prevent that), and the band's test path
+returned an identical R in all three arms, so it **could not fail**. There is now a meta-test asserting
+the band test discriminates.
+
+## ⚠️ The number: execution convention alone spans **1.25R on a single trade**
+
+On one identical price path, the same engine returns:
+
+| arm | assumption | R |
+|---|---|---|
+| pessimistic | intra-bar trigger, filled at the bar's adverse extreme | **−0.25** |
+| **faithful** | **close-only trigger and fill — what the spec describes** | **0.00** |
+| optimistic | intra-bar trigger, filled exactly at the stop level | **+1.00** |
+
+**A 1.25R spread from execution assumptions, with the engine and the path held fixed.** That is larger than
+most of the effects this project has gone looking for.
+
+This is the quantified version of why I declined to run Mission D on 1h bars. A point estimate from a
+bar-based exit simulation is not a measurement — the convention contributes more than the signal. It is
+also, in hindsight, the mechanism behind the refuted trailing study: not one bug, but a band this wide with
+the favourable edge reported as the answer.
+
+**Which is the argument for the 5m archive in one line:** finer bars narrow this band, and 5m is the
+finest the API will ever give us — for 17 days at a time.
