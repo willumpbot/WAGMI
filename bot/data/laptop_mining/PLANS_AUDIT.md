@@ -1,3 +1,12 @@
+> # ⚠️ HEADLINE CORRECTED — see `PLAN_GRADER_ANCHOR.md` (mission 7)
+>
+> The **9.62%** contamination figure was an average over a sweep dominated by stops of
+> 0.5–1%, which the owner does not use, computed on a symbol set that included the stale
+> `*_spot` series. **At his real geometry (stop 4.40%, target 0.500R, limit offset 0.411
+> stop-distances) contamination is 1.80%** — a 5× overstatement as applied to his trading.
+>
+> The mechanism and the fix stand; only the magnitude moved. ANCHORED.
+
 # Mission 4 — don't go to 1m (0.12%). Fix the fill candle instead (9.62%).
 
 _2026-10-09. 127,811 simulated plan resolutions on real HL 5m candles, 22 symbols, stop 0.5–3%,
