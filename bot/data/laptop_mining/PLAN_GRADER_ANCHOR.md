@@ -1,3 +1,11 @@
+> # ⚠️ CORRECTED: 1.26–1.42%, not 1.80% (red team `wxoc7han2`)
+>
+> Direction stands and is near-mechanical — a 5m bar must span **2.2%** to contaminate at this
+> geometry. Reviewers reproduced mission 4's comparison cells byte-exact (25.53%, 3.60%) and then
+> measured **1.26% sampled / 1.42% exhaustive** at the owner's exact geometry, and **0.00% on SOL**
+> specifically. So the shipped fix is right and the magnitude is smaller still: roughly **1 plan in
+> 75**, not 1 in 55.
+
 # Mission 7 — at the owner's real geometry the fill-candle bug hits 1.80%, not 9.62%.
 
 _2026-10-10. Anchored on `server_exports/plans.json`, 11 clean perps, 5m bars.

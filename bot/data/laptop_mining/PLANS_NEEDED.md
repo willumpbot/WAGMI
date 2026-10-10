@@ -1,3 +1,18 @@
+> # ⚠️ CORRECTED: ~200 plans WRITTEN, not 115 (red team `wxoc7han2`)
+>
+> The arithmetic reproduces to the unit, but **115 counts plans that RESOLVE** — and the owner's
+> limit entries fill only **56.7% of the time pooled, 46.4% on SOL**. He must *write* roughly twice
+> what he needs. My week-level rho estimator was also biased high (**0.2047** vs an ANOVA ICC of
+> **0.1189**), which inflated N in the other direction — the two errors offset, which is the only
+> reason 115 landed inside the resolved-trade band.
+>
+> **Corrected: ~200 written plans (band 170–250), of which ~100–130 resolve. 13–20 months at three
+> written plans a week; multi-year at the one-a-week rate actually achieved.**
+>
+> Practical point the document missed: his one plan expired unfilled, and at his 0.411
+> stop-distance offset roughly half never will. Either place limits closer to price or accept the
+> attrition and write more — drifting between the two is the expensive option.
+
 # Mission 5 — log about 115 plans before your own numbers mean anything.
 
 _2026-10-10. Dispersion from the cached signal panel (15,663 sims, 14 ISO weeks); geometry anchored on

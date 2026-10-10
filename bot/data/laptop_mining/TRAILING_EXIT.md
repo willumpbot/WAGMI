@@ -1,3 +1,41 @@
+> # 🔴 REFUTED by red team `wxoc7han2` (high confidence). Do not act on this document.
+>
+> **The trailing exit is NOT better than a fixed target.** Under neutral intra-bar ordering and
+> gap-aware fills the paired gain is **−0.0218R (t −0.45)** at ×1 and **−0.0391R (t −0.77)** at ×2.
+> Three defects, two of them outright bugs in my own code:
+>
+> 1. **The hard 1R stop was disabled once the trail armed** — `if adv >= 1.0 and not armed`. A
+>    position armed at +0.25R with a 1.5R trail had its trigger at **−1.25R**, i.e. it was allowed to
+>    lose more than the stop permits. This penalises loose trails and leaves tight ones untouched, so
+>    it **manufactured the "trail tight, 6 of 6" result.**
+> 2. **The trail was tested against the previous bars' best**, before `best` updated — the most
+>    favourable intra-bar ordering available. Flip only that and the headline cell goes
+>    **−0.1033 → −0.2164** and 6-of-6 becomes **0 of 6**. A neutral coin-flip ordering gives −0.1598,
+>    so **54% of the claimed gain was ordering convention.**
+> 3. **Exits booked the trail level exactly.** 74.5% of trades exited by trail, and on the exit bar
+>    price travelled a mean of **0.2874R through** the level (max 5.393R; 36.4% more than 0.25R
+>    through). Filling at the bar low gives **−0.4593R**. The published −0.1033 was the extreme
+>    optimistic end of a [−0.4593, −0.1033] band.
+>
+> **"1.6R per trade is left on the table" is inflated ~14×.** Excursion is the *ex-post supremum* of
+> the price path — no causal rule can harvest it. My own best cell captured 7% of it, and under honest
+> fills, none. Calling it "plain measurement — no null, no model" was the error: it is a difference
+> against a perfect-foresight benchmark, which is both a model and an infeasible one.
+>
+> **Two more defects.** The −0.0433R headline was the **argmax of 90 cells** (median −0.1401, and the
+> selection gap is smaller than one standard error). And my standard error was **inflated 4.0×** —
+> I added two SEs in quadrature for the *same* 15,663 trades (0.1551 vs the correct paired 0.0392),
+> which manufactured every "unmeasurable" label in the document.
+>
+> **The confidence-filter claim is also wrong as presented.** I printed 3 of 5 excursion values
+> (0.760 / 0.731 / 0.707) and called it a monotone fall. The full column is
+> **0.7602, 0.7514, 0.7311, 0.7448, 0.7070 — non-monotone.** The three I happened to print were the
+> only falling subset.
+>
+> **What survives:** `exc` and `stopped` as raw measurements (reproduced exactly: +1.1854R mean
+> excursion, 68.67% stopped out at ×1), and the cached panel itself (verified bit-identical).
+> Nothing built on top of them in this document stands.
+
 # The trailing exit is the biggest single lever — it takes the loss from −0.21R to about −0.04R. It does not reach profit.
 
 _2026-10-10. 15,663 signals, 14 ISO weeks, 2026-02-11 → 06-05. Scripts: `trailing_exit.py`
