@@ -87,3 +87,36 @@ often.** That combination should not happen, and I cannot explain it from the le
   trades rather than 25 events, which is why it survives where that did not.
 - Pre-2026-07-24 USD is leverage-inflated; read share and sign as solid, absolute dollars as indicative.
 - One bot, one four-month window, 43 long winners. **Not red-teamed.**
+
+---
+
+# Update: candidate 2 is **not supported.** The exit agent is not specifically bad on longs.
+
+_Same day. `exit_agent_by_side.py` re-runs the verified replay split by side — same tie rule, same three
+bug fixes, so the arithmetic is identical to the pooled run._
+
+| action | side | n | edge (pooled) | edge (equal-weighted by week) | week t | MDE(80%) |
+|---|---|---|---|---|---|---|
+| close | **LONG** | 267 | **−0.134R** | **+0.389R** | 2.45 | 0.321 |
+| close | **SHORT** | 558 | **+0.119R** | −0.092R | −0.39 | 0.224 |
+
+**LONG close edge −0.134R vs SHORT +0.119R. Difference −0.253R, t = −1.81 — not significant,** and the
+80%-power MDE for that difference is **0.391R**, so a side gap smaller than that was never detectable here.
+**The pooled "+0.037R wash" was not hiding a side split.**
+
+**And the long arm's own estimate is not stable enough to quote in either direction.** Pooled **−0.134R**
+and equal-weighted-by-week **+0.389R** have **opposite signs**. When those two disagree on sign, the
+number is a property of which weeks carried the volume, not of the agent. The `t = 2.45` on the clustered
+figure would read as "the agent adds value on longs" — it is below the MDE and contradicts its own pooled
+mean, so it is not a finding.
+
+**Net: candidate 2 is both unsupported and underpowered.** It is not the explanation, and this test could
+not have found a moderate version of it.
+
+**That leaves candidates 1 and 3**, which are now the whole question:
+- **late long entries** — answerable from `ic_dropped_resolved.jsonl`'s `r1h`/`r4h`/`up12`/`dn12` by side,
+- **a mechanical asymmetry in the long trail/TP1 path** — a direct code read on the server's side.
+
+The `hold` and `partial` arms are reported in the script output but are **selected states** (the agent
+holds when things go well), and the SHORT hold arm returns **+26R**, which is that selection, not an
+effect. They are not evidence about anything.
