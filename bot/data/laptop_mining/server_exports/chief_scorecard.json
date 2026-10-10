@@ -1,13 +1,13 @@
 {
- "updated": "2026-10-10T21:35+00:00",
+ "updated": "2026-10-10T22:35+00:00",
  "horizons": {
   "1d": {
-   "n_calls": 50,
+   "n_calls": 56,
    "n_directional": 0,
    "directional_hit": null,
    "directional_mean_pct": null,
    "always_long_mean_pct": null,
-   "neutral_quiet_rate": 0.98,
+   "neutral_quiet_rate": 0.964,
    "by_conviction": {}
   },
   "5d": {
@@ -19,6 +19,9 @@
    "neutral_quiet_rate": null,
    "by_conviction": {}
   }
+ },
+ "brier_24h": {
+  "n": 0
  },
  "verdict": "collecting"
 }
