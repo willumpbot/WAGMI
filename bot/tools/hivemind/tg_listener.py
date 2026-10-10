@@ -96,12 +96,13 @@ def _caller_line(sender):
     except Exception:
         return None
     r = R.get(sender)
-    if not r or r.get("hist_hit") is None:
+    if not r or r.get("hist15_hit") is None:
         return None
-    base = R.get("_base_hit") or 0
-    fwd = f" · since tracking {r.get('fwd_2x', 0)}/{r.get('fwd_n', 0)} hit 2x" if r.get("fwd_n") else ""
+    base = (R.get("_base_15x") or {}).get("hit") or 0
+    fwd = f" · since tracking {r.get('fwd_15x', 0)}/{r.get('fwd_n', 0)} hit 1.5x" if r.get("fwd_n") else ""
     return (("★ WATCHED CALLER · " if r.get("watch") else "") +
-            f"{sender}: {r['hist_hit'] * 100:.0f}% of {r.get('hist_n')} past calls hit 2x (chat {base * 100:.0f}%){fwd}")
+            f"{sender}: {r['hist15_hit'] * 100:.0f}% of {r.get('hist15_n')} past calls hit 1.5x "
+            f"(chat {base * 100:.0f}%), avg {r['hist15_mean']:+.0f}% selling at 1.5x{fwd}")
 
 
 def format_card(c, chat, sender, ca):

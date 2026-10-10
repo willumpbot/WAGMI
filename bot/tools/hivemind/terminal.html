@@ -1001,8 +1001,9 @@ function aiPlans(){
 }
 function callerCell(h){
   const R = ((DATA.tgTrack||{}).callers||{})[h]; if (!h) return "–"; if (!R) return esc(h);
-  const tip = `History (graded): ${R.hist_n??0} calls, ${R.hist_hit!=null?(R.hist_hit*100).toFixed(0):"–"}% hit 2x (chat ${(((DATA.tgTrack.callers||{})._base_hit||0)*100).toFixed(0)}%). Tracked since: ${R.fwd_2x||0} of ${R.fwd_n||0} hit 2x. Starred = worth watching; no caller has beaten random picks yet.`;
-  return `<span title="${esc(tip)}">${R.watch?'<span style="color:var(--warn)">★</span> ':""}${esc(h)}${R.hist_hit!=null?` <span class="num">${(R.hist_hit*100).toFixed(0)}%</span>`:""}</span>`;
+  const B = (DATA.tgTrack.callers||{})._base_15x || {};
+  const tip = `Selling everything at 1.5x: ${R.hist15_n??0} past calls, ${R.hist15_hit!=null?(R.hist15_hit*100).toFixed(0):"–"}% hit 1.5x, avg ${R.hist15_mean!=null?(R.hist15_mean>=0?"+":"")+R.hist15_mean.toFixed(0)+"%":"–"} per call (whole chat: ${((B.hit||0)*100).toFixed(0)}%, ${(B.mean||0)>=0?"+":""}${(B.mean||0).toFixed(0)}%). Since tracking: ${R.fwd_15x||0} of ${R.fwd_n||0} hit 1.5x. Found after looking at the data: being confirmed on new calls (CALLER_15X_PREREG).`;
+  return `<span title="${esc(tip)}">${R.watch?'<span style="color:var(--warn)">★</span> ':""}${esc(h)}${R.hist15_hit!=null?` <span class="num">${(R.hist15_hit*100).toFixed(0)}%</span>`:""}</span>`;
 }
 function tgTrack(){
   const C0 = Object.values((DATA.tgTrack||{}).calls || {}).sort((a,b) => b.call_ts - a.call_ts).slice(0, 15);

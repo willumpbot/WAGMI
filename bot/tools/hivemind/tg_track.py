@@ -191,12 +191,30 @@ def run():
         records["_base_hit"] = base
     except Exception:
         pass
+    try:   # the "sell all at 1.5x" view (CALLER_15X_PREREG.md): historical hit rate + mean per caller
+        g15 = {}
+        for l in (TG / "caller_calls_graded.jsonl").read_text(encoding="utf-8").splitlines():
+            r = json.loads(l)
+            if "Syndicate" in (r.get("chat") or "") and r.get("status") == "graded" and r.get("peak_mult") and r.get("ret_7d") is not None:
+                g15.setdefault(r.get("sender"), []).append(((50.0 if r["peak_mult"] >= 1.5 else r["ret_7d"]) - 3, r["peak_mult"] >= 1.5))
+        allv = [v for xs in g15.values() for v, _ in xs]
+        records["_base_15x"] = {"hit": sum(h for xs in g15.values() for _, h in xs) / max(1, len(allv)),
+                                "mean": sum(allv) / max(1, len(allv))}
+        for h, xs in g15.items():
+            if h and len(xs) >= 8:
+                r = records.setdefault(h, {})
+                r["hist15_n"], r["hist15_hit"] = len(xs), sum(x for _, x in xs) / len(xs)
+                r["hist15_mean"] = sum(v for v, _ in xs) / len(xs)
+                r["watch"] = r["hist15_hit"] >= records["_base_15x"]["hit"] + 0.10 and r["hist15_mean"] > records["_base_15x"]["mean"] + 10
+    except Exception:
+        pass
     for c in calls.values():
         h = c.get("caller")
         if h and c.get("x_peak") is not None:
             r = records.setdefault(h, {})
             r["fwd_n"] = r.get("fwd_n", 0) + 1
             r["fwd_2x"] = r.get("fwd_2x", 0) + (c["x_peak"] >= 2)
+            r["fwd_15x"] = r.get("fwd_15x", 0) + (c["x_peak"] >= 1.5)
     _ai_verdicts(calls, prev, records, now)
     out = {"updated": now, "calls": calls, "callers": records, "ai_stats": _ai_stats(calls)}
     tmp = OUT.with_suffix(".tmp")
