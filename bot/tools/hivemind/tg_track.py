@@ -86,13 +86,14 @@ def run():
     calls = {}
     for r in rows:
         ca = r.get("ca")
-        if not ca or ca in calls or r["ts"] < now - TRACK_DAYS * 86400 or ca.startswith("0x"):
+        if not ca or ca in calls or r["ts"] < now - TRACK_DAYS * 86400 or ca.startswith("0x") or ca.islower():
             continue
         human = r.get("sender") and not str(r.get("sender")).lower().endswith("bot")
         old = prev.get(ca) or {}
         calls[ca] = {"ca": ca, "call_ts": r["ts"], "caller": r.get("sender") if human else old.get("caller"),
                      "call_mcap": old.get("call_mcap") or _call_mcap(rows, ca, r["ts"]),
                      "peak_mcap": old.get("peak_mcap"), "peak_ts": old.get("peak_ts"),
+                     "call_mcap_approx": old.get("call_mcap_approx"),
                      "card_at_call": old.get("card_at_call") or ({"mcap": r.get("mcap"), "liq": r.get("liq")} if r.get("notified") else None)}
         if not human:   # first sight was a bot alert; credit the human named in it (e.g. "├ takinginitialshere")
             m = re.search(r"├\s*@?([A-Za-z0-9_]{3,})\s*(?:\n|/|$)", r.get("msg") or "")
@@ -102,6 +103,9 @@ def run():
         d = live.get(ca) or {}
         c.update({"name": d.get("name") or (prev.get(ca) or {}).get("name"), "sym": d.get("sym"), "url": d.get("url"),
                   "now_mcap": d.get("mcap"), "liq_now": d.get("liq")})
+        if not c.get("call_mcap") and c["now_mcap"] and now - c["call_ts"] <= 1800:
+            # no price-bot stats with the call: first market cap we saw, within 30 min of the call (approximate)
+            c["call_mcap"], c["call_mcap_approx"] = c["now_mcap"], True
         if c["now_mcap"] and (not c["peak_mcap"] or c["now_mcap"] > c["peak_mcap"]):
             c["peak_mcap"], c["peak_ts"] = c["now_mcap"], now
         if c["call_mcap"]:
