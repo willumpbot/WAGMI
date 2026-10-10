@@ -1,0 +1,130 @@
+{
+ "n_decisions": 1318,
+ "horizons": [
+  24,
+  48,
+  168
+ ],
+ "results": {
+  "close|24h": {
+   "n": 825,
+   "acted_R": 0.0035,
+   "held_R": -0.0354,
+   "edge_pooled": 0.0389,
+   "edge_week": 0.0224,
+   "week_t": 0.21,
+   "weeks": 11,
+   "edge_target_first": 0.0389
+  },
+  "close|48h": {
+   "n": 825,
+   "acted_R": 0.0035,
+   "held_R": -0.0338,
+   "edge_pooled": 0.0373,
+   "edge_week": -0.0025,
+   "week_t": -0.02,
+   "weeks": 11,
+   "edge_target_first": 0.0373
+  },
+  "close|168h": {
+   "n": 825,
+   "acted_R": 0.0035,
+   "held_R": -0.1926,
+   "edge_pooled": 0.1961,
+   "edge_week": -0.0696,
+   "week_t": -0.2,
+   "weeks": 11,
+   "edge_target_first": 0.1961
+  },
+  "partial|24h": {
+   "n": 198,
+   "acted_R": 5.4804,
+   "held_R": 5.5802,
+   "edge_pooled": -0.0998,
+   "edge_week": -0.5545,
+   "week_t": -0.59,
+   "weeks": 10
+  },
+  "partial|48h": {
+   "n": 198,
+   "acted_R": 5.4804,
+   "held_R": 4.0931,
+   "edge_pooled": 1.3873,
+   "edge_week": 0.8757,
+   "week_t": 0.68,
+   "weeks": 10
+  },
+  "partial|168h": {
+   "n": 198,
+   "acted_R": 5.4804,
+   "held_R": 4.2637,
+   "edge_pooled": 1.2167,
+   "edge_week": 0.2113,
+   "week_t": 0.12,
+   "weeks": 10
+  },
+  "hold|24h": {
+   "n": 175,
+   "acted_R": 11.4736,
+   "held_R": 9.2955,
+   "edge_pooled": 2.1781,
+   "edge_week": 0.9315,
+   "week_t": 0.92,
+   "weeks": 8,
+   "edge_target_first": 2.1781
+  },
+  "hold|48h": {
+   "n": 175,
+   "acted_R": 11.4736,
+   "held_R": 8.122,
+   "edge_pooled": 3.3516,
+   "edge_week": 1.4357,
+   "week_t": 0.93,
+   "weeks": 8,
+   "edge_target_first": 3.3516
+  },
+  "hold|168h": {
+   "n": 175,
+   "acted_R": 11.4736,
+   "held_R": 8.1038,
+   "edge_pooled": 3.3698,
+   "edge_week": 1.0599,
+   "week_t": 0.58,
+   "weeks": 8,
+   "edge_target_first": 3.3698
+  },
+  "tighten_sl|24h": {
+   "n": 116,
+   "acted_R": -0.2839,
+   "held_R": 0.2773,
+   "edge_pooled": -0.5611,
+   "edge_week": -1.3465,
+   "week_t": -1.58,
+   "weeks": 11
+  },
+  "tighten_sl|48h": {
+   "n": 116,
+   "acted_R": -0.2839,
+   "held_R": 0.1551,
+   "edge_pooled": -0.4389,
+   "edge_week": -0.331,
+   "week_t": -0.44,
+   "weeks": 11
+  },
+  "tighten_sl|168h": {
+   "n": 116,
+   "acted_R": -0.2839,
+   "held_R": 0.2516,
+   "edge_pooled": -0.5355,
+   "edge_week": -0.9769,
+   "week_t": -0.69,
+   "weeks": 11
+  }
+ },
+ "placebo": {
+  "size": 0.0,
+  "real_week_t": -0.02,
+  "p": 1.0,
+  "valid": false
+ }
+}

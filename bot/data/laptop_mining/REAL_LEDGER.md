@@ -1,3 +1,17 @@
+> # ⚠️ THE "EXIT AGENT IS THE LEAK" READING IS WITHDRAWN (see `EXIT_AGENT_REPLAY.md`)
+>
+> I replayed all 827 of the agent's close decisions against what holding would have done, on real
+> candles. **Its closes are worth +0.037R, week t −0.02 — a wash.** The −$721 is **composition, not
+> causation**: the agent closes a lot of positions that end up losers, which is its job, and closing
+> them was neither right nor wrong on this evidence.
+>
+> The composition table below stands as arithmetic. The causal sentence — "the money leaks out
+> through the LLM exit agent" — does not, and I should not have written it that way.
+>
+> Also found while doing it: **any R figure computed from `position_sl` is wrong on tightened
+> positions**, by up to 50× (observed −14.6R where the truth is −0.28R), because `position_sl` is the
+> *current* stop, not the original. That affects `realized_rr` and anything downstream of it.
+
 # The real ledger: the trailing exit is the bot's most profitable path. It runs on 6.8% of trades.
 
 _2026-10-10. 293 real closes from `server_exports/trade_ledger.csv`, 2026-06-01 → 10-10.
