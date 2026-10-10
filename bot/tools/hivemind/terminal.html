@@ -238,7 +238,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         <label>Stop<input id="c_stop" type="number" step="any"></label>
         <label>Target<input id="c_tgt" type="number" step="any"></label>
         <label>Entry type<select id="c_etype"><option value="limit">Limit at entry</option><option value="market">Market now</option></select></label>
-        <label style="grid-column:1/-1">Setup<select id="c_setup"><option>50d pullback</option><option>breakout</option><option>breakdown</option><option>range fade</option><option>liq magnet</option><option>trend continuation</option><option>other</option></select></label>
+        <label style="grid-column:1/-1">Setup<select id="c_setup"><option>ai idea</option><option>50d pullback</option><option>breakout</option><option>breakdown</option><option>range fade</option><option>liq magnet</option><option>trend continuation</option><option>other</option></select></label>
         <label style="grid-column:1/-1">Why<input id="c_reason" placeholder="your read, in a few words"></label>
       </div>
       <div id="c_safe" style="margin-top:8px"></div>
@@ -994,10 +994,22 @@ function aiPlans(){
   const row = q => { const r = q.result || {}, sg = q.side==="LONG"?"up":"dn";
     return `<div style="border-bottom:1px solid var(--line);padding:6px 0"><div><b>${q.coin}</b> <span class="pill ${sg}">${q.side}</span> <span class="mut">${q.entry_type} ${fmt(q.entry)} · stop ${fmt(q.stop)} · target ${fmt(q.target)} · ${q.leverage}× · confidence ${q.confidence}/5</span>
       <span style="float:right">${r.r!=null?`<span class="num ${r.r>=0?"up":"dn"}">${r.status} ${r.r>=0?"+":""}${(+r.r).toFixed(2)}R</span>`:`<span class="mut">${r.status||""}${r.status==="open"&&r.live_r!=null?" "+(r.live_r>=0?"+":"")+r.live_r+"R":""}</span>`}
-      ${r.status==="waiting"?` <button class="aiadopt" data-id="${q.id}" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:2px 9px;cursor:pointer" title="Copy into MY plans (graded as yours too)">I'd take it</button>`:""}</span></div>
+      ${r.status==="waiting"?` <button class="aiadj" data-id="${q.id}" style="background:none;border:1px solid var(--accent);border-radius:5px;color:var(--accent);font-weight:700;padding:2px 9px;cursor:pointer" title="Load into my planner to change leverage, entry, stop or target before saving">Adjust</button> <button class="aiadopt" data-id="${q.id}" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:2px 9px;cursor:pointer" title="Copy into MY plans (graded as yours too)">I'd take it</button>`:""}</span></div>
       <div style="font-size:12px;margin-top:2px">${esc(q.reason)}</div><div class="mut" style="font-size:11px">Wrong if: ${esc(q.invalidation||"–")} · ${new Date(q.ts*1000).toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit"})}</div></div>`; };
   $("aiplans").innerHTML = (act.length ? act.map(row).join("") : `<div class="mut" style="font-size:12px">No open ideas. ${esc(A.last_note||"")}</div>`)
     + (done.length ? `<details style="margin-top:6px"><summary class="mut" style="cursor:pointer;font-size:11.5px">Finished ideas (${done.length})</summary>${done.map(row).join("")}</details>` : "");
+  document.querySelectorAll(".aiadj").forEach(b => b.onclick = async () => {
+    const q = I.find(x => x.id === b.dataset.id); if (!q) return;
+    if (SYMS.includes(q.coin)) pick(q.coin); else await adhoc(q.coin);
+    $("c_side").value = q.side; $("c_etype").value = "limit"; $("c_setup").value = "ai idea";
+    for (const [id, v] of [["c_entry", q.entry], ["c_stop", q.stop], ["c_tgt", q.target]]) { $(id).value = +(+v).toPrecision(6); $(id).dataset.touched = 1; }
+    $("c_lev").value = q.leverage || 3;
+    $("c_reason").value = `Claude idea ${q.id}, adjusted: `;
+    calc();
+    const box = $("c_plan").closest(".box"); box.scrollIntoView({behavior: "smooth", block: "start"});
+    box.style.boxShadow = "0 0 0 3px var(--accent)"; setTimeout(() => box.style.boxShadow = "", 2500);
+    $("c_msg").innerHTML = `<span class="up">Claude's ${q.coin} ${q.side} idea is loaded. Change anything (leverage, entry, stop, target), check the safety box, then Save my plan.</span>`;
+  });
   document.querySelectorAll(".aiadopt").forEach(b => b.onclick = async () => {
     const q = I.find(x => x.id === b.dataset.id); if (!q) return;
     try { const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken},
