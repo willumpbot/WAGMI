@@ -224,7 +224,7 @@ def test_old_persisted_dict_without_original_sl_falls_back(pm):
 # ── schema backward compatibility ────────────────────────────────────────
 
 def test_new_columns_appended_at_end():
-    assert LEDGER_COLUMNS[-2:] == ["stop_initial", "stop_final"]
+    assert LEDGER_COLUMNS[-4:] == ["stop_initial", "stop_final", "tp1_level", "tp2_level"]
     for col in ("realized_rr", "position_id", "pipeline_id", "thesis_id"):
         assert col in LEDGER_COLUMNS
 

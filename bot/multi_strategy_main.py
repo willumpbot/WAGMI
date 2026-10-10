@@ -4313,6 +4313,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 # vs stop at close (breakeven/trailing moves).
                                 "stop_initial": _rr_cells["stop_initial"],
                                 "stop_final": _rr_cells["stop_final"],
+                                "tp1_level": _rr_cells.get("tp1_level", ""),
+                                "tp2_level": _rr_cells.get("tp2_level", ""),
                             })
                             # Write-ahead journal (Phase 0.3b): mark this
                             # position's close as fully booked ONLY after the

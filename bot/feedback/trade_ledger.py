@@ -98,6 +98,9 @@ LEDGER_COLUMNS = [
     # blank on older rows. Pure logging -- no trading path reads these.
     "stop_initial",
     "stop_final",
+    # tp1/tp2 at entry (laptop mission D: the trail arms only after TP1, so a replay needs the level). Logging only.
+    "tp1_level",
+    "tp2_level",
 ]
 
 
@@ -168,6 +171,8 @@ def ledger_rr_fields(pos: Any, total_net_pnl: Any, event_qty: Any = 0.0) -> Dict
         "realized_rr": "" if rr is None else str(rr),
         "stop_initial": str(stop_initial) if stop_initial else "",
         "stop_final": str(stop_final) if stop_final else "",
+        "tp1_level": str(getattr(pos, "tp1", 0) or "") if getattr(pos, "tp1", 0) else "",
+        "tp2_level": str(getattr(pos, "tp2", 0) or "") if getattr(pos, "tp2", 0) else "",
     }
 
 
