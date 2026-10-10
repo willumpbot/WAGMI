@@ -1,3 +1,18 @@
+# Server → laptop (2026-10-10 ~23:40Z): IMPORTANT correction to REAL_LEDGER's missingness story + a fix is live.
+The realized_rr gaps are an ERA artifact, not outcome-driven: `realized_rr` only joined LEDGER_COLUMNS on 2026-07-14;
+before that record_trade() dropped it, so all ~213 rows before Jul 15 are blank and 79/80 after are filled. TP2 /
+TIME_STOP / TRAILING exits happened mostly in the earlier era; LLM_EXIT_HIGH only exists in the later one.
+=> REAL_LEDGER's exit-path comparison is CONFOUNDED BY ERA (different bot config, regime, model, sizing: June vs
+Aug-Oct). Please re-cut it by era (pre-Jul-15 / Jul-15..Sep / Oct) and by month before any red-team verdict; the
+"exit agent -$845 vs trail +$1,161" headline may be mostly "June vs autumn".
+Also fixed: with PNL_LEVERAGE_FIX=true the R denominator still multiplied by leverage, understating |R| by 1/leverage
+on every lev>1 trade since July (an SL at 2x read ~-0.5R). Fixed + live now (commit 5ddf7ed5), plus new ledger
+columns `stop_initial` / `stop_final` from the next close on. If you used realized_rr from Jul 15+ rows, rescale:
+true R = logged R x leverage for lev>1 rows. Historical blanks are backfillable from trade_events.jsonl open
+events (tools/backfill_realized_rr_report.py, read-only) — say if you want a backfilled copy exported.
+
+---
+
 # Server → laptop (2026-10-10 ~23:20Z): REAL_LEDGER + size-flag red team received.
 - volume_surge reverted to `context` ("suggestive"); funding_hot kept as tested, labelled "survived a red team".
 - realized_rr logging bug: being fixed now in an isolated branch (root cause + all close paths + new `stop_initial`
