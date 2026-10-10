@@ -12,6 +12,7 @@ import asyncio
 import collections
 import logging
 import os
+import json
 import signal
 import sys
 import time
@@ -8270,6 +8271,41 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         except Exception:
             pass  # Never crash the bot on tracking errors
 
+    def _adaptive_stop(self, symbol, side, entry, sl, tp1, qty, trace_id=""):
+        """ADAPTIVE_STOPS: forecast-sized stop/target at unchanged dollar risk.
+
+        Reads data/hivemind/state/<SYM>.json (written every 15 min by
+        tools/hivemind/assemble.py from the laptop's risk_voice module). Returns
+        (sl, tp1, qty) unchanged when the reading is missing, older than
+        ADAPTIVE_STOPS_MAX_AGE_S (default 3600) or not wider than the current stop.
+        """
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "hivemind", "state", f"{symbol}.json")
+        with open(path, "r", encoding="utf-8") as fh:
+            st = json.load(fh)
+        updated = datetime.fromisoformat(str(st.get("updated", "")).replace("Z", "+00:00"))
+        if updated.tzinfo is None:
+            updated = updated.replace(tzinfo=timezone.utc)
+        age = (datetime.now(timezone.utc) - updated).total_seconds()
+        if age > float(os.getenv("ADAPTIVE_STOPS_MAX_AGE_S", "3600")):
+            logger.info(f"[{trace_id}][{symbol}] ADAPTIVE_STOPS: hivemind reading {age:.0f}s old, keeping signal stop")
+            return sl, tp1, qty
+        leg = ((st.get("risk") or {}).get("long" if side == "LONG" else "short") or {})
+        stop_pct, tgt_pct = leg.get("stop_pct"), leg.get("target_pct")
+        if not stop_pct or not tgt_pct or entry <= 0:
+            return sl, tp1, qty
+        d_old = abs(entry - sl)
+        d_new = entry * float(stop_pct) / 100.0
+        if d_old <= 0 or d_new <= d_old:
+            return sl, tp1, qty   # never tighten: the finding is that tight stops bleed
+        sgn = 1 if side == "LONG" else -1
+        new_sl = entry - sgn * d_new
+        new_tp1 = entry + sgn * entry * float(tgt_pct) / 100.0
+        new_qty = qty * d_old / d_new   # equal dollar risk
+        logger.info(
+            f"[{trace_id}][{symbol}] ADAPTIVE_STOPS: SL {sl:.6g}->{new_sl:.6g} ({stop_pct:.2f}%), "
+            f"TP1 {tp1:.6g}->{new_tp1:.6g}, qty {qty:.6g}->{new_qty:.6g} (risk unchanged)")
+        return new_sl, new_tp1, new_qty
+
     def _note_llm_pipeline_health(self, pipeline_failed: bool, symbol: str, trace_id: str = ""):
         """RUNTIME durability instrument (2026-07-12, THE_STANDARD v1.4).
 
@@ -9088,6 +9124,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 adj_sl = actual_entry + raw_signal.atr * 1.5 if raw_signal.atr > 0 else actual_entry * 1.02
             if adj_tp1 >= actual_entry:
                 adj_tp1 = actual_entry - raw_signal.atr * 1.0 if raw_signal.atr > 0 else actual_entry * 0.99
+
+        # ADAPTIVE_STOPS (default off; owner decision): replace the signal's tight stop
+        # with the laptop-tested geometry -- stop 2x the forecast next-day move,
+        # target 0.5R -- read from the hivemind's risk block (laptop_mining/
+        # risk_voice.py via tools/hivemind/assemble.py), and scale qty down so the
+        # dollar risk is unchanged. Pair with TIME_STOP_HOURS=48: the tested
+        # geometry holds up to 48h, and earlier time stops cost ~0.1R/trade
+        # (laptop EXITS.md). Tight stops lost ~-0.43R/setup; this geometry
+        # was +0.09R on held-out data and wider stops won 4/4 walk-forward folds
+        # (bot/data/laptop_mining/ADAPTIVE_STOPS.md, GEOMETRY.md). Falls back to
+        # the existing stop if the hivemind reading is missing or stale.
+        if os.getenv("ADAPTIVE_STOPS", "false").lower() in ("1", "true", "yes"):
+            try:
+                adj_sl, adj_tp1, qty = self._adaptive_stop(symbol, side, actual_entry, adj_sl, adj_tp1, qty, trace_id)
+            except Exception as _as_e:
+                logger.warning(f"[{trace_id}][{symbol}] ADAPTIVE_STOPS skipped: {_as_e}")
 
         # Round qty for exchange
         qty = round_qty(symbol, qty)
