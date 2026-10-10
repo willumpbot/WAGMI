@@ -30,6 +30,10 @@ FILES = {
     "geometry_shadow.json": BOT / "data" / "hivemind" / "geometry_shadow.json",
     "geometry_shadow_results.jsonl": BOT / "data" / "hivemind" / "geometry_shadow_results.jsonl",
     "live_scorecard.json": BOT / "data" / "agent_grades" / "live" / "live_scorecard.json",
+    "agent_grades_resolved.jsonl": BOT / "data" / "agent_grades" / "live" / "resolved.jsonl",
+    "exit_decisions.jsonl": BOT / "data" / "logs" / "exit_decisions.jsonl",
+    "llm_exits_resolved.jsonl": BOT / "data" / "llm_exits_resolved.jsonl",
+    "position_manager.py": BOT / "execution" / "position_manager.py",
 }
 
 
