@@ -203,6 +203,11 @@ class TradeClosed:
     # a live cross-position sum); accepted as an emit-time override kwarg
     # for the same reason as equity_after/session_dd_pct.
     open_realized_pnl: Optional[float] = None
+    # stop_final: the position's CURRENT stop at close (Position.sl -- moved by
+    # breakeven/ratchet/trailing), for the ledger's stop_final column
+    # (LEDGER_RR_FIX 2026-10-10). Deliberately NOT read from metadata["sl"],
+    # which is the ORIGINAL stop (-> original_sl above). Logging only.
+    stop_final: Optional[float] = None
 
     # ---- delivery metadata -------------------------------------------------------
     exchange_submitted: bool = False
@@ -430,6 +435,7 @@ class TradeClosed:
             setup_type=setup_type,
             btc_trend=btc_trend,
             funding_rate=funding_rate,
+            stop_final=_get(meta, position, "stop_final", pos_attr="sl"),
             exchange_submitted=exchange_submitted,
             sim=sim,
         )

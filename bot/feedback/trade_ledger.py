@@ -56,7 +56,8 @@ LEDGER_COLUMNS = [
     # multi_strategy_main.py since inception but silently dropped because
     # record_trade() only keeps keys present in this schema.
     "predicted_ev",   # ev_per_dollar from entry_reasons at open
-    "realized_rr",    # net_pnl / (original stop width * original qty * leverage)
+    "realized_rr",    # whole-trade net_pnl / (|entry - stop_initial| * original qty
+                      #   * pnl leverage) -- see compute_realized_rr(); blank = unknown
     "win",            # 1 if net_pnl > 0 else 0
     # EPOCH_FENCE (measurement-integrity, Phase 0, 2026-07-20): identifies
     # which canonical epoch (data/epoch_start.json / data/epoch.py) this row
@@ -89,7 +90,85 @@ LEDGER_COLUMNS = [
     # thesis it graded. Appended at the END; blank on older rows.
     "pipeline_id",
     "thesis_id",
+    # STOP_GEOMETRY (2026-10-10, LEDGER_RR_FIX): the stop at OPEN
+    # (Position.original_sl -- set once in __post_init__, persisted through
+    # auto_recovery's position_state round-trip) and the stop at CLOSE
+    # (Position.sl -- differs when breakeven/ratchet/trailing moved it).
+    # stop_initial is the 1R denominator of realized_rr. Appended at the END;
+    # blank on older rows. Pure logging -- no trading path reads these.
+    "stop_initial",
+    "stop_final",
 ]
+
+
+def rr_pnl_leverage(leverage: Any) -> float:
+    """Leverage factor that the booked pnl actually carries.
+
+    MUST mirror ``execution.position_manager.PositionManager._pnl_lev``
+    (pinned by tests/test_ledger_realized_rr.py): with PNL_LEVERAGE_FIX=true
+    pnl = price_move * qty (no leverage), so the 1R loss at the initial stop
+    is ``stop_width * qty``; multiplying the denominator by leverage there
+    would understate |R| by a factor of ``leverage``. With the flag off pnl
+    is leverage-inflated and the denominator must be too.
+    """
+    if os.getenv("PNL_LEVERAGE_FIX", "false").lower() in ("1", "true", "yes"):
+        return 1.0
+    try:
+        return float(leverage or 1.0)
+    except (TypeError, ValueError):
+        return 1.0
+
+
+def compute_realized_rr(
+    total_net_pnl: Any,
+    entry: Any,
+    stop_initial: Any,
+    original_qty: Any,
+    leverage: Any = 1.0,
+) -> Optional[float]:
+    """Whole-trade R multiple: net pnl (all legs) / 1R at the INITIAL stop.
+
+    1R = |entry - stop_initial| * original_qty * rr_pnl_leverage(leverage).
+    Returns None (-> blank ledger cell, i.e. "unknown") when the risk
+    denominator cannot be determined, instead of a fabricated 0 that is
+    indistinguishable from a genuine scratch trade. Logging only.
+    """
+    try:
+        entry_f = float(entry or 0.0)
+        sl_f = float(stop_initial or 0.0)
+        qty_f = abs(float(original_qty or 0.0))
+        pnl_f = float(total_net_pnl)
+    except (TypeError, ValueError):
+        return None
+    if entry_f <= 0 or sl_f <= 0 or qty_f <= 0:
+        return None
+    risk = abs(entry_f - sl_f) * qty_f * rr_pnl_leverage(leverage)
+    if risk <= 0:
+        return None
+    return round(pnl_f / risk, 3)
+
+
+def ledger_rr_fields(pos: Any, total_net_pnl: Any, event_qty: Any = 0.0) -> Dict[str, str]:
+    """realized_rr / stop_initial / stop_final ledger cells for a CLOSED
+    Position (god-block writer in multi_strategy_main.py). Read-only on
+    ``pos``. ``total_net_pnl`` must be the whole-trade net (pos.realized_pnl,
+    all legs) -- the ledger is one row per position, so R is per trade.
+    ``original_qty``/``original_sl`` are used because ``_close_position``
+    zeroes pos.qty and breakeven/trailing move pos.sl before the row is
+    written.
+    """
+    qty = getattr(pos, "original_qty", 0) or event_qty or 0
+    stop_initial = getattr(pos, "original_sl", 0) or getattr(pos, "sl", 0) or 0
+    stop_final = getattr(pos, "sl", 0) or 0
+    rr = compute_realized_rr(
+        total_net_pnl, getattr(pos, "entry", 0), stop_initial, qty,
+        getattr(pos, "leverage", 1.0),
+    )
+    return {
+        "realized_rr": "" if rr is None else str(rr),
+        "stop_initial": str(stop_initial) if stop_initial else "",
+        "stop_final": str(stop_final) if stop_final else "",
+    }
 
 
 class TradeLedger:

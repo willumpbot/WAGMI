@@ -88,7 +88,11 @@ class TestLedgerPositionIdColumn:
         # are unchanged; later additions (funding snapshot, lineage ids) only
         # ever go after it.
         assert LEDGER_COLUMNS.index("position_id") > LEDGER_COLUMNS.index("win")
-        assert LEDGER_COLUMNS[-2:] == ["pipeline_id", "thesis_id"]
+        _i = LEDGER_COLUMNS.index("pipeline_id")
+        assert LEDGER_COLUMNS[_i:_i + 2] == ["pipeline_id", "thesis_id"]
+        assert _i > LEDGER_COLUMNS.index("position_id")
+        # LEDGER_RR_FIX (2026-10-10) appended stop_initial/stop_final after them.
+        assert LEDGER_COLUMNS[-2:] == ["stop_initial", "stop_final"]
 
     def test_record_trade_writes_position_id_from_dict(self, tmp_path):
         led = TradeLedger(data_dir=str(tmp_path))

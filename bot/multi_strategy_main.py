@@ -4234,11 +4234,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             # Use ORIGINAL qty/SL (immutable at entry) and include
                             # leverage so 1R == loss at the initial stop:
                             #   pnl_at_SL = stop_width * qty * leverage.
-                            _rr_qty = getattr(pos, "original_qty", 0) or event.qty or 0
-                            _rr_sl = getattr(pos, "original_sl", 0) or pos.sl
-                            _stop_width = abs(pos.entry - _rr_sl) if _rr_sl else 0
-                            _rr_risk = _stop_width * _rr_qty * (pos.leverage or 1)
-                            _realized_rr = round(total_pnl / _rr_risk, 3) if _rr_risk > 0 else 0
+                            # LEDGER_RR_FIX (2026-10-10): the leverage factor now
+                            # mirrors pos_mgr._pnl_lev (the factor total_pnl was
+                            # actually booked with): under PNL_LEVERAGE_FIX=true
+                            # pnl carries NO leverage, so the old `* pos.leverage`
+                            # understated |R| by 1/leverage. Undeterminable risk
+                            # -> blank (unknown), not a fabricated 0. Whole-trade
+                            # R: total_pnl = pos.realized_pnl (all legs, net).
+                            # Pure logging -- nothing downstream trades on it.
+                            from feedback.trade_ledger import ledger_rr_fields as _lrf
+                            _rr_cells = _lrf(pos, total_pnl, event.qty)
                             _predicted_ev = pos.entry_reasons.get("ev_per_dollar", "") if pos.entry_reasons else ""
                             # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION, 2026-07-27):
                             # source regime_4h + numeric funding/OI from the entry
@@ -4288,7 +4293,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "running_equity": str(round(self.risk_mgr.equity, 2)),
                                 "session_dd_pct": str(_session_dd),
                                 "predicted_ev": str(_predicted_ev),
-                                "realized_rr": str(_realized_rr),
+                                "realized_rr": _rr_cells["realized_rr"],
                                 "win": "1" if total_pnl > 0 else "0",
                                 # POSITION_IDENTITY (Phase 0.3b): stamps this
                                 # ledger row with the same position_id minted
@@ -4304,6 +4309,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "funding_rate_entry": _funding_rate_entry,
                                 "open_interest_entry": _open_interest_entry,
                                 "premium_entry": _premium_entry,
+                                # STOP_GEOMETRY (LEDGER_RR_FIX): stop at open
+                                # vs stop at close (breakeven/trailing moves).
+                                "stop_initial": _rr_cells["stop_initial"],
+                                "stop_final": _rr_cells["stop_final"],
                             })
                             # Write-ahead journal (Phase 0.3b): mark this
                             # position's close as fully booked ONLY after the
