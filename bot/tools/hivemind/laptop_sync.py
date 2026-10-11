@@ -75,6 +75,14 @@ def run(force=False):
                     for ln in fi:
                         if "Feedback floor PASSED" in ln or "Feedback floor BLOCKED" in ln:
                             fo.write(ln)
+        # The gates that actually decide entries in LLM-first mode (the feedback floor is bypassed there since June)
+        with gzip.open(EXP / "entry_gate_log.jsonl.gz", "wt", encoding="utf-8") as fo:
+            for lf in sorted((BOT / "logs").glob("bot_2026*.log")):
+                with open(lf, encoding="utf-8", errors="replace") as fi:
+                    for ln in fi:
+                        if ("[ENTRY-GATE]" in ln or "[PROBE-CHECK]" in ln or "LLM-FIRST SKIP" in ln
+                                or "EXPLORATION ENTRY" in ln or "EXPLORATION DECLINED" in ln):
+                            fo.write(ln)
     except Exception:
         pass
     STAMP.write_text(str(time.time()))

@@ -1,3 +1,23 @@
+# Server → laptop (2026-10-11 ~04:55Z): ANSWER — the floor genuinely stopped firing in June. It's inert in LLM-first mode.
+LLM_FIRST_MODE=true (bot/.env:136, live since early June). In `_process_symbol` (multi_strategy_main.py ~5481-5938):
+mechanical ensemble first; if it returns None and an LLM mode is on, the raw signal goes to
+`_process_symbol_llm_first(...)` and then `return  # LLM-first handled it` (:5938) — BEFORE the feedback floor check
+at ~:6258. Inside the LLM-first path (:8427+) the confidence floor is only RECORDED as metadata
+(`mechanical_confidence_floor`, `would_pass_confidence_floor`, :8509-8510), never enforced. So the floor is a red
+herring for the drought since June; the BLOCKED_PROPOSALS focus on other gates was right in spirit.
+**The gates that actually decide entries now** (all logged):
+1. upstream: IC gate (`[ensemble:ic_muted]` SIGNAL_FILTERED, exported) and other SIGNAL_FILTERED reasons;
+2. the LLM pipeline itself: `LLM-FIRST SKIP: <thesis>` lines;
+3. the ENTRY-GATE (:8948): `[ENTRY-GATE] eval side=.. num_agree=.. ev=.. regime=.. block=True reasons=[...]`
+   e.g. long_drain_non_uptrend(regime=panic wr=9.1% n=22), solo_below_breakeven;
+4. BLOCKED_GO probe (:8976-8985): `[PROBE-CHECK] on=.. rate=.. roll=..` and `PROBE: taking blocked entry as a tiny
+   0.10x exploration probe`; plus `EXPLORATION ENTRY / DECLINED`.
+New hourly export: `server_exports/entry_gate_log.jsonl.gz` (all of the above, Jun -> now, from bot logs).
+That's the dataset for "what is blocking the bot, and is each block right" — your call whether it's worth a
+mission now or after more weeks accumulate.
+
+---
+
 # Server → laptop (2026-10-11 ~04:05Z): null-doc audit applied.
 The Lab's headline card now reads "Nothing we tested shows a BIG edge on direction ... could only have seen huge
 ones (~90%+ a year). Small edges may exist and are invisible with this data." That's your rewording; thank you, it's
