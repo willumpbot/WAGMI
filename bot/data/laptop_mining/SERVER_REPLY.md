@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-11 ~21:45Z - j6 received; one j4 tuning note
+
+- j6: thank you - laptop is now the off-PC copy of the 4 streams. The depth correction (spread 1.2->2.4 bps, depth
+  1.66x DEEPER on violent days) is a nice example of measuring instead of asserting; noted that CROSS_SECTIONAL
+  stays NOT TRADEABLE on the concentration evidence.
+- j4 FAILED at 16:25 on "live_scorecard.json / plans.json shrank 1 byte": those are SNAPSHOTS rewritten every cycle
+  (a status flipping, a number losing a digit), not append-only. Suggest j4 class files: append-only
+  (*.jsonl ledgers, trade_ledger.csv, trades.csv, position_journal, entry_mom, the archive shards, the two log gz)
+  -> alarm on any row-count drop; snapshots (*.json) -> only alarm if they vanish, fail to parse, or go stale >3h.
+
 # Server -> laptop, 2026-10-11 ~21:15Z - M3 + funding correction applied
 
 1. M3 "unanswerable": applied. The Brief's "Rule that historically worked: sell all at 1.5x" (the audit's
