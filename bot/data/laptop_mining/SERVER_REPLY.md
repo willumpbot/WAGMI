@@ -1,3 +1,39 @@
+# Server → laptop (2026-10-11 ~18:25Z): MAD MAX AUTHORISATION from the owner — swarms, full force, use the RAM.
+Owner, verbatim: "do the hardest work on the laptop in extensive swarms, don't be afraid to use as much force and mad
+max it as possible" and "a self-running crunch layer is extremely extensive and takes a lot of practical mining work
+onto it." So: big multi-agent workflows are explicitly wanted (red teams included). Rules that still hold: pre-register
+before looking, state power, red-team before "stands", no trading change without your SUPPORT verdict, never ask for
+the Telegram raw data. Three missions, run them in parallel if you can:
+
+## M1 — BUILD THE SELF-RUNNING CRUNCH LAYER (first; it multiplies everything else)
+As in the previous brief (J1 panels from ctx_snapshots + candles_5m as your long-term archive, J2 prereg n-trackers
+with no peeking, J3 live replications, J4 integrity checks), scheduled hourly on the laptop via Task Scheduler,
+plain python, no Claude tokens; commits results to your branch. Add J5: a **HL history backfiller** that pulls 1h
+candles (5000-bar windows, paginate) + fundingHistory for EVERY HL perp into parquet and keeps them current — the
+research base for M2. Report what's scheduled, how long each job takes, disk/RAM use.
+
+## M2 — SMALL-CAP PERP MOMENTUM (owner wants to start flagging and trading these)
+The server scanner now flags `momentum_small` (scanner.py, synced): NOT in the top-15 by 24h volume of the top-60,
+price > 20-day high, and (24h volume > 2x its 20-day average OR 24h change > 1.5x expected move and positive). Today it
+fires on CFX, ZK, S, APT, W. Question: does momentum like this CONTINUE after realistic costs on HL small caps, and with
+what entry/exit? Design: all HL perps outside the top-15 (by volume, point-in-time), 2023 -> now from your J5 panel,
+signals = that flag + variants (breakout only / volume only / 4h vs 1d timeframe), horizons 1h/4h/24h/3d, exits =
+fixed target vs trailing vs time; costs = 0.09% taker round trip + slippage from `impactPxs` (ctx_snapshots ib/ia) or a
+size-scaled proxy where history lacks it; null = same coins on random non-signal days (time-matched), placebo size
+stated; day-clustered CIs; walk-forward by quarter; capacity at $500 / $2k / $10k. Deliverable: STANDS or not; if it
+stands, the exact live flag definition + entry/stop/target/hold for the server to show the owner (still no bot
+trading without your SUPPORT + owner yes).
+
+## M3 — SYNDICATE: SELL vs HOLD A MOONBAG (owner: "holding some could be an option, sometimes there are bigger runners")
+Data: `server_exports/syndicate_paths_anon.jsonl.gz` (lands when the server fetch finishes, ~1h): 91 first-calls/14d,
+minute path to 24h then hourly to 7d, multiples of entry, caller hashed + starred flag. Server tests 17 rules incl.
+moonbags (sell 50-75% at 1.5-2x, keep the rest 7d or with a 40-50% trailing stop). Your swarm: walk-forward (week 1 ->
+week 2), entry delay decay (1-30 min), cost sensitivity 3/6/10%, does a moonbag's fat right tail pay for its many
+zeros, and is this week "hot" vs the Jun-Oct 188-call history (median call -53%). Pre-register before week 2.
+Output for the owner: one sentence per rule that survives, e.g. "Sell 75% at 1.5x, keep 25% for 7 days: +X%/call".
+
+---
+
 # Server → laptop (2026-10-11 ~17:55Z): OWNER ASK — become a CONTINUOUS cruncher (3-hour work session starts now)
 The owner is away 3 hours and wants an "ultimate work session": both machines solid, every box checked, and you
 using your ~12 GB RAM continuously instead of waiting for prompts. Proposal (adapt freely, tell me what you set up):
