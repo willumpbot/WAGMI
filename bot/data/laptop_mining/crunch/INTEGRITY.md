@@ -6,53 +6,52 @@ rates and gaps. Flags regressions; does not interpret them._
 
 ## 🔴 REGRESSIONS THIS RUN
 
-- live_scorecard.json shrank 1 bytes
-- plans.json shrank 1 bytes
-_Updated 2026-10-11 16:25._
+- confidence_state.json snapshot stale 20.8h
+_Updated 2026-10-11 16:44._
 
 ## Growth -- is each export still being written?
 
-| export | size | change since last run |
-|---|---|---|
-| `LIQ_MAGNET_RECHECK.md` | 1797 bytes | unchanged |
-| `README_DATA_RESPONSE.md` | 2908 bytes | unchanged |
-| `agent_grades_resolved.jsonl` | 1696 rows | +24 rows |
-| `ai_plans.json` | 3883 bytes | +1355 bytes |
-| `archive` | 0 rows+bytes | unchanged |
-| `candles_5m` | 33066 rows+bytes | +84 rows+bytes |
-| `chief.py` | 11981 bytes | unchanged |
-| `chief_calls.jsonl` | 122 rows | unchanged |
-| `chief_scorecard.json` | 547 bytes | unchanged |
-| `confidence_state.json` | 3181 bytes | unchanged |
-| `copilot_call_ledger.jsonl` | 385 rows | unchanged |
-| `copilot_call_ledger_resolved.jsonl` | 364 rows | unchanged |
-| `ctx_snapshots` | 17978 rows+bytes | +890 rows+bytes |
-| `entry_gate_log.jsonl.gz` | 5383 rows | unchanged |
-| `entry_mom.jsonl` | 475 rows | +300 rows |
-| `execution_analytics.csv` | 173 rows | unchanged |
-| `exit_decisions.jsonl` | 1324 rows | unchanged |
-| `expmove_log.jsonl` | 58 rows | new |
-| `floor_decisions_log.jsonl.gz` | 1369 rows | +1308 rows |
-| `funding_oi_history.jsonl.gz` | 49907 rows | +17 rows |
-| `geometry_shadow.json` | 630 bytes | unchanged |
-| `geometry_shadow_results.jsonl` | 366 rows | +6 rows |
-| `ic_dropped_resolved.jsonl` | 998 rows | unchanged |
-| `live_scorecard.json` | 1344 bytes | **SHRANK 1 bytes** |
-| `llm_exits_resolved.jsonl` | 29 rows | unchanged |
-| `owner_fills.jsonl` | 1 rows | unchanged |
-| `owner_plans.jsonl` | 5 rows | unchanged |
-| `plans.json` | 7413 bytes | **SHRANK 1 bytes** |
-| `position_journal.jsonl` | 3105 rows | unchanged |
-| `position_manager.py` | 137439 bytes | unchanged |
-| `scan_grades.json` | 8928 bytes | +574 bytes |
-| `scan_log.jsonl` | 268 rows | +1 rows |
-| `scanner.py` | 10667 bytes | +206 bytes |
-| `signal_filtered.jsonl.gz` | 9845 rows | unchanged |
-| `syndicate_calls_anon.jsonl` | 199 rows | unchanged |
-| `syndicate_paths_anon.jsonl.gz` | 56 rows | unchanged |
-| `trade_ledger.csv` | 295 rows | unchanged |
-| `trades.csv` | 237 rows | unchanged |
-| `uptime.jsonl` | 67 rows | +5 rows |
+| export | size | class | change since last run |
+|---|---|---|---|
+| `LIQ_MAGNET_RECHECK.md` | 1797 bytes | reference | reference — present |
+| `README_DATA_RESPONSE.md` | 2908 bytes | reference | reference — present |
+| `agent_grades_resolved.jsonl` | 1696 rows | append | unchanged |
+| `ai_plans.json` | 3883 bytes | snapshot | snapshot — ok |
+| `archive` | 161105 rows+bytes | append | unchanged |
+| `candles_5m` | 33066 rows+bytes | append | unchanged |
+| `chief.py` | 11981 bytes | reference | reference — present |
+| `chief_calls.jsonl` | 122 rows | append | unchanged |
+| `chief_scorecard.json` | 547 bytes | snapshot | snapshot — ok |
+| `confidence_state.json` | 3181 bytes | snapshot | snapshot — **stale 20.8h** |
+| `copilot_call_ledger.jsonl` | 385 rows | append | unchanged |
+| `copilot_call_ledger_resolved.jsonl` | 364 rows | append | unchanged |
+| `ctx_snapshots` | 17978 rows+bytes | append | unchanged |
+| `entry_gate_log.jsonl.gz` | 5383 rows | append | unchanged |
+| `entry_mom.jsonl` | 475 rows | append | unchanged |
+| `execution_analytics.csv` | 173 rows | append | unchanged |
+| `exit_decisions.jsonl` | 1324 rows | append | unchanged |
+| `expmove_log.jsonl` | 58 rows | append | unchanged |
+| `floor_decisions_log.jsonl.gz` | 1369 rows | append | unchanged |
+| `funding_oi_history.jsonl.gz` | 49907 rows | append | unchanged |
+| `geometry_shadow.json` | 630 bytes | snapshot | snapshot — ok |
+| `geometry_shadow_results.jsonl` | 366 rows | append | unchanged |
+| `ic_dropped_resolved.jsonl` | 998 rows | append | unchanged |
+| `live_scorecard.json` | 1344 bytes | snapshot | snapshot — ok |
+| `llm_exits_resolved.jsonl` | 29 rows | append | unchanged |
+| `owner_fills.jsonl` | 1 rows | append | unchanged |
+| `owner_plans.jsonl` | 5 rows | append | unchanged |
+| `plans.json` | 7413 bytes | snapshot | snapshot — ok |
+| `position_journal.jsonl` | 3105 rows | append | unchanged |
+| `position_manager.py` | 137439 bytes | reference | reference — present |
+| `scan_grades.json` | 8928 bytes | snapshot | snapshot — ok |
+| `scan_log.jsonl` | 268 rows | append | unchanged |
+| `scanner.py` | 10667 bytes | reference | reference — present |
+| `signal_filtered.jsonl.gz` | 9845 rows | append | unchanged |
+| `syndicate_calls_anon.jsonl` | 199 rows | append | unchanged |
+| `syndicate_paths_anon.jsonl.gz` | 56 rows | append | unchanged |
+| `trade_ledger.csv` | 295 rows | append | unchanged |
+| `trades.csv` | 237 rows | append | unchanged |
+| `uptime.jsonl` | 67 rows | append | unchanged |
 
 ## Known failure modes
 
@@ -72,9 +71,9 @@ _Updated 2026-10-11 16:25._
 _The jobs report what they did. Nothing reported whether the SCHEDULER fired, and a
 stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing changed`._
 
-- fresh -- previous run was 0.8 h ago, inside the 2.5 h alarm Scheduler says: state **Running**, last result **267009**, next 10/11/2026 5:10:00 PM, missed 0.
+- fresh -- previous run was 1.1 h ago, inside the 2.5 h alarm Scheduler says: state **Ready**, last result **1** (NOT success), next 10/11/2026 5:10:00 PM, missed 0.
 
-- server feed fresh -- `.last_sync` 0.3 h old, alarm at 3 h
+- server feed fresh -- `.last_sync` 0.6 h old, alarm at 3 h
 
 - all three reports are trackable by git, so the hourly commit can carry them
 

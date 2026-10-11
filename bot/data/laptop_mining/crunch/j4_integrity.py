@@ -154,6 +154,52 @@ LAST_SYNC = os.path.join(EXP, ".last_sync")
 SYNC_STALE_S = 3 * 3600
 
 
+SNAPSHOT_STALE_S = 3 * 3600
+
+
+def file_class(p):
+    """APPEND-ONLY or SNAPSHOT. The distinction decides what counts as a regression.
+
+    SECOND FALSE ALARM I RAISED, and the server had to explain it: `live_scorecard.json` and
+    `plans.json` "shrank 1 byte". They are SNAPSHOTS rewritten every cycle -- a status flipping
+    from "open" to "shut", a number losing a digit, legitimately makes them smaller. Treating
+    every file as append-only means every snapshot update is a potential alarm, which trains a
+    reader to ignore the alarms. That is worse than not checking.
+
+    So: ledgers and archives may only grow (a row-count drop is real), while snapshots are
+    judged on whether they vanish, stop parsing, or go stale.
+    """
+    name = os.path.basename(p)
+    if os.path.isdir(p):
+        return "append"                      # the shard directories only gain files
+    if name.endswith((".jsonl", ".jsonl.gz", ".csv")):
+        return "append"
+    if name.endswith(".gz"):
+        return "append"                      # the two log archives
+    if name.endswith(".json"):
+        return "snapshot"
+    # THIRD CLASS, and the third false-alarm family I created today: source and docs. The
+    # fallback used to be "snapshot", so j4 JSON-parsed scanner.py and reported it
+    # "UNPARSEABLE" -- five of six regressions in one run were this. A .py file failing to
+    # parse as JSON is not a finding, it is a category error on my part.
+    if name.endswith((".py", ".md", ".txt", ".yml", ".yaml", ".toml", ".cfg")):
+        return "reference"
+    return "reference"
+
+
+def snapshot_health(p):
+    """A snapshot is healthy if it parses and is fresh. Size is not evidence either way."""
+    try:
+        age = time.time() - os.path.getmtime(p)
+    except OSError:
+        return "unreadable"
+    try:
+        json.load(io.open(p, encoding="utf-8"))
+    except (ValueError, OSError):
+        return "UNPARSEABLE"
+    return "stale %.1fh" % (age / 3600.0) if age > SNAPSHOT_STALE_S else "ok"
+
+
 def measure(p):
     """Size a file by its CONTENT, not its bytes.
 
@@ -167,11 +213,12 @@ def measure(p):
     alongside so a future comparison cannot mix them.
     """
     if os.path.isdir(p):
+        # RECURSE: server_exports/archive/ contains per-stream SUBdirectories, so a
+        # non-recursive walk reported 0 rows for 127 shards of otherwise unrecoverable data.
         tot = 0
-        for f in sorted(os.listdir(p)):
-            fp = os.path.join(p, f)
-            if os.path.isfile(fp):
-                tot += measure(fp)[0]
+        for root, _dirs, files in os.walk(p):
+            for f in sorted(files):
+                tot += max(measure(os.path.join(root, f))[0], 0)
         return tot, "rows+bytes"
     if p.endswith(".gz"):
         try:
@@ -263,28 +310,38 @@ def main():
              "",
              "## Growth -- is each export still being written?",
              "",
-             "| export | size | change since last run |",
-             "|---|---|---|"]
+             "| export | size | class | change since last run |",
+             "|---|---|---|---|"]
     for p in sorted(glob.glob(os.path.join(EXP, "*"))):
         name = os.path.basename(p)
         sz, unit = measure(p)
         cur[name] = {"v": sz, "u": unit}
+        cls = file_class(p)
         o = prev.get(name)
-        # old state was a bare int in bytes; a unit change is not a content change
         old = o.get("v") if isinstance(o, dict) else None
         oldu = o.get("u") if isinstance(o, dict) else None
-        if old is None:
-            ch = "new" if o is None else "unit changed to %s -- not compared" % unit
+        if cls == "reference":
+            ch = "reference — present"       # existence is the only claim worth making
+        elif cls == "snapshot":
+            # judged on parse + freshness, never on size: a status flipping shrinks the file
+            h = snapshot_health(p)
+            ch = "snapshot — %s" % h
+            if h != "ok":
+                ch = "snapshot — **%s**" % h
+                regress.append("%s snapshot %s" % (name, h))
+        elif old is None:
+            ch = "new" if o is None else "unit changed to %s — not compared" % unit
         elif oldu != unit:
-            ch = "unit changed %s to %s -- not compared" % (oldu, unit)
+            ch = "unit changed %s to %s — not compared" % (oldu, unit)
         elif sz > old:
             ch = "+%d %s" % (sz - old, unit)
         elif sz == old:
             ch = "unchanged"
         else:
             ch = "**SHRANK %d %s**" % (old - sz, unit)
-            regress.append("%s shrank %d %s" % (name, old - sz, unit))
-        lines.append("| `%s` | %d %s | %s |" % (name, sz, unit, ch))
+            regress.append("%s shrank %d %s (append-only: a row drop is real)"
+                           % (name, old - sz, unit))
+        lines.append("| `%s` | %d %s | %s | %s |" % (name, sz, unit, cls, ch))
     gone = [k for k in prev if k not in cur]
     for g in gone:
         regress.append("%s DISAPPEARED from the export" % g)
