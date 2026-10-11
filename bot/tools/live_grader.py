@@ -209,6 +209,7 @@ def ingest(state, pending):
                "prop_side": sg[2] if sg else tside,
                "side_src": "exact" if exact_side else ("signal" if sg else ("text" if tside else None)),
                "round": "entry" if ctx else "unknown",
+               "would_pass_floor": exact.get("would_pass_floor"), "mechanical_floor": exact.get("mechanical_floor"),
                "sig": sg}
         for role, x in m.items():
             row[role] = {"dec": x["dec"], "conf": x["conf"], "model": x["model"], "fallback": x["fallback"]}

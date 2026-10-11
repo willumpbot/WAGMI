@@ -35,6 +35,7 @@ FILES = {
     "exit_decisions.jsonl": BOT / "data" / "logs" / "exit_decisions.jsonl",
     "llm_exits_resolved.jsonl": BOT / "data" / "llm_exits_resolved.jsonl",
     "position_manager.py": BOT / "execution" / "position_manager.py",
+    "scanner.py": BOT / "tools" / "hivemind" / "scanner.py",   # flag definitions, so reviewers can audit them
 }
 
 

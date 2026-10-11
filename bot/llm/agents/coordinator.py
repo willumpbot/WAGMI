@@ -1682,6 +1682,12 @@ class AgentCoordinator:
                 if isinstance(_sg, dict) and trigger_reason == "llm_first_entry":
                     _ctx["signal"] = {k: _sg.get(k) for k in ("side", "entry", "sl", "tp1", "confidence")
                                       if _sg.get(k) is not None}
+                    # Laptop REGISTER ask #1: the (inert) confidence floor's verdict on this signal, an unselected
+                    # prediction that can be graded for free. Logging only.
+                    for _k_out, _k_in in (("would_pass_floor", "would_pass_floor"), ("would_pass_floor", "would_pass_confidence_floor"),
+                                          ("mechanical_floor", "mechanical_floor"), ("mechanical_floor", "mechanical_confidence_floor")):
+                        if _sg.get(_k_in) is not None and _k_out not in _ctx["signal"]:
+                            _ctx["signal"][_k_out] = _sg.get(_k_in)
             except Exception:
                 pass
             self._last_pipeline_id = _pipeline_id
@@ -2230,6 +2236,9 @@ class AgentCoordinator:
                 "confidence": confidence,
                 "atr": atr,
                 "strategy": signal_ctx.get("strategy", ""),
+                # logging only (laptop REGISTER ask #1): the inert floor's verdict, graded later by live_grader
+                "would_pass_floor": signal_ctx.get("would_pass_confidence_floor"),
+                "mechanical_floor": signal_ctx.get("mechanical_confidence_floor"),
             }],
             "sigs": [{
                 "sym": symbol,
