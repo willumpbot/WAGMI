@@ -1,3 +1,31 @@
+> # DOWNGRADED 2026-10-11 — the live flag is a different, stricter condition. See `FUNDING_STOP_AUDIT.md`.
+>
+> `scanner.py` finally landed in the export and **the live `funding_hot` is top DECILE plus an absolute
+> funding floor** (`scanner.py:159-163`). **This study used top QUINTILE with no floor** — the definition
+> quoted in a docstring, which was all anyone had seen. The live flag fires on **5.14%** of coin-days;
+> this one fires on **26.33%**.
+>
+> **The significance does not survive the narrowing:**
+>
+> | variant | n | effect | week t |
+> |---|---|---|---|
+> | **as published here** | 4,122 | **+2.64 pp** | **3.31** |
+> | index-based top 20% | 3,202 | +1.87 | 2.08 |
+> | top 10%, no floor | 1,374 | +1.48 | 1.21 |
+> | **the LIVE flag** | 804 | +1.87 | **1.28** |
+>
+> **The sign is robust across all variants (+1.48 to +2.64 pp). The significance is not** — t spans
+> 1.21–3.31, and even two different "top 20%" implementations disagree (pandas `quantile` interpolates;
+> indexing a sorted list does not). **The figure below is the most favourable of the set**, which I did
+> not know when I published it.
+>
+> **The live flag is not refuted — it is underpowered** (804 rows, se ~2.3× larger). "Untested at that
+> definition" is the honest label.
+>
+> **Recommended fix: change the flag to the tested definition**, not soften the text — the quintile
+> version has 4,122 rows, a calibrated placebo and 17/17 leave-one-out survivals behind it. If the flag
+> stays strict, the terminal must drop the number and the "survived red team" claim.
+
 # Funding-conditional stops: the effect is **real** and survives everything I threw at it. The lever is **2.9%** — decide if that is worth shipping.
 
 _2026-10-11. `funding_stop.py`. 15,653 coin-days, 17 perps, **1,010 distinct days**, 2024-01-01 →
