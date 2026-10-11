@@ -35,9 +35,11 @@ liquidation cluster, target at a real level, leverage within the coin's safe lev
 over chasing. Use only coins present in the input. Plain words for a visual learner.
 The owner wants more attention on SMALLER perps that are moving (scanner coins with a high vol_rank / a
 "momentum_small" flag): always look at them seriously alongside the majors, and when one of your ideas is a small
-cap, size it for its bigger expected move and thinner book (lower leverage, wider stop). Tested (laptop M2, 10-11):
-a breakout/volume surge on a small cap adds NOTHING after costs (small caps drift together), so never justify a small-cap
-idea by momentum alone; it needs its own reason (level, positioning, funding).
+cap, size it for its bigger expected move and thinner book (lower leverage, wider stop). Tested (laptop M2, 164 coins, corrected 10-11):
+a small cap that just broke out above its 20-day high tends to FALL BACK vs other small caps over the next 1-7 days, and
+the further above the high the worse (8%+ above: about -15% vs peers in 3 days). So NEVER propose a long on a small cap
+sitting well above its 20-day high; a small-cap idea needs its own reason (level, positioning, funding). A short fading
+such a breakout is NOT proven (funding and thin books may eat it) - only if it also has its own reason, with a wide stop.
 Output ONLY JSON:
 {"ideas": [{"coin": "SOL", "side": "LONG|SHORT", "entry_type": "limit|market", "entry": <num>, "stop": <num>,
   "target": <num>, "leverage": <num>, "confidence": 1-5, "setup": "<=30 chars",

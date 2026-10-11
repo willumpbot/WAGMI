@@ -36,6 +36,9 @@ FILES = {
     "llm_exits_resolved.jsonl": BOT / "data" / "llm_exits_resolved.jsonl",
     "position_manager.py": BOT / "execution" / "position_manager.py",
     "scanner.py": BOT / "tools" / "hivemind" / "scanner.py",   # flag definitions, so reviewers can audit them
+    "chief.py": BOT / "tools" / "hivemind" / "chief.py",       # chief Brier definition (scorecard())
+    "board_decisions.jsonl": BOT / "data" / "hivemind" / "board_decisions.jsonl",   # phone taps on the laptop's board, read by server Claude
+    "entry_mom.jsonl": BOT / "data" / "hivemind" / "entry_mom.jsonl",   # signed_mom_24h per entry (PREREG_ENTRY_TIMING s3)
 }
 
 
@@ -86,6 +89,10 @@ def run(force=False):
                         if ("[ENTRY-GATE]" in ln or "[PROBE-CHECK]" in ln or "LLM-FIRST SKIP" in ln
                                 or "EXPLORATION ENTRY" in ln or "EXPLORATION DECLINED" in ln):
                             fo.write(ln)
+        # funding/OI/premium snapshots the bot has collected since 2026-06-06 (31 coins), for the fade-funding question
+        with open(BOT / "data" / "funding_oi_history.jsonl", "rb") as fi, \
+                gzip.open(EXP / "funding_oi_history.jsonl.gz", "wb") as fo:
+            shutil.copyfileobj(fi, fo)
     except Exception:
         pass
     try:   # anonymised Syndicate call list (public CAs + times + hashed caller) for the laptop's M3 / crunch layer

@@ -111,7 +111,7 @@ def main():
             journal.main()
         except Exception as e:
             log(f"journal failed: {e}")
-        for mod, fn in (("scanner", "run"), ("plans", "resolve"), ("tg_track", "run"), ("candle_archive", "run"), ("ai_plans", "run"), ("history", "build"), ("laptop_sync", "run")):
+        for mod, fn in (("scanner", "run"), ("plans", "resolve"), ("tg_track", "run"), ("candle_archive", "run"), ("entry_mom", "run"), ("ai_plans", "run"), ("history", "build"), ("laptop_sync", "run")):
             try:
                 res = getattr(__import__(mod), fn)()
                 if mod == "scanner":

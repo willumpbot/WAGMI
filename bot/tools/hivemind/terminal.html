@@ -575,7 +575,9 @@ function calc(){
   if (margin > acct) w.push("Margin exceeds the account.");
   { const x = safeLev(sel); if (x) { const sl = side==="LONG" ? x.long : x.short; if (lev > sl) w.push(`${lev}× is above the safe ${sl.toFixed(1)}× for ${sel} right now: one bad day could liquidate you.`); } }
   { const sr = ((typeof SCAN !== "undefined" && SCAN.coins) || []).find(r => r.coin === sel);
-    if (sr && sr.flags.includes("funding_hot")) w.push(`Longs are paying a lot of funding on ${sel} right now. On days like this a normal stop tended to get hit a bit more often in testing (about +2 points). Consider a slightly smaller size.`); }
+    if (sr && sr.flags.includes("funding_hot")) w.push(`Longs are paying a lot of funding on ${sel} right now. On days like this a normal stop tended to get hit a bit more often in testing (about +2 points). Consider a slightly smaller size.`);
+    if (sr && side==="LONG" && (sr.vol_rank||0) > 15 && sr.hi20 && sr.px > sr.hi20) { const up = (sr.px/sr.hi20-1)*100;
+      w.push(`${sel} is a small cap ${up.toFixed(1)}% above its 20-day high. Tested on 164 coins: breakouts like this tended to fall back vs other small caps over the next few days${up>=8?" (this far above: about -15% in 3 days)":""}. Buying here is chasing.`); } }
   if (dist*100 < a) w.push(`Stop is closer than a normal day's move (±${a.toFixed(1)}%): stops this tight got hit a lot in testing. Try about ${(2*a).toFixed(1)}%.`);
   $("c_warn").textContent = w.join(" ");
   $("c_safe").innerHTML = w.length
