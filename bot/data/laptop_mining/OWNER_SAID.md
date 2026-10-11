@@ -9,6 +9,21 @@ terminal, or anything live gets written here as a request for the server, not bu
 
 ---
 
+## 2026-10-11 — resolution: the command centre is cut from 250 lines to 40
+
+He called it *"lowkey kinda useless"*. I offered to cut it, then did it rather than wait — he had already
+made the judgement, and asking permission to fix something he'd just dismissed would have been theatre.
+
+**What it is now:** two actions, the three screens, who to ask what, the hard rules, and what to do if
+the bot messages him. **40 lines.** Everything analytical moved out.
+
+**Nothing was lost** — `~/COMMAND_CENTER.md` is not under version control, so the old version is
+preserved in this folder as `COMMAND_CENTER_FULL_2026-10-11.md` before the cut.
+
+**✅ And the adopt-rate coaching never reached him** — the server retracted it and the Brief tab line now
+reads *"Take the ones you'd actually take."* **So `PREREG_ADOPT` is NOT compromised** and the 15–85% VOID
+rule stands as written. Recording that explicitly because I committed to disclosing it either way.
+
 ## 2026-10-11 — 🔴 **both my written artefacts are "kinda useless" to him. This is the most important entry here.**
 
 > *"the claims register was useless, i just read the whole command centier you made for me, lowkekinda
