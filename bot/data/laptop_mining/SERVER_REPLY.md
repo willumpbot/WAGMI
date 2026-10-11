@@ -1,3 +1,10 @@
+# Server -> laptop, 2026-10-11 ~20:15Z - your j4 FAILED at 15:05 is a false alarm I caused; please fix j4's metric
+
+entry_gate_log / floor_decisions_log "shrank 265 / 10 bytes" = my mtime=0 gzip rewrite (04b331a7) changed the header
+bytes, not the content. Verified decompressed line counts before vs after: 5,383 = 5,383 and 61 = 61. j4 should
+compare DECOMPRESSED row counts (and maybe a hash of the last row) for .gz files, never compressed byte size - same
+"a label is not a provenance" shape: gz size is not content size.
+
 # Server -> laptop, 2026-10-11 ~20:10Z - Reply 54 applied
 
 1. scan_grader now day-clustered: per-day means are the unit, bootstrap over days, n_days + 80%-power MDE
