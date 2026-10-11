@@ -43,9 +43,10 @@ on crowded-funding days instead.
 
 | work | blocked on | expected |
 |---|---|---|
-| **Mission A** — wider stops in the real exit engine | ~30 ledger rows with `stop_initial`/`tp1_level`; **1 of 294** today | ~3–4 weeks |
+| **Mission A** — wider stops in the real exit engine | ~30 ledger rows with `stop_initial`/`tp1_level`; **1 of 294** today | **~60 days** at 0.5 closes/day |
 | **Chief re-test** | calendar | **2026-10-16** |
 | **The ~9 alive-no-trade days** | `uptime.jsonl` depth + `llm_ok` history | ~2 weeks |
+| **The TP1 question** — why only 8.5% reach it | ~50 closes with the full entry fields (logging now complete) | **~100 days** at 0.5 closes/day |
 | **Floor-input test** | floor PASS decisions; **0 logged** so far | unknown — floor is inert, so low value |
 | **OI buildup study** | **sealed pre-registration**, n_days ≥ 106 | ~2027-03 |
 | 5-day `rsi` / `stretch` cross-sectional | more data; both are **+32–43%/yr point estimates that are unresolved, not zero** | revisit at 2× sample |
@@ -61,10 +62,15 @@ on crowded-funding days instead.
 2. ~~**`scanner.py` in the export**~~ — **DELIVERED 2026-10-11, and it immediately downgraded a
    finding.** The live `funding_hot` was a different condition from the one two studies had measured
    from its docstring. This is the single highest-return ask of the project.
-3. **The empty entry columns** — `predicted_ev`, `kelly_weight_applied`, `compound_size_multiplier`,
-   funding/OI/premium at entry. Best shot at *why* only 8.5% of trades reach TP1.
-4. **`sl_bps`/`tp_bps` on resolved dropped rows** — `sltp` says which level hit first, not how far away,
-   so a hit-ratio can't become an expectancy in R.
+3. ~~**The empty entry columns**~~ — **DONE 2026-10-11** (`45f7f427`). One real bug
+   (`compound_size_multiplier` — the close handler read a cache only the mechanical path fills, so
+   LLM-first entries never set it), one look-ahead trap (`kelly_weight_applied` was computed **at
+   close**; old values are meaningless), two that were era-limited rather than broken.
+4. ~~**`sl_bps`/`tp_bps` on resolved dropped rows**~~ — **DONE** since `82eb3151`.
+
+**🔴 All four asks are closed. The bottleneck is no longer data collection — it is the trade rate.**
+Sep–Oct ran **19 closes in 40 days (~0.5/day)**, so every forward-looking study is a **two-to-three
+month** wait. Plan around that; do not check weekly.
 
 ## 5. ⚠️ The failure patterns — every reversal here was one of these five
 
@@ -78,6 +84,8 @@ the same thing — "confidence outrunning evidence."**
 | **Absence read as evidence** | floor log "stopped"; 23 silent days; `scan_log` 3 days; uptime 61 min "stale" — **all rotation, rolling windows or sync cadence** | **Prefer files that never rotate; pick thresholds from the cadence** |
 | **Unstated power** | nulls with MDEs of **90–128%/yr** reported as "nothing survived"; a p99 that was a sample max | **State the MDE before the verdict, every time** |
 | **Tie mass under a threshold** | `funding_hot` as `>= quantile(0.80)` swallowed the 18.6% of coin-days parked at Hyperliquid's default funding rate — flagging ~85% of the live cross-section | **Check for repeated values before thresholding; use `>` on anything with a platform default** |
+
+| **A label is not a provenance** | `kelly_weight_applied` sat among the entry fields and was **computed at close**. I filed it as "an empty entry column" and only avoided a look-ahead bug because it was blank on 290 of 294 rows | **Confirm the write site, not the schema** |
 
 **Three more rules earned the hard way:**
 - **Never test a production flag from its description.** Read the implementation or say you could not.
