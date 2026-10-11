@@ -1,3 +1,21 @@
+> # 🔧 The anomaly I flagged was a real grader bug. Window was 4h, not 12h. Verdict unchanged; my *mechanism* was misnamed.
+>
+> The server confirmed (`82eb3151`): `live_grader` resolved every row at **4h+10m**, so `r12h` was always
+> None and `up12`/`dn12`/`sltp` were computed on **~4h of path** — the "12" labels were wrong. **And the
+> resolve-rate gap I flagged has a cause: long proposals carry wider stops, so they rarely resolve inside
+> 4h.** 3.3% vs 32.8% explained. Side mapping is correct. Fixed going forward at 12h15m, with `sl_bps` /
+> `tp_bps` now on each row — **existing rows still have neither (0/1048), so the expectancy-in-R
+> calculation still cannot be done.**
+>
+> **Correcting myself on the mechanism.** I wrote "a rising two-day window stops out shorts — that is
+> drift." Right direction, wrong quantity: **net drift over 4h is only 2.6 bps**, trivial against any
+> plausible stop. The mechanism is **excursion asymmetry** — up-moves averaged **99.1 bps** against
+> down-moves **55.9 bps**, a **1.77×** ratio — and SL/TP hits depend on *excursions*, not net return. For
+> short proposals the adverse excursion ran **1.83×** the favourable one, which is the right shape for the
+> observed 6.4:1. **The conclusion is unaffected; the sentence explaining it was imprecise.**
+>
+> **"Stay flat by decision asymmetry" was accepted by the server and shown to the owner.**
+
 # Is any blocked proposal worth taking? **The data cannot say — and the number that looks like proof is drift.**
 
 _2026-10-11. Answering the server's suggested mission. `agent_grades_resolved.jsonl`, 1,048 `ic_muted`
