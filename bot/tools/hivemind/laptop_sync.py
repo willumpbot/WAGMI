@@ -207,12 +207,21 @@ def run(force=False):
         _sys.path.insert(0, str(BOT / "tools" / "hivemind"))
         import syndicate_study as _ss
         rec = (_json.loads((BOT / "data" / "hivemind" / "tg" / "track.json").read_text(encoding="utf-8")).get("callers") or {})
-        with open(EXP / "syndicate_calls_anon.jsonl", "w", encoding="utf-8") as f:
-            for c in _ss.first_calls(30):
-                f.write(_json.dumps({"ca": c["ca"], "call_ts": int(c["ts"]),
-                                     "caller_hash": hashlib.sha256((c["caller"] or "bot").encode()).hexdigest()[:10],
-                                     "starred": bool((rec.get(c["caller"]) or {}).get("watch")),
-                                     "first_seen_via_bot_alert": c["bot_first"]}) + chr(10))
+        # APPEND-ONLY by ca: calls that age out of the 30-day window stay in the export (laptop j4 flagged the drop)
+        path, rows = EXP / "syndicate_calls_anon.jsonl", {}
+        if path.exists():
+            for ln in path.read_text(encoding="utf-8").splitlines():
+                if ln.strip():
+                    o = _json.loads(ln)
+                    rows[o["ca"]] = o
+        for c in _ss.first_calls(30):
+            rows[c["ca"]] = {"ca": c["ca"], "call_ts": int(c["ts"]),
+                             "caller_hash": hashlib.sha256((c["caller"] or "bot").encode()).hexdigest()[:10],
+                             "starred": bool((rec.get(c["caller"]) or {}).get("watch")),
+                             "first_seen_via_bot_alert": c["bot_first"]}
+        with open(path, "w", encoding="utf-8") as f:
+            for o in sorted(rows.values(), key=lambda o: o["call_ts"]):
+                f.write(_json.dumps(o) + chr(10))
     except Exception:
         pass
     STAMP.write_text(str(time.time()))
