@@ -150,6 +150,39 @@ def check_self_freshness():
     return verdict + sched
 
 
+def check_outputs_tracked():
+    """Can this layer's own reports actually reach git?
+
+    THIS BIT FOR REAL. The repo ignores `bot/data/**` and re-includes the mining deliverables
+    with SINGLE-LEVEL negations (`laptop_mining/*.md`). Everything in `laptop_mining/crunch/`
+    sits one directory deeper, so it fell straight back through -- and because the runner calls
+    `git add` with check=False, it failed silently. STATUS.md, TRACKERS.md and INTEGRITY.md were
+    written every hour and never committed; the log said "nothing changed, no commit", which is
+    indistinguishable from genuinely nothing changing.
+
+    The .gitignore comment says the same trap bit on 2026-10-08. So it is checked here rather
+    than trusted.
+    """
+    names = ["STATUS.md", "TRACKERS.md", "INTEGRITY.md"]
+    bad = []
+    for n in names:
+        path = os.path.join(HERE, n)
+        if not os.path.exists(path):
+            continue
+        try:
+            r = subprocess.run(["git", "check-ignore", "-q", path],
+                               cwd=HERE, capture_output=True, text=True, timeout=20)
+            if r.returncode == 0:          # exit 0 means git IS ignoring it
+                bad.append(n)
+        except Exception:
+            return "could not ask git whether the outputs are tracked"
+    if bad:
+        return ("🔴 **%s is git-ignored** -- written every hour and never committed, so the "
+                "server cannot see it. Add a negation in .gitignore for "
+                "`bot/data/laptop_mining/crunch/`." % ", ".join("`%s`" % b for b in bad))
+    return "all three reports are trackable by git, so the hourly commit can carry them"
+
+
 def main():
     t0 = time.time()
     prev = {}
@@ -222,6 +255,7 @@ def main():
               "stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing changed`._",
               ""]
     lines += ["- " + check_self_freshness(), ""]
+    lines += ["- " + check_outputs_tracked(), ""]
 
     lines += ["", "## Panel store", ""]
     try:

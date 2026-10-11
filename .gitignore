@@ -71,6 +71,16 @@ bot/data/**
 !bot/data/laptop_mining/*.json
 !bot/data/laptop_mining/*.jsonl.gz
 
+# ...and the crunch layer's outputs, which live one directory deeper. The negations
+# above are single-level (`laptop_mining/*.md`), so `laptop_mining/crunch/*.md` fell
+# straight back through `bot/data/**` and the hourly runner's `git add` silently did
+# nothing -- STATUS/TRACKERS/INTEGRITY never reached the branch at all, which is the
+# third time the trap described above has bitten. Checked every hour by
+# j4_integrity.check_outputs_tracked().
+!bot/data/laptop_mining/crunch/
+!bot/data/laptop_mining/crunch/*.md
+!bot/data/laptop_mining/crunch/*.json
+
 # Re-include frontend fallback snapshots (the broad `data/` rule above also caught
 # web/public/data). These JSONs are the CDN-served last-known-data fallback for the
 # site when the bot PC / ngrok tunnel is offline — they ARE deployable content.
