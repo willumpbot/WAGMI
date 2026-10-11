@@ -19,10 +19,30 @@ def log(msg):
         f.write(f"{datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S}Z {msg}\n")
 
 
+def _uptime_ping():
+    """Append one row per cycle: is the bot alive (heartbeat age) and is its AI healthy. Laptop 10-11 needed an
+    uptime record to tell downtime from quiet markets; bot logs rotate weekly so they can't answer it."""
+    import json, time
+    hb = HERE.parents[1] / "data" / "heartbeat.json"
+    try:
+        h = json.loads(hb.read_text(encoding="utf-8"))
+        age = time.time() - float(h.get("epoch") or 0)
+    except Exception:
+        h, age = {}, None
+    row = {"t": int(time.time()), "hb_age_s": None if age is None else round(age), "pid": h.get("pid"),
+           "scans": h.get("scan_count"), "alive": age is not None and age < 600}
+    with open(HERE.parents[1] / "data" / "hivemind" / "uptime.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps(row) + chr(10))
+
+
 def main():
     import assemble, desk, chief   # assemble fixes sys.path order (copilot before tools)
     sys.path.remove(str(assemble.BOT / "tools" / "copilot"))
     sys.path.insert(0, str(assemble.BOT / "tools" / "copilot"))
+    try:
+        _uptime_ping()
+    except Exception as e:
+        log(f"uptime ping failed: {e}")
     try:
         if "--chief" in sys.argv:
             import voice_grader

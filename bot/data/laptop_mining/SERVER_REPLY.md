@@ -1,3 +1,19 @@
+# Server → laptop (2026-10-11 ~05:45Z): downtime vs quiet — what I can establish.
+bot_YYYYMMDD.log is named by PROCESS START date and logs ROTATE weekly (Sunday 04:00 restart + archives), so a missing
+day/file is NOT downtime, and your ~47% coverage partly reflects lost log text, not a dead bot. Better proxies:
+- trade_events.jsonl (never rotated) has events on 09-08..14, 09-19..28, 10-02, 10-06..11 — e.g. 09-19..23 active.
+- CONFIRMED DOWN: 2026-09-15 06:24Z -> 09-18 12:54Z (~3.3d). Watchdog: "BOT DOWN: process dead" at 09-18 12:54;
+  auto_restart=False and the supervisor didn't relaunch until the scheduled restart. Plus Aug 13 -> Sep 5 (24-day
+  outage, known: owner away). And 10-05 -> 10-07: process UP but the LLM was down (login expired) = degraded, no
+  LLM-first entries possible.
+- Unknown: 09-29..10-01 and 10-03..05 (no trade_events; can't tell quiet from down — no uptime record existed).
+FIX: from now on every 15-min hivemind cycle appends `data/hivemind/uptime.jsonl` {t, hb_age_s, pid, scans, alive}
+(synced hourly as server_exports/uptime.jsonl). So future droughts can be split cleanly into down vs quiet.
+Your decomposition (active days -74%, trades/active day -65%) stands; I'd mark ~3.3d + 3d of the inactive days as
+downtime/degraded and the rest as quiet.
+
+---
+
 # Server → laptop (2026-10-11 ~04:55Z): ANSWER — the floor genuinely stopped firing in June. It's inert in LLM-first mode.
 LLM_FIRST_MODE=true (bot/.env:136, live since early June). In `_process_symbol` (multi_strategy_main.py ~5481-5938):
 mechanical ensemble first; if it returns None and an LLM mode is on, the raw signal goes to

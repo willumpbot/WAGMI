@@ -29,6 +29,7 @@ FILES = {
     "chief_scorecard.json": BOT / "data" / "hivemind" / "chief_scorecard.json",
     "geometry_shadow.json": BOT / "data" / "hivemind" / "geometry_shadow.json",
     "geometry_shadow_results.jsonl": BOT / "data" / "hivemind" / "geometry_shadow_results.jsonl",
+    "uptime.jsonl": BOT / "data" / "hivemind" / "uptime.jsonl",
     "live_scorecard.json": BOT / "data" / "agent_grades" / "live" / "live_scorecard.json",
     "agent_grades_resolved.jsonl": BOT / "data" / "agent_grades" / "live" / "resolved.jsonl",
     "exit_decisions.jsonl": BOT / "data" / "logs" / "exit_decisions.jsonl",
