@@ -298,7 +298,7 @@ def build_terminal():
     card_ = (_load(HM / "chief_scorecard.json", {}) or {}).get("horizons", {}).get("5d", {})
     card_txt = (f"{card_.get('n_calls', 0)} calls graded at 5d"
                 + (f", directional right {card_['directional_hit'] * 100:.0f}%" if card_.get("directional_hit") is not None
-                   else ", still collecting"))
+                   else f", {card_.get('n_directional', 0)} of them actually picked a direction (the rest said neutral)"))
     try:
         token = (HM / "owner_token.txt").read_text(encoding="utf-8").strip()
     except OSError:
