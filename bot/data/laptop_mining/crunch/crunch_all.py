@@ -39,7 +39,7 @@ COMMIT_PATHS = [
 ]
 
 
-def write_status(results, started):
+def write_status(results, started, in_progress=False):
     lines = ["# Crunch layer status",
              "",
              "_Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly,",
@@ -52,15 +52,20 @@ def write_status(results, started):
              "| job | result | rows | secs | note |",
              "|---|---|---|---|---|"]
     for name, ok, rows, secs, note in results:
+        state = "running…" if ok is None else ("ok" if ok else "**FAILED**")
         lines.append("| `%s` | %s | %s | %.0f | %s |" % (
-            name, "ok" if ok else "**FAILED**", rows if rows is not None else "—", secs,
+            name, state, rows if rows is not None else "—", secs,
             (note or "")[:160].replace("|", "/")))
-    bad = [r for r in results if not r[1]]
+    bad = [r for r in results if r[1] is False]
     lines += [""]
-    if bad:
+    if in_progress:
+        lines += ["🟡 **A run is IN PROGRESS as of the timestamp above.** If this line is still",
+                  "here more than an hour later, the run died mid-loop -- which is exactly the",
+                  "case the old write-at-the-end order could not show.", ""]
+    elif bad:
         lines += ["## 🔴 %d job(s) failed this run" % len(bad), ""]
         lines += ["- `%s`: %s" % (r[0], (r[4] or "")[:300]) for r in bad] + [""]
-    else:
+    elif not in_progress:
         lines += ["All jobs succeeded.", ""]
     lines += ["## What each job does", "",
               "- **j1_panels** — folds `server_exports/` (ctx snapshots, 5m candles) and the 1h",
@@ -116,7 +121,9 @@ def main():
     jobs = [j for j in JOBS if not args or any(a in j for a in args)]
 
     if not acquire_lock("runner"):
-        return 0
+        # EXIT NON-ZERO. Returning 0 made `schtasks` report Last Result: 0, so a stale lock
+        # could silence the whole layer for three hours while the scheduler claimed success.
+        return 3
     os.environ[RUNNER_ENV] = "1"      # jobs must not re-take the lock we now hold
     try:
         return _run(started, args, use_git, jobs)
@@ -145,6 +152,11 @@ def _run(started, args, use_git, jobs):
             log("run", "fetch/checkout failed (continuing): %s" % str(e)[:160])
 
     init_schema()
+    # STATUS.md is written BEFORE the jobs run, marked in-progress. Previously it was written
+    # only after the loop, so anything raising earlier left the PREVIOUS run's "All jobs
+    # succeeded" text in place with no as-of -- a crash that looked like a success.
+    write_status([(j, None, None, 0.0, "not started yet") for j in jobs], started,
+                 in_progress=True)
     results = []
     sys.path.insert(0, HERE)
     for name in jobs:
