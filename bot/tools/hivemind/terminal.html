@@ -1100,7 +1100,7 @@ function brief(){
 function callerCell(h){
   const R = ((DATA.tgTrack||{}).callers||{})[h]; if (!h) return "–"; if (!R) return esc(h);
   const B = (DATA.tgTrack.callers||{})._base_15x || {};
-  const tip = `Selling everything at 1.5x: ${R.hist15_n??0} past calls, ${R.hist15_hit!=null?(R.hist15_hit*100).toFixed(0):"–"}% hit 1.5x, avg ${R.hist15_mean!=null?(R.hist15_mean>=0?"+":"")+R.hist15_mean.toFixed(0)+"%":"–"} per call (whole chat: ${((B.hit||0)*100).toFixed(0)}%, ${(B.mean||0)>=0?"+":""}${(B.mean||0).toFixed(0)}%). Since tracking: ${R.fwd_15x||0} of ${R.fwd_n||0} hit 1.5x. Found after looking at the data: being confirmed on new calls (CALLER_15X_PREREG).`;
+  const tip = `Selling everything at 1.5x: ${R.hist15_n??0} past calls, ${R.hist15_hit!=null?(R.hist15_hit*100).toFixed(0):"–"}% hit 1.5x, avg ${R.hist15_mean!=null?(R.hist15_mean>=0?"+":"")+R.hist15_mean.toFixed(0)+"%":"–"} per call (whole chat: ${((B.hit||0)*100).toFixed(0)}%, ${(B.mean||0)>=0?"+":""}${(B.mean||0).toFixed(0)}%). Since tracking: ${R.fwd_15x||0} of ${R.fwd_n||0} hit 1.5x. "Hit 1.5x" counts brief price spikes; on a thin pool you may not actually get filled there. Found after looking at the data: being confirmed on new calls (CALLER_15X_PREREG).`;
   return `<span title="${esc(tip)}">${R.watch?'<span style="color:var(--warn)">★</span> ':""}${esc(h)}${R.hist15_hit!=null?` <span class="num">${(R.hist15_hit*100).toFixed(0)}%</span>`:""}</span>`;
 }
 function tgTrack(){
