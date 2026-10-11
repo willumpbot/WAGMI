@@ -10,7 +10,7 @@ metric's MDE has fallen below the in-sample effect it is replicating. Both numbe
 printed below, every run. A replication read before it could have come out the other
 way is not a replication._
 
-_Updated 2026-10-11 16:25. 2 out-of-sample day-block(s) evaluated since 2026-10-09._
+_Updated 2026-10-11 17:19. 2 out-of-sample day-block(s) evaluated since 2026-10-09._
 
 ## What accrued
 
@@ -65,11 +65,11 @@ _Updated 2026-10-11 16:25. 2 out-of-sample day-block(s) evaluated since 2026-10-
 | run | `stop.panel_exceedance_rate.size_mean_corr` | 2 | — | corr(day n, day rate) over 2 blocks -- UNDEFINED, and benignly so: the scanned universe is a fixed top-60 every day, so every block has identical n and the pooled and equal-weighted figures above coincide by construction rather than by luck |
 | run | `stop.funding_hot_matched_diff_pp.status` | — | — | SOURCE-MISSING: the +2.64pp matched difference needs funding_hot, which needs the funding cross-section recorded above. Nothing is appended for it, and its absence is not a difference of zero. |
 | run | `stop.definition_divergence` | — | — | RECORDED FOR WHEN FUNDING ARRIVES: live scanner.py flags funding > p80 (STRICT, interpolated) on the INSTANTANEOUS hourly rate across the top 60 by volume; tested funding_stop.py used >= pandas quantile(0.80) on the DAY-SUMMED rate across 17 clean perps. Inclusive-vs-strict on a mass point, and instantaneous-vs-daily-sum, are different flags. Replicating the live flag and replicating the published claim are two different jobs, and this job will have to be told which one is wanted. |
-| run | `chief.definition_source.status` | — | — | CODE-VERIFIED against server_exports/chief.py (199 lines): it defines both `brier` and `p_up`. Its no-information baseline is 0.25 (always_50) -- note that the correct no-information benchmark is p(1-p), which is 0.172 on the graded rows, so 0.25 credits as skill anything beating a coin flip while losing to a constant. |
-| run | `chief.brier_24h.n_calls_with_p` | 30 | — | p_up_24h arrives as integer percent (observed range 48..52) and is divided by 100 to a probability. The scale is DETECTED, not assumed: read at face value a percent would make every Brier ~2300. |
-| run | `chief.brier_24h.baseline` | 30 | 0.25 | the stated coin-flip reference, recorded so this log is self-contained |
-| run | `chief.brier_24h.attainable_skill` | 30 | 0.00658 | CEILING: the largest possible improvement on 0.25 given the observed spread of p (max /p-0.5/ = 0.020). Best attainable Brier is 0.24342; a perfectly ordered forecaster could not beat it. Read any Brier against this, not against 0.25 alone. |
-| run | `chief.brier_24h.n_resolved` | 0 | — | GENUINE ZERO of resolvable pairs, not SOURCE-MISSING: both inputs are readable and all 30 p_up_24h calls were made within the last 24h, so none has matured. Earliest resolves 2026-10-12 01:08Z. Separately, 0 of the calls carrying the server's own ret_1d also carry p_up_24h, so the server cannot resolve them either -- consistent with chief_scorecard.json reporting brier_24h n=0. |
+| run | `chief.definition_source.status` | — | — | CODE-VERIFIED against server_exports/chief.py (207 lines): it defines both `brier` and `p_up`. Its no-information baseline is 0.25 (always_50) -- note that the correct no-information benchmark is p(1-p), which is 0.172 on the graded rows, so 0.25 credits as skill anything beating a coin flip while losing to a constant. |
+| run | `chief.brier_24h.n_calls_with_p` | 36 | — | p_up_24h arrives as integer percent (observed range 48..52) and is divided by 100 to a probability. The scale is DETECTED, not assumed: read at face value a percent would make every Brier ~2300. |
+| run | `chief.brier_24h.baseline` | 36 | 0.25 | the stated coin-flip reference, recorded so this log is self-contained |
+| run | `chief.brier_24h.attainable_skill` | 36 | 0.00767 | CEILING: the largest possible improvement on 0.25 given the observed spread of p (max /p-0.5/ = 0.020). Best attainable Brier is 0.24233; a perfectly ordered forecaster could not beat it. Read any Brier against this, not against 0.25 alone. |
+| run | `chief.brier_24h.n_resolved` | 0 | — | GENUINE ZERO of resolvable pairs, not SOURCE-MISSING: both inputs are readable and all 36 p_up_24h calls were made within the last 24h, so none has matured. Earliest resolves 2026-10-12 01:08Z. Separately, 0 of the calls carrying the server's own ret_1d also carry p_up_24h, so the server cannot resolve them either -- consistent with chief_scorecard.json reporting brier_24h n=0. |
 
 ## The refusals, restated
 
