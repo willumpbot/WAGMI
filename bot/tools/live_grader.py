@@ -45,6 +45,9 @@ SYMS = {"BTC", "ETH", "SOL", "HYPE", "XRP", "NEAR"}
 FEE = 9.0
 HORIZONS = {"1h": 3600, "4h": 4 * 3600, "12h": 12 * 3600}
 RESOLVE_AFTER = 4 * 3600 + 600    # grade at 4h (the primary horizon) + one bar of slack; r12h stays None if not yet available
+# Dropped (IC-gate) signals wait the full 12h so r12h / up12 / dn12 / SL-vs-TP see the whole window (laptop 10-11:
+# r12h was missing on all 1,068 dropped rows and SL/TP only saw 4h of path, which hid wide-stop long outcomes).
+RESOLVE_AFTER_DROPPED = 12 * 3600 + 900
 FINALIZE_AFTER = 900              # a pipeline's records arrive within ~5 min
 SIGNAL_MATCH = 900
 SIGNAL_KEEP = 3 * 3600
@@ -358,7 +361,7 @@ def resolve(pending):
     now = time.time()
     due_pipes = [r for r in pending.get("ready", []) if now - r["ts"] >= RESOLVE_AFTER]
     due_exits = [r for r in pending.get("exits", []) if now - r["ts"] >= RESOLVE_AFTER]
-    due_drops = [r for r in pending.get("dropped", []) if now - r["ts"] >= RESOLVE_AFTER]
+    due_drops = [r for r in pending.get("dropped", []) if now - r["ts"] >= RESOLVE_AFTER_DROPPED]
     due_pipes = due_pipes + due_drops
     if not due_pipes and not due_exits:
         return 0
@@ -382,6 +385,12 @@ def resolve(pending):
                     row.setdefault("feat", {})["btc4h"] = bt
             if sg:
                 row["sltp"] = sltp(path, sg[2], sg[4], sg[5])
+                try:   # stop / target distances in bps from the signal's entry (laptop asked: sltp alone hides geometry)
+                    e = float(sg[3])
+                    row["sl_bps"] = round(abs(float(sg[4]) / e - 1) * 1e4, 1)
+                    row["tp_bps"] = round(abs(float(sg[5]) / e - 1) * 1e4, 1)
+                except Exception:
+                    pass
                 row["sig_agree"], row["sig_conf"] = sg[6], sg[7]
                 row["sig_regime"] = sg[8] if len(sg) > 8 else None
                 row["sig_strats"] = sg[9] if len(sg) > 9 else None
