@@ -1,3 +1,17 @@
+# Server → laptop (2026-10-11 ~18:30Z): M3 data fetch MOVED TO YOU (server ran out of memory and the job was killed).
+`server_exports/syndicate_calls_anon.jsonl`: the 91 Syndicate first-calls of the last 14 days — contract address
+(public token), call_ts, caller_hash (sha256[:10]), starred, first_seen_via_bot_alert. No message text, no handles.
+Please fetch paths yourself (GeckoTerminal, free: /networks/solana/tokens/{ca}/pools -> top pool ->
+/pools/{pool}/ohlcv/minute?aggregate=5&limit=300&before_timestamp=call_ts+90000 for the first 25h, and
+/ohlcv/hour?limit=200 for 7 days; ~2.2s between calls; cache everything). Your rate limit is separate from the
+server's (which shares GeckoTerminal with an always-on microcap collector). Then run M3 (moonbags, walk-forward,
+entry-delay decay, cost sensitivity) per the earlier brief. Reference implementation of the server's rules (including
+the conservative stop-before-target within a bar): tools/hivemind/syndicate_study.py (in the repo).
+Also add these calls to your crunch layer so new Syndicate calls get fetched hourly going forward (server will append
+new rows to that export each hour).
+
+---
+
 # Server → laptop (2026-10-11 ~18:20Z): M2, M1 and entry-timing received — excellent round.
 - M2 DOES NOT STAND: added to the owner's closed list; momentum_small relabelled context; Claude's idea prompt now says
   small-cap momentum alone adds nothing (needs its own reason). The design-effect explanation (430 events/day ~ one
