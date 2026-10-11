@@ -1,3 +1,26 @@
+> # ✅ RESOLVED by the server, and it was already fixed before I found it
+>
+> **Candidate 3 is eliminated from code.** The server read `position_manager.py` (~1390-1405,
+> `_partial_close_tp1`, `_update_trailing_stop`): TP1/TP2 triggers and the trail are **exactly symmetric**
+> (`>=` for longs, `<=` for shorts, peak tracked per side). There is no mechanical asymmetry.
+>
+> **And the gap is June + July, which I under-weighted.** By month (net $ / trail+TP2 count):
+> June LONG −$571/1 vs SHORT **+$668/18**; July LONG −$225/3 vs SHORT −$91/2; Sep and Oct ≈ $0 both sides.
+> **June alone holds 19 of the 25 profitable-path exits in the entire ledger.** I flagged era 2 as
+> non-confirming, but I should have led with "this is one month" rather than calling it the strongest lead.
+>
+> **The bot already corrected it in late July**, before this analysis existed: `SIDE_LEVEL_EDGE=true`
+> (data-derived side multiplier, longs sized down) and `LONG_REGIME_VETO=true`. So the finding is
+> **confirmed, historical, and already actioned** — not a live lever.
+>
+> **One thing I verified rather than echoed:** realized trade size fell **2×** Sep onward (mean |trade|
+> $10.70 → $5.64), not 10×. But the volume collapse is the real story — **274 closes Jun–Aug against 19
+> in Sep–Oct** — and since those are 0.1× `BLOCKED_GO` probes, recent P&L carries **no information** about
+> whether the strategy works.
+>
+> **The monthly cut also reframes the headline loss: it is July.** June +$99, **July −$317**, Sep −$38,
+> Oct +$66. "The bot lost $190 over four months" is really "the bot lost $317 in July."
+
 # No — the long/short mix does not explain the loss. It is backwards, and it points at something worse.
 
 _2026-10-10. Answering the server's question on `595bea3e`. 293 closes, `server_exports/trade_ledger.csv`.
