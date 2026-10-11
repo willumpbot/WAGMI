@@ -3100,3 +3100,5 @@
 {"position_id": "7d26ec8f671e4301a1487b7d1a8d1bbc", "phase": "CLOSING", "ts": "2026-10-10T03:26:19.941545+00:00", "symbol": "NEAR", "meta": {"action": "SL", "price": 4.96055}}
 {"position_id": "7d26ec8f671e4301a1487b7d1a8d1bbc", "phase": "CLOSED_BOOKED", "ts": "2026-10-10T03:26:20.112272+00:00", "symbol": "NEAR"}
 {"position_id": "2ab44bab9378478e9d6ea373bc13fa37", "phase": "OPEN", "ts": "2026-10-10T14:23:54.720833+00:00", "symbol": "NEAR", "meta": {"side": "LONG", "entry": 5.414, "qty": 44.1}}
+{"position_id": "2ab44bab9378478e9d6ea373bc13fa37", "phase": "CLOSING", "ts": "2026-10-11T00:25:56.860235+00:00", "symbol": "NEAR", "meta": {"action": "SL", "price": 5.2668}}
+{"position_id": "2ab44bab9378478e9d6ea373bc13fa37", "phase": "CLOSED_BOOKED", "ts": "2026-10-11T00:25:57.561540+00:00", "symbol": "NEAR"}
