@@ -178,12 +178,20 @@ def resolve(calls=None, card_path=None):
                 [(1 if r["lean"] == "LONG" else -1) * r[k] for r in dirn if r.get("conviction") == cv])
                 for cv in range(1, 6) if any(r.get("conviction") == cv for r in dirn)},
         }
-    # Brier score of p_up_24h vs "higher after 1d" (0 = perfect, 0.25 = always saying 50%). Lower than 0.25 = skill.
+    # Brier score of p_up_24h vs "higher after 1d" (0 = perfect). Skill is measured against the base-rate forecast
+    # (always say the fraction of days that went up: Brier = b(1-b)), not against a coin flip at 0.25 - beating 0.25
+    # while losing to a constant is not skill (laptop reply 55: b(1-b) = 0.172 on the graded rows).
     bp = [((r["p_up_24h"] or 50) / 100, 1.0 if r["ret_1d"] > 0 else 0.0) for r in rows
           if r.get("p_up_24h") is not None and "ret_1d" in r]
-    card["brier_24h"] = ({"n": len(bp), "brier": round(sum((p - o) ** 2 for p, o in bp) / len(bp), 4),
-                          "always_50": 0.25, "skill": None if len(bp) < 100 else
-                          round(1 - (sum((p - o) ** 2 for p, o in bp) / len(bp)) / 0.25, 3)} if bp else {"n": 0})
+    if bp:
+        br = sum((p - o) ** 2 for p, o in bp) / len(bp)
+        b = sum(o for _, o in bp) / len(bp)
+        clim = b * (1 - b)
+        card["brier_24h"] = {"n": len(bp), "brier": round(br, 4), "always_50": 0.25, "base_rate_up": round(b, 3),
+                             "always_base_rate": round(clim, 4),
+                             "skill": None if len(bp) < 100 or clim == 0 else round(1 - br / clim, 3)}
+    else:
+        card["brier_24h"] = {"n": 0}
     card["verdict"] = ("collecting" if card["horizons"]["5d"]["n_directional"] < 30 else "graded")
     card_path.write_text(json.dumps(card, indent=1), encoding="utf-8")
     return card

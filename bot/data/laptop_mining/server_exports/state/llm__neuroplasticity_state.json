@@ -1,0 +1,1725 @@
+{
+  "setup_edges": {
+    "BTC_SELL_confidence_scorer": {
+      "wr": 0.3472222222222222,
+      "n": 144,
+      "ema_wr": 0.3464392602198931,
+      "pnl_sum": -58.10038294955033,
+      "last_updated": 1784927638.6925306,
+      "raw_wins": 50,
+      "trend": "weakening"
+    },
+    "BTC_SELL_BB": {
+      "wr": 0.35294117647058826,
+      "n": 68,
+      "ema_wr": 0.3863301151045449,
+      "pnl_sum": -23.965904077559074,
+      "last_updated": 1784927637.424178,
+      "raw_wins": 24,
+      "trend": "strengthening"
+    },
+    "BTC_BUY_confidence_scorer": {
+      "wr": 0.35294117647058826,
+      "n": 17,
+      "ema_wr": 0.3529411764705883,
+      "pnl_sum": -2.885801771574595,
+      "last_updated": 1784927626.1601143,
+      "raw_wins": 6,
+      "trend": "strengthening"
+    },
+    "BTC_SELL_vmc_cipher": {
+      "wr": 0.3333333333333333,
+      "n": 12,
+      "ema_wr": 0.33333333333333326,
+      "pnl_sum": -2.816589865941499,
+      "last_updated": 1784927628.6907356,
+      "raw_wins": 4,
+      "trend": "weakening"
+    },
+    "BTC_SELL_2-agree": {
+      "wr": 0.5384615384615384,
+      "n": 13,
+      "ema_wr": 0.5384615384615384,
+      "pnl_sum": 3.8890425646392144,
+      "last_updated": 1784927610.0060253,
+      "raw_wins": 7,
+      "trend": "weakening"
+    },
+    "BTC_BUY_BB": {
+      "wr": 0.5454545454545454,
+      "n": 44,
+      "ema_wr": 0.523912891457633,
+      "pnl_sum": 8.283888259731807,
+      "last_updated": 1784927633.1647265,
+      "raw_wins": 24,
+      "trend": "weakening"
+    },
+    "BTC_SELL_mean_reversion": {
+      "wr": 0.5,
+      "n": 6,
+      "ema_wr": 0.5,
+      "pnl_sum": -2.131171005382986,
+      "last_updated": 1784927631.6267323,
+      "raw_wins": 3,
+      "trend": "weakening"
+    },
+    "BTC_BUY_2-agree": {
+      "wr": 0.5555555555555556,
+      "n": 18,
+      "ema_wr": 0.5555555555555557,
+      "pnl_sum": -9.111917744530603,
+      "last_updated": 1784927548.51961,
+      "raw_wins": 10,
+      "trend": "strengthening"
+    },
+    "BTC_BUY_monte_carlo_zones": {
+      "wr": 0.4,
+      "n": 5,
+      "ema_wr": 0.4,
+      "pnl_sum": -1.860794233575854,
+      "last_updated": 1784927509.5570977,
+      "raw_wins": 2,
+      "trend": "weakening"
+    },
+    "ETH_SELL_BB": {
+      "wr": 0.3561643835616438,
+      "n": 73,
+      "ema_wr": 0.36481209455268515,
+      "pnl_sum": -36.788260698631895,
+      "last_updated": 1785350293.2974033,
+      "raw_wins": 26,
+      "trend": "strengthening"
+    },
+    "ETH_SELL_2-agree": {
+      "wr": 0.2727272727272727,
+      "n": 11,
+      "ema_wr": 0.2727272727272727,
+      "pnl_sum": -4.7015403427842095,
+      "last_updated": 1784928046.5381262,
+      "raw_wins": 3,
+      "trend": "weakening"
+    },
+    "ETH_BUY_BB": {
+      "wr": 1.0,
+      "n": 3,
+      "ema_wr": 1.0,
+      "pnl_sum": 0.05489437765885301,
+      "last_updated": 1784927662.150211,
+      "raw_wins": 3,
+      "trend": "weakening"
+    },
+    "BTC_SELL_monte_carlo_zones": {
+      "wr": 0.5,
+      "n": 2,
+      "ema_wr": 0.5,
+      "pnl_sum": -0.5967662181455282,
+      "last_updated": 1784927559.8557065,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "BTC_BUY_mean_reversion": {
+      "wr": 0.0,
+      "n": 1,
+      "ema_wr": 0.0,
+      "pnl_sum": -3.093646202454776e-05,
+      "last_updated": 1784927539.4995382,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "SOL_SELL_BB": {
+      "wr": 0.36153846153846153,
+      "n": 130,
+      "ema_wr": 0.4024223002766156,
+      "pnl_sum": -102.78764955242087,
+      "last_updated": 1785240508.6473348,
+      "raw_wins": 47,
+      "trend": "strengthening"
+    },
+    "SOL_BUY_BB": {
+      "wr": 0.30666666666666664,
+      "n": 75,
+      "ema_wr": 0.2973799923329884,
+      "pnl_sum": -37.30298229726675,
+      "last_updated": 1784928478.9299736,
+      "raw_wins": 23,
+      "trend": "weakening"
+    },
+    "SOL_SELL_2-agree": {
+      "wr": 0.55,
+      "n": 40,
+      "ema_wr": 0.5549162373978517,
+      "pnl_sum": 23.85689572747721,
+      "last_updated": 1785240513.7762468,
+      "raw_wins": 22,
+      "trend": "strengthening"
+    },
+    "SOL_BUY_2-agree": {
+      "wr": 0.4,
+      "n": 10,
+      "ema_wr": 0.4,
+      "pnl_sum": -4.908970722006059,
+      "last_updated": 1790397494.5305407,
+      "raw_wins": 4,
+      "trend": "weakening"
+    },
+    "XRP_BUY_BB": {
+      "wr": 0.2857142857142857,
+      "n": 28,
+      "ema_wr": 0.2965261293867187,
+      "pnl_sum": -16.302824792237274,
+      "last_updated": 1784928623.6179967,
+      "raw_wins": 8,
+      "trend": "strengthening"
+    },
+    "XRP_SELL_BB": {
+      "wr": 0.21621621621621623,
+      "n": 37,
+      "ema_wr": 0.19256515205457617,
+      "pnl_sum": -25.89311594248015,
+      "last_updated": 1784928633.6934335,
+      "raw_wins": 8,
+      "trend": "weakening"
+    },
+    "XRP_SELL_2-agree": {
+      "wr": 0.5714285714285714,
+      "n": 7,
+      "ema_wr": 0.5714285714285716,
+      "pnl_sum": 6.579782315128771,
+      "last_updated": 1790966393.8651993,
+      "raw_wins": 4,
+      "trend": "strengthening"
+    },
+    "BTC_BUY_0-agree": {
+      "wr": 0.29310344827586204,
+      "n": 116,
+      "ema_wr": 0.3472796201650287,
+      "pnl_sum": -26.960174934210478,
+      "last_updated": 1791492399.1540391,
+      "raw_wins": 34,
+      "trend": "strengthening"
+    },
+    "TEST_BUY_0-agree": {
+      "wr": 0.8,
+      "n": 20,
+      "ema_wr": 0.8,
+      "pnl_sum": 311.6597,
+      "last_updated": 1791492399.3226535,
+      "raw_wins": 16,
+      "trend": "weakening"
+    },
+    "BTC_SELL_0-agree": {
+      "wr": 0.4634146341463415,
+      "n": 41,
+      "ema_wr": 0.4992683880788171,
+      "pnl_sum": -0.9652082499999786,
+      "last_updated": 1791492396.1347327,
+      "raw_wins": 19,
+      "trend": "strengthening"
+    },
+    "TEST_SELL_0-agree": {
+      "wr": 1.0,
+      "n": 4,
+      "ema_wr": 1.0,
+      "pnl_sum": 160.0,
+      "last_updated": 1785550821.3564215,
+      "raw_wins": 4,
+      "trend": "weakening"
+    },
+    "HYPE_BUY_0-agree": {
+      "wr": 1.0,
+      "n": 2,
+      "ema_wr": 1.0,
+      "pnl_sum": 39.21568627450981,
+      "last_updated": 1785550821.7207017,
+      "raw_wins": 2,
+      "trend": "weakening"
+    },
+    "SOL_SELL_0-agree": {
+      "wr": 1.0,
+      "n": 2,
+      "ema_wr": 1.0,
+      "pnl_sum": 20.0,
+      "last_updated": 1785550821.7578607,
+      "raw_wins": 2,
+      "trend": "weakening"
+    },
+    "HYPE_BUY_mean_reversion": {
+      "wr": 0.0,
+      "n": 1,
+      "ema_wr": 0.0,
+      "pnl_sum": -0.09995250916342621,
+      "last_updated": 1784934029.3767114,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "XRP_SELL_mean_reversion": {
+      "wr": 0.0,
+      "n": 3,
+      "ema_wr": 0.0,
+      "pnl_sum": -0.39284226401008826,
+      "last_updated": 1785010187.284961,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "SOL_SELL_regime_trend": {
+      "wr": 0.5,
+      "n": 2,
+      "ema_wr": 0.5,
+      "pnl_sum": -0.5765432384797522,
+      "last_updated": 1785081321.8138542,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "BTC_BUY_3-agree": {
+      "wr": 0.5,
+      "n": 2,
+      "ema_wr": 0.5,
+      "pnl_sum": 0.0392457526485175,
+      "last_updated": 1785184996.1062365,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "DOGE_SELL_2-agree": {
+      "wr": 0.25,
+      "n": 12,
+      "ema_wr": 0.24999999999999997,
+      "pnl_sum": -7.445025760231504,
+      "last_updated": 1785186266.2620826,
+      "raw_wins": 3,
+      "trend": "weakening"
+    },
+    "DOGE_BUY_2-agree": {
+      "wr": 0.75,
+      "n": 4,
+      "ema_wr": 0.75,
+      "pnl_sum": 5.018340256919852,
+      "last_updated": 1785186244.750744,
+      "raw_wins": 3,
+      "trend": "weakening"
+    },
+    "DOGE_BUY_BB": {
+      "wr": 0.5,
+      "n": 2,
+      "ema_wr": 0.5,
+      "pnl_sum": -2.5477073046494434,
+      "last_updated": 1785186244.357661,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "DOGE_SELL_BB": {
+      "wr": 0.7142857142857143,
+      "n": 7,
+      "ema_wr": 0.7142857142857144,
+      "pnl_sum": 2.306018151276591,
+      "last_updated": 1785186270.8864582,
+      "raw_wins": 5,
+      "trend": "strengthening"
+    },
+    "LINK_SELL_BB": {
+      "wr": 0.5,
+      "n": 6,
+      "ema_wr": 0.5,
+      "pnl_sum": -7.403896172398656,
+      "last_updated": 1785186349.8183143,
+      "raw_wins": 3,
+      "trend": "weakening"
+    },
+    "LINK_BUY_BB": {
+      "wr": 0.5,
+      "n": 8,
+      "ema_wr": 0.5,
+      "pnl_sum": -5.269780166859049,
+      "last_updated": 1785186352.2646303,
+      "raw_wins": 4,
+      "trend": "weakening"
+    },
+    "LINK_BUY_2-agree": {
+      "wr": 0.5454545454545454,
+      "n": 22,
+      "ema_wr": 0.5415,
+      "pnl_sum": 2.5677340004931803,
+      "last_updated": 1785186354.000124,
+      "raw_wins": 12,
+      "trend": "weakening"
+    },
+    "NEAR_BUY_BB": {
+      "wr": 0.38461538461538464,
+      "n": 13,
+      "ema_wr": 0.3846153846153846,
+      "pnl_sum": 16.16064361381575,
+      "last_updated": 1791602779.972961,
+      "raw_wins": 5,
+      "trend": "weakening"
+    },
+    "NEAR_SELL_BB": {
+      "wr": 0.5882352941176471,
+      "n": 17,
+      "ema_wr": 0.5882352941176474,
+      "pnl_sum": 7.454024136845854,
+      "last_updated": 1785240984.8217652,
+      "raw_wins": 10,
+      "trend": "strengthening"
+    },
+    "NEAR_SELL_2-agree": {
+      "wr": 0.375,
+      "n": 24,
+      "ema_wr": 0.3758024999999999,
+      "pnl_sum": -35.35799561245537,
+      "last_updated": 1791511058.7507303,
+      "raw_wins": 9,
+      "trend": "strengthening"
+    },
+    "NEAR_BUY_2-agree": {
+      "wr": 0.5652173913043478,
+      "n": 23,
+      "ema_wr": 0.5619250000000001,
+      "pnl_sum": -8.41359453546714,
+      "last_updated": 1791678357.1156738,
+      "raw_wins": 13,
+      "trend": "weakening"
+    },
+    "NEAR_SELL_monte_carlo_zones": {
+      "wr": 1.0,
+      "n": 1,
+      "ema_wr": 1.0,
+      "pnl_sum": 0.9392619738752136,
+      "last_updated": 1785186401.8223495,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "SUI_BUY_2-agree": {
+      "wr": 0.75,
+      "n": 16,
+      "ema_wr": 0.75,
+      "pnl_sum": -0.3862195871570888,
+      "last_updated": 1785186486.0230243,
+      "raw_wins": 12,
+      "trend": "weakening"
+    },
+    "SUI_SELL_BB": {
+      "wr": 0.5714285714285714,
+      "n": 7,
+      "ema_wr": 0.5714285714285715,
+      "pnl_sum": -1.2614662956644154,
+      "last_updated": 1785186496.3802636,
+      "raw_wins": 4,
+      "trend": "strengthening"
+    },
+    "SUI_BUY_BB": {
+      "wr": 0.3,
+      "n": 10,
+      "ema_wr": 0.30000000000000004,
+      "pnl_sum": -14.726813529773834,
+      "last_updated": 1785186483.2619767,
+      "raw_wins": 3,
+      "trend": "strengthening"
+    },
+    "SUI_SELL_2-agree": {
+      "wr": 0.6666666666666666,
+      "n": 6,
+      "ema_wr": 0.6666666666666667,
+      "pnl_sum": -4.716567809459913,
+      "last_updated": 1785186495.7737725,
+      "raw_wins": 4,
+      "trend": "strengthening"
+    },
+    "AVAX_BUY_2-agree": {
+      "wr": 0.0,
+      "n": 6,
+      "ema_wr": 0.0,
+      "pnl_sum": -12.199405143226441,
+      "last_updated": 1785186529.4897566,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "AVAX_BUY_BB": {
+      "wr": 0.0,
+      "n": 2,
+      "ema_wr": 0.0,
+      "pnl_sum": -8.004187286206434,
+      "last_updated": 1785186528.6525438,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "AVAX_SELL_BB": {
+      "wr": 0.0,
+      "n": 2,
+      "ema_wr": 0.0,
+      "pnl_sum": -5.834073738148634,
+      "last_updated": 1785186528.1566377,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "ARB_SELL_BB": {
+      "wr": 0.45454545454545453,
+      "n": 11,
+      "ema_wr": 0.45454545454545453,
+      "pnl_sum": -2.79139621734691,
+      "last_updated": 1785186605.3200297,
+      "raw_wins": 5,
+      "trend": "weakening"
+    },
+    "ARB_BUY_BB": {
+      "wr": 0.3333333333333333,
+      "n": 9,
+      "ema_wr": 0.33333333333333337,
+      "pnl_sum": 0.5747559457501767,
+      "last_updated": 1785186587.5851903,
+      "raw_wins": 3,
+      "trend": "strengthening"
+    },
+    "ARB_BUY_2-agree": {
+      "wr": 0.4666666666666667,
+      "n": 15,
+      "ema_wr": 0.4666666666666667,
+      "pnl_sum": -3.9858149159937977,
+      "last_updated": 1785186595.564207,
+      "raw_wins": 7,
+      "trend": "weakening"
+    },
+    "ARB_SELL_2-agree": {
+      "wr": 0.5,
+      "n": 2,
+      "ema_wr": 0.5,
+      "pnl_sum": -2.684111060180994,
+      "last_updated": 1785186603.5767398,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "AAVE_BUY_2-agree": {
+      "wr": 0.6470588235294118,
+      "n": 17,
+      "ema_wr": 0.6470588235294119,
+      "pnl_sum": 6.676309136661308,
+      "last_updated": 1785186678.5703478,
+      "raw_wins": 11,
+      "trend": "strengthening"
+    },
+    "AAVE_SELL_BB": {
+      "wr": 0.6666666666666666,
+      "n": 6,
+      "ema_wr": 0.6666666666666667,
+      "pnl_sum": 6.811195096425036,
+      "last_updated": 1785186673.174319,
+      "raw_wins": 4,
+      "trend": "strengthening"
+    },
+    "AAVE_BUY_BB": {
+      "wr": 0.1875,
+      "n": 16,
+      "ema_wr": 0.1875,
+      "pnl_sum": -36.10297696973562,
+      "last_updated": 1785186675.874735,
+      "raw_wins": 3,
+      "trend": "weakening"
+    },
+    "HYPE_SELL_BB+MTQ": {
+      "wr": 0.5,
+      "n": 2,
+      "ema_wr": 0.5,
+      "pnl_sum": 1.164773096414351,
+      "last_updated": 1785358698.942858,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "SOL_SELL_BB+MTQ": {
+      "wr": 0.0,
+      "n": 3,
+      "ema_wr": 0.0,
+      "pnl_sum": -1.5521803742511402,
+      "last_updated": 1785350221.779705,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "HYPE_SELL_2-agree": {
+      "wr": 0.5,
+      "n": 4,
+      "ema_wr": 0.5,
+      "pnl_sum": 0.8382053188151484,
+      "last_updated": 1790365587.5849228,
+      "raw_wins": 2,
+      "trend": "weakening"
+    },
+    "POPCAT_SELL_BB": {
+      "wr": 0.25,
+      "n": 4,
+      "ema_wr": 0.25,
+      "pnl_sum": -24.192957968274982,
+      "last_updated": 1785240561.4180124,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "POPCAT_BUY_BB": {
+      "wr": 0.3333333333333333,
+      "n": 3,
+      "ema_wr": 0.33333333333333337,
+      "pnl_sum": 7.212669024999984,
+      "last_updated": 1785240575.3514137,
+      "raw_wins": 1,
+      "trend": "strengthening"
+    },
+    "POPCAT_BUY_2-agree": {
+      "wr": 0.2,
+      "n": 5,
+      "ema_wr": 0.2,
+      "pnl_sum": -6.796272652638547,
+      "last_updated": 1785240556.8743927,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "POPCAT_SELL_2-agree": {
+      "wr": 0.0,
+      "n": 2,
+      "ema_wr": 0.0,
+      "pnl_sum": -35.89787630601248,
+      "last_updated": 1785240573.7070186,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "PURR_BUY_BB": {
+      "wr": 0.0,
+      "n": 2,
+      "ema_wr": 0.0,
+      "pnl_sum": -8.396350540261105,
+      "last_updated": 1785240622.011704,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "PURR_SELL_2-agree": {
+      "wr": 0.1875,
+      "n": 16,
+      "ema_wr": 0.1875,
+      "pnl_sum": -12.992500644943252,
+      "last_updated": 1785240638.0057054,
+      "raw_wins": 3,
+      "trend": "weakening"
+    },
+    "PURR_BUY_2-agree": {
+      "wr": 0.16666666666666666,
+      "n": 6,
+      "ema_wr": 0.16666666666666669,
+      "pnl_sum": 6.565458016197157,
+      "last_updated": 1785240627.033792,
+      "raw_wins": 1,
+      "trend": "strengthening"
+    },
+    "PURR_SELL_BB": {
+      "wr": 0.5,
+      "n": 6,
+      "ema_wr": 0.5000000000000001,
+      "pnl_sum": 1.0823499561901935,
+      "last_updated": 1785240639.3670633,
+      "raw_wins": 3,
+      "trend": "strengthening"
+    },
+    "FARTCOIN_BUY_2-agree": {
+      "wr": 0.36363636363636365,
+      "n": 11,
+      "ema_wr": 0.3636363636363637,
+      "pnl_sum": -15.080031432807676,
+      "last_updated": 1785240694.873453,
+      "raw_wins": 4,
+      "trend": "strengthening"
+    },
+    "FARTCOIN_SELL_BB": {
+      "wr": 0.5714285714285714,
+      "n": 7,
+      "ema_wr": 0.5714285714285715,
+      "pnl_sum": 7.438480883427698,
+      "last_updated": 1785240715.8629103,
+      "raw_wins": 4,
+      "trend": "strengthening"
+    },
+    "FARTCOIN_BUY_BB": {
+      "wr": 0.3333333333333333,
+      "n": 3,
+      "ema_wr": 0.3333333333333333,
+      "pnl_sum": -1.694483452691876,
+      "last_updated": 1785240694.1064024,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "FARTCOIN_SELL_2-agree": {
+      "wr": 0.5,
+      "n": 6,
+      "ema_wr": 0.5000000000000001,
+      "pnl_sum": 0.5505821279541541,
+      "last_updated": 1785240719.7936153,
+      "raw_wins": 3,
+      "trend": "strengthening"
+    },
+    "WIF_BUY_2-agree": {
+      "wr": 0.3333333333333333,
+      "n": 12,
+      "ema_wr": 0.33333333333333326,
+      "pnl_sum": -23.750875934921176,
+      "last_updated": 1785240889.0361707,
+      "raw_wins": 4,
+      "trend": "weakening"
+    },
+    "WIF_BUY_BB": {
+      "wr": 0.0,
+      "n": 3,
+      "ema_wr": 0.0,
+      "pnl_sum": -6.8493181109692065,
+      "last_updated": 1785240888.8277426,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "WIF_SELL_BB": {
+      "wr": 0.5714285714285714,
+      "n": 7,
+      "ema_wr": 0.5714285714285714,
+      "pnl_sum": -1.0234889115749928,
+      "last_updated": 1785240887.997529,
+      "raw_wins": 4,
+      "trend": "weakening"
+    },
+    "NEAR_SELL_3-agree": {
+      "wr": 0.0,
+      "n": 2,
+      "ema_wr": 0.0,
+      "pnl_sum": -1.096534291111459,
+      "last_updated": 1785362885.720871,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "SOL_BUY_0-agree": {
+      "wr": 0.0,
+      "n": 14,
+      "ema_wr": 0.0,
+      "pnl_sum": -69.53569999999999,
+      "last_updated": 1791483520.9640703,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "ETH_BUY_0-agree": {
+      "wr": 0.5,
+      "n": 6,
+      "ema_wr": 0.5000000000000001,
+      "pnl_sum": 16.16116666666667,
+      "last_updated": 1791492399.531731,
+      "raw_wins": 3,
+      "trend": "strengthening"
+    },
+    "HYPE_SELL_3-agree": {
+      "wr": 0.0,
+      "n": 1,
+      "ema_wr": 0.0,
+      "pnl_sum": -1.0364620409232888,
+      "last_updated": 1785351425.0742686,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "SOL_SELL_mean_reversion": {
+      "wr": 0.0,
+      "n": 1,
+      "ema_wr": 0.0,
+      "pnl_sum": -1.3508000428284472,
+      "last_updated": 1789417387.2901292,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "XRP_BUY_2-agree": {
+      "wr": 0.0,
+      "n": 3,
+      "ema_wr": 0.0,
+      "pnl_sum": -2.1424310746810593,
+      "last_updated": 1790398303.7734451,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "NEAR_BUY_3-agree": {
+      "wr": 1.0,
+      "n": 1,
+      "ema_wr": 1.0,
+      "pnl_sum": 0.8454375738696909,
+      "last_updated": 1790345708.7200074,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "XRP_BUY_BB+MTQ": {
+      "wr": 0.0,
+      "n": 1,
+      "ema_wr": 0.0,
+      "pnl_sum": -1.3808236548930024,
+      "last_updated": 1790354875.067609,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "ETH_BUY_BB+MTQ": {
+      "wr": 0.0,
+      "n": 1,
+      "ema_wr": 0.0,
+      "pnl_sum": -0.2785843977440229,
+      "last_updated": 1790360220.7774928,
+      "raw_wins": 0,
+      "trend": "weakening"
+    },
+    "NEAR_BUY_BB+MTQ": {
+      "wr": 0.5,
+      "n": 2,
+      "ema_wr": 0.5,
+      "pnl_sum": -0.16351476356565176,
+      "last_updated": 1791421129.7510598,
+      "raw_wins": 1,
+      "trend": "weakening"
+    },
+    "NEAR_BUY_mean_reversion": {
+      "wr": 1.0,
+      "n": 1,
+      "ema_wr": 1.0,
+      "pnl_sum": 2.40251795765847,
+      "last_updated": 1790606653.6910636,
+      "raw_wins": 1,
+      "trend": "weakening"
+    }
+  },
+  "surprise_log": [
+    {
+      "setup": "SUI_BUY_2-agree",
+      "expected_wr": 0.7692307692307693,
+      "actual": "loss",
+      "surprise_magnitude": 0.419,
+      "ts": 1785186475.9454312,
+      "investigation_needed": true
+    },
+    {
+      "setup": "SUI_BUY_2-agree",
+      "expected_wr": 0.7142857142857143,
+      "actual": "loss",
+      "surprise_magnitude": 0.364,
+      "ts": 1785186483.4788725,
+      "investigation_needed": true
+    },
+    {
+      "setup": "SUI_SELL_2-agree",
+      "expected_wr": 0.6,
+      "actual": "loss",
+      "surprise_magnitude": 0.25,
+      "ts": 1785186495.1174524,
+      "investigation_needed": true
+    },
+    {
+      "setup": "SUI_SELL_BB",
+      "expected_wr": 0.5714285714285714,
+      "actual": "loss",
+      "surprise_magnitude": 0.221,
+      "ts": 1785186496.3802814,
+      "investigation_needed": true
+    },
+    {
+      "setup": "ARB_BUY_BB",
+      "expected_wr": 0.2,
+      "actual": "win",
+      "surprise_magnitude": 0.15,
+      "ts": 1785186570.2256756,
+      "investigation_needed": false
+    },
+    {
+      "setup": "ARB_BUY_2-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785186579.097441,
+      "investigation_needed": false
+    },
+    {
+      "setup": "ARB_BUY_2-agree",
+      "expected_wr": 0.45454545454545453,
+      "actual": "loss",
+      "surprise_magnitude": 0.105,
+      "ts": 1785186580.7845447,
+      "investigation_needed": false
+    },
+    {
+      "setup": "ARB_BUY_2-agree",
+      "expected_wr": 0.4666666666666667,
+      "actual": "loss",
+      "surprise_magnitude": 0.117,
+      "ts": 1785186595.5642252,
+      "investigation_needed": false
+    },
+    {
+      "setup": "ARB_SELL_BB",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785186597.2653522,
+      "investigation_needed": false
+    },
+    {
+      "setup": "ARB_SELL_BB",
+      "expected_wr": 0.45454545454545453,
+      "actual": "loss",
+      "surprise_magnitude": 0.105,
+      "ts": 1785186605.3200471,
+      "investigation_needed": false
+    },
+    {
+      "setup": "AAVE_BUY_BB",
+      "expected_wr": 0.1111111111111111,
+      "actual": "win",
+      "surprise_magnitude": 0.239,
+      "ts": 1785186647.5797267,
+      "investigation_needed": true
+    },
+    {
+      "setup": "AAVE_BUY_2-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785186649.3476949,
+      "investigation_needed": false
+    },
+    {
+      "setup": "AAVE_BUY_BB",
+      "expected_wr": 0.16666666666666666,
+      "actual": "win",
+      "surprise_magnitude": 0.183,
+      "ts": 1785186654.692406,
+      "investigation_needed": false
+    },
+    {
+      "setup": "AAVE_BUY_BB",
+      "expected_wr": 0.2,
+      "actual": "win",
+      "surprise_magnitude": 0.15,
+      "ts": 1785186669.8774803,
+      "investigation_needed": false
+    },
+    {
+      "setup": "AAVE_BUY_2-agree",
+      "expected_wr": 0.6470588235294118,
+      "actual": "loss",
+      "surprise_magnitude": 0.297,
+      "ts": 1785186678.5703683,
+      "investigation_needed": true
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5384615384615384,
+      "actual": "loss",
+      "surprise_magnitude": 0.188,
+      "ts": 1785186721.608981,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5333333333333333,
+      "actual": "loss",
+      "surprise_magnitude": 0.183,
+      "ts": 1785186729.116852,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5294117647058824,
+      "actual": "loss",
+      "surprise_magnitude": 0.179,
+      "ts": 1785186749.9918303,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5263157894736842,
+      "actual": "loss",
+      "surprise_magnitude": 0.176,
+      "ts": 1785186753.0744443,
+      "investigation_needed": false
+    },
+    {
+      "setup": "XRP_SELL_2-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785188760.126099,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785240356.0389593,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785240364.840987,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5555555555555556,
+      "actual": "loss",
+      "surprise_magnitude": 0.206,
+      "ts": 1785240370.1209846,
+      "investigation_needed": true
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5517241379310345,
+      "actual": "loss",
+      "surprise_magnitude": 0.202,
+      "ts": 1785240378.4312735,
+      "investigation_needed": true
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5483870967741935,
+      "actual": "loss",
+      "surprise_magnitude": 0.198,
+      "ts": 1785240398.6962893,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5454545454545454,
+      "actual": "loss",
+      "surprise_magnitude": 0.195,
+      "ts": 1785240402.2008655,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5294117647058824,
+      "actual": "loss",
+      "surprise_magnitude": 0.179,
+      "ts": 1785240479.5881681,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.5142857142857142,
+      "actual": "loss",
+      "surprise_magnitude": 0.164,
+      "ts": 1785240488.7703867,
+      "investigation_needed": false
+    },
+    {
+      "setup": "SOL_SELL_2-agree",
+      "expected_wr": 0.55,
+      "actual": "loss",
+      "surprise_magnitude": 0.2,
+      "ts": 1785240513.7762778,
+      "investigation_needed": true
+    },
+    {
+      "setup": "POPCAT_BUY_2-agree",
+      "expected_wr": 0.2,
+      "actual": "win",
+      "surprise_magnitude": 0.15,
+      "ts": 1785240556.8744178,
+      "investigation_needed": false
+    },
+    {
+      "setup": "PURR_SELL_2-agree",
+      "expected_wr": 0.2222222222222222,
+      "actual": "win",
+      "surprise_magnitude": 0.128,
+      "ts": 1785240620.4418895,
+      "investigation_needed": false
+    },
+    {
+      "setup": "PURR_SELL_2-agree",
+      "expected_wr": 0.23076923076923078,
+      "actual": "win",
+      "surprise_magnitude": 0.119,
+      "ts": 1785240634.550599,
+      "investigation_needed": false
+    },
+    {
+      "setup": "PURR_SELL_BB",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785240639.3670828,
+      "investigation_needed": false
+    },
+    {
+      "setup": "FARTCOIN_BUY_2-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785240672.2835903,
+      "investigation_needed": false
+    },
+    {
+      "setup": "FARTCOIN_SELL_BB",
+      "expected_wr": 0.6666666666666666,
+      "actual": "loss",
+      "surprise_magnitude": 0.317,
+      "ts": 1785240711.1409,
+      "investigation_needed": true
+    },
+    {
+      "setup": "FARTCOIN_SELL_2-agree",
+      "expected_wr": 0.6,
+      "actual": "loss",
+      "surprise_magnitude": 0.25,
+      "ts": 1785240715.5433173,
+      "investigation_needed": true
+    },
+    {
+      "setup": "FARTCOIN_SELL_BB",
+      "expected_wr": 0.5714285714285714,
+      "actual": "loss",
+      "surprise_magnitude": 0.221,
+      "ts": 1785240715.8629355,
+      "investigation_needed": true
+    },
+    {
+      "setup": "FARTCOIN_SELL_2-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785240719.7936392,
+      "investigation_needed": false
+    },
+    {
+      "setup": "WIF_BUY_2-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785240863.4470668,
+      "investigation_needed": false
+    },
+    {
+      "setup": "NEAR_BUY_2-agree",
+      "expected_wr": 0.6,
+      "actual": "loss",
+      "surprise_magnitude": 0.25,
+      "ts": 1785240920.4116592,
+      "investigation_needed": true
+    },
+    {
+      "setup": "NEAR_BUY_2-agree",
+      "expected_wr": 0.5833333333333334,
+      "actual": "loss",
+      "surprise_magnitude": 0.233,
+      "ts": 1785240925.448197,
+      "investigation_needed": true
+    },
+    {
+      "setup": "NEAR_BUY_2-agree",
+      "expected_wr": 0.5384615384615384,
+      "actual": "loss",
+      "surprise_magnitude": 0.188,
+      "ts": 1785240926.3048933,
+      "investigation_needed": false
+    },
+    {
+      "setup": "NEAR_BUY_2-agree",
+      "expected_wr": 0.5333333333333333,
+      "actual": "loss",
+      "surprise_magnitude": 0.183,
+      "ts": 1785240927.9168928,
+      "investigation_needed": false
+    },
+    {
+      "setup": "NEAR_BUY_BB",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785240931.9715605,
+      "investigation_needed": false
+    },
+    {
+      "setup": "NEAR_BUY_2-agree",
+      "expected_wr": 0.5555555555555556,
+      "actual": "loss",
+      "surprise_magnitude": 0.206,
+      "ts": 1785240933.4664738,
+      "investigation_needed": true
+    },
+    {
+      "setup": "NEAR_BUY_BB",
+      "expected_wr": 0.45454545454545453,
+      "actual": "loss",
+      "surprise_magnitude": 0.105,
+      "ts": 1785240945.9014058,
+      "investigation_needed": false
+    },
+    {
+      "setup": "NEAR_BUY_2-agree",
+      "expected_wr": 0.5714285714285714,
+      "actual": "loss",
+      "surprise_magnitude": 0.221,
+      "ts": 1785240948.2559266,
+      "investigation_needed": true
+    },
+    {
+      "setup": "NEAR_SELL_BB",
+      "expected_wr": 0.6153846153846154,
+      "actual": "loss",
+      "surprise_magnitude": 0.265,
+      "ts": 1785240957.688609,
+      "investigation_needed": true
+    },
+    {
+      "setup": "NEAR_SELL_BB",
+      "expected_wr": 0.5714285714285714,
+      "actual": "loss",
+      "surprise_magnitude": 0.221,
+      "ts": 1785240958.29925,
+      "investigation_needed": true
+    },
+    {
+      "setup": "NEAR_SELL_BB",
+      "expected_wr": 0.5625,
+      "actual": "loss",
+      "surprise_magnitude": 0.213,
+      "ts": 1785240979.7700233,
+      "investigation_needed": true
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.5714285714285714,
+      "actual": "loss",
+      "surprise_magnitude": 0.221,
+      "ts": 1785348547.637793,
+      "investigation_needed": true
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.5625,
+      "actual": "loss",
+      "surprise_magnitude": 0.213,
+      "ts": 1785465665.313457,
+      "investigation_needed": true
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.5294117647058824,
+      "actual": "loss",
+      "surprise_magnitude": 0.179,
+      "ts": 1785465665.39233,
+      "investigation_needed": false
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785465665.4373271,
+      "investigation_needed": false
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.47368421052631576,
+      "actual": "loss",
+      "surprise_magnitude": 0.124,
+      "ts": 1785465665.479522,
+      "investigation_needed": false
+    },
+    {
+      "setup": "TEST_BUY_0-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1785550668.0798943,
+      "investigation_needed": false
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.2413793103448276,
+      "actual": "win",
+      "surprise_magnitude": 0.109,
+      "ts": 1785550799.7278697,
+      "investigation_needed": false
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.2222222222222222,
+      "actual": "win",
+      "surprise_magnitude": 0.128,
+      "ts": 1785550817.7749655,
+      "investigation_needed": false
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.22972972972972974,
+      "actual": "win",
+      "surprise_magnitude": 0.12,
+      "ts": 1785550818.3042984,
+      "investigation_needed": false
+    },
+    {
+      "setup": "BTC_BUY_0-agree",
+      "expected_wr": 0.24,
+      "actual": "win",
+      "surprise_magnitude": 0.11,
+      "ts": 1785550818.37884,
+      "investigation_needed": false
+    },
+    {
+      "setup": "TEST_BUY_0-agree",
+      "expected_wr": 0.7142857142857143,
+      "actual": "loss",
+      "surprise_magnitude": 0.364,
+      "ts": 1785550821.6003041,
+      "investigation_needed": true
+    },
+    {
+      "setup": "ETH_BUY_0-agree",
+      "expected_wr": 0.6,
+      "actual": "loss",
+      "surprise_magnitude": 0.25,
+      "ts": 1791482853.6392932,
+      "investigation_needed": true
+    },
+    {
+      "setup": "BTC_SELL_0-agree",
+      "expected_wr": 0.4634146341463415,
+      "actual": "loss",
+      "surprise_magnitude": 0.113,
+      "ts": 1791492396.1349547,
+      "investigation_needed": false
+    },
+    {
+      "setup": "ETH_BUY_0-agree",
+      "expected_wr": 0.5,
+      "actual": "loss",
+      "surprise_magnitude": 0.15,
+      "ts": 1791492399.5318944,
+      "investigation_needed": false
+    },
+    {
+      "setup": "NEAR_BUY_2-agree",
+      "expected_wr": 0.5652173913043478,
+      "actual": "loss",
+      "surprise_magnitude": 0.215,
+      "ts": 1791678357.1165972,
+      "investigation_needed": true
+    }
+  ],
+  "consolidation_queue": [
+    {
+      "text": "Surprise XRP_SELL_2-agree: expected win at 60% but lost",
+      "category": "surprise",
+      "symbol": "XRP",
+      "regime": "",
+      "ts": 1784928621.665144
+    },
+    {
+      "text": "Surprise TEST_BUY_0-agree: expected win at 60% but lost",
+      "category": "surprise",
+      "symbol": "TEST",
+      "regime": "",
+      "ts": 1785173799.6787906
+    },
+    {
+      "text": "Surprise DOGE_SELL_BB: expected win at 80% but lost",
+      "category": "surprise",
+      "symbol": "DOGE",
+      "regime": "",
+      "ts": 1785186246.844883
+    },
+    {
+      "text": "Surprise DOGE_SELL_BB: expected win at 67% but lost",
+      "category": "surprise",
+      "symbol": "DOGE",
+      "regime": "",
+      "ts": 1785186270.501974
+    },
+    {
+      "text": "Surprise LINK_BUY_2-agree: expected win at 63% but lost",
+      "category": "surprise",
+      "symbol": "LINK",
+      "regime": "",
+      "ts": 1785186346.2050562
+    },
+    {
+      "text": "Surprise LINK_BUY_2-agree: expected win at 60% but lost",
+      "category": "surprise",
+      "symbol": "LINK",
+      "regime": "",
+      "ts": 1785186352.4795876
+    },
+    {
+      "text": "Surprise LINK_BUY_2-agree: expected win at 57% but lost",
+      "category": "surprise",
+      "symbol": "LINK",
+      "regime": "",
+      "ts": 1785186353.4449844
+    },
+    {
+      "text": "LINK_BUY_2-agree: LOSS in high_volatility, pnl=-1.57%",
+      "category": "trade_outcome",
+      "symbol": "LINK",
+      "regime": "high_volatility",
+      "ts": 1785186354.000145
+    },
+    {
+      "text": "SUI_SELL_2-agree: LOSS in high_volatility, pnl=-2.73%",
+      "category": "trade_outcome",
+      "symbol": "SUI",
+      "regime": "high_volatility",
+      "ts": 1785186495.1175396
+    },
+    {
+      "text": "SUI_SELL_2-agree: WIN in trending_bear, pnl=0.04%",
+      "category": "trade_outcome",
+      "symbol": "SUI",
+      "regime": "trending_bear",
+      "ts": 1785186495.7738204
+    },
+    {
+      "text": "SUI_SELL_BB: WIN in ranging, pnl=0.28%",
+      "category": "trade_outcome",
+      "symbol": "SUI",
+      "regime": "ranging",
+      "ts": 1785186495.9125175
+    },
+    {
+      "text": "Surprise SUI_SELL_BB: expected win at 57% but lost",
+      "category": "surprise",
+      "symbol": "SUI",
+      "regime": "",
+      "ts": 1785186496.3803785
+    },
+    {
+      "text": "SUI_SELL_BB: LOSS in ranging, pnl=-0.76%",
+      "category": "trade_outcome",
+      "symbol": "SUI",
+      "regime": "ranging",
+      "ts": 1785186496.3803806
+    },
+    {
+      "text": "ARB_SELL_BB: WIN in ranging, pnl=0.10%",
+      "category": "trade_outcome",
+      "symbol": "ARB",
+      "regime": "ranging",
+      "ts": 1785186604.6757486
+    },
+    {
+      "text": "ARB_SELL_BB: LOSS in ranging, pnl=-0.58%",
+      "category": "trade_outcome",
+      "symbol": "ARB",
+      "regime": "ranging",
+      "ts": 1785186605.320058
+    },
+    {
+      "text": "Surprise AAVE_BUY_BB: expected loss at 11% but won",
+      "category": "surprise",
+      "symbol": "AAVE",
+      "regime": "",
+      "ts": 1785186647.5798254
+    },
+    {
+      "text": "AAVE_BUY_BB: LOSS in high_volatility, pnl=-0.00%",
+      "category": "trade_outcome",
+      "symbol": "AAVE",
+      "regime": "high_volatility",
+      "ts": 1785186675.8747725
+    },
+    {
+      "text": "AAVE_BUY_2-agree: WIN in trending_bull, pnl=1.02%",
+      "category": "trade_outcome",
+      "symbol": "AAVE",
+      "regime": "trending_bull",
+      "ts": 1785186676.9444005
+    },
+    {
+      "text": "AAVE_BUY_2-agree: WIN in trending_bull, pnl=0.00%",
+      "category": "trade_outcome",
+      "symbol": "AAVE",
+      "regime": "trending_bull",
+      "ts": 1785186677.4620194
+    },
+    {
+      "text": "Surprise AAVE_BUY_2-agree: expected win at 65% but lost",
+      "category": "surprise",
+      "symbol": "AAVE",
+      "regime": "",
+      "ts": 1785186678.5704758
+    },
+    {
+      "text": "AAVE_BUY_2-agree: LOSS in trending_bull, pnl=-1.14%",
+      "category": "trade_outcome",
+      "symbol": "AAVE",
+      "regime": "trending_bull",
+      "ts": 1785186678.5704787
+    },
+    {
+      "text": "Surprise SOL_SELL_2-agree: expected win at 56% but lost",
+      "category": "surprise",
+      "symbol": "SOL",
+      "regime": "",
+      "ts": 1785240370.1210806
+    },
+    {
+      "text": "Surprise SOL_SELL_2-agree: expected win at 55% but lost",
+      "category": "surprise",
+      "symbol": "SOL",
+      "regime": "",
+      "ts": 1785240378.4313676
+    },
+    {
+      "text": "Surprise SOL_SELL_2-agree: expected win at 55% but lost",
+      "category": "surprise",
+      "symbol": "SOL",
+      "regime": "",
+      "ts": 1785240513.7765117
+    },
+    {
+      "text": "POPCAT_SELL_BB: WIN in high_volatility, pnl=15.69%",
+      "category": "trade_outcome",
+      "symbol": "POPCAT",
+      "regime": "high_volatility",
+      "ts": 1785240561.4180303
+    },
+    {
+      "text": "POPCAT_SELL_2-agree: LOSS in trending_bear, pnl=-12.96%",
+      "category": "trade_outcome",
+      "symbol": "POPCAT",
+      "regime": "trending_bear",
+      "ts": 1785240571.523856
+    },
+    {
+      "text": "POPCAT_SELL_2-agree: LOSS in trending_bear, pnl=-22.94%",
+      "category": "trade_outcome",
+      "symbol": "POPCAT",
+      "regime": "trending_bear",
+      "ts": 1785240573.7070355
+    },
+    {
+      "text": "POPCAT_BUY_BB: LOSS in high_volatility, pnl=-15.49%",
+      "category": "trade_outcome",
+      "symbol": "POPCAT",
+      "regime": "high_volatility",
+      "ts": 1785240575.3514345
+    },
+    {
+      "text": "Surprise FARTCOIN_SELL_BB: expected win at 67% but lost",
+      "category": "surprise",
+      "symbol": "FARTCOIN",
+      "regime": "",
+      "ts": 1785240711.141
+    },
+    {
+      "text": "Surprise FARTCOIN_SELL_2-agree: expected win at 60% but lost",
+      "category": "surprise",
+      "symbol": "FARTCOIN",
+      "regime": "",
+      "ts": 1785240715.5434508
+    },
+    {
+      "text": "Surprise FARTCOIN_SELL_BB: expected win at 57% but lost",
+      "category": "surprise",
+      "symbol": "FARTCOIN",
+      "regime": "",
+      "ts": 1785240715.8630714
+    },
+    {
+      "text": "FARTCOIN_SELL_BB: LOSS in trending_bear, pnl=-0.90%",
+      "category": "trade_outcome",
+      "symbol": "FARTCOIN",
+      "regime": "trending_bear",
+      "ts": 1785240715.8630745
+    },
+    {
+      "text": "FARTCOIN_SELL_2-agree: LOSS in trending_bear, pnl=-0.16%",
+      "category": "trade_outcome",
+      "symbol": "FARTCOIN",
+      "regime": "trending_bear",
+      "ts": 1785240719.7936475
+    },
+    {
+      "text": "WIF_BUY_BB: LOSS in ranging, pnl=-0.13%",
+      "category": "trade_outcome",
+      "symbol": "WIF",
+      "regime": "ranging",
+      "ts": 1785240888.827762
+    },
+    {
+      "text": "WIF_BUY_2-agree: LOSS in trending_bull, pnl=-3.17%",
+      "category": "trade_outcome",
+      "symbol": "WIF",
+      "regime": "trending_bull",
+      "ts": 1785240889.0361865
+    },
+    {
+      "text": "Surprise BTC_BUY_0-agree: expected win at 57% but lost",
+      "category": "surprise",
+      "symbol": "BTC",
+      "regime": "",
+      "ts": 1785348547.6379025
+    },
+    {
+      "text": "Surprise BTC_BUY_0-agree: expected win at 56% but lost",
+      "category": "surprise",
+      "symbol": "BTC",
+      "regime": "",
+      "ts": 1785465665.3135583
+    },
+    {
+      "text": "Surprise TEST_BUY_0-agree: expected win at 71% but lost",
+      "category": "surprise",
+      "symbol": "TEST",
+      "regime": "",
+      "ts": 1785550821.6004016
+    },
+    {
+      "text": "XRP_BUY_2-agree: LOSS in consolidation, pnl=-0.53%",
+      "category": "trade_outcome",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "ts": 1790272894.9883614
+    },
+    {
+      "text": "XRP_BUY_BB+MTQ: LOSS in consolidation, pnl=-1.38%",
+      "category": "trade_outcome",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "ts": 1790354875.0678618
+    },
+    {
+      "text": "ETH_BUY_BB+MTQ: LOSS in consolidation, pnl=-0.28%",
+      "category": "trade_outcome",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "ts": 1790360220.7787032
+    },
+    {
+      "text": "XRP_BUY_2-agree: LOSS in consolidation, pnl=-1.02%",
+      "category": "trade_outcome",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "ts": 1790398303.7754264
+    },
+    {
+      "text": "XRP_SELL_2-agree: WIN in consolidation, pnl=1.00%",
+      "category": "trade_outcome",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "ts": 1790966393.8653526
+    },
+    {
+      "text": "NEAR_BUY_BB+MTQ: WIN in consolidation, pnl=0.66%",
+      "category": "trade_outcome",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "ts": 1791421129.7525318
+    },
+    {
+      "text": "TEST_BUY_0-agree: WIN in unknown, pnl=4.20%",
+      "category": "trade_outcome",
+      "symbol": "TEST",
+      "regime": "unknown",
+      "ts": 1791482853.01893
+    },
+    {
+      "text": "TEST_BUY_0-agree: WIN in unknown, pnl=10.00%",
+      "category": "trade_outcome",
+      "symbol": "TEST",
+      "regime": "unknown",
+      "ts": 1791482853.0540018
+    },
+    {
+      "text": "Surprise ETH_BUY_0-agree: expected win at 60% but lost",
+      "category": "surprise",
+      "symbol": "ETH",
+      "regime": "",
+      "ts": 1791482853.6393962
+    },
+    {
+      "text": "ETH_BUY_0-agree: LOSS in unknown, pnl=-0.08%",
+      "category": "trade_outcome",
+      "symbol": "ETH",
+      "regime": "unknown",
+      "ts": 1791482853.6393988
+    },
+    {
+      "text": "SOL_BUY_0-agree: LOSS in consolidation, pnl=-4.08%",
+      "category": "trade_outcome",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "ts": 1791483511.4954169
+    },
+    {
+      "text": "SOL_BUY_0-agree: LOSS in consolidation, pnl=-4.08%",
+      "category": "trade_outcome",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "ts": 1791483520.9642484
+    },
+    {
+      "text": "BTC_BUY_0-agree: LOSS in unknown, pnl=-8.09%",
+      "category": "trade_outcome",
+      "symbol": "BTC",
+      "regime": "unknown",
+      "ts": 1791492398.2145717
+    },
+    {
+      "text": "BTC_BUY_0-agree: WIN in unknown, pnl=19.40%",
+      "category": "trade_outcome",
+      "symbol": "BTC",
+      "regime": "unknown",
+      "ts": 1791492398.2827015
+    },
+    {
+      "text": "BTC_BUY_0-agree: WIN in unknown, pnl=19.40%",
+      "category": "trade_outcome",
+      "symbol": "BTC",
+      "regime": "unknown",
+      "ts": 1791492398.3182702
+    },
+    {
+      "text": "BTC_BUY_0-agree: LOSS in unknown, pnl=-12.09%",
+      "category": "trade_outcome",
+      "symbol": "BTC",
+      "regime": "unknown",
+      "ts": 1791492399.1542866
+    },
+    {
+      "text": "TEST_BUY_0-agree: WIN in unknown, pnl=4.20%",
+      "category": "trade_outcome",
+      "symbol": "TEST",
+      "regime": "unknown",
+      "ts": 1791492399.286831
+    },
+    {
+      "text": "TEST_BUY_0-agree: WIN in unknown, pnl=10.00%",
+      "category": "trade_outcome",
+      "symbol": "TEST",
+      "regime": "unknown",
+      "ts": 1791492399.322848
+    },
+    {
+      "text": "ETH_BUY_0-agree: LOSS in unknown, pnl=-0.08%",
+      "category": "trade_outcome",
+      "symbol": "ETH",
+      "regime": "unknown",
+      "ts": 1791492399.5319014
+    },
+    {
+      "text": "NEAR_SELL_2-agree: WIN in consolidation, pnl=1.51%",
+      "category": "trade_outcome",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "ts": 1791511058.7510426
+    },
+    {
+      "text": "NEAR_BUY_BB: LOSS in consolidation, pnl=-0.18%",
+      "category": "trade_outcome",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "ts": 1791602779.9736593
+    },
+    {
+      "text": "NEAR_BUY_2-agree: LOSS in consolidation, pnl=-2.81%",
+      "category": "trade_outcome",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "ts": 1791678357.1168406
+    }
+  ],
+  "edge_decay_alerts": [],
+  "last_run": 1791678357.1156561,
+  "total_runs": 1336
+}

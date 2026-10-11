@@ -1,0 +1,3160 @@
+{
+  "lessons": [
+    {
+      "ts": 1783919340.1993651,
+      "lesson": "SOL SHORT in trend won by SL despite 20% regime WR\u2014luck not edge. Skip trend shorts <80% confidence; consolidation regime preferred.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "trend",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783926241.5119529,
+      "lesson": "Consolidation regime favors SHORTs: HYPE SHORT won $6.87 over 3.2h vs 3 recent consolidation LONG losses. High confluence (72.5%=2+ agreement) + SHORT + consolidation + >2h hold = winner. Avoid consolidation LONGs.",
+      "category": "pattern_win",
+      "strength": "moderate",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783926328.3916173,
+      "lesson": "Supporting thesis broke (XRP SHORT 0% WR)\u2192LLM exited HYPE SHORT $+6.87. Thesis invalidation, not price stops, is hard exit rule. Prevents late-trade deterioration.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783952099.3224773,
+      "lesson": "EXPLORATION in low_liquidity: won micro on exit discipline, not entry edge. MFE 1.9%/9.96h poor. Avoid low_liquidity for solo <70% confidence.",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "XRP",
+      "regime": "low_liquidity",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783952181.5043886,
+      "lesson": "Low_liquidity + <70% confidence EXPLORATION fails on entry, saved only by exit discipline. Systematic: skip or block this pattern.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "low_liquidity",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783954294.6080158,
+      "lesson": "SOL SHORT consolidation (64% conf) won $0.50 via mechanical exit, invalid thesis. 35% WR pattern\u2014avoid or require 2+ strategy confluence.",
+      "category": "pattern_loss",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783954328.0272593,
+      "lesson": "Consolidation SHORT: mechanical profit-lock > thesis validity. 10.8h hold, invalid thesis, +$1.23 WIN. Doctrine+regime+size > thesis accuracy.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783954371.0841134,
+      "lesson": "Confidence 64.55% missed regime mismatch: SOL SHORT in consolidation invalid thesis. Scorer must validate regime+setup compatibility before high-conf signals.",
+      "category": "thesis_accuracy",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783954401.1302133,
+      "lesson": "BTC SHORT consolidation overcomes weak symbol baseline (29% WR) via regime strength (45% WR). Regime match > symbol weakness and thesis accuracy.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783954453.1385524,
+      "lesson": "Consolidation SHORT solo 65% conf bypassed gating rule. Won via mechanical exit. Enforce 2+ agreement for solo <70% conf signals.",
+      "category": "entry_timing",
+      "strength": "moderate",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783954518.9924374,
+      "lesson": "Consolidation SHORT: bounced +2.36%, retraced to SL at +$0.35. Mechanical SL discipline works despite weak thesis. Tight stops > predictions in range.",
+      "category": "pattern_win",
+      "strength": "moderate",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783985187.2613754,
+      "lesson": "XRP SHORT consolidation: mechanical MFE >0.5% exit (50%) locked profit as thesis invalidated. Prevented loss. Regime insight: avoid >3h holds in range.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783985242.249838,
+      "lesson": "XRP SHORT consolidation: mechanical MFE>0.5% exit locked profit before thesis decay. Use mechanical rules, not discretionary holds in range.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783986713.1226928,
+      "lesson": "ETH SHORT in consolidation: regime misidentified at entry. Exit agent correct at 5.6h. Avoid or require 2-agreement in ranges.",
+      "category": "pattern_loss",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1783986750.6298397,
+      "lesson": "ETH SHORT in consolidation: 0/4 WR. Avoid or require 2-agreement + regime stability verification.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1783987543.8854373,
+      "lesson": "SOL SHORT consolidation: exit agent flagged thesis_invalid, but +$1.21 at 7.4h hold. Thesis WAS valid; high-confidence shorts outlast warnings.",
+      "category": "thesis_accuracy",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SELL",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783987624.561169,
+      "lesson": "SOL SHORT consolidation +$1.21 despite Exit Agent veto\u2014high-confidence shorts outlast warnings. Pattern repeating: implement override rule.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1783987624.7329035,
+      "lesson": "LONG trades underperforming \u2014 require stronger confluence",
+      "category": "active_learning",
+      "strength": "strong",
+      "symbol": "",
+      "regime": "",
+      "side": "LONG",
+      "outcome": ""
+    },
+    {
+      "ts": 1784019889.5075018,
+      "lesson": "SOL SHORT consolidation +0.63% exited via size reduction. Consolidation is mean-revert hostile to shorts. De-risking prevented larger loss. Reduce SHORT consolidation leverage to 1.0x.",
+      "category": "sizing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784019923.0408945,
+      "lesson": "SOL SHORT consolidation +0.63 @ 2.0x: regime-hostile, exit-agent saved via de-risk. Avoid or use 1.0x max.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784032291.2746918,
+      "lesson": "XRP SHORT confidence_scorer in consolidation: 39% WR strategy + -$79 symbol + 47% regime WR = avoid or require 3+ confluence",
+      "category": "pattern_loss",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784032381.9436982,
+      "lesson": "confidence_scorer XRP SHORT consolidation: thesis was WRONG (bull divergence), not just stopped early. 39% WR strategy + low confluence = fail.",
+      "category": "pattern_loss",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784032839.1015482,
+      "lesson": "confidence_scorer SHORT consolidation: 39% WR + low confluence (55.5%) = failure. Skip or require 3+ signals, >65% confidence, and 1.5x max leverage.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784032879.3683016,
+      "lesson": "confidence_scorer SHORT consolidation <65% confluence: 39% WR loser. Require 3+ signal agreement or reduce to 1.5x leverage max.",
+      "category": "pattern_loss",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784043329.0413353,
+      "lesson": "XRP SHORT failed in consolidation+bullish regime (BTC bull reversal)\u2014avoid SHORT vs bullish BTC OR require 2-strategy confirm. Single LLM + 4x over-leveraged weak thesis.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation_with_bullish_bias",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784043387.1356053,
+      "lesson": "XRP SHORT in bullish consolidation + 4x leverage\u2014$9 SL loss. Regime mismatch. Require 2-strategy confirmation or reduce leverage to 2x for mismatched signals.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SELL",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784055881.1772363,
+      "lesson": "BTC LONG consolidation +$1.91 but confidence_scorer down -$911 on BTC (27% WR). Micro-win noise; avoid or size for rapid exits.",
+      "category": "strategy_edge",
+      "strength": "moderate",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784055975.9200983,
+      "lesson": "Consolidation LONG survivor 3.8h closed for micro-profit. 46% WR regime warrants TP1-based exit, not early profit-lock. Hold survivors >1h for TP.",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784067355.8474677,
+      "lesson": "EXPLORATION mode + low confidence (35) in consolidation \u2192 dead capital (5h, $0.18). Require high confluence (2+ strategies, 65+ conf) for entries.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784067432.1918008,
+      "lesson": "EXPLORATION <65 confidence destroys ROI/hour: 5.16h \u2192 $0.18. Hit SL then recovered. Block at gate per prior guidance (require 65+ conf + 2 strategies).",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784079356.1470528,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784079663.9951875,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784079670.5635397,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784082377.8461018,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784082604.0771255,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784082775.0749185,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784083129.7604675,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784083363.609881,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784092425.68855,
+      "lesson": "BTC confidence_scorer: 29% WR (31 trades) vs 40% system avg. Regime correct, directional thesis failed. Skip or require 3+ confluence.",
+      "category": "strategy_edge",
+      "strength": "moderate",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784092457.966068,
+      "lesson": "confidence_scorer 53% in consolidation barely +$0.37 after 2h+. Weak strategy (40% WR) needs high confidence + regime support. Raise minimum to 65%.",
+      "category": "strategy_edge",
+      "strength": "moderate",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784092490.974147,
+      "lesson": "BTC confidence_scorer LONG stopped 125min in consolidation. Strategy 28% WR on BTC (vs 40% avg). Require 2+ confluence.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784092540.379496,
+      "lesson": "confidence_scorer solos lose money (40% WR, -$909). Gate to 2+ confluence. ETH: thesis failed, SL luck saved it.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784092600.522969,
+      "lesson": "confidence_scorer at 75% confidence on SOL LONG still lost \u2014 strategy WR 40%. Solo signals need 2+ confluence regardless of confidence.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784092700.9714572,
+      "lesson": "SOL LONG solo confidence_scorer in consolidation: 0/3 losses. AVOID solo entries here. Wait for 2+ confluence or skip symbol.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784123463.182583,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784124045.9675968,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784141109.4021068,
+      "lesson": "Consolidation + 2h+ hold = profitable: SOL +$0.79, 46% WR. Moderate leverage trumps regime-shift fears. Hold consolidations",
+      "category": "pattern_win",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784141172.3530343,
+      "lesson": "Exit agent escape hatch exits consolidation too early. Profitable but loses 20-30% upside. Use as risk trigger (tighten SL), not exit.",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784144438.7225747,
+      "lesson": "71% confidence + MFI 91 + MACD divergence in consolidation = poor confluence. Add momentum exhaustion filter.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784144508.7026367,
+      "lesson": "Confidence_scorer assigned 71% to overbought entry (MFI 91, divergence). Add -25 confidence penalty for MFI >85 + divergence to prevent momentum chasing.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784188145.4426303,
+      "lesson": "confidence_scorer on SOL/consolidation: entered 50.67% confidence on trend premise, regime was range\u2014thesis invalidated. Raise entry bar to 55%+.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784188202.085967,
+      "lesson": "SOL consolidation: 50.67% confidence entry violated 55%+ rule. EXPLORATION setup failed in range. Enforce gate or switch to mean-reversion.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784230323.135976,
+      "lesson": "SOL SHORT in consolidation: LLM-only entry exited early by agent\u2014correct risk management. Consolidation directionals need strategy validation",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784230378.8391507,
+      "lesson": "Consolidation SHORT with mechanical SL at 6.3h hold captured +0.54% MFE before reversal. Mechanical exits: 52% WR vs agent discretion: <40%.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784250066.924473,
+      "lesson": "XRP SHORT: confidence_scorer 59% WR edge reinforced (+$0.098, 2.46h). Symbol-level allocation key\u2014overall 40% WR diluted by low-WR symbols",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784250154.3380003,
+      "lesson": "XRP SHORT confidence_scorer: 59% WR consolidation vs 0/5 trending_bear. Regime gate critical\u2014avoid trending_bear. Consolidation regime wins.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784251202.668395,
+      "lesson": "SOL SHORT consolidation: 2.92h hold captured win. confidence_scorer SHORT 51% WR consolidation requires patience\u2014extend hold >2h before TP.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784251280.4777324,
+      "lesson": "SOL SHORT consolidation: 2.92h hold + tight trailing SL captured move and locked profit. Edge (51% WR) holds\u2014extend hold >2h, use trailing SL.",
+      "category": "pattern_win",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784264147.6352146,
+      "lesson": "confidence_scorer alone (41% WR, -$933/135 trades) is net-losing. HARD-BLOCK; require 2+ agreement (74% WR). This SOL SHORT correctly exited on thesis weak.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784264236.1020892,
+      "lesson": "Solo confidence_scorer in consolidation SHORT: 20% WR baseline, LLM confidence 65% but thesis weak. Exit agent escape hatch rescued. Avoid or require 2+ agreement (74% WR).",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784270188.2072499,
+      "lesson": "Regime-mismatched directional trade (SHORT in consolidation) recovered via exit agent's partial-close + BE stop. Exit discipline > entry quality.",
+      "category": "exit_timing",
+      "strength": "weak",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784270260.4138048,
+      "lesson": "Consolidation SHORT profitable via exit agent's close, but edge weak (XRP 50% WR). Exit discipline masks regime mismatch. Require confluence >70% or skip consolidation shorts.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784278776.1866837,
+      "lesson": "Consolidation SHORT + 1h-2h = 30% WR. Exit agent flagged weakness @ +$5.83, trade ran to -$0.37. Close when exit_thesis_valid=false.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SELL",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784278841.9688966,
+      "lesson": "XRP SHORT consolidation: +$5.83 profit@1.88h, thesis weakened, trailing SL lost -$0.37. Range SHORTs 1h-2h: 30% WR. Lock early profit with fixed TP.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784283642.7166371,
+      "lesson": "RSI extreme + momentum exhaustion in consolidation = profit-lock exit before reversal bounce. Thesis broke but trade won by exiting defensively.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784283691.557881,
+      "lesson": "When RSI extreme + momentum exhaustion + 5h+ hold in consolidation, exit defensively. Thesis reversal + exhaustion triggers bounce. Take profit.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784288552.9977236,
+      "lesson": "Consolidation SHORT held 6.4h\u2014thesis correct. Extend SL patience to 4-6h holds in ranges (not <3h). Cap leverage at 1.5x.",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784288670.1256187,
+      "lesson": "Consolidation SHORT 6.38h: SL exit profitable\u2014confirms leverage \u22641.5x rule. Enforce to avoid noise stops.",
+      "category": "sizing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784293014.6120992,
+      "lesson": "XRP SHORT consolidation: TP1 quick exit (2.18h, 2.0x lev) won despite prior caps (\u22641.5x, 4-6h). Regime match + fast TP > leverage/hold duration rules.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784293115.2202086,
+      "lesson": "XRP SHORT: thesis invalidated but TP1 exit (2.18h hold) still won\u2014mechanical execution beats thesis certainty; enforce discipline",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784296613.6023662,
+      "lesson": "SOL SHORT consolidation @ 48% confidence stopped 32m. Low confidence + weak regime (42% WR) = entry trap. Require >55% confidence or breakout.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784296716.1754112,
+      "lesson": "SOL SHORT 48% confidence entered despite >55% gate rule. confidence_scorer 42% WR, -$935 PnL. Gate enforcement failed\u2014add hard controls or escalate strategy review.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784297609.7113292,
+      "lesson": "HYPE SHORT consolidation, 65% confidence, 3.3h hold in mean-reversion window: +$2.95 WIN. Pattern to repeat: consolidation shorts on HYPE >55% confidence.",
+      "category": "pattern_win",
+      "strength": "moderate",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784297695.4228418,
+      "lesson": "HYPE consolidation SHORT >60% confidence wins despite 38% overall WR. This +$2.95 SL exit (3.3h hold) validates setup. Repeat; avoid other HYPE.",
+      "category": "pattern_win",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784407837.9974132,
+      "lesson": "SOL LONG 1.0x exploration survived regime-shift exit veto at 37min, held 3.9h +win\u2014regime rule too aggressive for low-leverage probes",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784407895.619718,
+      "lesson": "Regime-shift exit veto prevented 37m loss-lock; 1.0x SOL recovered over 3.9h +$0.137. Add hold-time gate to regime exits in consolidation.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784414341.781791,
+      "lesson": "Regime sub-shift contradicted LONG thesis mid-trade. Exited +$0.50 before cascade. Monitor regime stability; exit quickly if thesis invalidated.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784414450.7744205,
+      "lesson": "Consolidation LONG stalled at TP1, mean-reversion killed thesis at 2.5h. Exit saved +$0.10 WIN. Close consolidation breakouts if stalled >30min.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784435741.5744932,
+      "lesson": "XRP LONG contradicted regime outlook (bearish 73% SHORT edge), stalled 14h, 0.52% progress. Won by luck\u2014exit on thesis invalidation, not P&L.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784435808.467904,
+      "lesson": "Regime-contradicted entries (73% opposite edge) are noise trades. Add hard regime gate at entry, not soft exit signal.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784453246.746066,
+      "lesson": "Regime shift to trending_bull invalidated SHORT. Exit at 4h despite small profit was correct. 20% WR in trending_bull is structural\u2014not recoverable.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "trending_bull",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784453309.3402395,
+      "lesson": "SOL SHORT won via exit timing, not entry. Regime shift detected mid-trade; closed +0.15% vs. 20% expected loss in trending_bull.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784469290.255682,
+      "lesson": "HYPE SHORT won via regime-aware exit (MFE 73%), but HYPE shorts weak (38% WR, -$559). Exit saved bad thesis\u2014avoid or require downtrend confirmation.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784469393.4772682,
+      "lesson": "HYPE SHORT (38% WR) with 95% confidence entered in consolidation. Regime shifted bullish; Exit Agent + tight SL saved trade. Thesis was wrong. Lesson: Avoid weak symbols or require 2+ strategy confluence for entries.",
+      "category": "thesis_accuracy",
+      "strength": "moderate",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784499926.255078,
+      "lesson": "ETH SHORT 68% conf stopped 87min: regime stated consolidation but actual trending_bull\u2014SHORTs need confirmation",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "trending_bull",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784499974.4232333,
+      "lesson": "ETH SHORT SL'd 87min\u2014regime misclassified consolidation vs trending_bull. Repeats XRP. Need 2+ strategy + regime invalidation exits.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784527335.9200351,
+      "lesson": "SOL LONG: BTC-dependent thesis invalidated (expected reversal, continued down). 2.96h bleed -$1.89. Avoid BTC-reversal entries when BTC trending down.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784527444.9178622,
+      "lesson": "Consolidation reversals: 2.96h hold exceeded optimal <90min. No TP1, -$1.89. Hard exit: 90min or thesis invalidation.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784539625.828951,
+      "lesson": "BTC SHORT in consolidation+bullish: known <30% WR. Recurred despite prior knowledge. Implement entry gate to block before order.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784539713.817386,
+      "lesson": "BTC SHORT in consolidation+bullish: <30% WR but scored 88%. Entry gate failed\u2014add regime-direction conflict check.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784540643.3392565,
+      "lesson": "XRP consolidation short: exit agent retrace-based exit (45%+ threshold) captured +$1.49 and protected from high_volatility regime losses.",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784540772.1528568,
+      "lesson": "16h consolidation SHORT drifted into high_volatility (0% WR XRP). Exit agent retrace exit saved +$1.49. Cap time-stops to 8-12h max on volatile pairs to avoid regime drift.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784548011.4441943,
+      "lesson": "ETH SHORT via LLM_FIRST without ensemble (68% conf, 2.5x leverage) in consolidation\u2014thesis contradicted by +1.0% price move. Require 2+ strategy signals + confidence>75% before SHORT on ETH.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784548093.8127275,
+      "lesson": "confidence_scorer on ETH: 40% WR (-$952). SHORT at 68% conf lost $16.86. Disable or require 85%+ confidence to compensate.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784562332.4778042,
+      "lesson": "HYPE SHORT confidence_scorer: bullish-trend shift at 13.5h invalidated thesis. 36% WR edge\u2014skip or add 6h time-stop.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784562411.0106776,
+      "lesson": "HYPE SHORT: regime-shift invalidated thesis mid-hold; exit delayed to SL. Enforce 6h time-stop or close immediately on bullish-trend regime-shift signal.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784632408.4975133,
+      "lesson": "XRP SHORT in bullish regime (20% WR n=5)\u2014Exit Agent detected & closed thesis-invalidated position. Avoid SHORTs when regime=bullish.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "bullish",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784632483.2825835,
+      "lesson": "XRP SHORT during trending_bull (20% WR): regime-mismatch. Exit Agent closed early, preventing loss. Gate SHORTs when regime=trending_bull.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "trending_bull",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784689864.049342,
+      "lesson": "SOL LONG in consolidation (conf 44.8%, MFE=0): thesis failed, won via exit timing only. Pattern: regime-mismatched LONG loses.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784689940.06996,
+      "lesson": "LLM_FIRST SOL LONG 3.0x in consolidation conf 44.8%: won via exit-agent at 4h, not thesis. Overleveraged regime-mismatch. Size <2.0x or block.",
+      "category": "sizing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1784738256.4347167,
+      "lesson": "BTC LONG consolidation: +17.4pts directional but dead capital after 5.3h. Avoid trend setups in consolidation or enforce <2h hold max.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784738335.2522082,
+      "lesson": "Consolidation trend-setup trap: +17.4pts initial, dead capital after 5.3h + 2.0x. Rule: avoid trends in consolidation, or enforce <1.5h + 1.0x.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784819802.5973659,
+      "lesson": "SOL LONG consolidation: 36min stop. confidence_scorer weak (41% WR, $-954 lifetime PnL). Require 2+ strategy agreement or breakout before entry.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784819897.8347816,
+      "lesson": "LLM confidence 75% failed in consolidation SL\u2014confidence overoptimistic in ranges (actual WR 50% vs stated 75%). Recalibrate.",
+      "category": "psychology",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784821007.3836834,
+      "lesson": "ETH LONG in consolidation: tight SL (0.04%) + 2.0x leverage killed in 51 min. Consolidation unsuitable\u2014avoid or require SL>=0.5% + 1.0x lev",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784821085.7713354,
+      "lesson": "Consolidation mean-reversion regime (49% WR overall) punishes directional LONG. Avoid consolidation LONGs entirely; wait for breakout confirmation",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784863145.0957456,
+      "lesson": "SOL consolidation SHORT: 0.54% MFE partial on unclear EMA thesis ('TBD direction') fails. Exit only on confirmed reversal, not speculation. Avoid small-MFE partials.",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784863218.8589957,
+      "lesson": "SOL SHORT consolidation: 0.54% MFE partial closed speculatively on EMA (correct thesis). Exit Agent must require explicit reversal confirmation, not EMA speculation, to avoid killing directional trades.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784911073.0777066,
+      "lesson": "confidence_scorer LONG on BTC without strategy confluence: 20% WR (5 trades). Regime shift trending_bull\u2192trending_bear killed position. Require 2+ strategies for BTC.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "trending_bull",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784911131.9332285,
+      "lesson": "Solo confidence_scorer LONG BTC in trending_bull: regime flipped bear in 47m. 20% WR solo vs 74% with 2+ confluence. Enforce gate.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "trending_bull",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784934397.146182,
+      "lesson": "LLM_FIRST LONG in consolidation+bearish contradicted Scout playbook (SHORT). Exit agent caught regime-thesis mismatch at 15min. Tighten entry gating for direction-regime misalignment.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1784934440.8495536,
+      "lesson": "HYPE LONG failed in consolidation+bearish\u2014entry conflicted with regime direction. Tighten entry gate: reject direction-regime misalignment.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785004571.172219,
+      "lesson": "SHORT in bullish consolidation: $-10 loss in 4m due to regime hostility. Reject SHORT when consolidation shows bullish bias.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785004611.7383504,
+      "lesson": "SHORT in consolidation + bullish bias = regime hostile, even at 77% conf. Avoid or flip to LONG; early LLM exit was correct.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785008307.5964918,
+      "lesson": "SHORT consolidation + bullish confirmation = regime hostile. Lost $0.50 in 36s. RULE: Require bearish confluence for SHORT in consolidation or Critic veto.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785008367.2350936,
+      "lesson": "SHORT consolidation without bullish ruled-out = hostile regime, stop hit 36s. ENFORCE: Skip or require Critic veto gate.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785010582.9197972,
+      "lesson": "XRP SHORT in consolidation\u2014long-crowded OI signals bullish break, not range. Check OI pre-entry; block if >5x long. Prevent at entry gate, not exit.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785010666.9531722,
+      "lesson": "SHORT in consolidation + crowded long OI (>5x) \u2192 4.6min LLM exit/loss. Entry gate didn't validate OI. Block SHORT pre-entry if opposite OI >5x.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785068241.964191,
+      "lesson": "SOL SHORT in consolidation: Scout forecasted breakout, entry missed forward regime. RULE: When Scout forecasts breakout, skip opposite-direction entries until breakout confirmed.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785068284.0586843,
+      "lesson": "SOL SHORT contradicted Scout bullish breakout: Entry gate failed, LLM_EXIT_HIGH (95%) closed cleanly before loss. Rule working via exit.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785139195.2602665,
+      "lesson": "Consolidation LONG at 45.9% confidence + invalid thesis = 30s noise kill. Require 65%+ OR 2+ strategy agree for consolidation LONG.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785139269.6154213,
+      "lesson": "Consolidation LONG gate failed: 45.9% conf \u2192 29s kill. Block if conf<65% AND no 2-agree.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785185184.2847497,
+      "lesson": "BTC long at 45.76% conf + 2x leverage in consolidation; regime shifted to high_vol (0% WR). Exit agent closed correctly at 2h\u2014win is rescue, not edge. Don't leverage sub-50% confidence.",
+      "category": "entry_timing",
+      "strength": "moderate",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785185252.8794422,
+      "lesson": "Don't leverage sub-50% confidence. This BTC 45.76% + 2x in consolidation was rescued by exit agent, not won by edge. Entry discipline > exit luck.",
+      "category": "sizing",
+      "strength": "strong",
+      "symbol": "BTC",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785189225.70241,
+      "lesson": "XRP SHORT in consolidation broken: 3 consecutive losses (-$20.66). Pattern dead\u2014avoid until regime shift or 3+ strategy agreement.",
+      "category": "pattern_loss",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785189282.7936876,
+      "lesson": "Sunk-cost immunity failed: XRP SHORT consolidation (3 prior losses, 4th lost). Gate must block >2-loss streaks unless 3+ strategies agree.",
+      "category": "psychology",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785206117.7178588,
+      "lesson": "MFE-based partial close rule (1%+ MFE in consolidation, 5h hold) captured +$5.19 profit before thesis invalidation. Validated rule for range regimes.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785206191.8886144,
+      "lesson": "HYPE SHORT thesis was weak (0/5 WR in trending_bear data), but mechanical MFE+time exit rule captured +$5.19 win\u2014exit rules outperform weak directional accuracy",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785206957.3419268,
+      "lesson": "SOL SHORT: regime predicted bounce within 2-4h, contradicting SHORT thesis. Exit caught invalidation at 75min. Filter SHORTs when outlook bullish.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785226550.5160663,
+      "lesson": "HYPE SHORT: 39% WR, -$390 cumulative. Thesis invalidated in trending_bear (0% WR). AVOID or require 2+ signal confluence.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785226650.578512,
+      "lesson": "Don't exit consolidation trades on cross-regime pattern breaks. HYPE SHORT: exit agent flagged trending_bear weakness but +$4.2 gain confirmed. Thesis holds in consolidation\u2014let TP1 decide.",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785230019.594502,
+      "lesson": "SOL SHORT consolidation: 6.1h dead capital trap (0.01% move, -$0.071). Avoid <3-strategy or skip consolidation.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785230104.9884875,
+      "lesson": "confidence_scorer on SOL 0/3 WR, consolidation SHORT dead capital $-0.071\u2014strategy miscalibrated. Disable solo or require 3+ votes.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785232727.5737972,
+      "lesson": "HYPE SHORT consolidation exited 79min: regime shifted, thesis failed. SHORTs in consolidation show 81% noise, 18% true WR. Avoid or require 3+ agreement.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785232755.7074327,
+      "lesson": "Block SHORTs in consolidation\u201481% noise rate, 18% true WR. HYPE SHORT lost $0.28 despite 78% conf. Regime + side structural mismatch. Require 3+ agreement minimum.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785240283.9434836,
+      "lesson": "NEAR SHORT: invalid thesis (0% WR) survived 3h\u2192+$2.20. Weak setup (38% WR). Close when flagged invalid; this is survivor bias, not edge recovery.",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785240371.8149166,
+      "lesson": "2.0x leverage on 56% confidence + 44% WR setup = fragile. Position luck-survived 3h\u2192+$2.20. Cap leverage \u22641.5x for confidence <60% entries.",
+      "category": "sizing",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785241797.2977705,
+      "lesson": "NEAR SHORT in consolidation+micro-bullish has regime conflict, invalidating thesis. Avoid or wait for explicit bearish confirmation.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785241854.518683,
+      "lesson": "confidence_scorer in consolidation has 40% WR (losing edge). Skip or require 2-strategy agreement. NEAR SHORT 82% confidence was false positive.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785245704.077013,
+      "lesson": "HYPE SHORT in consolidation contradicted by bullish momentum (1h +2.47). confidence_scorer 40% WR in range \u2014 require 2-strategy agreement.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785245790.0188727,
+      "lesson": "Consolidation + bullish momentum punishes SHORT (mean-revert against direction). Avoid SHORT unless volatility drops or price breaks below range.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785245970.7816594,
+      "lesson": "Consolidation SHORT + bullish momentum: $0.74 loss in 60s (4.0x). Lacked 2-strategy mechanical agreement. Require consensus before directional trades in range.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785246029.3207223,
+      "lesson": "Consolidation SHORT on solo confidence_scorer + bullish 1h momentum invalidates thesis in 60s. Require 2-strategy agreement.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785348367.7417943,
+      "lesson": "Consolidation + SHORT = mean-reversion trap. Skip or require breakout + 2-strategy agreement.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785348400.5769944,
+      "lesson": "NEAR SHORT in consolidation stopped 2.24h \u2014 consolidation=mean-reversion trap; skip SHORTs without breakout+2-agree",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785350777.7537003,
+      "lesson": "Consolidation SHORTs have 0% WR (HYPE, ETH confirmed). STOP SHORTing consolidation\u2014only LONGs work. Regime-thesis mismatch.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785350799.4015052,
+      "lesson": "SOL SHORT in trending regime (labeled consolidation). Thesis invalid (0% WR). BLOCK shorts in trends or require 3-strategy confluence.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "trending",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785350836.9148483,
+      "lesson": "Consolidation SHORTs 0% WR (2nd time). Exit agent rescued, entry gate failed. SOLUTION: Block consolidation SHORTs at entry or require 3+ confluence.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785350841.234651,
+      "lesson": "Consolidation SHORTs confirmed 0% WR (SOL/HYPE/ETH). Block at gate or require 3-strategy confluence minimum.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785351727.4808257,
+      "lesson": "Consolidation SHORT held 2.4h, still lost. Directional trades fail in ranges regardless of duration. Block consolidation SHORTs or require 3+ confluence.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785351810.8293808,
+      "lesson": "Regime misclassified: stated consolidation, actual trending_bear. HYPE SHORT lost. Require 2-TF regime validation (1h+6h) at pre-entry gate.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785359180.8308933,
+      "lesson": "Oversold RSI + accumulation signals mean-reversion UP, contradicting SHORT thesis. Avoid SHORTs in mean-reverting setups. Add to pre-entry gate.",
+      "category": "thesis_accuracy",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785359260.76167,
+      "lesson": "Solo regime_trend SHORT HYPE consolidation: 0% WR pattern. High leverage (2.5x > threshold 2.1x) compounds. Gate reject or need 2-strategy",
+      "category": "pattern_loss",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785363133.4905097,
+      "lesson": "NEAR SHORT consolidation: 0% WR pattern + regime-thesis mismatch. Continuation needs breakout, not consolidation. Avoid or require 2-strategy + \u22642.0x.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785363210.5973868,
+      "lesson": "NEAR SHORT consolidation: 0% WR, $51 loss at 3x despite 95% confidence. Skip symbol-setup mismatches\u2014require 2-strategy confluence, \u22641.5x leverage, verify edge \u226540% first.",
+      "category": "strategy_edge",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785465673.0707092,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785465713.8744838,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785467854.9234915,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785469017.0850096,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785469099.188559,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785550814.1302125,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1789417419.0302024,
+      "lesson": "SOL SHORT contradicted bullish regime conviction in consolidation\u2014avoid directional shorts opposite regime bias",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1789417467.505423,
+      "lesson": "EXPLORATION SHORT vs bullish regime in consolidation: SL hit 47min. Avoid contradicted regime, or size 50% smaller with 1.5x wider SL",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790019148.9038048,
+      "lesson": "SHORT into bullish trend via consolidation misclassification\u2014add momentum verification before range-trade entry",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790019204.005372,
+      "lesson": "NEAR consolidation SHORT: regime misclassified bullish, 0/5 mean reversion pattern. Add RSI<45+MACD negative confirmation before entry",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790022615.3904896,
+      "lesson": "SOL+trend = 20% WR vs 40% baseline. Won by noise, not edge. AVOID or swap mean reversion. Enforce 4h dead capital exit.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "trend",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790022682.230657,
+      "lesson": "SOL LONG in trend: won by luck (+$0.024, false thesis). Skip SOL-trend or require >80% confidence; current 75% allows noise wins masking poor edge.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "trend",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790033421.5368135,
+      "lesson": "XRP mean_reversion: 0% WR (3 trades, -$25). Pattern profitless in consolidation; stop using\u2014test range-fade or breakout instead.",
+      "category": "pattern_loss",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790033511.196168,
+      "lesson": "Entered without full confluence (missing NEAR lead-lag). Require \u22653 independent signals before entry on weak-edge setups.",
+      "category": "thesis_accuracy",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790273015.6484241,
+      "lesson": "XRP LONG failed in bearish consolidation (62% conf). Regime + bias hostile to thesis. Skip or raise confidence to 70%+ + full 3-signal confluence.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790273055.5358057,
+      "lesson": "XRP LONG in bearish consolidation (62% conf) = regime mismatch. Skip or wait for breakout + 70%+ confidence + 3-signal confluence.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790345789.9786053,
+      "lesson": "NEAR LONG consolidation 83% confidence survived 2.4h\u2014high-confidence entries reverse 17% symbol underperformance",
+      "category": "pattern_win",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790345858.2134104,
+      "lesson": "83% confidence entry beat consolidation base (43% WR), survived SL hit. Entry quality > regime. Thesis correct\u2014keep high-confidence NEAR longs despite consolidation headwind.",
+      "category": "entry_timing",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790355244.400643,
+      "lesson": "Mean_reversion in consolidation: 0% WR (5 trades, -$25). Stopped despite 78% confidence. Regime mismatch kills thesis. Disable in consolidation.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790355278.6770155,
+      "lesson": "Mean_reversion in consolidation: 0% WR (5 trades, $-25). SKIP entries when regime=consolidation + setup=mean_reversion, regardless of confidence.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790358442.4416053,
+      "lesson": "SOL consolidation: Exit Agent false regime-shift detection closed LONG at 1.52h (+$0.05). In range, disable regime-shift exits or require secondary confirmation.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790358526.907918,
+      "lesson": "EXPLORATION entries 70%+ confidence SOL consolidation reach profit within 1.5h despite exit noise",
+      "category": "entry_timing",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790360530.1593258,
+      "lesson": "Pattern reinforced: consolidation longs stagnating >3h are dead capital\u2014exit at 2h if no \u00b10.3% progress",
+      "category": "pattern_loss",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790360611.082207,
+      "lesson": "EXPLORATION longs in consolidation: failed at 3.77h (-$0.16, zero progress). AVOID or enforce 2h hard exit.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "ETH",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790365746.6457617,
+      "lesson": "Solo LLM signal, 65% confidence, consolidation regime: Below solo-signal threshold (75%+ needed). Dead capital at 5.3h proves low edge. Require 2-confluence or >=75% solo.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "HYPE",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790397567.9375277,
+      "lesson": "EXPLORATION entries in consolidation at 73-75% confidence create 5h+ dead capital traps. Require 80%+ confidence or avoid setup type in ranges.",
+      "category": "entry_timing",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790397612.0991168,
+      "lesson": "EXPLORATION in consolidation 73%: directional thesis proved correct (MFE) but trapped 6.3h, SL hit. Regime-setup mismatch\u2014require 80%+ or avoid.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "SOL",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790398647.7343843,
+      "lesson": "EXPLORATION LONG in consolidation at 76% confidence trapped 2.27h. Thesis correct but regime-squeezed. Require 80%+ + 2+ confluence or skip.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790398698.1842186,
+      "lesson": "Consolidation LONG at 76% conf + solo signal violated regime rule. Mean-reverting regime\u2014skip unless \u226580% confidence + 2+ strategy confluence.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790477956.6798491,
+      "lesson": "NEAR LONG in consolidation: 83% confidence insufficient without confluence. Mean-reversion in consolidation 0% WR. Require 2+ strategy agreement or skip",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790478002.3748548,
+      "lesson": "Exploration entries in consolidation without strategy confluence are fragile\u2014exited by LLM on early loss (1h). Require 2+ agreement or skip symbol.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790535462.513446,
+      "lesson": "SHORT in bullish consolidation = regime mismatch. 0% WR mean-reversion on NEAR. Pre-filter: SHORT only in neutral/bearish consolidation or with 2+ consensus.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790535510.0883677,
+      "lesson": "SHORT in bullish consolidation (0% WR, 5/5 losses). Regime contradicts thesis. LLM override at 75% conf caused $8.70 loss in 27min.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790606716.598069,
+      "lesson": "MFE-locking framework (50% at 3.5%+) + 4h hold window rescued mean-reversion consolidation (0% baseline) to rare win. Execution > setup.",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790606761.7258787,
+      "lesson": "Mean-reversion consolidation: 50% lock at 3.55% MFE + 50% trail rescued NEAR 0% baseline \u2192 +$0.28 win\u2014apply framework",
+      "category": "exit_timing",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790966511.1934571,
+      "lesson": "XRP SHORT in consolidation (bullish regime) thesis-invalid\u20140% WR historically. Exit agent right to close despite +$50. Avoid this pattern.",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790966549.350821,
+      "lesson": "XRP SHORT in bullish consolidation won $+50 but thesis invalid (0% WR hist). Exit agent saved by closing early\u2014avoid",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "XRP",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1791421178.4298232,
+      "lesson": "NEAR LONG +$0.10 in range: exploration entry, 2.7h hold, MFE ~1.46% but 71-80% given back; TP1 6% away unreachable. Use range-sized TP1 (~1.5%) or trail early",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1791421185.2955532,
+      "lesson": "NEAR LONG exploration in range hit SL above entry (+$0.10) after 2.8h; MFE ~1.46% was 71% retraced, TP1 6% away was unreachable. Use ~1.5% range TP1 or trail early.",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1791477274.0213194,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1791482797.8937838,
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "category": "regime_mismatch",
+      "strength": "moderate",
+      "symbol": "SOL",
+      "regime": "range",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1791511072.9295707,
+      "lesson": "NEAR SHORT in consolidation won +$15.29 after ~16.7h hold at 2x\u2014patient range-fade survived far past 2h; keep low leverage and let range-fade shorts run",
+      "category": "pattern_win",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1791511081.2462153,
+      "lesson": "NEAR SHORT range-fade won +$15.29 via TRAILING_STOP after ~16.7h at 2x in consolidation\u2014patience past 2h paid; repeat with low leverage, trail wide",
+      "category": "pattern_win",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "SHORT",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1791678371.1878192,
+      "lesson": "NEAR LONG in consolidation drifted 10h, MFE ~0, time-stop at -2.3% with SL 0.18% away\u2014no momentum, no edge; skip longs w/o breakout trigger, cut dead trades by ~3h",
+      "category": "exit_timing",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1791678377.875937,
+      "lesson": "NEAR LONG in consolidation bled 10h to SL (-$6.70, 2x lev), MFE ~0, never reached TP1\u2014no breakout trigger; cut dead longs at ~3h or skip without breakout",
+      "category": "regime_mismatch",
+      "strength": "strong",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
+    }
+  ],
+  "prompt_injections": {
+    "critic": [
+      {
+        "rule": "[regime_mismatch] Consolidation LONG at 76% conf + solo signal violated regime rule. Mean-reverting regime\u2014skip unless \u226580% confidence + 2",
+        "ts": 1790398698.185067
+      },
+      {
+        "rule": "[regime_mismatch] NEAR LONG in consolidation: 83% confidence insufficient without confluence. Mean-reversion in consolidation 0% WR. Requi",
+        "ts": 1790477956.68637
+      },
+      {
+        "rule": "[regime_mismatch] Exploration entries in consolidation without strategy confluence are fragile\u2014exited by LLM on early loss (1h). Require 2",
+        "ts": 1790478002.37512
+      },
+      {
+        "rule": "[regime_mismatch] SHORT in bullish consolidation = regime mismatch. 0% WR mean-reversion on NEAR. Pre-filter: SHORT only in neutral/bearis",
+        "ts": 1790535462.5146337
+      },
+      {
+        "rule": "[regime_mismatch] SHORT in bullish consolidation (0% WR, 5/5 losses). Regime contradicts thesis. LLM override at 75% conf caused $8.70 los",
+        "ts": 1790535510.0883863
+      },
+      {
+        "rule": "[exit_timing] MFE-locking framework (50% at 3.5%+) + 4h hold window rescued mean-reversion consolidation (0% baseline) to rare win. Ex",
+        "ts": 1790606716.598705
+      },
+      {
+        "rule": "[exit_timing] Mean-reversion consolidation: 50% lock at 3.55% MFE + 50% trail rescued NEAR 0% baseline \u2192 +$0.28 win\u2014apply framework",
+        "ts": 1790606761.7259018
+      },
+      {
+        "rule": "[regime_mismatch] XRP SHORT in consolidation (bullish regime) thesis-invalid\u20140% WR historically. Exit agent right to close despite +$50. A",
+        "ts": 1790966511.193544
+      },
+      {
+        "rule": "[regime_mismatch] XRP SHORT in bullish consolidation won $+50 but thesis invalid (0% WR hist). Exit agent saved by closing early\u2014avoid",
+        "ts": 1790966549.3508582
+      },
+      {
+        "rule": "[regime_mismatch] NEAR LONG in consolidation bled 10h to SL (-$6.70, 2x lev), MFE ~0, never reached TP1\u2014no breakout trigger; cut dead long",
+        "ts": 1791678377.875983
+      }
+    ],
+    "trade": [
+      {
+        "rule": "SOL LONG in consolidation regime: LOSS. EXPLORATION in consolidation 73%: directional thesis proved correct (MFE) but trapped 6.3h, SL hit. Regime-setup mismatc",
+        "ts": 1790397612.0991402
+      },
+      {
+        "rule": "XRP LONG in consolidation regime: LOSS. EXPLORATION LONG in consolidation at 76% confidence trapped 2.27h. Thesis correct but regime-squeezed. Require 80%+ + 2+",
+        "ts": 1790398647.7345352
+      },
+      {
+        "rule": "XRP LONG in consolidation regime: LOSS. Consolidation LONG at 76% conf + solo signal violated regime rule. Mean-reverting regime\u2014skip unless \u226580% confidence + 2",
+        "ts": 1790398698.1849627
+      },
+      {
+        "rule": "NEAR LONG in consolidation regime: LOSS. NEAR LONG in consolidation: 83% confidence insufficient without confluence. Mean-reversion in consolidation 0% WR. Requi",
+        "ts": 1790477956.6856558
+      },
+      {
+        "rule": "NEAR LONG in consolidation regime: LOSS. Exploration entries in consolidation without strategy confluence are fragile\u2014exited by LLM on early loss (1h). Require 2",
+        "ts": 1790478002.3750618
+      },
+      {
+        "rule": "NEAR SHORT in consolidation regime: LOSS. SHORT in bullish consolidation = regime mismatch. 0% WR mean-reversion on NEAR. Pre-filter: SHORT only in neutral/bearis",
+        "ts": 1790535462.5145764
+      },
+      {
+        "rule": "NEAR SHORT in consolidation regime: LOSS. SHORT in bullish consolidation (0% WR, 5/5 losses). Regime contradicts thesis. LLM override at 75% conf caused $8.70 los",
+        "ts": 1790535510.0883818
+      },
+      {
+        "rule": "XRP SHORT in consolidation regime: WIN. XRP SHORT in consolidation (bullish regime) thesis-invalid\u20140% WR historically. Exit agent right to close despite +$50. A",
+        "ts": 1790966511.1935222
+      },
+      {
+        "rule": "XRP SHORT in consolidation regime: WIN. XRP SHORT in bullish consolidation won $+50 but thesis invalid (0% WR hist). Exit agent saved by closing early\u2014avoid",
+        "ts": 1790966549.350849
+      },
+      {
+        "rule": "NEAR LONG in consolidation regime: LOSS. NEAR LONG in consolidation bled 10h to SL (-$6.70, 2x lev), MFE ~0, never reached TP1\u2014no breakout trigger; cut dead long",
+        "ts": 1791678377.875971
+      }
+    ],
+    "regime": [
+      {
+        "rule": "EXPLORATION in consolidation 73%: directional thesis proved correct (MFE) but trapped 6.3h, SL hit. Regime-setup mismatch\u2014require 80%+ or avoid.",
+        "ts": 1790397612.0991454
+      },
+      {
+        "rule": "EXPLORATION LONG in consolidation at 76% confidence trapped 2.27h. Thesis correct but regime-squeezed. Require 80%+ + 2+ confluence or skip.",
+        "ts": 1790398647.73455
+      },
+      {
+        "rule": "Consolidation LONG at 76% conf + solo signal violated regime rule. Mean-reverting regime\u2014skip unless \u226580% confidence + 2+ strategy confluence.",
+        "ts": 1790398698.1850495
+      },
+      {
+        "rule": "NEAR LONG in consolidation: 83% confidence insufficient without confluence. Mean-reversion in consolidation 0% WR. Require 2+ strategy agreement or sk",
+        "ts": 1790477956.6860805
+      },
+      {
+        "rule": "Exploration entries in consolidation without strategy confluence are fragile\u2014exited by LLM on early loss (1h). Require 2+ agreement or skip symbol.",
+        "ts": 1790478002.3751075
+      },
+      {
+        "rule": "SHORT in bullish consolidation = regime mismatch. 0% WR mean-reversion on NEAR. Pre-filter: SHORT only in neutral/bearish consolidation or with 2+ con",
+        "ts": 1790535462.514614
+      },
+      {
+        "rule": "SHORT in bullish consolidation (0% WR, 5/5 losses). Regime contradicts thesis. LLM override at 75% conf caused $8.70 loss in 27min.",
+        "ts": 1790535510.0883846
+      },
+      {
+        "rule": "XRP SHORT in consolidation (bullish regime) thesis-invalid\u20140% WR historically. Exit agent right to close despite +$50. Avoid this pattern.",
+        "ts": 1790966511.1935337
+      },
+      {
+        "rule": "XRP SHORT in bullish consolidation won $+50 but thesis invalid (0% WR hist). Exit agent saved by closing early\u2014avoid",
+        "ts": 1790966549.3508534
+      },
+      {
+        "rule": "NEAR LONG in consolidation bled 10h to SL (-$6.70, 2x lev), MFE ~0, never reached TP1\u2014no breakout trigger; cut dead longs at ~3h or skip without break",
+        "ts": 1791678377.8759768
+      }
+    ],
+    "risk": [
+      {
+        "rule": "ETH SHORT: relief bounce thesis failed. Fee drag (3.5%) > TP (1.5%) = EV-negative. Rule: skip if fee > target; avoid SHORT bounces.",
+        "ts": 1780783581.436058
+      },
+      {
+        "rule": "SOL SHORT: TP1 1.5% < fee drag 3.5%. Block SHORT if TP < 2.5x fees\u2014unprofitable before signal.",
+        "ts": 1780783660.0544698
+      }
+    ]
+  },
+  "calibration": {
+    "predicted": [
+      68.39999999999999,
+      68.39999999999999,
+      68.39999999999999,
+      68.39999999999999,
+      88.35,
+      88.35,
+      61.99999999999999,
+      61.99999999999999,
+      68.39999999999999,
+      68.39999999999999,
+      58.9,
+      58.9,
+      74.0,
+      74.0,
+      44.814,
+      44.814,
+      50.0,
+      50.0,
+      75.0,
+      75.0,
+      61.044,
+      61.044,
+      78.0,
+      78.0,
+      80.0,
+      80.0,
+      77.34556810158732,
+      77.34556810158732,
+      76.06502820432077,
+      76.06502820432077,
+      76.06502820432077,
+      76.06502820432077,
+      95.0,
+      95.0,
+      45.903,
+      45.903,
+      45.762,
+      45.762,
+      66.0,
+      66.0,
+      73.0,
+      73.0,
+      56.00000000000001,
+      56.00000000000001,
+      73.0,
+      73.0,
+      78.0,
+      78.0,
+      56.00000000000001,
+      56.00000000000001,
+      82.0,
+      82.0,
+      73.0,
+      73.0,
+      71.0,
+      71.0,
+      64.87460610670433,
+      64.87460610670433,
+      66.5,
+      74.47079865261327,
+      66.5,
+      74.47079865261327,
+      82.12426952052382,
+      82.12426952052382,
+      95.0,
+      95.0,
+      95.0,
+      95.0,
+      69.49354016540175,
+      69.49354016540175,
+      70.45859,
+      70.45859,
+      75.0,
+      75.0,
+      75.0,
+      75.0,
+      61.99999999999999,
+      61.99999999999999,
+      83.0,
+      78.0,
+      78.0,
+      71.0,
+      71.0,
+      73.0,
+      73.0,
+      65.0,
+      73.0,
+      76.0,
+      76.0,
+      83.0,
+      83.0,
+      75.153103,
+      75.153103,
+      79.14299796513002,
+      60.00754700000001,
+      60.00754700000001,
+      70.178264,
+      70.178264,
+      67.0,
+      67.0
+    ],
+    "actual": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0
+    ]
+  },
+  "risk_constraints": [
+    {
+      "rule": "Consolidation SHORTs confirmed 0% WR (SOL/HYPE/ETH). Block at gate or require 3-strategy confluence minimum.",
+      "ts": 1785350841.2347329,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "Consolidation SHORT held 2.4h, still lost. Directional trades fail in ranges regardless of duration. Block consolidation SHORTs or require 3+ confluen",
+      "ts": 1785351727.481046,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "Regime misclassified: stated consolidation, actual trending_bear. HYPE SHORT lost. Require 2-TF regime validation (1h+6h) at pre-entry gate.",
+      "ts": 1785351810.8295045,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "NEAR SHORT consolidation: 0% WR pattern + regime-thesis mismatch. Continuation needs breakout, not consolidation. Avoid or require 2-strategy + \u22642.0x.",
+      "ts": 1785363133.4906313,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "SOL SHORT contradicted bullish regime conviction in consolidation\u2014avoid directional shorts opposite regime bias",
+      "ts": 1789417419.0304394,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "EXPLORATION SHORT vs bullish regime in consolidation: SL hit 47min. Avoid contradicted regime, or size 50% smaller with 1.5x wider SL",
+      "ts": 1789417467.5054734,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "SHORT into bullish trend via consolidation misclassification\u2014add momentum verification before range-trade entry",
+      "ts": 1790019148.910811,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "NEAR consolidation SHORT: regime misclassified bullish, 0/5 mean reversion pattern. Add RSI<45+MACD negative confirmation before entry",
+      "ts": 1790019204.005416,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "XRP LONG failed in bearish consolidation (62% conf). Regime + bias hostile to thesis. Skip or raise confidence to 70%+ + full 3-signal confluence.",
+      "ts": 1790273015.6562908,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "XRP LONG in bearish consolidation (62% conf) = regime mismatch. Skip or wait for breakout + 70%+ confidence + 3-signal confluence.",
+      "ts": 1790273055.535982,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "Mean_reversion in consolidation: 0% WR (5 trades, -$25). Stopped despite 78% confidence. Regime mismatch kills thesis. Disable in consolidation.",
+      "ts": 1790355244.4015899,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "Mean_reversion in consolidation: 0% WR (5 trades, $-25). SKIP entries when regime=consolidation + setup=mean_reversion, regardless of confidence.",
+      "ts": 1790355278.6770813,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "EXPLORATION in consolidation 73%: directional thesis proved correct (MFE) but trapped 6.3h, SL hit. Regime-setup mismatch\u2014require 80%+ or avoid.",
+      "ts": 1790397612.0991797,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "EXPLORATION LONG in consolidation at 76% confidence trapped 2.27h. Thesis correct but regime-squeezed. Require 80%+ + 2+ confluence or skip.",
+      "ts": 1790398647.7350795,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "Consolidation LONG at 76% conf + solo signal violated regime rule. Mean-reverting regime\u2014skip unless \u226580% confidence + 2+ strategy confluence.",
+      "ts": 1790398698.1873198,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "NEAR LONG in consolidation: 83% confidence insufficient without confluence. Mean-reversion in consolidation 0% WR. Require 2+ strategy agreement or sk",
+      "ts": 1790477956.6884553,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "Exploration entries in consolidation without strategy confluence are fragile\u2014exited by LLM on early loss (1h). Require 2+ agreement or skip symbol.",
+      "ts": 1790478002.3752809,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "SHORT in bullish consolidation = regime mismatch. 0% WR mean-reversion on NEAR. Pre-filter: SHORT only in neutral/bearish consolidation or with 2+ con",
+      "ts": 1790535462.5151823,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "SHORT in bullish consolidation (0% WR, 5/5 losses). Regime contradicts thesis. LLM override at 75% conf caused $8.70 loss in 27min.",
+      "ts": 1790535510.0884159,
+      "source": "regime_loss"
+    },
+    {
+      "rule": "NEAR LONG in consolidation bled 10h to SL (-$6.70, 2x lev), MFE ~0, never reached TP1\u2014no breakout trigger; cut dead longs at ~3h or skip without break",
+      "ts": 1791678377.8760223,
+      "source": "regime_loss"
+    }
+  ],
+  "regime_patterns": [
+    {
+      "ts": 1785010582.920496,
+      "regime": "consolidation",
+      "lesson": "XRP SHORT in consolidation\u2014long-crowded OI signals bullish break, not range. Check OI pre-entry; block if >5x long. Prevent at entry gate, not exit.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785010666.9532497,
+      "regime": "consolidation",
+      "lesson": "SHORT in consolidation + crowded long OI (>5x) \u2192 4.6min LLM exit/loss. Entry gate didn't validate OI. Block SHORT pre-entry if opposite OI >5x.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785068241.964801,
+      "regime": "consolidation",
+      "lesson": "SOL SHORT in consolidation: Scout forecasted breakout, entry missed forward regime. RULE: When Scout forecasts breakout, skip opposite-direction entries until breakout confirmed.",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1785139195.2604353,
+      "regime": "consolidation",
+      "lesson": "Consolidation LONG at 45.9% confidence + invalid thesis = 30s noise kill. Require 65%+ OR 2+ strategy agree for consolidation LONG.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785139269.6154873,
+      "regime": "consolidation",
+      "lesson": "Consolidation LONG gate failed: 45.9% conf \u2192 29s kill. Block if conf<65% AND no 2-agree.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785206957.3420863,
+      "regime": "consolidation",
+      "lesson": "SOL SHORT: regime predicted bounce within 2-4h, contradicting SHORT thesis. Exit caught invalidation at 75min. Filter SHORTs when outlook bullish.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785230019.5952713,
+      "regime": "consolidation",
+      "lesson": "SOL SHORT consolidation: 6.1h dead capital trap (0.01% move, -$0.071). Avoid <3-strategy or skip consolidation.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785232727.5742543,
+      "regime": "consolidation",
+      "lesson": "HYPE SHORT consolidation exited 79min: regime shifted, thesis failed. SHORTs in consolidation show 81% noise, 18% true WR. Avoid or require 3+ agreement.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785232755.70753,
+      "regime": "consolidation",
+      "lesson": "Block SHORTs in consolidation\u201481% noise rate, 18% true WR. HYPE SHORT lost $0.28 despite 78% conf. Regime + side structural mismatch. Require 3+ agreement minimum.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785241797.2998743,
+      "regime": "consolidation",
+      "lesson": "NEAR SHORT in consolidation+micro-bullish has regime conflict, invalidating thesis. Avoid or wait for explicit bearish confirmation.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785245704.0782838,
+      "regime": "consolidation",
+      "lesson": "HYPE SHORT in consolidation contradicted by bullish momentum (1h +2.47). confidence_scorer 40% WR in range \u2014 require 2-strategy agreement.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785245790.0190146,
+      "regime": "consolidation",
+      "lesson": "Consolidation + bullish momentum punishes SHORT (mean-revert against direction). Avoid SHORT unless volatility drops or price breaks below range.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785245970.7817965,
+      "regime": "consolidation",
+      "lesson": "Consolidation SHORT + bullish momentum: $0.74 loss in 60s (4.0x). Lacked 2-strategy mechanical agreement. Require consensus before directional trades in range.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785246029.3208792,
+      "regime": "consolidation",
+      "lesson": "Consolidation SHORT on solo confidence_scorer + bullish 1h momentum invalidates thesis in 60s. Require 2-strategy agreement.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785348367.7418683,
+      "regime": "consolidation",
+      "lesson": "Consolidation + SHORT = mean-reversion trap. Skip or require breakout + 2-strategy agreement.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785348400.5770442,
+      "regime": "consolidation",
+      "lesson": "NEAR SHORT in consolidation stopped 2.24h \u2014 consolidation=mean-reversion trap; skip SHORTs without breakout+2-agree",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785350777.7543714,
+      "regime": "consolidation",
+      "lesson": "Consolidation SHORTs have 0% WR (HYPE, ETH confirmed). STOP SHORTing consolidation\u2014only LONGs work. Regime-thesis mismatch.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785350799.401547,
+      "regime": "trending",
+      "lesson": "SOL SHORT in trending regime (labeled consolidation). Thesis invalid (0% WR). BLOCK shorts in trends or require 3-strategy confluence.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785350836.9148965,
+      "regime": "consolidation",
+      "lesson": "Consolidation SHORTs 0% WR (2nd time). Exit agent rescued, entry gate failed. SOLUTION: Block consolidation SHORTs at entry or require 3+ confluence.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785350841.2347062,
+      "regime": "consolidation",
+      "lesson": "Consolidation SHORTs confirmed 0% WR (SOL/HYPE/ETH). Block at gate or require 3-strategy confluence minimum.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785351727.4809582,
+      "regime": "consolidation",
+      "lesson": "Consolidation SHORT held 2.4h, still lost. Directional trades fail in ranges regardless of duration. Block consolidation SHORTs or require 3+ confluence.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785351810.829472,
+      "regime": "consolidation",
+      "lesson": "Regime misclassified: stated consolidation, actual trending_bear. HYPE SHORT lost. Require 2-TF regime validation (1h+6h) at pre-entry gate.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785363133.4905894,
+      "regime": "consolidation",
+      "lesson": "NEAR SHORT consolidation: 0% WR pattern + regime-thesis mismatch. Continuation needs breakout, not consolidation. Avoid or require 2-strategy + \u22642.0x.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785465673.0707204,
+      "regime": "range",
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785465713.8744946,
+      "regime": "range",
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785467854.9235044,
+      "regime": "range",
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785469017.0850208,
+      "regime": "range",
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785469099.1885693,
+      "regime": "range",
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1785550814.1302466,
+      "regime": "range",
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1789417419.0303957,
+      "regime": "consolidation",
+      "lesson": "SOL SHORT contradicted bullish regime conviction in consolidation\u2014avoid directional shorts opposite regime bias",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1789417467.5054579,
+      "regime": "consolidation",
+      "lesson": "EXPLORATION SHORT vs bullish regime in consolidation: SL hit 47min. Avoid contradicted regime, or size 50% smaller with 1.5x wider SL",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790019148.9096618,
+      "regime": "consolidation",
+      "lesson": "SHORT into bullish trend via consolidation misclassification\u2014add momentum verification before range-trade entry",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790019204.0054047,
+      "regime": "consolidation",
+      "lesson": "NEAR consolidation SHORT: regime misclassified bullish, 0/5 mean reversion pattern. Add RSI<45+MACD negative confirmation before entry",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790022615.3937073,
+      "regime": "trend",
+      "lesson": "SOL+trend = 20% WR vs 40% baseline. Won by noise, not edge. AVOID or swap mean reversion. Enforce 4h dead capital exit.",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790273015.6557894,
+      "regime": "consolidation",
+      "lesson": "XRP LONG failed in bearish consolidation (62% conf). Regime + bias hostile to thesis. Skip or raise confidence to 70%+ + full 3-signal confluence.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790273055.5359356,
+      "regime": "consolidation",
+      "lesson": "XRP LONG in bearish consolidation (62% conf) = regime mismatch. Skip or wait for breakout + 70%+ confidence + 3-signal confluence.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790355244.4015093,
+      "regime": "consolidation",
+      "lesson": "Mean_reversion in consolidation: 0% WR (5 trades, -$25). Stopped despite 78% confidence. Regime mismatch kills thesis. Disable in consolidation.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790355278.6770625,
+      "regime": "consolidation",
+      "lesson": "Mean_reversion in consolidation: 0% WR (5 trades, $-25). SKIP entries when regime=consolidation + setup=mean_reversion, regardless of confidence.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790397612.0991645,
+      "regime": "consolidation",
+      "lesson": "EXPLORATION in consolidation 73%: directional thesis proved correct (MFE) but trapped 6.3h, SL hit. Regime-setup mismatch\u2014require 80%+ or avoid.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790398647.7346456,
+      "regime": "consolidation",
+      "lesson": "EXPLORATION LONG in consolidation at 76% confidence trapped 2.27h. Thesis correct but regime-squeezed. Require 80%+ + 2+ confluence or skip.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790398698.187289,
+      "regime": "consolidation",
+      "lesson": "Consolidation LONG at 76% conf + solo signal violated regime rule. Mean-reverting regime\u2014skip unless \u226580% confidence + 2+ strategy confluence.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790477956.6879442,
+      "regime": "consolidation",
+      "lesson": "NEAR LONG in consolidation: 83% confidence insufficient without confluence. Mean-reversion in consolidation 0% WR. Require 2+ strategy agreement or skip",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790478002.3752012,
+      "regime": "consolidation",
+      "lesson": "Exploration entries in consolidation without strategy confluence are fragile\u2014exited by LLM on early loss (1h). Require 2+ agreement or skip symbol.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790535462.5147393,
+      "regime": "consolidation",
+      "lesson": "SHORT in bullish consolidation = regime mismatch. 0% WR mean-reversion on NEAR. Pre-filter: SHORT only in neutral/bearish consolidation or with 2+ consensus.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790535510.0883977,
+      "regime": "consolidation",
+      "lesson": "SHORT in bullish consolidation (0% WR, 5/5 losses). Regime contradicts thesis. LLM override at 75% conf caused $8.70 loss in 27min.",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1790966511.1935594,
+      "regime": "consolidation",
+      "lesson": "XRP SHORT in consolidation (bullish regime) thesis-invalid\u20140% WR historically. Exit agent right to close despite +$50. Avoid this pattern.",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1790966549.350872,
+      "regime": "consolidation",
+      "lesson": "XRP SHORT in bullish consolidation won $+50 but thesis invalid (0% WR hist). Exit agent saved by closing early\u2014avoid",
+      "outcome": "WIN"
+    },
+    {
+      "ts": 1791477274.0213294,
+      "regime": "range",
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1791482797.8937948,
+      "regime": "range",
+      "lesson": "SOL longs fail in range regime\u2014wait for trend",
+      "outcome": "LOSS"
+    },
+    {
+      "ts": 1791678377.8759975,
+      "regime": "consolidation",
+      "lesson": "NEAR LONG in consolidation bled 10h to SL (-$6.70, 2x lev), MFE ~0, never reached TP1\u2014no breakout trigger; cut dead longs at ~3h or skip without breakout",
+      "outcome": "LOSS"
+    }
+  ],
+  "edge_tracking": {
+    "BTC_SHORT_": {
+      "wins": 3,
+      "total": 6,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_SHORT_range": {
+      "wins": 2,
+      "total": 6,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "HYPE_LONG_range": {
+      "wins": 4,
+      "total": 10,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "SOL_SHORT_": {
+      "wins": 1,
+      "total": 3,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_SHORT_trending": {
+      "wins": 1,
+      "total": 1,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "BTC_SHORT_trending_bear": {
+      "wins": 1,
+      "total": 8,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_SHORT_illiquid": {
+      "wins": 1,
+      "total": 1,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "SOL_SHORT_illiquid": {
+      "wins": 2,
+      "total": 2,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "HYPE_SHORT_": {
+      "wins": 2,
+      "total": 6,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_SHORT_trending_bear": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_SHORT_range": {
+      "wins": 0,
+      "total": 14,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_SHORT_": {
+      "wins": 0,
+      "total": 6,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_SHORT_relief_bounce": {
+      "wins": 0,
+      "total": 1,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_SHORT_unknown": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_LONG_consolidation": {
+      "wins": 13,
+      "total": 27,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_LONG_": {
+      "wins": 1,
+      "total": 5,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_LONG_trending\u2192range": {
+      "wins": 1,
+      "total": 1,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "BTC_LONG_range": {
+      "wins": 3,
+      "total": 7,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_LONG_consolidation": {
+      "wins": 12,
+      "total": 28,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_SHORT_consolidation": {
+      "wins": 8,
+      "total": 26,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_SHORT_trend": {
+      "wins": 2,
+      "total": 4,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "ETH_SHORT_consolidation": {
+      "wins": 12,
+      "total": 29,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_LONG_trend": {
+      "wins": 4,
+      "total": 7,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "HYPE_LONG_consolidation": {
+      "wins": 4,
+      "total": 13,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_LONG_trending_bull": {
+      "wins": 0,
+      "total": 4,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_SHORT_trend": {
+      "wins": 0,
+      "total": 3,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_SHORT_high_volatility": {
+      "wins": 0,
+      "total": 3,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_SHORT_trend": {
+      "wins": 0,
+      "total": 3,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_SHORT_range": {
+      "wins": 0,
+      "total": 3,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_LONG_range": {
+      "wins": 2,
+      "total": 6,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_LONG_consolidation": {
+      "wins": 8,
+      "total": 26,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "SOL_LONG_trending_bull": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "HYPE_SHORT_trending_bull": {
+      "wins": 0,
+      "total": 1,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "HYPE_SHORT_unknown": {
+      "wins": 0,
+      "total": 13,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_LONG_trending": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "HYPE_SHORT_consolidation": {
+      "wins": 17,
+      "total": 27,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "SOL_SHORT_consolidation": {
+      "wins": 18,
+      "total": 37,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_LONG_range": {
+      "wins": 2,
+      "total": 65,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_SHORT_consolidation\u2192trending": {
+      "wins": 0,
+      "total": 1,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "HYPE_LONG_trend": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_SHORT_consolidation": {
+      "wins": 20,
+      "total": 31,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "XRP_LONG_unknown": {
+      "wins": 2,
+      "total": 4,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_SHORT_unknown": {
+      "wins": 0,
+      "total": 3,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_LONG_range": {
+      "wins": 4,
+      "total": 9,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_LONG_": {
+      "wins": 0,
+      "total": 1,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_LONG_trending_bull": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_SHORT_unknown": {
+      "wins": 3,
+      "total": 3,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "BTC_LONG_RANGE": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_LONG_unknown|consolidation": {
+      "wins": 0,
+      "total": 1,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_LONG_unknown": {
+      "wins": 2,
+      "total": 6,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_SHORT_range": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "HYPE_SHORT_trend": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_LONG_consolidation": {
+      "wins": 8,
+      "total": 22,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "BTC_LONG_unknown": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_SHORT_trend": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "ETH_LONG_trend": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_SHORT_low_liquidity": {
+      "wins": 2,
+      "total": 2,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "SOL_SELL_consolidation": {
+      "wins": 1,
+      "total": 1,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "XRP_SHORT_consolidation_with_bullish_bias": {
+      "wins": 0,
+      "total": 1,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_SELL_consolidation": {
+      "wins": 0,
+      "total": 2,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "SOL_SHORT_trending_bull": {
+      "wins": 1,
+      "total": 1,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "ETH_SHORT_trending_bull": {
+      "wins": 0,
+      "total": 1,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "XRP_SHORT_bullish": {
+      "wins": 1,
+      "total": 1,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "XRP_SHORT_trending_bull": {
+      "wins": 1,
+      "total": 1,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "NEAR_SHORT_consolidation": {
+      "wins": 4,
+      "total": 16,
+      "recent_wins": 1,
+      "recent_total": 1
+    },
+    "SOL_SHORT_trending": {
+      "wins": 0,
+      "total": 1,
+      "recent_wins": 0,
+      "recent_total": 1
+    },
+    "NEAR_LONG_consolidation": {
+      "wins": 6,
+      "total": 10,
+      "recent_wins": 0,
+      "recent_total": 1
+    }
+  },
+  "stats": {
+    "total_processed": 547,
+    "last_updated": 1791678377.8759627
+  }
+}
