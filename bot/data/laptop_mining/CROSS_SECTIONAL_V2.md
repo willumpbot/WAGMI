@@ -120,3 +120,45 @@ archive fills.
 - 36 cells, and the signals are **not independent** — `stretch`, `rsi`, `bb` and `rangepos` all measure
   "price high relative to recent range." Bonferroni over 36 is therefore conservative in count and
   generous in correlation; neither correction changes the verdict, which rests on §4, not on p-values.
+
+---
+
+## 7. ⚠️ CORRECTION, 2026-10-11: §4's fill argument was ASSERTED, and the data runs the other way
+
+§4 rested the verdict partly on two claims I never measured:
+
+> *"9 bps is fantasy. Spreads and slippage on a 20%-move day are multiples of that"* and
+> *"A 2× leveraged 16-coin book meets real depth limits precisely when everything is moving."*
+
+The server's SPOF audit shipped an L2 depth archive on 2026-10-11 — the exact data
+`INTRADAY_DISP.md` §6 asked for and called *"the only missing piece between 'the spread exists' and
+'the spread was reachable'."* It is now in the panel store (`depth`: 61,696 rows, 30 symbols, 101
+days, 15-minute cadence) and it says:
+
+| daily \|move\| | n | mean spread | 0.5% depth vs calmest |
+|---|---|---|---|
+| 0.0–1.7% | 340 | 1.23 bps | 1.00× |
+| 1.7–3.5% | 170 | 1.52 bps | 1.48× |
+| 3.5–5.8% | 102 | 2.14 bps | 1.96× |
+| 5.8–7.8% | 34 | 2.21 bps | 1.65× |
+| **7.8–21.3%** | **34** | **2.44 bps** | **1.66×** |
+
+`corr(log daily move, log spread) = +0.237`; `corr(log daily move, log depth) = **+0.190**`.
+
+**Both of my claims fail.** Spreads on the most violent days average **2.44 bps — not multiples of
+9 bps, but a quarter of it.** And depth does not collapse; it is **1.66× deeper** on those days than
+on the calmest half. **Volatility brings participation.** The intuition that the book empties out
+when everything moves is not true for this universe.
+
+**What this does and does not change.** The verdict — **NOT TRADEABLE** — stands, but **not for the
+reason §4 gave.** It stands on the parts that were measured: the return living in **25 of 494 days**
+(81–84%), **two of seventeen coins carrying half the effect**, and a **train/test ratio of
+1.65–2.97** where real effects decay. The fill-and-depth argument was the one leg of §4 that was
+intuition dressed as evidence, and it should be struck.
+
+**Limits on this correction, so it is not over-read in turn:** depth is sampled every **15 minutes**,
+so a book that was empty for thirty seconds during a liquidation cascade would not show here — this
+measures the *day's* conditions, not the *moment's*. The violent-day bin holds only **n=34**, and its
+top is a **21.3%** move, whereas §4's worst days had individual coins moving 20%+ with the
+cross-section spreading 63%. So the extreme tail remains thinly sampled. The honest statement is
+**"not supported, and the point estimate runs the other way"** — not "refuted".
