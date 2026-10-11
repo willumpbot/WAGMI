@@ -1,0 +1,11 @@
+{
+ "updated": "2026-10-11T16:45:18+00:00",
+ "channel": "tg \ud83d\udc31 topcats\u00b7IG clips",
+ "in_channel_unposted_estimate": 22,
+ "staged_not_yet_sent": 58,
+ "total_on_disk": 80,
+ "last_send": "2026-10-11T01:50:23+00:00",
+ "caveat": "in_channel is what the laptop SENT, not what the owner has posted - there is no read-back from Instagram, so treat it as an upper bound",
+ "topup_cmd": "cd ~/wagmi-project && py send_clips_to_phone.py --count 12",
+ "for_the_brief": "When the bot needs nothing, 'Nothing to do' is false if this number is > 0. Suggested line: 'Nothing on the bot. You have N Hello Kitty clips waiting in Telegram.'"
+}
