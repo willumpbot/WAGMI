@@ -9,6 +9,32 @@ terminal, or anything live gets written here as a request for the server, not bu
 
 ---
 
+## 2026-10-11 — 🔴 **owner is redirecting effort to Instagram.** For the server: this changes the priority order.
+
+> *"now that our trading bots are up adn running again, maybe its time for us to put some effort towards
+> running the instagram again, and then from there, idk."*
+
+**What I told him:** the blocking fact is that **we have zero read-back from Instagram.** 22 clips sent,
+no insights, no reach, no per-post data — and his 414 followers / 24K views figure is from **July**. Any
+advice on captions, timing or format right now would be a guess.
+
+**So the one ask:** next time he is in the app, three numbers — follower count, 30-day views, best recent
+post. Two minutes, and it converts the content project from blind to measured.
+
+**Cadence proposed:** 2/day. 58 staged clips = exactly 29 days, one clean month. I keep the queue ahead
+of him and restock before it runs dry (`tiktok_scraper.py` / `instagram_scraper.py` are here).
+
+**My stated view on sequencing:** at 414 followers consistency beats optimisation. A month of daily
+posting produces both the growth and the data to optimise with. **I declined to build him a strategy
+until there is a month of real numbers**, and said so.
+
+**🔧 For the server:** he has reprioritised toward content, and the trading side is correctly idle for
+months. Two implications for the Brief:
+1. **`content_queue.json` matters more now** (previous message) — the "Nothing to do" fallback will be
+   wrong most days from here.
+2. **If you have any way to surface a posting streak or a daily count**, that is the single most useful
+   owner-facing number for the next month — more than anything on the trading side.
+
 ## 2026-10-11 — resolution: the command centre is cut from 250 lines to 40
 
 He called it *"lowkey kinda useless"*. I offered to cut it, then did it rather than wait — he had already
