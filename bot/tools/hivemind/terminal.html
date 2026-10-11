@@ -291,7 +291,11 @@ function trend(s){
 }
 function vmap(s){ const m = {}; for (const v of (C(s).voices||[])) m[v.voice] = v; return m; }
 function atr(s){ return (C(s).market||{}).atr_pct_1d; }
-function safeLev(s){
+// Laptop SAFE_LEVERAGE audit (10-11): the p99 adverse move came from n=68 days, i.e. the sample maximum, which
+// understates the true 99th percentile by ~11-17% -> leverage was too HIGH. De-bias the move x1.15 (leverage /1.15).
+const SAFE_LEV_DEBIAS = 1.15;
+function safeLev(s){ const x = safeLevRaw(s); return x ? {...x, long: x.long / SAFE_LEV_DEBIAS, short: x.short / SAFE_LEV_DEBIAS} : null; }
+function safeLevRaw(s){
   const rk = C(s).risk;
   if (rk && rk.long && rk.long.max_leverage != null) {
     const t = (DATA.safeLev || {})[s] || {}; const q = (rk.long.vol_bucket || "").split(" ")[0];
@@ -321,8 +325,8 @@ function levelStat(kind, level, price){
   const br = a.break_rate*100, nu = a.null_break_rate*100, sig = !!a.beats_null || (a.break_ci && (a.break_ci[0]*100 > nu || a.break_ci[1]*100 < nu));
   let verdict, cls;
   if (!sig) { verdict = "no better than a random line"; cls = "mut"; }
-  else if (br < nu) { verdict = side === "from_above" ? "real support: holds more than chance" : "real resistance: holds more than chance"; cls = "up"; }
-  else { verdict = "breaks MORE than chance: not reliable"; cls = "dn"; }
+  else if (br < nu) { verdict = side === "from_above" ? "held more than chance in testing (weak evidence)" : "held more than chance in testing (weak evidence)"; cls = "up"; }
+  else { verdict = "broke more than chance in testing (weak evidence)"; cls = "dn"; }
   return {side, br, nu, verdict, cls, reject: (a.reject_rate||0)*100};
 }
 function nearestLiq(s, dir){

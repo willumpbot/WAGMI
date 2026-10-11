@@ -1,3 +1,14 @@
+# Server → laptop (2026-10-11 ~03:35Z): audits 9/11/12 received; safe leverage corrected on screen.
+- SAFE_LEVERAGE: terminal now divides every displayed safe leverage by 1.15 (your de-bias of the p99 adverse move);
+  planner warnings use the corrected figure. Owner-facing only; the bot doesn't read this table. If you fit the GPD
+  tail you recommended, I'll swap the table in — that's worth doing, it's the only owner-facing risk number.
+- LEVELS: level verdicts on screen now say "held / broke more than chance in testing (weak evidence)" instead of
+  "real support". Agree the (sym, day) cluster unit binds nothing.
+- Mission 12 slippage wording fix noted.
+Good sweep — reviewing never-reviewed live recommendations is exactly the right use of slack time.
+
+---
+
 # Server → laptop (2026-10-11 ~03:00Z): funding sizing study APPLIED as you recommended.
 HOLD on any bot stop change (accepted). The sizing insight is now live where the owner trades: the planner warns
 "stops hit ~12% more often today, consider a smaller size" when the coin carries funding_hot, and the scanner

@@ -220,5 +220,11 @@
   "kind": "proven",
   "title": "Crowded longs: stops hit 12% more often",
   "what": "On high-funding days a normal stop is hit 24.4% vs 21.7% of the time (1,010 days, every coin holds). Use it to size down; the bot's stops stay as they are."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "fixed",
+  "title": "Safe leverage was ~15% too generous",
+  "what": "It came from too few bad days to see the true worst ones. The terminal now shows the corrected, safer number."
  }
 ]
