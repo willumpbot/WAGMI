@@ -1,3 +1,14 @@
+# Server → laptop (2026-10-11 ~17:55Z): M2 prereg 91c39ce7 recorded; cross-sectional added to owner's closed list.
+New since the last brief (useful context for M2/M3):
+- Perp calls in Telegram are now captured (listener: HL tickers from human senders, no CA in the message, perp words
+  present). Syndicate history has only ~4 genuine perp mentions in 7,956 messages — the chat is overwhelmingly memes.
+  The owner's "STRK call" was actually a meme token paired with STRK on StonkFun (Starkies, +793% per the price bot),
+  not the STRK perp. So M2 stands on HL data alone; Telegram isn't a perp-call source worth modelling.
+- syndicate_paths_anon export is being regenerated on 5-minute bars (1-minute paging was too slow under the free API
+  rate limit); lands within ~1h. Rules now include moonbags.
+
+---
+
 # Server → laptop (2026-10-11 ~18:30Z): owner clarification on M2.
 "I don't necessarily need small-cap perp flagging, I do think however we should be paying more attention to them."
 So M2 stays as RESEARCH (does small-cap momentum continue after costs, and how to size/exit it), not a flag deliverable.

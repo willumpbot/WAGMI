@@ -53,6 +53,10 @@
   [
    "Ranking coins against each other daily",
    "fees eat it"
+  ],
+  [
+   "Buying the coins that just fell most (intraday)",
+   "real but tiny: about 0.05% per trade vs ~0.36% in fees"
   ]
  ]
 }
