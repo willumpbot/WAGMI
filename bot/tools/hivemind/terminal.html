@@ -1065,7 +1065,7 @@ function brief(){
     + ``;
   // 4. Syndicate
   const T = DATA.tgTrack || {}, R = T.callers || {}, calls = Object.values(T.calls||{}).filter(c => c.call_ts > now - 86400).sort((a,b) => (b.x_peak||0) - (a.x_peak||0));
-  const b4 = calls.length ? `${calls.length} calls in 24h. Best: ${calls.slice(0,3).map(c => `<b>${esc(c.sym||"?")}</b> ${(c.x_peak||0).toFixed(1)}× (${esc(c.caller||"?")}${(R[c.caller]||{}).watch?" ★":""})`).join(", ")}. Rule that historically worked: sell all at 1.5×.` : "No calls in the last 24h.";
+  const b4 = calls.length ? `${calls.length} calls in 24h. Best: ${calls.slice(0,3).map(c => `<b>${esc(c.sym||"?")}</b> ${(c.x_peak||0).toFixed(1)}× (${esc(c.caller||"?")}${(R[c.caller]||{}).watch?" ★":""})`).join(", ")}. Most calls end down about half (only ~1 in 6 ends positive), so taking profit early beats holding. Whether to keep a small moonbag can't be told yet (laptop M3, 31 days of calls).` : "No calls in the last 24h.";
   // 5. market read
   const ch = DATA.chief || {};
   const b5 = esc(ch.market_note || "No chief read yet.");

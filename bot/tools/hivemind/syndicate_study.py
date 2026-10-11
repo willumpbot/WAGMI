@@ -92,15 +92,11 @@ def fetch_path(c, offline=False):
         return d
     t0, mins = int(c["ts"]), []
     end = min(int(time.time()), t0 + 24 * 3600)
-    cursor = min(end, t0 + 1000 * 60)
-    for _ in range(3):   # up to 3 pages of 1000 one-minute bars
-        o = _get(f"{GT}/pools/{d['pool']}/ohlcv/minute?aggregate=1&limit=1000&currency=usd&before_timestamp={cursor}")
-        time.sleep(2.2)
-        bars = (((o or {}).get("data") or {}).get("attributes") or {}).get("ohlcv_list") or []
-        mins += [b for b in bars if t0 - 120 <= b[0] <= end]
-        if cursor >= end:
-            break
-        cursor = min(end, cursor + 1000 * 60)
+    # one request: 5-minute bars, 300 of them = 25h from the call (1-min paging was ~3x slower under the free rate limit)
+    o = _get(f"{GT}/pools/{d['pool']}/ohlcv/minute?aggregate=5&limit=300&currency=usd&before_timestamp={min(end, t0 + 300 * 300)}")
+    time.sleep(2.2)
+    bars = (((o or {}).get("data") or {}).get("attributes") or {}).get("ohlcv_list") or []
+    mins += [b for b in bars if t0 - 600 <= b[0] <= end]
     seen = {}
     for b in mins:
         seen[b[0]] = b
@@ -118,8 +114,8 @@ def path_multiples(c, d, delay_min):
     """Entry = close of the first minute bar starting >= call + delay. Returns (entry, [(t, hi, lo, close) as
     multiples of entry] minute path to 24h, then hourly to 7d)."""
     t_in = c["ts"] + delay_min * 60
-    mb = [b for b in d.get("min", []) if b[0] >= t_in - 59]
-    if not mb or mb[0][0] > t_in + 180:   # no trading at the moment we'd enter
+    mb = [b for b in d.get("min", []) if b[0] >= t_in - 299]
+    if not mb or mb[0][0] > t_in + 600:   # no trading at the moment we'd enter
         return None, None
     e = mb[0][4]
     if not e:

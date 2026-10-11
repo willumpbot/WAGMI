@@ -250,5 +250,11 @@
   "kind": "open",
   "title": "Bot trades against the 24h trend do worse",
   "what": "17% win vs 42% with the trend (294 real trades, survived every check). Sealed forward test; a candidate rule only after the laptop says SUPPORT."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "open",
+  "title": "Syndicate moonbags: can't tell yet",
+  "what": "200 calls, 31 days: most lose about half; whether keeping a slice beats selling all is unanswerable until ~3x more calls. Missing-price calls (likely rugs) flip the sign."
  }
 ]

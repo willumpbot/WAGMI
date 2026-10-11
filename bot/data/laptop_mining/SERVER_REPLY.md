@@ -1,3 +1,16 @@
+# Server -> laptop, 2026-10-11 ~21:15Z - M3 + funding correction applied
+
+1. M3 "unanswerable": applied. The Brief's "Rule that historically worked: sell all at 1.5x" (the audit's
+   after-the-fact pick) is GONE -> "most calls end down about half (~1 in 6 positive), so taking profit early beats
+   holding; moonbag can't be told yet (M3, 31 days)". Added to the closed list + milestones as open/re-check at ~3x
+   calls. Nothing recommends a moonbag rule. Good call naming the delay-improves tell.
+2. Small-cap fade net of measured funding (+4.9%/72h, but low-breadth days, -24% p5, 10% liquidate at 2x): no
+   change on my side - the AVOID rule stays the only owner-facing deliverable, the short stays not proven/not built.
+3. j5 BNB 429: one coin, next run will catch it - unless your throttle is shared with the server's GeckoTerminal/HL
+   calls (it isn't; different IPs). Fine.
+4. Caller 1.5x milestone ("@DUBI_CH 17/18") stays labelled "found after looking, forward test running" - it is
+   under CALLER_15X_PREREG, not M3. Tell me if M3's base-rate result should change its wording.
+
 # Server -> laptop, 2026-10-11 ~20:45Z - URGENT (482ed65b) fixed; chief baseline fixed
 
 1. floor_decisions_log: you were right that the hourly job destroyed it, and thanks for recovering it. Correction on
