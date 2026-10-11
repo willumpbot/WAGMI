@@ -150,6 +150,68 @@ def check_self_freshness():
     return verdict + sched
 
 
+LAST_SYNC = os.path.join(EXP, ".last_sync")
+SYNC_STALE_S = 3 * 3600
+
+
+def measure(p):
+    """Size a file by its CONTENT, not its bytes.
+
+    FALSE ALARM I ACTUALLY RAISED: this used compressed byte size, so when the server made its
+    gzip headers deterministic (mtime=0) the header bytes changed and j4 reported
+    `entry_gate_log` and `floor_decisions_log` as SHRANK -- while the decompressed line counts
+    were identical (5,383 = 5,383 and 61 = 61). Compressed size is not content size, which is
+    the same shape as the server's own rule that a label is not a provenance.
+
+    So: .gz and .jsonl are measured in ROWS, everything else in bytes, and the unit is recorded
+    alongside so a future comparison cannot mix them.
+    """
+    if os.path.isdir(p):
+        tot = 0
+        for f in sorted(os.listdir(p)):
+            fp = os.path.join(p, f)
+            if os.path.isfile(fp):
+                tot += measure(fp)[0]
+        return tot, "rows+bytes"
+    if p.endswith(".gz"):
+        try:
+            n = 0
+            with gzip.open(p, "rt", encoding="utf-8", errors="replace") as f:
+                for _ in f:
+                    n += 1
+            return n, "rows"
+        except (OSError, EOFError):
+            return -1, "unreadable"
+    if p.endswith((".jsonl", ".csv")):
+        try:
+            n = 0
+            with io.open(p, encoding="utf-8", errors="replace") as f:
+                for _ in f:
+                    n += 1
+            return n, "rows"
+        except OSError:
+            return -1, "unreadable"
+    try:
+        return os.path.getsize(p), "bytes"
+    except OSError:
+        return -1, "unreadable"
+
+
+def check_sync_freshness():
+    """Is the server still shipping? Their ask: a failed push only returns a string on their
+    side, so the laptop is the only place that would notice the feed stopping."""
+    if not os.path.exists(LAST_SYNC):
+        return ("`server_exports/.last_sync` **SOURCE-MISSING** -- cannot tell whether the "
+                "server is still shipping. That is not the same as the feed being fine.")
+    age = time.time() - os.path.getmtime(LAST_SYNC)
+    if age > SYNC_STALE_S:
+        return ("🔴 **THE SERVER FEED LOOKS STOPPED: `.last_sync` is %.1f h old** (alarm at "
+                "%.0f h). Every export below is that stale, whatever its own numbers say."
+                % (age / 3600.0, SYNC_STALE_S / 3600.0))
+    return "server feed fresh -- `.last_sync` %.1f h old, alarm at %.0f h" % (
+        age / 3600.0, SYNC_STALE_S / 3600.0)
+
+
 def check_outputs_tracked():
     """Can this layer's own reports actually reach git?
 
@@ -201,27 +263,28 @@ def main():
              "",
              "## Growth -- is each export still being written?",
              "",
-             "| export | bytes | change since last run |",
+             "| export | size | change since last run |",
              "|---|---|---|"]
     for p in sorted(glob.glob(os.path.join(EXP, "*"))):
-        if os.path.isdir(p):
-            sz = sum(os.path.getsize(os.path.join(p, f)) for f in os.listdir(p)
-                     if os.path.isfile(os.path.join(p, f)))
-        else:
-            sz = os.path.getsize(p)
         name = os.path.basename(p)
-        cur[name] = sz
-        old = prev.get(name)
+        sz, unit = measure(p)
+        cur[name] = {"v": sz, "u": unit}
+        o = prev.get(name)
+        # old state was a bare int in bytes; a unit change is not a content change
+        old = o.get("v") if isinstance(o, dict) else None
+        oldu = o.get("u") if isinstance(o, dict) else None
         if old is None:
-            ch = "new"
+            ch = "new" if o is None else "unit changed to %s -- not compared" % unit
+        elif oldu != unit:
+            ch = "unit changed %s to %s -- not compared" % (oldu, unit)
         elif sz > old:
-            ch = "+%d" % (sz - old)
+            ch = "+%d %s" % (sz - old, unit)
         elif sz == old:
             ch = "unchanged"
         else:
-            ch = "**SHRANK %d**" % (old - sz)
-            regress.append("%s shrank %d bytes" % (name, old - sz))
-        lines.append("| `%s` | %d | %s |" % (name, sz, ch))
+            ch = "**SHRANK %d %s**" % (old - sz, unit)
+            regress.append("%s shrank %d %s" % (name, old - sz, unit))
+        lines.append("| `%s` | %d %s | %s |" % (name, sz, unit, ch))
     gone = [k for k in prev if k not in cur]
     for g in gone:
         regress.append("%s DISAPPEARED from the export" % g)
@@ -255,6 +318,7 @@ def main():
               "stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing changed`._",
               ""]
     lines += ["- " + check_self_freshness(), ""]
+    lines += ["- " + check_sync_freshness(), ""]
     lines += ["- " + check_outputs_tracked(), ""]
 
     lines += ["", "## Panel store", ""]
