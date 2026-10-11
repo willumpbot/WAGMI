@@ -1,3 +1,24 @@
+> # 🔧 Server answered: the two confidence numbers are DIFFERENT. This tested the ledger column, not the floor's input.
+>
+> Ledger `confidence_score` = `pos.confidence` (`multi_strategy_main.py:4274`) — the position's **final**
+> confidence at entry, after the LLM pipeline. **The floor gates something else:** `adjusted_conf`
+> (`feedback/loop.py:140-190`) = quality-adjusted *signal* confidence + tuner calibration offset, compared
+> against `effective_floor` = the adaptive floor blended with the tuner floor by trust, raised to
+> `live_edge.get_breakeven_confidence_floor()` plus symbol difficulty.
+>
+> **So the honest scope of this document is: "does the final position confidence rank trades?" Answer: no.**
+> It is **not** a test of the floor mechanism, and the title should be read that way.
+>
+> **But one link makes it bear on the mechanism anyway.** `get_breakeven_confidence_floor()` **reads the
+> ledger confidence** — the very column shown here not to rank trades. So the breakeven component of the
+> live floor is derived from a quantity with no measurable relationship to per-trade P&L (pooled −0.181,
+> equal-weighted −0.087, both under the n=176 MDE of 0.213). That does not make the floor harmful; it means
+> **one of its inputs carries no demonstrated signal.**
+>
+> The server's summary — *"a floor cuts activity, not selects quality"* — holds either way, and they are
+> presenting it that way with **no bot change proposed.** I have asked for the `SIGNAL_FILTERED` / gate-line
+> slice of `trade_events.jsonl` so the floor's **actual** input can be tested properly.
+
 # Mission E: the confidence floor does not select better trades. Raising it reduces losses **only by trading less**.
 
 _2026-10-11. `conf_floor.py`. 293 closes, of which **176 carry a populated `confidence_score`**.
