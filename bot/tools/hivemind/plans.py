@@ -68,7 +68,10 @@ def create(p):
            "entry_type": etype, "entry_window_h": float(p.get("entry_window_h") or 24),
            "max_hold_h": float(p.get("max_hold_h") or 48), "leverage": float(p.get("leverage") or 1),
            "risk_usd": float(p.get("risk_usd") or 0), "setup": str(p.get("setup") or "other")[:40],
-           "reason": str(p.get("reason") or "")[:300], "context": _context(coin)}
+           "reason": str(p.get("reason") or "")[:300], "context": _context(coin),
+           # which Claude idea this plan came from (laptop prereg needs it to grade the owner's adopt/skip choice)
+           "source_idea_id": str(p.get("source_idea_id") or "")[:20] or None,
+           "adopt_mode": (p.get("adopt_mode") if p.get("adopt_mode") in ("adopt", "adjust") else None)}
     HM.mkdir(parents=True, exist_ok=True)
     with open(PLANS, "a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")
@@ -337,6 +340,12 @@ def resolve(write=True):
                 bot_res = _walk(alt, hl.candles(pl["coin"], "5m", pl["ts"] * 1000 - 300000, ttl=50) or [], now)
             except Exception:
                 pass
+        if not pl.get("source_idea_id"):   # older plans: recover the link from the reason text
+            import re as _re
+            m = _re.search(r"Claude idea (ai[0-9a-f]{8})", pl.get("reason") or "")
+            if m:
+                pl = dict(pl, source_idea_id=m.group(1), adopt_mode="adjust" if "adjusted" in pl["reason"] else "adopt",
+                          source_inferred=True)
         plans.append(dict(pl, result=res, review=(reviews.get(pl["id"]) or None), bot_result=bot_res or None))
     execs = _exec_results(last_px)
     for p in plans:

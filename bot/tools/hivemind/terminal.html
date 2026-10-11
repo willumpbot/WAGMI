@@ -920,13 +920,14 @@ async function makePlan(){
   const side = $("c_side").value, et = $("c_etype").value, now = px(sel);
   const body = {coin: sel, side, entry: +$("c_entry").value, stop: +$("c_stop").value, target: +$("c_tgt").value, entry_type: et, price: now,
     leverage: +$("c_lev").value, risk_usd: +$("c_acct").value * +$("c_risk").value / 100, setup: $("c_setup").value, reason: $("c_reason").value};
+  if (window.LOADED_IDEA && window.LOADED_IDEA.coin === sel) { body.source_idea_id = window.LOADED_IDEA.id; body.adopt_mode = "adjust"; }
   try {
     const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken}, body: JSON.stringify(body)});
     const j = await r.json(); if (!j.ok) throw new Error(j.error || "rejected");
     const a = alerts(), add = (p, l) => a.push({c: sel, p, dir: p >= now ? 1 : -1, l});
     if (et === "limit") add(j.plan.entry, "plan entry"); add(j.plan.stop, "plan stop"); add(j.plan.target, "plan target"); saveAlerts(a);
     $("c_msg").innerHTML = `<span class="up">Planned: ${sel} ${side} ${et === "market" ? "at market " + fmt(j.plan.entry) : "limit " + fmt(j.plan.entry)}, stop ${fmt(j.plan.stop)}, target ${fmt(j.plan.target)}. Alerts set. See the Plans tab.</span>`;
-    $("c_reason").value = "";
+    $("c_reason").value = ""; window.LOADED_IDEA = null;
     try { if (window.Notification && Notification.permission === "default") Notification.requestPermission(); } catch(e) {}
     await loadPlans(); drawChart(); showTab("t_plans");
     [20, 45, 90].forEach(sec => setTimeout(loadPlans, sec*1000));
@@ -1013,6 +1014,7 @@ function aiPlans(){
     for (const [id, v] of [["c_entry", q.entry], ["c_stop", q.stop], ["c_tgt", q.target]]) { $(id).value = +(+v).toPrecision(6); $(id).dataset.touched = 1; }
     $("c_lev").value = q.leverage || 3;
     $("c_reason").value = `Claude idea ${q.id}, adjusted: `;
+    window.LOADED_IDEA = {id: q.id, coin: q.coin};
     calc();
     const box = $("c_plan").closest(".box"); box.scrollIntoView({behavior: "smooth", block: "start"});
     box.style.boxShadow = "0 0 0 3px var(--accent)"; setTimeout(() => box.style.boxShadow = "", 2500);
@@ -1021,7 +1023,7 @@ function aiPlans(){
   document.querySelectorAll(".aiadopt").forEach(b => b.onclick = async () => {
     const q = I.find(x => x.id === b.dataset.id); if (!q) return;
     try { const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken},
-        body: JSON.stringify({coin:q.coin, side:q.side, entry:q.entry, stop:q.stop, target:q.target, entry_type:"limit", price:midOf(q.coin)||q.price_at_plan, leverage:q.leverage, setup:"ai idea", reason:"adopted Claude idea "+q.id+": "+q.reason.slice(0,200)})});
+        body: JSON.stringify({coin:q.coin, side:q.side, entry:q.entry, stop:q.stop, target:q.target, entry_type:"limit", price:midOf(q.coin)||q.price_at_plan, leverage:q.leverage, setup:"ai idea", reason:"adopted Claude idea "+q.id+": "+q.reason.slice(0,200), source_idea_id:q.id, adopt_mode:"adopt"})});
       const j = await r.json(); b.textContent = j.ok ? "Added to my plans ✔" : "Couldn't add"; b.disabled = true; loadPlans(); } catch(e) { b.textContent = "API not reachable"; } });
 }
 let HF = null;
