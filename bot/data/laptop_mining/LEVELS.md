@@ -1,3 +1,26 @@
+> # ⚠️ AUDITED 2026-10-11 — the ma50 claim does not survive its own table's multiplicity. See `M11_AUDIT.md`.
+>
+> **The design is good** — random-date pseudo-levels at matched distance is the best null in this
+> folder, and the "a third of touches do nothing" admission is honest. Two specific problems:
+>
+> **1. The bootstrap clusters on `(sym, day)`, which holds ~1 touch**, so it is arithmetically the same
+> as resampling individual touches. (Published CIs match a plain binomial to within 0.5 pp on every
+> cell.) The correlation that matters — many of the 11 coins hitting a 20-day low on the *same day*, and
+> runs of touches within one downtrend — is uncontrolled. Clustering on **`day`** gives a design effect
+> of 3–7 and widens every CI by **1.7–2.6×**.
+>
+> **2. Six cells were tested (3 levels × 2 approaches) with no correction.** Bonferroni needs |z| > 2.64:
+> `lo20` from below clears at **3.05**; `lo20` from above **fails** at 2.16; **`ma50` from above fails at
+> 2.50.**
+>
+> **So "the 50-day average IS support — the only level that holds better than chance" overstates the
+> weakest cell in the table**, and it is the one feeding the scanner's SMA-vs-EMA change. That change is
+> still probably right, but justify it as *"flag the level that was tested"* rather than *"proven support"*.
+>
+> **What stands:** `hi20` is noise (widening only reinforces it); a third of touches do nothing; and
+> **`lo20` breaking more than random is the one finding that clears multiplicity** — keep the direction
+> (a 20-day low is not a bounce level), hold the magnitude loosely.
+
 # Mission 11 — what happens at the levels the terminal flags
 
 _2026-10-08. 2,955 touches across 11 coins, 2020-10-19 → 2026-09-27, plus 5,910 random-level nulls.
