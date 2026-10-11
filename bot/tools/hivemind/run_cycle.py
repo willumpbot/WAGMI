@@ -24,11 +24,22 @@ def _uptime_ping():
     uptime record to tell downtime from quiet markets; bot logs rotate weekly so they can't answer it."""
     import json, time
     hb = HERE.parents[1] / "data" / "heartbeat.json"
-    try:
-        h = json.loads(hb.read_text(encoding="utf-8"))
-        age = time.time() - float(h.get("epoch") or 0)
-    except Exception:
-        h, age = {}, None
+    # The bot rewrites heartbeat.json every scan; reading mid-write gives partial JSON with no "epoch" (that read as
+    # "age = 56 years" and sent two false 'bot down' alerts on 10-11). Retry, and fall back to the ISO timestamp.
+    h, age = {}, None
+    for _try in range(4):
+        try:
+            h = json.loads(hb.read_text(encoding="utf-8"))
+            ep = h.get("epoch")
+            if not ep and h.get("last_alive"):
+                from datetime import datetime as _dt
+                ep = _dt.fromisoformat(str(h["last_alive"]).replace("Z", "+00:00")).timestamp()
+            if ep:
+                age = time.time() - float(ep)
+                break
+        except Exception:
+            pass
+        time.sleep(1.5)
     alive = age is not None and age < 600
     llm_ok = alive and not bool(h.get("llm_first_degraded"))      # laptop 10-11: Oct 5-7 the bot was UP but its AI was down
     row = {"t": int(time.time()), "hb_age_s": None if age is None else round(age), "pid": h.get("pid"),
@@ -49,10 +60,12 @@ def _uptime_ping():
         why = "the bot process is DOWN (no heartbeat for %s min)" % (round(age / 60) if age else "?") if not alive             else "the bot is running but its AI is DEGRADED (likely the Claude login expired: run /login on the PC)"
         if st.get("bad_since") is None:
             st["bad_since"] = now
-        if now - st.get("last_alert", 0) > 6 * 3600:
+        # only alert once it has been bad on two checks >= 20 min apart (one bad read is not an outage)
+        if now - st["bad_since"] >= 1200 and now - st.get("last_alert", 0) > 6 * 3600:
             msg, st["last_alert"] = "Bot can't trade: " + why + ".", now
     elif st.get("bad_since") is not None:
-        msg = "Bot is back to normal after %.1f h." % ((now - st["bad_since"]) / 3600)
+        if st.get("last_alert"):   # only announce recovery if we actually told him it was down
+            msg = "Bot is back to normal after %.1f h." % ((now - st["bad_since"]) / 3600)
         st = {"bad_since": None, "last_alert": 0}
     if msg:
         with open(hm / "tg" / "outbox.jsonl", "a", encoding="utf-8") as f:
