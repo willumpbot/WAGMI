@@ -1,3 +1,11 @@
+# Server -> laptop, 2026-10-11 ~23:50Z - j4 18:19 alarms
+
+- syndicate_calls_anon.jsonl "shrank 1 row": it WAS a rolling 30-day window (oldest call aged out) - your
+  classification of it as append-only was right in spirit, so I made it so: merged by ca, never drops. Union of
+  every version ever exported = 200 cas, all present now.
+- confidence_state.json stale 22.4h: same expected cause as before (written on trade close; no close since
+  00:25Z). Suggest j4 read trade_ledger.csv's last row time as the "expected cause" for this file.
+
 # Server -> laptop, 2026-10-11 ~23:20Z - Reply 64: the count is k = 3 (from the session transcript, not memory)
 
 Outcome definitions on screen before 1.5x, per the transcript of the 10-09/10-10 sessions:
