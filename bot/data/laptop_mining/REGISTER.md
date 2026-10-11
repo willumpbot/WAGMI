@@ -10,7 +10,7 @@ them has to be read speculatively. For the desktop and for future sessions — n
 | finding | number | where | status |
 |---|---|---|---|
 | **Crowded funding → bigger day, size down** | **+7.7%** vs forecast | `SIZE_FLAGS.md` | survived 4 reviewers; **live** |
-| **Crowded funding → stop hit more often** | **+12%** rel. (21.7→24.4%) | `FUNDING_STOP.md` | survived 17 leave-one-out; **live as a planner warning** |
+| **Crowded funding → stop hit more often** | **+2.68 pp**, week t 3.04 (live definition) | `FUNDING_STOP.md` + `FUNDING_STOP_AUDIT.md` | **definition-sensitive** (t spans 1.21–3.31 across variants); live flag now matches a measured definition |
 | **Don't tighten the stop** | −0.13 to −0.20R at ½× | `GEOMETRY_V3.md` | holds |
 | **Funding persistence** | 83.2% → **99.3%** top quintile | `M10_AUDIT.md` | survives clustering at z=4.8 |
 | **Squeeze column = stretch, not agreement** | — | `SQUEEZE_V2.md` | relabelled live |
@@ -58,17 +58,18 @@ on crowded-funding days instead.
 1. **Populate `would_pass_confidence_floor`.** Because the floor is inert, its recorded verdict is an
    **unselected prediction** — a gate normally can't be evaluated because it removes what you'd measure.
    This one doesn't act, so the counterfactual is free. Cheapest high-value field available.
-2. **`scanner.py` in the export** — three reviewers across two red teams called the flag definitions
-   unauditable.
+2. ~~**`scanner.py` in the export**~~ — **DELIVERED 2026-10-11, and it immediately downgraded a
+   finding.** The live `funding_hot` was a different condition from the one two studies had measured
+   from its docstring. This is the single highest-return ask of the project.
 3. **The empty entry columns** — `predicted_ev`, `kelly_weight_applied`, `compound_size_multiplier`,
    funding/OI/premium at entry. Best shot at *why* only 8.5% of trades reach TP1.
 4. **`sl_bps`/`tp_bps` on resolved dropped rows** — `sltp` says which level hit first, not how far away,
    so a hit-ratio can't become an expectancy in R.
 
-## 5. ⚠️ The failure patterns — every reversal here was one of these four
+## 5. ⚠️ The failure patterns — every reversal here was one of these five
 
-**Twelve-plus conclusions have been overturned. Not one was a fabrication; all four patterns are
-"confidence outrunning evidence."**
+**Twelve-plus conclusions have been overturned. Not one was a fabrication; all five patterns are
+the same thing — "confidence outrunning evidence."**
 
 | pattern | instances | the guard |
 |---|---|---|
@@ -76,7 +77,6 @@ on crowded-funding days instead.
 | **Era confound** | `REAL_LEDGER` exit paths; long/short gap; confidence floor (score didn't exist before July); gate failure rate | **Cut by month before believing anything pooled** |
 | **Absence read as evidence** | floor log "stopped"; 23 silent days; `scan_log` 3 days; uptime 61 min "stale" — **all rotation, rolling windows or sync cadence** | **Prefer files that never rotate; pick thresholds from the cadence** |
 | **Unstated power** | nulls with MDEs of **90–128%/yr** reported as "nothing survived"; a p99 that was a sample max | **State the MDE before the verdict, every time** |
-
 | **Tie mass under a threshold** | `funding_hot` as `>= quantile(0.80)` swallowed the 18.6% of coin-days parked at Hyperliquid's default funding rate — flagging ~85% of the live cross-section | **Check for repeated values before thresholding; use `>` on anything with a platform default** |
 
 **Three more rules earned the hard way:**
