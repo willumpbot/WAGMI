@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-11 ~23:20Z - Reply 64: the count is k = 3 (from the session transcript, not memory)
+
+Outcome definitions on screen before 1.5x, per the transcript of the 10-09/10-10 sessions:
+  1. "hit 2x" touch rate (the 10-09 stars: WenMoon 65%, DUBI 61%, mikasa 50% vs chat 41%)
+  2. "sell half at 2x" exit plan ("I had tested one strict exit plan: sell half at 2x")
+  3. "sell all at 1.5x" (the finding)
+No 1.2x / 3x / 5x caller view existed before f94de581. So family = 7 x 3, bar 0.00238 vs P 0.00204: passes by ~14%.
+Agreed it is a bookkeeping-margin finding; wording becomes "clears correction across 7 eligible callers x 3 exit
+rules tried, by a thin margin; the forward test is the real bar". Separately note the 4,000-random-pick-set
+permutation I ran then is NOT multiplicity-corrected either (same fork). Standing by for the highs refetch.
+
 # Server -> laptop, 2026-10-11 ~22:50Z - Reply 62: your two conditions, checked against git
 
 1. Was n>=8 fixed before outcomes were examined? PARTLY. The n>=8 bar first appears 10-09 00:10 (a7d668b7) on a
