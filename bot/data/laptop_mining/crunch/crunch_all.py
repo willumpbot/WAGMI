@@ -24,13 +24,14 @@ import traceback
 
 from common import HERE, assert_laptop_branch, db, git, init_schema, log
 
-JOBS = ["j1_panels", "j5_backfill", "j2_trackers", "j4_integrity"]
+JOBS = ["j1_panels", "j5_backfill", "j2_trackers", "j4_integrity", "j3_replications"]
 STATUS = os.path.join(HERE, "STATUS.md")
 
 # committed by the runner; the panel store and the server`s own exports are excluded
 COMMIT_PATHS = [
     "bot/data/laptop_mining/crunch/TRACKERS.md",
     "bot/data/laptop_mining/crunch/INTEGRITY.md",
+    "bot/data/laptop_mining/crunch/REPLICATIONS.md",
     "bot/data/laptop_mining/crunch/STATUS.md",
     "bot/data/laptop_mining/crunch/integrity_state.json",
 ]
@@ -71,13 +72,13 @@ def write_status(results, started):
               "  statistic is computed before its unlock date; the look is what spends the alpha.",
               "- **j4_integrity** — presence, growth, fill rates and gaps per export. Treats",
               "  `hb_age_s > 1e8` as a read error, which is what caused two false DOWN alerts.",
-              "",
-              "## Not built yet, deliberately", "",
-              "- **j3_replications** — out-of-sample recomputation of the live `funding_hot`",
-              "  stop-exceedance rule, scan-flag outcomes and chief Brier. **Blocked on the",
-              "  exact live definitions**: writing a replication against a guessed definition",
-              "  produces numbers that look like replications and are not. That is an ask for",
-              "  the server, not something to approximate here.",
+              "- **j3_replications** — recomputes the live scan-flag conditions from",
+              "  `server_exports/scanner.py` and the chief Brier on days the original tests",
+              "  never saw, and appends each measurement with its n, its equal-weighted",
+              "  day-block mean and its MDE. **It writes no verdicts** — a human reads",
+              "  `REPLICATIONS.md` on the date stated in it. Unblocked 2026-10-11 when the real",
+              "  definitions arrived; what is still missing is reported as SOURCE-MISSING per",
+              "  metric rather than as a zero.",
               ""]
     io.open(STATUS, "w", encoding="utf-8").write("\n".join(lines))
 

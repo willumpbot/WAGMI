@@ -1,0 +1,93 @@
+# Replications -- OBSERVATIONS ONLY, no verdicts
+
+_Written by `crunch/j3_replications.py` every hour. It recomputes the live scan-flag
+definitions and the chief Brier on days the original tests never saw, and appends what
+it measures to the `replications` table in `panels.sqlite`. **It never concludes
+anything.** There is no verdict column here and there will not be one._
+
+_Do not read this for a verdict before **2026-12-10**, or earlier only to check whether a
+metric's MDE has fallen below the in-sample effect it is replicating. Both numbers are
+printed below, every run. A replication read before it could have come out the other
+way is not a replication._
+
+_Updated 2026-10-11 14:27. 2 out-of-sample day-block(s) evaluated since 2026-10-09._
+
+## What accrued
+
+| asof | metric | n | value | note |
+|---|---|---|---|---|
+| run | `meta.oos_boundary` | 205 | — | OOS outcome days start 2026-10-09. 205 earlier closed days are WITHHELD as in-sample for the flag tests (all built on history through 2026-10-08) -- counted here so the small n below reads as a deliberate exclusion, not as missing data. |
+| run | `meta.panel` | 176 | 356 | 176 coins with >=60 closed 24-bar days; 356 partial days excluded; universe capped at the top 60 by candle USD volume (live caps at the top 60 by ctx.dayNtlVlm -- a stated deviation) |
+| run | `meta.em` | — | — | live em = volforecast.forecast(closes), stage 1 + the 0.8 haircut at >= 3.9, exactly as scanner.py calls it |
+| run | `meta.oos_days` | 2 | — | evaluated 2026-10-09 .. 2026-10-10; scanned universe 60..60 coins/day; coin-days skipped: gap=0, no_em=0, short_history=0 |
+| 2026-10-09 | `scan.squeeze.day.diff_ret_pct` | 0 | — | flag fired on none of the 60 coins scanned on 2026-10-09. A real non-firing: every input was present. |
+| 2026-10-10 | `scan.squeeze.day.diff_ret_pct` | 0 | — | flag fired on none of the 60 coins scanned on 2026-10-10. A real non-firing: every input was present. |
+| run | `scan.squeeze.cum.blockmean_diff_pct` | 0 | — | no day-block in the OOS window produced a flagged-vs-unflagged comparison, so there is nothing to average. EXACT: closed daily candles + the live em only, no price input |
+| 2026-10-09 | `scan.vol_expanding.day.diff_ret_pct` | 1 | -10.5091 | within-day: mean next-day % of the 1 flagged coins minus the 59 unflagged coins scanned the same day (flagged level was -7.4765%). EXACT: rv5/rv22 from closed daily closes only |
+| 2026-10-10 | `scan.vol_expanding.day.diff_ret_pct` | 6 | -1.7936 | within-day: mean next-day % of the 6 flagged coins minus the 54 unflagged coins scanned the same day (flagged level was +1.5328%). EXACT: rv5/rv22 from closed daily closes only |
+| run | `scan.vol_expanding.cum.level_pooled_pct` | 7 | 0.2457 | DESCRIPTION ONLY, not the number to act on: event-weighted mean return of the flagged coins, which contains the whole market move of every day it spans. Equal-weighted by day it is -2.9719% -- the gap between those two is the clustering trap, printed here rather than hidden. |
+| run | `scan.vol_expanding.cum.pooled_diff_pct` | 7 | -3.0387 | event-weighted (by flagged coin-days) within-day difference over 7 coin-days. EXACT: rv5/rv22 from closed daily closes only |
+| run | `scan.vol_expanding.cum.blockmean_diff_pct` | 2 | -6.1513 | EQUAL-WEIGHTED over 2 day-blocks -- THE FIGURE TO ACT ON, printed beside the pooled one above. EXACT: rv5/rv22 from closed daily closes only |
+| run | `scan.vol_expanding.cum.mde_diff_pct` | 2 | — | DETECTION FLOOR, STATED BEFORE ANY READING: 80% power, two-sided 0.05, clustered on 2 day-blocks -- UNDEFINED until 3 blocks exist. Until then no reading of the means above is distinguishable from noise, either way. |
+| run | `scan.vol_expanding.cum.size_mean_corr` | 2 | — | corr(day n, day difference) over 2 blocks -- UNDEFINED: every block has the same n, so pooled and block mean coincide by construction |
+| run | `scan.vol_expanding.cum.placebo_reject_rate` | 2 | — | SOURCE-INSUFFICIENT: 2 usable day-blocks, needs 3 before a rejection rate means anything. This is the test's REALIZED SIZE, and it is what licenses reading the figures above. The placebo CAN fail and has: run on the flagged LEVEL it rejected at 0.17-0.27, which is what forced the switch to the within-day difference. HOW TO READ IT: at 0.05 the MDE above is as advertised; above 0.05 the MDE is optimistic by roughly the ratio (a realized 0.10 means treat the floor as about undefined until the MDE exists), and a rate far above indicts the figures rather than merely widening them. |
+| 2026-10-09 | `scan.ma50_pullback.day.diff_ret_pct` | 5 | -0.9107 | within-day: mean next-day % of the 5 flagged coins minus the 55 unflagged coins scanned the same day (flagged level was +2.0227%). DEVIATION: px = close(D-1) stands in for the live intraday markPx |
+| 2026-10-10 | `scan.ma50_pullback.day.diff_ret_pct` | 4 | -1.6982 | within-day: mean next-day % of the 4 flagged coins minus the 56 unflagged coins scanned the same day (flagged level was +1.5621%). DEVIATION: px = close(D-1) stands in for the live intraday markPx |
+| run | `scan.ma50_pullback.cum.level_pooled_pct` | 9 | 1.818 | DESCRIPTION ONLY, not the number to act on: event-weighted mean return of the flagged coins, which contains the whole market move of every day it spans. Equal-weighted by day it is +1.7924% -- the gap between those two is the clustering trap, printed here rather than hidden. |
+| run | `scan.ma50_pullback.cum.pooled_diff_pct` | 9 | -1.2607 | event-weighted (by flagged coin-days) within-day difference over 9 coin-days. DEVIATION: px = close(D-1) stands in for the live intraday markPx |
+| run | `scan.ma50_pullback.cum.blockmean_diff_pct` | 2 | -1.3044 | EQUAL-WEIGHTED over 2 day-blocks -- THE FIGURE TO ACT ON, printed beside the pooled one above. DEVIATION: px = close(D-1) stands in for the live intraday markPx |
+| run | `scan.ma50_pullback.cum.mde_diff_pct` | 2 | — | DETECTION FLOOR, STATED BEFORE ANY READING: 80% power, two-sided 0.05, clustered on 2 day-blocks -- UNDEFINED until 3 blocks exist. Until then no reading of the means above is distinguishable from noise, either way. |
+| run | `scan.ma50_pullback.cum.size_mean_corr` | 2 | — | corr(day n, day difference) over 2 blocks -- UNDEFINED: every block has the same n, so pooled and block mean coincide by construction |
+| run | `scan.ma50_pullback.cum.placebo_reject_rate` | 2 | — | SOURCE-INSUFFICIENT: 2 usable day-blocks, needs 3 before a rejection rate means anything. This is the test's REALIZED SIZE, and it is what licenses reading the figures above. The placebo CAN fail and has: run on the flagged LEVEL it rejected at 0.17-0.27, which is what forced the switch to the within-day difference. HOW TO READ IT: at 0.05 the MDE above is as advertised; above 0.05 the MDE is optimistic by roughly the ratio (a realized 0.10 means treat the floor as about undefined until the MDE exists), and a rate far above indicts the figures rather than merely widening them. |
+| 2026-10-09 | `scan.on_20d_low.day.diff_ret_pct` | 1 | -0.0884 | within-day: mean next-day % of the 1 flagged coins minus the 59 unflagged coins scanned the same day (flagged level was +2.7705%). DEVIATION: px = close(D-1) stands in for the live intraday markPx, and the `lo20 <= px` half of the live condition is vacuous at the close |
+| 2026-10-10 | `scan.on_20d_low.day.diff_ret_pct` | 2 | -3.3224 | within-day: mean next-day % of the 2 flagged coins minus the 58 unflagged coins scanned the same day (flagged level was -0.0646%). DEVIATION: px = close(D-1) stands in for the live intraday markPx, and the `lo20 <= px` half of the live condition is vacuous at the close |
+| run | `scan.on_20d_low.cum.level_pooled_pct` | 3 | 0.8804 | DESCRIPTION ONLY, not the number to act on: event-weighted mean return of the flagged coins, which contains the whole market move of every day it spans. Equal-weighted by day it is +1.3529% -- the gap between those two is the clustering trap, printed here rather than hidden. |
+| run | `scan.on_20d_low.cum.pooled_diff_pct` | 3 | -2.2444 | event-weighted (by flagged coin-days) within-day difference over 3 coin-days. DEVIATION: px = close(D-1) stands in for the live intraday markPx, and the `lo20 <= px` half of the live condition is vacuous at the close |
+| run | `scan.on_20d_low.cum.blockmean_diff_pct` | 2 | -1.7054 | EQUAL-WEIGHTED over 2 day-blocks -- THE FIGURE TO ACT ON, printed beside the pooled one above. DEVIATION: px = close(D-1) stands in for the live intraday markPx, and the `lo20 <= px` half of the live condition is vacuous at the close |
+| run | `scan.on_20d_low.cum.mde_diff_pct` | 2 | — | DETECTION FLOOR, STATED BEFORE ANY READING: 80% power, two-sided 0.05, clustered on 2 day-blocks -- UNDEFINED until 3 blocks exist. Until then no reading of the means above is distinguishable from noise, either way. |
+| run | `scan.on_20d_low.cum.size_mean_corr` | 2 | — | corr(day n, day difference) over 2 blocks -- UNDEFINED: every block has the same n, so pooled and block mean coincide by construction |
+| run | `scan.on_20d_low.cum.placebo_reject_rate` | 2 | — | SOURCE-INSUFFICIENT: 2 usable day-blocks, needs 3 before a rejection rate means anything. This is the test's REALIZED SIZE, and it is what licenses reading the figures above. The placebo CAN fail and has: run on the flagged LEVEL it rejected at 0.17-0.27, which is what forced the switch to the within-day difference. HOW TO READ IT: at 0.05 the MDE above is as advertised; above 0.05 the MDE is optimistic by roughly the ratio (a realized 0.10 means treat the floor as about undefined until the MDE exists), and a rate far above indicts the figures rather than merely widening them. |
+| 2026-10-09 | `scan.volume_surge_candlevol.day.diff_ret_pct` | 7 | 0.9827 | within-day: mean next-day % of the 7 flagged coins minus the 53 unflagged coins scanned the same day (flagged level was +3.7255%). PROXY: candle USD volume for both terms; live uses ctx.dayNtlVlm |
+| 2026-10-10 | `scan.volume_surge_candlevol.day.diff_ret_pct` | 3 | 11.9929 | within-day: mean next-day % of the 3 flagged coins minus the 57 unflagged coins scanned the same day (flagged level was +14.5402%). PROXY: candle USD volume for both terms; live uses ctx.dayNtlVlm |
+| run | `scan.volume_surge_candlevol.cum.level_pooled_pct` | 10 | 6.9699 | DESCRIPTION ONLY, not the number to act on: event-weighted mean return of the flagged coins, which contains the whole market move of every day it spans. Equal-weighted by day it is +9.1329% -- the gap between those two is the clustering trap, printed here rather than hidden. |
+| run | `scan.volume_surge_candlevol.cum.pooled_diff_pct` | 10 | 4.2857 | event-weighted (by flagged coin-days) within-day difference over 10 coin-days. PROXY: candle USD volume for both terms; live uses ctx.dayNtlVlm |
+| run | `scan.volume_surge_candlevol.cum.blockmean_diff_pct` | 2 | 6.4878 | EQUAL-WEIGHTED over 2 day-blocks -- THE FIGURE TO ACT ON, printed beside the pooled one above. PROXY: candle USD volume for both terms; live uses ctx.dayNtlVlm |
+| run | `scan.volume_surge_candlevol.cum.mde_diff_pct` | 2 | — | DETECTION FLOOR, STATED BEFORE ANY READING: 80% power, two-sided 0.05, clustered on 2 day-blocks -- UNDEFINED until 3 blocks exist. Until then no reading of the means above is distinguishable from noise, either way. |
+| run | `scan.volume_surge_candlevol.cum.size_mean_corr` | 2 | — | corr(day n, day difference) over 2 blocks -- UNDEFINED: every block has the same n, so pooled and block mean coincide by construction |
+| run | `scan.volume_surge_candlevol.cum.placebo_reject_rate` | 2 | — | SOURCE-INSUFFICIENT: 2 usable day-blocks, needs 3 before a rejection rate means anything. This is the test's REALIZED SIZE, and it is what licenses reading the figures above. The placebo CAN fail and has: run on the flagged LEVEL it rejected at 0.17-0.27, which is what forced the switch to the within-day difference. HOW TO READ IT: at 0.05 the MDE above is as advertised; above 0.05 the MDE is optimistic by roughly the ratio (a realized 0.10 means treat the floor as about undefined until the MDE exists), and a rate far above indicts the figures rather than merely widening them. |
+| run | `scan.above_20d_high.status` | — | — | STRUCTURAL-ZERO, NOT an observation: the live condition is markPx > max(high) over a window that INCLUDES the evaluation day's predecessor, and this job's only price is that predecessor's close, which cannot exceed its own high. The flag can never fire here, so no n is reported -- an n of 0 would be an artifact of the reconstruction. Becomes replicable once ctx.mark has an intraday series (archived since 2026-10-10). |
+| run | `scan.funding_hot.status` | — | — | SOURCE-MISSING: needs a funding cross-section of >=20 coins on the evaluation day. funding_hist holds 999 rows/coin (the API page cap) ending Nov 2025 for 176 of 178 coins; history/*_funding.csv (40 coins) all end 2026-10-08 19:00; ctx begins 2026-10-10 22:42. Coverage actually found -- 2026-10-09: 2 coins via SOURCE-MISSING; 2026-10-10: 2 coins via SOURCE-MISSING |
+| run | `scan.funding_cold.status` | — | — | SOURCE-MISSING: needs a funding cross-section of >=20 coins on the evaluation day. funding_hist holds 999 rows/coin (the API page cap) ending Nov 2025 for 176 of 178 coins; history/*_funding.csv (40 coins) all end 2026-10-08 19:00; ctx begins 2026-10-10 22:42. Coverage actually found -- 2026-10-09: 2 coins via SOURCE-MISSING; 2026-10-10: 2 coins via SOURCE-MISSING |
+| run | `scan.volume_surge.status` | — | — | SOURCE-MISSING for the LIVE definition: its numerator is ctx.dayNtlVlm, a rolling 24h figure of which the laptop holds under one day. What accrues instead is `volume_surge_candlevol`, a candle-volume proxy, named apart on purpose so the two can never be read as the same flag. |
+| run | `stop.panel_exceedance_rate.pooled` | 120 | 0.10833 | event-weighted. /next-day close-to-close move/ > 1.65 x em, em from funding_stop.py's hardcoded HAR, NOT the live volforecast em. ALL scanned coins: the in-sample 21.72% reference was the UNFLAGGED rate within date x em-quintile cells on 17 clean perps, a different population, so this is a companion figure and not that number. |
+| run | `stop.panel_exceedance_rate.blockmean` | 2 | 0.10833 | EQUAL-WEIGHTED by day -- the figure to act on. /next-day close-to-close move/ > 1.65 x em, em from funding_stop.py's hardcoded HAR, NOT the live volforecast em. ALL scanned coins: the in-sample 21.72% reference was the UNFLAGGED rate within date x em-quintile cells on 17 clean perps, a different population, so this is a companion figure and not that number. |
+| run | `stop.panel_exceedance_rate.mde` | 2 | — | DETECTION FLOOR on the day-clustered rate, 80% power, two-sided 0.05 -- UNDEFINED, needs 3 day-blocks |
+| run | `stop.panel_exceedance_rate.size_mean_corr` | 2 | — | corr(day n, day rate) over 2 blocks -- UNDEFINED, and benignly so: the scanned universe is a fixed top-60 every day, so every block has identical n and the pooled and equal-weighted figures above coincide by construction rather than by luck |
+| run | `stop.funding_hot_matched_diff_pp.status` | — | — | SOURCE-MISSING: the +2.64pp matched difference needs funding_hot, which needs the funding cross-section recorded above. Nothing is appended for it, and its absence is not a difference of zero. |
+| run | `stop.definition_divergence` | — | — | RECORDED FOR WHEN FUNDING ARRIVES: live scanner.py flags funding > p80 (STRICT, interpolated) on the INSTANTANEOUS hourly rate across the top 60 by volume; tested funding_stop.py used >= pandas quantile(0.80) on the DAY-SUMMED rate across 17 clean perps. Inclusive-vs-strict on a mass point, and instantaneous-vs-daily-sum, are different flags. Replicating the live flag and replicating the published claim are two different jobs, and this job will have to be told which one is wanted. |
+| run | `chief.definition_source.status` | — | — | SOURCE-MISSING: server_exports/chief.py is NOT in the export. The only copy on this machine (bot/tools/hivemind/chief.py) contains no match for 'brier' or 'p_up', so the Brier below follows the definition as DESCRIBED, not as coded. Its two free choices -- the call's own `price` as the base, and the 1h close at/before ts+24h as the outcome -- are repeated in each row's note and remain unverified. |
+| run | `chief.brier_24h.n_calls_with_p` | 30 | — | p_up_24h arrives as integer percent (observed range 48..52) and is divided by 100 to a probability. The scale is DETECTED, not assumed: read at face value a percent would make every Brier ~2300. |
+| run | `chief.brier_24h.baseline` | 30 | 0.25 | the stated coin-flip reference, recorded so this log is self-contained |
+| run | `chief.brier_24h.attainable_skill` | 30 | 0.00658 | CEILING: the largest possible improvement on 0.25 given the observed spread of p (max /p-0.5/ = 0.020). Best attainable Brier is 0.24342; a perfectly ordered forecaster could not beat it. Read any Brier against this, not against 0.25 alone. |
+| run | `chief.brier_24h.n_resolved` | 0 | — | GENUINE ZERO of resolvable pairs, not SOURCE-MISSING: both inputs are readable and all 30 p_up_24h calls were made within the last 24h, so none has matured. Earliest resolves 2026-10-12 01:08Z. Separately, 0 of the calls carrying the server's own ret_1d also carry p_up_24h, so the server cannot resolve them either -- consistent with chief_scorecard.json reporting brier_24h n=0. |
+
+## The refusals, restated
+
+Each of these is a **refusal, not a zero**. A missing input reported as 0 reads as 'the
+flag never fired' or 'the forecaster has no skill', and this project has already
+published one false null that way.
+
+- `funding_hot`, `funding_cold`, and the matched +2.64pp stop difference -- no funding
+  cross-section exists on any out-of-sample day. Stated per day in the table above.
+- `above_20d_high` -- cannot fire in a day-boundary reconstruction. Declared, not counted.
+- `volume_surge` -- the live input is `ctx.dayNtlVlm`; the proxy accrues under a
+  different metric name so the two can never be confused.
+- the chief Brier definition -- `server_exports/chief.py` is absent, so the Brier is
+  implemented from prose and says so in every row it writes.
+
+## What would unblock what
+
+- a funding rate per coin per day, or ~20 more days of `ctx` accrual, turns on
+  `funding_hot`, `funding_cold` and the matched stop difference;
+- `server_exports/chief.py` turns the Brier from prose-derived into code-verified;
+- `ctx.mark` accrual turns `above_20d_high` from a structural zero into an observation.
