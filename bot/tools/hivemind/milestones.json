@@ -217,9 +217,9 @@
  },
  {
   "date": "2026-10-11",
-  "kind": "open",
+  "kind": "proven",
   "title": "Crowded longs: stops hit a bit more often",
-  "what": "Direction held in every variant (+1.5 to +2.6 pts); the size depends on how 'crowded' is defined. Scanner now uses the tested definition. Size down a little."
+  "what": "On days when a coin's funding is in the top 20% (strictly above the cut), a normal stop is hit ~2.7 pts more often (t=3.0, 1,010 days). Live flag now matches what was tested. Size down a little."
  },
  {
   "date": "2026-10-11",

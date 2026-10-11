@@ -36,8 +36,8 @@ FLAGS = {
                       "includes this (laptop SIZE_FLAGS: adds +1%, t=0.24): use the expected move instead."),
     "funding_hot": ("Longs paying a lot", "tested",
                     "Funding in the top 20% of the scanned coins: longs are crowded. In testing a normal stop got hit somewhat more "
-                    "often on days like this (+2-3 pts, e.g. 24% vs 22%; the direction held across every variant, the size is "
-                    "uncertain). Size down a little. Not direction."),
+                    "often on days like this (+2.7 pts, ~24% vs ~22%; t=3.0 on 1,010 days with exactly this definition). "
+                    "Size down a little. Not direction."),
     "funding_cold": ("Shorts paying", "context", "Negative funding: shorts are paying longs. Context only."),
     "volume_surge": ("Volume surge", "context", "24h volume over 2.5x its 20-day average. Suggestive: next day's move "
                      "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),

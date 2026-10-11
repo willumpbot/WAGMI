@@ -15,6 +15,10 @@
   [
    "Not saying how much a test could see",
    "'Nothing found' by tests that could only see huge effects. Now every result states what it could have detected."
+  ],
+  [
+   "Cutoffs on values with a default",
+   "Most coins sit at Hyperliquid's default funding rate, so 'top 20%' flagged 85% of coins. Now cutoffs use 'strictly above', and live flags are tested from their actual code, not their description."
   ]
  ],
  "dead": [
