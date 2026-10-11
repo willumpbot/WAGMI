@@ -88,6 +88,21 @@ def run(force=False):
                             fo.write(ln)
     except Exception:
         pass
+    try:   # anonymised Syndicate call list (public CAs + times + hashed caller) for the laptop's M3 / crunch layer
+        import hashlib
+        import json as _json
+        import sys as _sys
+        _sys.path.insert(0, str(BOT / "tools" / "hivemind"))
+        import syndicate_study as _ss
+        rec = (_json.loads((BOT / "data" / "hivemind" / "tg" / "track.json").read_text(encoding="utf-8")).get("callers") or {})
+        with open(EXP / "syndicate_calls_anon.jsonl", "w", encoding="utf-8") as f:
+            for c in _ss.first_calls(30):
+                f.write(_json.dumps({"ca": c["ca"], "call_ts": int(c["ts"]),
+                                     "caller_hash": hashlib.sha256((c["caller"] or "bot").encode()).hexdigest()[:10],
+                                     "starred": bool((rec.get(c["caller"]) or {}).get("watch")),
+                                     "first_seen_via_bot_alert": c["bot_first"]}) + chr(10))
+    except Exception:
+        pass
     STAMP.write_text(str(time.time()))
     rel = str(EXP.relative_to(BOT))
     _git("add", "-f", "--", rel)
