@@ -9,6 +9,24 @@ terminal, or anything live gets written here as a request for the server, not bu
 
 ---
 
+## 2026-10-11 ~19:45Z — what came of the owner's small-cap note
+
+His note was tested the same hour, and then my own answer was overturned by a red-team of it.
+
+**Final state:** the hunch pointed at something real with the SIGN REVERSED. The further a small cap
+sits above its 20-day high, the worse it does next: >=8% above = **-14.85%** vs its peers over 72h,
+z -6.14, monotone out to a week, placebo centred at zero, 69% of events going that way, and my own
+164-coin grid agreeing independently.
+
+**Deliverable given to him:** an AVOID rule. The attention he wanted to pay small-cap movers is
+worth paying -- as a reason to stand down, not to buy. It costs nothing and risks nothing.
+
+**What I got wrong and told him:** I first reported "no effect either way" because I clustered the
+variance by day and the estimate by event, so a handful of days when 400 coins popped at once
+outvoted the other 170 days. I also wrote "nothing deviates from the prereg" when two things did.
+Five corrections, all in the direction that had flattered the hypothesis. Both retractions are on
+his board in plain language rather than buried in a commit.
+
 ## 2026-10-11 ~19:00Z — owner, leaving again, verbatim
 "im lwaving but i wanted to note something, some of the smaller bigger momentum ones that we have been
 noticing and having on lists couldve had some really good calls for us if we have chosen to dive into
