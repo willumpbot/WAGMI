@@ -1,3 +1,20 @@
+> # ⚠️ AUDITED 2026-10-11 — the decision stands; the MDE does not support "nothing is there". See `NULLS_AUDIT.md`.
+>
+> **What is airtight:** at a 1-day hold fees are 0.36%/day and the shuffled null lands at −0.32 to
+> −0.43%, so the five "significantly negative" cells *are* the fee drag — as this doc already says.
+> That argument needs no statistics. The 5-day train→test collapse (four cells, all four) is valid
+> **overfitting** evidence, which is stronger than a failed detection.
+>
+> **What is overstated:** the MDE is never stated and it is **90–128% annualised** (1d ~0.33%/day,
+> 5d ~1.28%/5d). A realistic cross-sectional edge of 2–10 bps/day is **invisible here by construction**.
+> And two cells are economically large but unresolved rather than zero: **5d rsi +0.595 (= +43%/yr, CI
+> upper bound +112%/yr)** and **5d stretch +0.437 (+32%/yr)**. "Not significant" is right; "nothing
+> survived" invites reading them as zero. **These are the two cells to revisit first.**
+>
+> **And the tally in §"Why this test was worth running" needs rewording:** "~98 tests with nothing
+> surviving" should read *"none finding an edge large enough to clear detection floors that mostly sit
+> above 90% annualised."* A tally of underpowered tests describes the data, not the market.
+
 # Cross-sectional ranking — the last unasked structural question, answered
 
 _2026-10-08. Self-proposed (Proposal B in `LAPTOP_PROPOSALS.md`), executed immediately.

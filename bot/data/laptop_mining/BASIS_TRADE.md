@@ -1,3 +1,18 @@
+> # ⚠️ AUDITED 2026-10-11 — right call, but make it the economic argument, not a statistical one. See `NULLS_AUDIT.md`.
+>
+> **The test half is n = 15 cycles**, giving an MDE of about **7.8% annualised**. So "earns 1–2.5%
+> annualised" is **not distinguishable from zero** — *"the trade does not pay"* and *"we cannot tell
+> whether it pays below 8%/yr"* are different claims, and only the second is supported.
+>
+> **The `$25k` "significantly negative" cell should be softened:** its CI upper bound is **−0.001%**, a
+> knife-edge rejection on n = 15, with **6 cells tested** (3 clips × 2 halves) and no multiplicity
+> correction — Bonferroni would not clear it. The *direction* is sound because costs rise with clip size
+> mechanically; the significance claim is not.
+>
+> **None of this changes the verdict.** Carry is 1–2.5% annualised, costs scale with size, only 5 of 21
+> pairs were usable, and two were rejected on sub-$10k books. **"Do not add a Carry panel" is right on
+> economics** — state it that way rather than as a statistical refutation.
+
 # Mission 14 — is same-asset funding harvesting real on Hyperliquid?
 
 _2026-10-08. 21 spot/perp pairs screened, 5 usable, 2,562 coin-days, 57 cycles.
