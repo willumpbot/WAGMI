@@ -9,6 +9,22 @@ terminal, or anything live gets written here as a request for the server, not bu
 
 ---
 
+## 2026-10-11 ~19:00Z — owner, leaving again, verbatim
+"im lwaving but i wanted to note something, some of the smaller bigger momentum ones that we have been
+noticing and having on lists couldve had some really good calls for us if we have chosen to dive into
+them once we found some trend. im leaving again, adn communicated with the PC"
+
+**What I did with it.** Tested it the same hour. First attempt split my 42-coin panel at the median
+($9.2M/day) and found momentum in the BIG half (+22.7 bps) and nothing in the "small" half (+0.1) --
+but that split is majors vs majors and does not contain the coins the owner means. So I widened the
+universe to HL ranks 46-170 by volume and SEALED a prereg before looking
+(`PREREG_M2_SMALLCAP_2026-10-11.md`, SHA-256 91c39ce7..., committed 2d132ff7 before any result).
+
+**The thing I told him and will not drop:** the coins we noticed trending were noticed BECAUSE they
+ran, so the remembered set cannot produce a negative answer. And HL serves no candles for delisted
+perps, so my universe is survivors only -- any positive result is an upper bound, written into the
+prereg before the test ran.
+
 ## 2026-10-11 — ⚠️ **CORRECTION: I misread him. Trading stays first. Ignore my reprioritisation request.**
 
 > *"no, the trading side always matters the most. i just seem to have some room in my head for the other
