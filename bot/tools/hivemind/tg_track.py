@@ -67,18 +67,17 @@ def _dex(addrs):
     return out
 
 
-VERDICT_SYSTEM = """You judge a meme-coin call just posted in a Telegram group the owner follows (Solana memes).
-Facts for this chat (graded history): 62% of called coins touch 1.5x and 41% touch 2x at some point, but the median
-is -73% after 7 days. Following every call and selling all at 1.5x roughly breaks even (+2%/call); a few callers
-(starred in caller_record, e.g. 90%+ hitting 1.5x) did much better, found after looking, being confirmed forward.
-Today's winners took 4-5 hours to peak; losers often dumped in the first hour. So "coin flip" is the honest default.
-You see the token's market data, LIVE order flow (buys/sells, unique buyers/sellers, volume, price change over
-5m/15m/1h/6h from the pool), the price path since the call, and the caller's graded record. Say whether THIS call looks more likely than
-the chat's 41% base rate to reach 2x from the call within 24h ("runner"), about base rate ("coin flip"), or clearly
-worse / dangerous ("avoid": churn, tiny liquidity, rug flags, already ran). You are graded on this, so don't be a hype
-machine. Output ONLY JSON: {"verdict": "runner|coin flip|avoid", "p_15x": 0-100, "p_2x": 0-100,
- "plan": "<=90 chars: if someone takes it, how to sell (e.g. 'sell all at 1.5x; out if it loses -35% first hour')",
- "why": "<=160 chars plain, cite the flow numbers"}"""
+VERDICT_SYSTEM = """You estimate, for a meme-coin call just posted in the owner's Telegram group (Solana), the probability
+that price reaches 1.5x and 2x of the price at the call within 24 hours.
+CALIBRATION IS EVERYTHING: you are scored with a Brier score on every call. Base rates in this chat (graded history):
+about 62% of calls touch 1.5x and about 41% touch 2x. Your average p_15x across many calls should land near 62%.
+Start from 62% and move it only for concrete evidence in the data: order-flow (buyers vs sellers, volume vs
+liquidity over 5m/15m/1h), how far it already ran before the call, liquidity size, red flags (churn, tiny liquidity,
+mint/freeze risks), the price path since the call, and the caller's graded record. A coin that has already run hard
+is LESS likely to add another 50%; a fresh launch with strong net buying is MORE likely. Do not default to low numbers.
+Output ONLY JSON: {"p_15x": 5-95, "p_2x": 5-95,
+ "plan": "<=90 chars: if someone takes it, how to sell (e.g. 'sell all at 1.5x; out if -35% in the first hour')",
+ "why": "<=160 chars plain, cite the numbers that moved you off 62%"}"""
 
 
 def _ai_verdicts(calls, prev, records, now):
@@ -129,7 +128,13 @@ def _ai_verdicts(calls, prev, records, now):
                               max_budget_usd=float(os.getenv("CLI_MAX_BUDGET_USD", "5.00")), timeout=180)
             raw = (getattr(resp, "text", None) or getattr(resp, "content", "")).strip()
             v = json.loads(raw[raw.find("{"): raw.rfind("}") + 1])
-            c["ai"] = {"verdict": v.get("verdict"), "p_15x": v.get("p_15x"), "p_2x": v.get("p_2x"),
+            try:
+                p15 = float(v.get("p_15x"))
+            except (TypeError, ValueError):
+                p15 = None
+            # verdict is DERIVED from the calibrated probability (the label alone was 7/7 "avoid" on 10-11)
+            verdict = None if p15 is None else ("runner" if p15 >= 75 else "avoid" if p15 <= 40 else "coin flip")
+            c["ai"] = {"verdict": verdict, "p_15x": v.get("p_15x"), "p_2x": v.get("p_2x"), "prompt_v": 2,
                        "plan": str(v.get("plan") or "")[:120], "why": str(v.get("why") or "")[:200], "ts": now}
         except Exception:
             continue
@@ -147,6 +152,10 @@ def _ai_stats(calls):
             s["n"] += 1
             s["ran"] += bool(a["ran_2x"])
             s["ran15"] += bool(a.get("ran_15x"))
+            if a.get("p_15x") is not None and a.get("prompt_v") == 2:
+                s.setdefault("brier_sum", 0.0)
+                s["brier_sum"] += (float(a["p_15x"]) / 100 - (1.0 if a.get("ran_15x") else 0.0)) ** 2
+                s["brier_n"] = s.get("brier_n", 0) + 1
     return out
 
 
