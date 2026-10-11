@@ -6287,6 +6287,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 num_agree=signal_result.metadata.get("num_agree", 1),
             )
 
+            if should_trade:
+                # Laptop 10-11: the floor's PASS decisions were never logged (only BLOCKED), so the floor's real input
+                # (adjusted conf vs effective floor) couldn't be tested. Logging only; no behaviour change.
+                logger.info(f"[{trace_id}][{symbol}] Feedback floor PASSED: {fb_reason}")
             if not should_trade:
                 # ── Signal Override: can powerful signal bypass feedback floor? ──
                 _override_ok = False
