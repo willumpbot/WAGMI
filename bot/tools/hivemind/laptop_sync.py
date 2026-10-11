@@ -58,6 +58,9 @@ STREAMS = {
     "whales": BOT / "data" / "hivemind" / "whales_log.jsonl",                      # HL whale net positions
     "voices": BOT / "data" / "hivemind" / "voice_log.jsonl",                       # every voice reading, 15 min
 }
+LEARNED_STATE = ["epoch_start.json", "ic_history.json", "position_state.json", "feedback/signal_quality.json",
+                 "feedback/regime_feedback_state.json", "llm/agent_calibration.json", "llm/neuroplasticity_state.json",
+                 "llm/network_learning.json", "llm/active_learning.json", "llm/agent_performance.json"]
 ARCH_STAMP = BOT / "data" / "hivemind" / ".stream_archive_day"
 
 
@@ -111,6 +114,14 @@ def _archive_streams():
                 fo.write(ln.encode("utf-8") if ln.endswith(chr(10)) else (ln + chr(10)).encode("utf-8"))
         if fo:
             fo.close()
+    # The bot's learned state (<1 MB, rewritten constantly): one daily copy is enough - git history keeps every day,
+    # and a dead disk no longer means every learning loop cold-starts and the epoch baseline is lost (SPOF audit #4).
+    st = EXP / "state"
+    st.mkdir(exist_ok=True)
+    for rel in LEARNED_STATE:
+        src = BOT / "data" / rel
+        if src.exists():
+            shutil.copy2(src, st / rel.replace("/", "__"))
     ARCH_STAMP.write_text(today)
 
 
