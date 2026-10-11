@@ -35,8 +35,9 @@ FLAGS = {
                       "Recent 5-day volatility is well above its 22-day level. The expected-move forecast already "
                       "includes this (laptop SIZE_FLAGS: adds +1%, t=0.24): use the expected move instead."),
     "funding_hot": ("Longs paying a lot", "tested",
-                    "Funding in the top of the scanned coins: longs are crowded. A normal stop gets hit ~12% more often "
-                    "on days like this (24.4% vs 21.7%; laptop FUNDING_SIZING, 1,010 days, survived red team). Size down. Not direction."),
+                    "Funding in the top 20% of the scanned coins: longs are crowded. In testing a normal stop got hit somewhat more "
+                    "often on days like this (+2-3 pts, e.g. 24% vs 22%; the direction held across every variant, the size is "
+                    "uncertain). Size down a little. Not direction."),
     "funding_cold": ("Shorts paying", "context", "Negative funding: shorts are paying longs. Context only."),
     "volume_surge": ("Volume surge", "context", "24h volume over 2.5x its 20-day average. Suggestive: next day's move "
                      "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),
@@ -156,10 +157,18 @@ def run():
                 rows.append(r)
         except Exception:
             errors += 1
-    hot = sorted((r["funding_h"] for r in rows), reverse=True)
-    cut = hot[max(0, len(hot) // 10 - 1)] if hot else None
+    # funding_hot = top QUINTILE of funding across the scanned coins (pandas-style interpolated 80th percentile),
+    # no absolute floor: the exact definition the laptop tested (SIZE_FLAGS / FUNDING_STOP). The previous live flag
+    # (top decile + floor) was stricter than anything tested and not significant on its own (laptop 10-11).
+    fs = sorted(r["funding_h"] for r in rows)
+    cut = None
+    if fs:
+        pos = 0.8 * (len(fs) - 1)
+        lo = int(pos)
+        cut = fs[lo] + (fs[min(lo + 1, len(fs) - 1)] - fs[lo]) * (pos - lo)
     for r in rows:
-        if cut is not None and r["funding_h"] >= cut and r["funding_h"] > 1.25e-5:
+        # strictly ABOVE the cut: most HL coins sit exactly at the default funding rate, so ">=" flagged ~85% of coins
+        if cut is not None and r["funding_h"] > cut:
             r["flags"].append("funding_hot")
         r["n_tested"] = sum(FLAGS[k][1] == "tested" for k in r["flags"])
     rows.sort(key=lambda r: (-r["n_tested"], -len(r["flags"]), -r["vol24_usd"]))
