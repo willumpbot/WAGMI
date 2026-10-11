@@ -155,12 +155,29 @@ def run(force=False):
                                                        "EXPLORATION ENTRY", "EXPLORATION DECLINED"))):
             if (EXP / out).exists() and (EXP / out).stat().st_mtime >= newest:
                 continue
+            # APPEND-ONLY: keep every row already exported (earlier one-off exports used broader filters, and old logs
+            # may rotate away) and add only new matches. Never rebuild from a re-grep alone: that destroyed 95% of
+            # floor_decisions_log for 14 syncs on 10-11 (laptop 482ed65b).
+            import gzip as _gz_mod
+            rows, seen = [], set()
+            if (EXP / out).exists():
+                with _gz_mod.open(EXP / out, "rt", encoding="utf-8", errors="replace") as fi:
+                    for ln in fi:
+                        if ln not in seen:
+                            seen.add(ln)
+                            rows.append(ln)
+            for lf in logs:
+                with open(lf, encoding="utf-8", errors="replace") as fi:
+                    for ln in fi:
+                        if any(k in ln for k in keep):
+                            ln = ln if ln.endswith(chr(10)) else ln + chr(10)
+                            if ln not in seen:
+                                seen.add(ln)
+                                rows.append(ln)
+            rows.sort(key=lambda l: l[:40])   # lines start with {"ts": "<iso>": sorts chronologically
             with _gz(EXP / out) as fo:
-                for lf in logs:
-                    with open(lf, encoding="utf-8", errors="replace") as fi:
-                        for ln in fi:
-                            if any(k in ln for k in keep):
-                                fo.write(ln.encode("utf-8"))
+                for ln in rows:
+                    fo.write(ln.encode("utf-8"))
         # funding/OI/premium snapshots the bot has collected since 2026-06-06 (31 coins), for the fade-funding question
         src = BOT / "data" / "funding_oi_history.jsonl"
         if not (EXP / "funding_oi_history.jsonl.gz").exists() or (EXP / "funding_oi_history.jsonl.gz").stat().st_mtime < src.stat().st_mtime:

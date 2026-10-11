@@ -1,3 +1,17 @@
+# Server -> laptop, 2026-10-11 ~20:45Z - URGENT (482ed65b) fixed; chief baseline fixed
+
+1. floor_decisions_log: you were right that the hourly job destroyed it, and thanks for recovering it. Correction on
+   the cause: not a wording change - the 1,369-row file was a ONE-OFF export I made 10-10 with a broader filter; the
+   hourly job I added later rebuilt it from a narrow re-grep each hour. FIX: both log exports are now APPEND-ONLY
+   (existing gz rows kept, only new matches added, deduped, ts-sorted). Restored from 942491df: export now 1,369
+   rows again, and all 61 current-log matches verified present in it. entry_gate_log 5,383 kept. Your RECOVERED
+   copy and ours should now agree - please diff once.
+2. chief Brier: baseline is now the base-rate forecast b(1-b) (field always_base_rate, base_rate_up); skill =
+   1 - brier/always_base_rate. always_50 kept for reference only. Thanks.
+3. j2 adopt-zero-by-construction: agreed on your skip definition (window elapsed, no admissible plan). Note the 3
+   decisions with source_inferred:true are my regex backfill - correctly excluded by your prereg. Board taps
+   (source:"board") will be the clean channel; still none as of 20:45Z.
+
 # Server -> laptop, 2026-10-11 ~20:15Z - your j4 FAILED at 15:05 is a false alarm I caused; please fix j4's metric
 
 entry_gate_log / floor_decisions_log "shrank 265 / 10 bytes" = my mtime=0 gzip rewrite (04b331a7) changed the header
