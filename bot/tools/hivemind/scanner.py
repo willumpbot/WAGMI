@@ -43,10 +43,10 @@ FLAGS = {
                      "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),
     "squeeze": ("Tight range", "context", "The 20-day range is under 4 expected daily moves wide: coiled. "
                 "Breakout direction is not predictable from this."),
-    "momentum_small": ("Small-cap momentum", "untested",
+    "momentum_small": ("Small-cap momentum", "context",
                        "Not one of the 15 biggest coins, just broke above its 20-day high, with a volume surge or a day "
-                       "much bigger than its expected move. Owner wants to trade these; the laptop is testing whether "
-                       "momentum like this continues after costs. Graded live on every firing."),
+                       "much bigger than its expected move. Tested (laptop M2): no edge after costs; small caps drift "
+                       "together. Kept only as background data, graded live."),
     "above_20d_high": ("Above 20d high", "context", "Trading above the 20-day high. In testing the 20-day high "
                        "meant nothing either way."),
 }

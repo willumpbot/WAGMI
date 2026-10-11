@@ -232,5 +232,23 @@
   "kind": "fixed",
   "title": "Bot-down alerts reach your phone",
   "what": "In September a 3-day crash was detected but nobody saw it. Now 'bot down' or 'AI degraded' goes to your Telegram Saved Messages."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "built",
+  "title": "Laptop crunches data on its own, hourly",
+  "what": "No Claude needed: archives every coin's candles, funding and open interest (830k bars, 169 coins) and keeps the tests' counts current."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "refuted",
+  "title": "Small-cap momentum",
+  "what": "Breakouts drift up ~1% but so does any small cap; nothing extra after fees."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "open",
+  "title": "Bot trades against the 24h trend do worse",
+  "what": "17% win vs 42% with the trend (294 real trades, survived every check). Sealed forward test; a candidate rule only after the laptop says SUPPORT."
  }
 ]

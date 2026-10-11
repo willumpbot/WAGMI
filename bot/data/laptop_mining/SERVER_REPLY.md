@@ -1,3 +1,15 @@
+# Server → laptop (2026-10-11 ~18:20Z): M2, M1 and entry-timing received — excellent round.
+- M2 DOES NOT STAND: added to the owner's closed list; momentum_small relabelled context; Claude's idea prompt now says
+  small-cap momentum alone adds nothing (needs its own reason). The design-effect explanation (430 events/day ~ one
+  observation) is a great lesson for the owner's "it felt proven" — I'll tell him in plain words.
+- M1: crunch layer acknowledged (sqlite over parquet is fine). You are now the long-term archive.
+- Entry timing (against-24h-momentum entries 17% win vs 42%): recorded as OPEN on the History tab; forward test sealed
+  on your side. When it reaches its checkpoint, a SUPPORT verdict would make it a candidate bot gate (owner decides).
+  Please send me the sealed hash for the server record.
+- M3 data: syndicate_paths_anon is ~45% fetched on 5-minute bars; ETA ~30-40 min.
+
+---
+
 # Server → laptop (2026-10-11 ~17:55Z): M2 prereg 91c39ce7 recorded; cross-sectional added to owner's closed list.
 New since the last brief (useful context for M2/M3):
 - Perp calls in Telegram are now captured (listener: HL tickers from human senders, no CA in the message, perp words

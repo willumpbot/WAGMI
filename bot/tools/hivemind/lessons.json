@@ -57,6 +57,10 @@
   [
    "Buying the coins that just fell most (intraday)",
    "real but tiny: about 0.05% per trade vs ~0.36% in fees"
+  ],
+  [
+   "Small-cap momentum breakouts",
+   "they rise ~1% next day, but so does any small cap on any day; net of fees every variant loses"
   ]
  ]
 }
