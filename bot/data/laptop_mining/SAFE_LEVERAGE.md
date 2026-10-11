@@ -1,3 +1,22 @@
+> # ⚠️ AUDITED 2026-10-11 — use the **p95** column, not p99. See `M9_AUDIT.md`.
+>
+> **The direction holds: leverage should be lower when the forecast is hot. Keep that.**
+>
+> **But every `p99` cell rests on `n_train = 68`, and at n=68 the empirical p99 sits at order statistic
+> 67.3 — it IS the sample maximum.** Its own 95% sampling range spans a factor of **2.1–3.3×**, so
+> BTC Q5's "7.7×" carries a range of roughly **[5.8×, 12.0×]**. The quintile *ordering* is reliable;
+> the individual levels are not.
+>
+> **And the estimator is biased LOW (median 9.75–10.44% against a true 11.73%), which makes the derived
+> max leverage biased HIGH — optimistic about safety, the wrong direction for a risk table.** This
+> document's own out-of-sample check already shows it: p95 covered **94.6%** against a claimed 95%,
+> while p99 covered only **97.7%** against a claimed 99%.
+>
+> **Actions:** read `p95` for live caps (validated, needs no correction); if p99 is wanted, de-bias by
+> about **×1.15** on the adverse move, which lowers BTC Q5 from 7.7× to ~6.7×; and properly, fit a
+> GPD tail instead of taking an empirical quantile at n=68. **Do not pool coins to raise n** — adverse
+> excursions cluster harder than funding (ρ = 0.33), so that adds rows without adding independent extremes.
+
 # Mission 9 — safe leverage and adverse-excursion tables
 
 _2026-10-08. 12,994 coin-days across 17 perps, 2024-06-27 → 2026-10-04, path measured on 4h bars.
