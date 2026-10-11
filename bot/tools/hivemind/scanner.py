@@ -167,7 +167,8 @@ def run():
         lo = int(pos)
         cut = fs[lo] + (fs[min(lo + 1, len(fs) - 1)] - fs[lo]) * (pos - lo)
     for r in rows:
-        if cut is not None and r["funding_h"] >= cut:
+        # strictly ABOVE the cut: most HL coins sit exactly at the default funding rate, so ">=" flagged ~85% of coins
+        if cut is not None and r["funding_h"] > cut:
             r["flags"].append("funding_hot")
         r["n_tested"] = sum(FLAGS[k][1] == "tested" for k in r["flags"])
     rows.sort(key=lambda r: (-r["n_tested"], -len(r["flags"]), -r["vol24_usd"]))
