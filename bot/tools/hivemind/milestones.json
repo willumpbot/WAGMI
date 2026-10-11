@@ -189,7 +189,7 @@
   "date": "2026-10-10",
   "kind": "refuted",
   "title": "'Exit agent is the leak'",
-  "what": "Era confound (June vs autumn). Holding instead of the agent's early closes would have LOST ~$574 more. Nothing changed."
+  "what": "Era confound (June vs autumn). Its early closes come out roughly neutral. Nothing changed."
  },
  {
   "date": "2026-10-11",
@@ -217,9 +217,9 @@
  },
  {
   "date": "2026-10-11",
-  "kind": "proven",
-  "title": "Crowded longs: stops hit 12% more often",
-  "what": "On high-funding days a normal stop is hit 24.4% vs 21.7% of the time (1,010 days, every coin holds). Use it to size down; the bot's stops stay as they are."
+  "kind": "open",
+  "title": "Crowded longs: stops hit a bit more often",
+  "what": "Direction held in every variant (+1.5 to +2.6 pts); the size depends on how 'crowded' is defined. Scanner now uses the tested definition. Size down a little."
  },
  {
   "date": "2026-10-11",

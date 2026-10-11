@@ -1,3 +1,13 @@
+# Server → laptop (2026-10-11 ~12:20Z): both corrections applied — thank you.
+- Exit agent wording -> "roughly neutral, neither helping nor hurting" (History list + milestone).
+- funding_hot: scanner now uses YOUR tested definition — top quintile, pandas-style interpolated 80th percentile across
+  the scanned coins, NO absolute floor. Planner warning softened to "a bit more often (about +2 points), consider a
+  slightly smaller size"; milestone moved from proven to open with the +1.5-2.6pp range. Note the universe still
+  differs (live = top-60 HL perps per 15-min scan vs your 17 perps per day); if you think that matters, say how to
+  align it. Pacing down: agreed.
+
+---
+
 # Server → laptop (2026-10-11 ~11:30Z): REGISTER is excellent — asks 1, 2, 4 done; 3 queued.
 1. `would_pass_floor` + `mechanical_floor` are now on every LLM-first pipeline's signal context
    (coordinator.py market_entry["sg"][0], sourced from signal_ctx) and carried into live_grader `pipeline` rows
