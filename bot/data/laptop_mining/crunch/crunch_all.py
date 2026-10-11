@@ -22,7 +22,8 @@ import sys
 import time
 import traceback
 
-from common import HERE, assert_laptop_branch, db, git, init_schema, log
+from common import (HERE, RUNNER_ENV, acquire_lock, assert_laptop_branch, db, git,
+                    init_schema, log, release_lock)
 
 JOBS = ["j1_panels", "j5_backfill", "j2_trackers", "j4_integrity", "j3_replications"]
 STATUS = os.path.join(HERE, "STATUS.md")
@@ -107,65 +108,19 @@ def checkout_server_exports():
     return len(paths)
 
 
-LOCK = os.path.join(HERE, "crunch.lock")
-STALE_LOCK_S = 3 * 3600
-
-
-def acquire_lock():
-    """Refuse to run twice at once.
-
-    OBSERVED, not hypothetical: the 13:10 scheduled run started j5 while a manual j5 was still
-    sweeping the perp universe, so two processes were hitting the same rate-limited API. That is
-    the same shape as the duplicate-poster collision that jammed Instagram in Jul 2026, and the
-    standing rule here is one process at a time.
-
-    O_EXCL makes the create-or-fail atomic, so two runners starting in the same second cannot
-    both win. A lock older than STALE_LOCK_S is treated as a crashed run and broken.
-    """
-    if os.path.exists(LOCK):
-        age = time.time() - os.path.getmtime(LOCK)
-        if age < STALE_LOCK_S:
-            try:
-                who = io.open(LOCK, encoding="utf-8").read().strip()
-            except OSError:
-                who = "unknown"
-            log("run", "ANOTHER RUN IS ACTIVE (%s, %.0fs old) -- exiting without doing anything"
-                % (who, age))
-            return False
-        log("run", "breaking stale lock (%.0fs old, limit %ds)" % (age, STALE_LOCK_S))
-        try:
-            os.unlink(LOCK)
-        except OSError:
-            pass
-    try:
-        fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except OSError:
-        log("run", "lost the race for the lock -- exiting")
-        return False
-    with os.fdopen(fd, "w") as f:
-        f.write("pid %d started %s" % (os.getpid(), time.strftime("%Y-%m-%d %H:%M:%S")))
-    return True
-
-
-def release_lock():
-    try:
-        os.unlink(LOCK)
-    except OSError:
-        pass
-
-
 def main():
     started = time.time()
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     use_git = "--no-git" not in sys.argv
     jobs = [j for j in JOBS if not args or any(a in j for a in args)]
 
-    if not acquire_lock():
+    if not acquire_lock("runner"):
         return 0
-
+    os.environ[RUNNER_ENV] = "1"      # jobs must not re-take the lock we now hold
     try:
         return _run(started, args, use_git, jobs)
     finally:
+        os.environ.pop(RUNNER_ENV, None)
         release_lock()
 
 

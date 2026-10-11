@@ -22,7 +22,7 @@ import json
 import os
 import time
 
-from common import MINING, log, record_run
+from common import MINING, db, log, record_run
 
 EXP = os.path.join(MINING, "server_exports")
 SEAL_DAY = "2026-10-11"
@@ -43,13 +43,58 @@ def days_since_seal():
 
 
 def count_oi():
-    """n_days accrues with calendar days of ctx_snapshots after the seal."""
-    p = os.path.join(EXP, "ctx_snapshots")
-    if not os.path.isdir(p):
-        return None, "SOURCE-MISSING: ctx_snapshots/ absent"
-    days = {f[:10] for f in os.listdir(p) if f.endswith(".jsonl.gz")}
-    after = sorted(d for d in days if d >= SEAL_DAY)
-    return len(after), "%d snapshot days on or after the seal" % len(after)
+    """Coin-days that actually have a 24h OI change, which is the prereg's unit of observation.
+
+    THE BUG THIS REPLACES: it counted `ctx_snapshots/*.jsonl.gz` FILENAMES. The prereg's unit is
+    a coin-day carrying `oi_chg = log(oi_t / oi_{t-1d})`, which needs an observation AND one 24
+    hours earlier. With the archive spanning 20.6 hours, no coin had a 24h lag and the true n was
+    ZERO -- while this reported 1 and would have gone on reporting a number one higher than the
+    truth forever, because day one can never have a lag. Counting the files is counting the wrong
+    object, and it was wrong in the direction that made the test look closer than it was.
+    """
+    try:
+        c = db()
+        rows = c.execute("SELECT coin, t FROM ctx WHERE oi IS NOT NULL").fetchall()
+        c.close()
+    except Exception as e:
+        return None, "SOURCE-UNREADABLE: panel store (%s)" % str(e)[:60]
+    if not rows:
+        return None, ("SOURCE-MISSING: no ctx rows carry `oi`. The archive may exist without the "
+                      "column, which is not the same as zero observations")
+    # THE UNIT IS n_days, NOT coin-days. The prereg sizes its MDE as 2.8*SD/sqrt(n_days), so a
+    # day on which 178 coins are observed is ONE observation of the clustered quantity, not 178.
+    # My first fix counted coin-days and published "n=178, UNLOCKED" for a prereg holding under a
+    # day of data -- a worse error than the off-by-one it replaced, because it claimed the look
+    # was open. Counting the right object is not enough; it has to be the object the prereg sizes.
+    #
+    # And a calendar-day pair is not a 24h lag: the archive spans 2 UTC days but only 20.6 hours,
+    # so a day-index pair would "qualify" on observations 20 h apart. A real pair needs two
+    # observations about 24 h apart, so that is what is required here (+/- 2 h).
+    DAY_MS = 86_400_000
+    TOL_MS = 2 * 3_600_000
+    by_coin = {}
+    for coin, t in rows:
+        by_coin.setdefault(coin, []).append(int(t))
+    qualifying_days = set()
+    for coin, ts in by_coin.items():
+        ts.sort()
+        s = set(ts)
+        for t in ts:
+            want = t - DAY_MS
+            # any earlier observation within tolerance of exactly 24h back
+            if any(abs(u - want) <= TOL_MS for u in s if u < t):
+                qualifying_days.add(t // DAY_MS)
+                break        # one qualifying day per coin is enough to mark the day present
+    n_days = len(qualifying_days)
+    allt = [t for _c, t in rows]
+    span_h = (max(allt) - min(allt)) / 3_600_000.0
+    note = ("%d day(s) on which a 24h OI change is computable, from %.1f h of archive over "
+            "%d coins. The unit is DAYS, not coin-days: one day is one observation of the "
+            "clustered quantity the prereg sizes" % (n_days, span_h, len(by_coin)))
+    if n_days == 0:
+        note += (" — GENUINE ZERO: the archive is under 24 h deep, so no 24h pair exists yet. "
+                 "Not a missing source")
+    return n_days, note
 
 
 def count_ideas():
@@ -93,47 +138,80 @@ def count_ideas():
 
 
 def count_adopt():
-    """Two arms, keyed on `adopt_mode` (went live 2026-10-11 in 602291cb).
+    """Two arms: ideas ADOPTED, and ideas SKIPPED. A skip lives on the IDEA side, not the plan side.
 
-    The prereg admits ONLY rows where `source_inferred` is absent or false -- a link recovered
-    by matching coin and side cannot tell adopting an idea apart from independently reaching the
-    same view, so backfilled links are excluded by design.
+    TWO BUGS THIS REPLACES, both of which pinned the test at zero forever:
 
-    Note on the zero: `adopt_mode` only appears on a row once a decision is actually taken, so a
-    ledger with rows and no `adopt_mode` anywhere is a GENUINE zero, not a schema gap. Said
-    explicitly because this job`s other counters treat a missing field as loss of visibility.
+    1. WRONG SOURCE. It read `owner_plans.jsonl` (5 rows, none carrying the fields). The fields
+       landed in `plans.json`, where 3 of 4 plans carry `adopt_mode`.
+    2. WRONG DEFINITION OF A SKIP, which was the fatal one. It counted a skip as a *plan row*
+       carrying `source_idea_id` with no `adopt_mode` -- but a skipped idea produces NO PLAN ROW
+       AT ALL. So the skip arm could only ever be 0, and `min(adopt, 0) = 0` for all time. The
+       test was sealed against data that had no route to exist.
+
+    A skip is therefore counted here as: an idea whose entry window has ELAPSED and which no
+    admissible plan references. Until the window elapses the idea is still live and is neither
+    adopted nor skipped -- counting it either way would be inventing a decision.
+
+    The prereg admits only `source_inferred` false/absent: a link recovered by matching coin and
+    side cannot tell adopting an idea from independently reaching the same view.
     """
-    p = os.path.join(EXP, "owner_plans.jsonl")
-    if not os.path.exists(p):
-        return None, "SOURCE-MISSING: owner_plans.jsonl absent"
-    a = adj = b = rows = inferred = 0
+    pp = os.path.join(EXP, "plans.json")
+    ip = os.path.join(EXP, "ai_plans.json")
+    if not os.path.exists(pp):
+        return None, "SOURCE-MISSING: plans.json absent"
+    if not os.path.exists(ip):
+        return None, "SOURCE-MISSING: ai_plans.json absent (needed for the skip arm)"
     try:
-        for line in io.open(p, encoding="utf-8"):
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                r = json.loads(line)
-            except ValueError:
-                continue
-            rows += 1
-            if r.get("source_inferred") is True:
-                inferred += 1
-                continue
-            mode = str(r.get("adopt_mode") or "").lower()
-            if mode == "adopt":
-                a += 1
-            elif mode == "adjust":
-                adj += 1          # reported separately, never merged into adopted
-            elif r.get("source_idea_id") and not mode:
-                b += 1            # an idea was on the table and was not taken
-    except OSError as e:
+        pd = json.load(io.open(pp, encoding="utf-8"))
+        idd = json.load(io.open(ip, encoding="utf-8"))
+    except (ValueError, OSError) as e:
         return None, "SOURCE-UNREADABLE: %s" % str(e)[:80]
-    note = ("adopt=%d adjust=%d skip=%d over %d plan rows (%d excluded as source_inferred)"
-            % (a, adj, b, rows, inferred))
-    if a == 0 and b == 0:
-        note += " — genuine zero: adopt_mode populates only when a decision is taken"
-    return min(a, b), note
+    plans = pd if isinstance(pd, list) else (pd.get("plans") or [])
+    ideas = idd if isinstance(idd, list) else (idd.get("ideas") or [])
+    if not isinstance(plans, list) or not isinstance(ideas, list):
+        return None, "SOURCE-SHAPE-UNKNOWN"
+
+    adopt = adjust = inferred = 0
+    claimed = set()
+    for r in plans:
+        if not isinstance(r, dict):
+            continue
+        mode = str(r.get("adopt_mode") or "").lower()
+        if mode not in ("adopt", "adjust"):
+            continue
+        if r.get("source_inferred") is True:
+            inferred += 1
+            continue                      # backfilled link: inadmissible, by the prereg
+        if r.get("source_idea_id"):
+            claimed.add(r["source_idea_id"])
+        if mode == "adopt":
+            adopt += 1
+        else:
+            adjust += 1                   # reported separately, never merged into adopted
+
+    now = time.time()
+    skip = live = 0
+    for it in ideas:
+        if not isinstance(it, dict) or not it.get("id"):
+            continue
+        if it["id"] in claimed:
+            continue
+        try:
+            elapsed = now > float(it.get("ts") or 0) + float(it.get("entry_window_h") or 24) * 3600
+        except (TypeError, ValueError):
+            elapsed = False
+        if elapsed:
+            skip += 1
+        else:
+            live += 1
+
+    note = ("adopt=%d adjust=%d skip=%d (%d ideas still inside their entry window; "
+            "%d decisions EXCLUDED as source_inferred)" % (adopt, adjust, skip, live, inferred))
+    if adopt == 0 and skip == 0 and inferred:
+        note += (" — note this is NOT 'no decisions taken': %d were, and all were backfilled "
+                 "links the prereg does not admit" % inferred)
+    return min(adopt, skip), note
 
 
 COUNTERS = {"OI": count_oi, "IDEAS": count_ideas, "ADOPT": count_adopt}
@@ -176,4 +254,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from common import standalone
+    standalone(main, 'j2')

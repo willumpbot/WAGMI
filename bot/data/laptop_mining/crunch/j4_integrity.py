@@ -369,4 +369,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from common import standalone
+    standalone(main, 'j4')

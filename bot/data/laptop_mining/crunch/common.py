@@ -10,6 +10,7 @@ DESIGN RULES, because this runs unattended every hour with nobody watching:
     heavy wheel staying importable on a machine nobody is watching.
   - NEVER push to a branch that is not the laptop branch. Asserted, not trusted.
 """
+import io
 import json
 import os
 import sqlite3
@@ -121,6 +122,72 @@ def git(*args, check=True):
     if check and r.returncode != 0:
         raise RuntimeError("git %s failed: %s" % (" ".join(args), r.stderr.strip()[:300]))
     return r.stdout.strip()
+
+
+LOCK = os.path.join(HERE, "crunch.lock")
+STALE_LOCK_S = 3 * 3600
+RUNNER_ENV = "WAGMI_CRUNCH_RUNNER"
+
+
+def acquire_lock(who="job"):
+    """One crunch process at a time. O_EXCL so two starters cannot both win.
+
+    REENTRANCY: crunch_all sets WAGMI_CRUNCH_RUNNER before invoking the jobs, so a job running
+    under the runner does NOT try to take the lock the runner already holds. A job run by hand
+    (`python j5_backfill.py`) has no such parent and DOES take it.
+
+    That gap is why this moved here. The lock lived only in crunch_all, so running a job
+    directly bypassed it -- and I did exactly that: a hand-run j5_backfill paged the same
+    rate-limited funding endpoint as the 15:10 scheduled run, doubling the request rate against
+    the same table. Idempotent upserts meant no corruption, but it is the same collision shape
+    the lock exists to prevent.
+    """
+    if os.environ.get(RUNNER_ENV):
+        return True                          # the runner already holds it
+    if os.path.exists(LOCK):
+        age = time.time() - os.path.getmtime(LOCK)
+        if age < STALE_LOCK_S:
+            try:
+                held = io.open(LOCK, encoding="utf-8").read().strip()
+            except OSError:
+                held = "unknown"
+            log(who, "ANOTHER CRUNCH RUN IS ACTIVE (%s, %.0fs old) -- exiting" % (held, age))
+            return False
+        log(who, "breaking stale lock (%.0fs old)" % age)
+        try:
+            os.unlink(LOCK)
+        except OSError:
+            pass
+    try:
+        fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except OSError:
+        log(who, "lost the race for the lock -- exiting")
+        return False
+    with os.fdopen(fd, "w") as f:
+        f.write("pid %d (%s) started %s" % (os.getpid(), who,
+                                            time.strftime("%Y-%m-%d %H:%M:%S")))
+    return True
+
+
+def release_lock():
+    if os.environ.get(RUNNER_ENV):
+        return                               # not ours to release
+    try:
+        os.unlink(LOCK)
+    except OSError:
+        pass
+
+
+def standalone(main_fn, who):
+    """Wrap a job's __main__ so a hand-run cannot collide with the scheduler."""
+    if not acquire_lock(who):
+        return 0
+    try:
+        main_fn()
+        return 0
+    finally:
+        release_lock()
+
 
 
 def assert_laptop_branch():

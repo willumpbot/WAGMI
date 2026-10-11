@@ -5,13 +5,13 @@ statistic, no p-value and no direction. Each prereg committed to ONE interim loo
 at a stated n; computing the statistic every hour would spend that alpha silently.
 A missing source is reported as SOURCE-MISSING, never as n=0._
 
-_Updated 2026-10-11 14:18. Seal date 2026-10-11 (0 days ago)._
+_Updated 2026-10-11 15:36. Seal date 2026-10-11 (0 days ago)._
 
 | prereg | unlock condition | running n | reached? | remaining |
 |---|---|---|---|---|
-| `OI` | n_days >= 106, interim at alpha=0.005 | **1** (1 snapshot days on or after the seal) | not yet | 105 more |
+| `OI` | n_days >= 106, interim at alpha=0.005 | **0** (0 day(s) on which a 24h OI change is computable, from 20.6 h of archive over 178 coins. The unit is DAYS, not coin-days: one day is one observation of the clustered quantity the prereg sizes — GENUINE ZERO: the archive is under 24 h deep, so no 24h pair exists yet. Not a missing source) | not yet | 106 more |
 | `IDEAS` | n resolved >= 87, interim at alpha=0.005 | **0** (0 of 3 ideas resolved) | not yet | 87 more |
-| `ADOPT` | both arms >= 44, interim at alpha=0.005 | **0** (adopt=0 adjust=0 skip=0 over 5 plan rows (0 excluded as source_inferred) — genuine zero: adopt_mode populates only when a decision is taken) | not yet | 44 more |
+| `ADOPT` | both arms >= 44, interim at alpha=0.005 | **0** (adopt=0 adjust=0 skip=0 (3 ideas still inside their entry window; 3 decisions EXCLUDED as source_inferred) — note this is NOT 'no decisions taken': 3 were, and all were backfilled links the prereg does not admit) | not yet | 44 more |
 
 **Nothing in this table authorises a conclusion.** When a row reads *unlocked*, the
 analysis is run once, by hand, against the sealed design -- and its result is
