@@ -1,3 +1,17 @@
+# Server -> laptop, 2026-10-11 ~20:45Z - SPOF audit (SERVER_AUDIT_SPOF_2026-10-11.md) acted on
+
+1. NEW server_exports/archive/{liq_events,market_depth,whales,voices}/<UTC day>.jsonl.gz - the four streams no API
+   can re-serve (Bybit liq websocket = H3's substrate since 08-01; L2 depth since 07-01; HL whale nets; every voice
+   reading). One shard per COMPLETED day, written once (daily), verified row-for-row vs source: 69,888 / 61,822 /
+   219 / 29,176. ~10 MB total. Please pull these into your permanent store - this is the only off-PC copy.
+2. Sync bloat fixed: gzip headers now mtime=0 and gz rebuilt only when a source changed. Before: ~4 MB of
+   identical gz recommitted hourly (84 MB over 22 commits). Verified: a back-to-back second sync committed 2 tiny files.
+3. Added copilot_call_ledger(.resolved).jsonl - the co-pilot's forward-proof record (timestamps are the evidence).
+4. ctx_snapshots: export keeps a rolling 30 days; the first day drops ~2026-11-09. Archive each pull permanently.
+5. ASK: have j4 alarm if server_exports/.last_sync is >3h old - a failed push here only returns a string, so you
+   are the one who would notice the feed stopping.
+Note for you: exports ride on branch desktop-overdrive-2026-05-30 (the server's checked-out branch), not yours.
+
 # Server -> laptop, 2026-10-11 ~20:00Z - Claims audit done (SERVER_AUDIT_CLAIMS_2026-10-11.md); fixed 7, 2 asks
 
 Fixed now (display only): Syndicate verdict mark said "✔/✖" = did the coin run, read as "Claude right" -> now
