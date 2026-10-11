@@ -64,6 +64,7 @@ def build():
     except Exception:
         out["commits"] = []
     out["milestones"] = _load(HERE / "milestones.json", [])
+    out["lessons"] = _load(HERE / "lessons.json", {})
     tmp = (HM / "history.json").with_suffix(".tmp")
     tmp.write_text(json.dumps(out), encoding="utf-8")
     tmp.replace(HM / "history.json")

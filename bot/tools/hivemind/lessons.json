@@ -1,0 +1,54 @@
+{
+ "patterns": [
+  [
+   "A test that couldn't fail",
+   "Some checks would have said 'yes' no matter what. Now every test must be able to come out negative."
+  ],
+  [
+   "Comparing different eras",
+   "June's bot vs autumn's bot looked like one result. Now everything is split by month first."
+  ],
+  [
+   "Reading silence as evidence",
+   "Missing log files were weekly rotation, not a dead bot. Now only never-deleted records count."
+  ],
+  [
+   "Not saying how much a test could see",
+   "'Nothing found' by tests that could only see huge effects. Now every result states what it could have detected."
+  ]
+ ],
+ "dead": [
+  [
+   "Trailing-exit improvement",
+   "the simulation had 3 bugs; done right it isn't better"
+  ],
+  [
+   "Wider stops / 0.5R target / 48h limit",
+   "the gain was fee arithmetic, not an edge"
+  ],
+  [
+   "'The exit agent is the leak'",
+   "June vs autumn; its early closes actually saved money"
+  ],
+  [
+   "'Never close before the first target'",
+   "23 of 29 would have hit the stop"
+  ],
+  [
+   "Liquidation clusters as targets",
+   "two studies, opposite answers"
+  ],
+  [
+   "Volume surge as a sizing signal",
+   "just missed the bar; some flagged days had no volume data"
+  ],
+  [
+   "Raising the confidence floor",
+   "the floor hasn't been active since June"
+  ],
+  [
+   "Ranking coins against each other daily",
+   "fees eat it"
+  ]
+ ]
+}

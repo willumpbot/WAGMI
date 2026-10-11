@@ -219,6 +219,8 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     <div class="tabp" id="t_hist">
       <div class="two"><div class="box"><h3>What we're grading, over time</h3><div id="hcurves"></div></div>
         <div class="box"><h3>How hard we worked <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">code changes per day</span></h3><div id="hcommits"></div></div></div>
+      <div class="two"><div class="box"><h3>Ideas we tested and closed <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">don't re-open without new data</span></h3><div id="hdead"></div></div>
+        <div class="box"><h3>How we keep from fooling ourselves</h3><div id="hpat"></div></div></div>
       <div class="box"><h3>Timeline: what we built, proved and threw out <span class="sp"></span><span id="hfilt" class="chips" style="margin:0"></span></h3><div id="htime"></div></div>
     </div>
     <div class="tabp" id="t_lab">
@@ -1034,6 +1036,9 @@ function historyTab(){
   const M = (H.milestones||[]).slice().reverse(), kinds = [...new Set(M.map(m=>m.kind))];
   $("hfilt").innerHTML = kinds.map(k => `<span class="chip f ${HF===k?"on":""}" data-k="${k}" style="border-color:${KC[k]||"var(--line)"}">${k} ${M.filter(m=>m.kind===k).length}</span>`).join("");
   $("htime").innerHTML = M.filter(m => !HF || m.kind === HF).map(m => `<div style="display:grid;grid-template-columns:86px 80px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px"><span class="mut num">${m.date}</span><span><span class="pill" style="background:var(--panel2);color:${KC[m.kind]||"var(--soft)"}">${m.kind}</span></span><span><b>${esc(m.title)}</b> <span class="mut">${esc(m.what)}</span></span></div>`).join("");
+  const LS = H.lessons || {};
+  $("hdead").innerHTML = (LS.dead||[]).map(d => `<div style="font-size:12px;padding:3px 0;border-bottom:1px solid var(--line)"><span class="dn">✖</span> <b>${esc(d[0])}</b> <span class="mut">${esc(d[1])}</span></div>`).join("");
+  $("hpat").innerHTML = (LS.patterns||[]).map((d,i) => `<div style="font-size:12px;padding:3px 0;border-bottom:1px solid var(--line)"><b>${i+1}. ${esc(d[0])}</b> <span class="mut">${esc(d[1])}</span></div>`).join("");
   document.querySelectorAll("#hfilt .chip").forEach(el => el.onclick = () => { HF = HF === el.dataset.k ? null : el.dataset.k; historyTab(); });
 }
 function callerCell(h){
