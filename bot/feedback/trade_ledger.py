@@ -176,6 +176,83 @@ def ledger_rr_fields(pos: Any, total_net_pnl: Any, event_qty: Any = 0.0) -> Dict
     }
 
 
+def _cell(val: Any) -> str:
+    """Ledger cell for an entry-time value: blank for missing (None/""),
+    never a fabricated 0."""
+    if val is None:
+        return ""
+    s = str(val)
+    return "" if s.strip() == "" else s
+
+
+def stamp_entry_sizing_fields(
+    entry_reasons: Any, final_qty: Any, llm_base_qty: Any, llm_size_multiplier: Any = None
+) -> None:
+    """LEDGER_ENTRY_SIZING_FIELDS (2026-10-11): stamp the LLM-first path's
+    entry-time size provenance onto ``entry_reasons`` (mutates only that
+    dict; returns None; never raises). Called AFTER qty is final, so it can
+    not influence sizing.
+
+    compound_size_multiplier = final opened qty / LLM risk-sized qty -- the
+    compound of every post-LLM size adjustment (probe mult, notional caps,
+    min-notional floor, adaptive stops, living-edge side mult). Blank when
+    the base qty is unknown (no fabricated 1.0).
+    """
+    if not isinstance(entry_reasons, dict):
+        return
+    try:
+        base = float(llm_base_qty or 0.0)
+        fq = float(final_qty or 0.0)
+        if base > 0 and fq > 0:
+            entry_reasons["compound_size_multiplier"] = round(fq / base, 4)
+        if base > 0:
+            entry_reasons["llm_base_qty"] = base
+        if llm_size_multiplier is not None:
+            entry_reasons["llm_size_multiplier"] = float(llm_size_multiplier)
+    except Exception:
+        pass
+
+
+def ledger_entry_fields(entry_reasons: Any, compound_fallback: Any = None) -> Dict[str, str]:
+    """LEDGER_ENTRY_SIZING_FIELDS (2026-10-11): the six entry-time ledger
+    cells, read ONLY from the Position's persisted ``entry_reasons`` (which
+    survives restarts via execution/auto_recovery.py position_state), so the
+    row reflects what was true at OPEN, not a close-time recomputation.
+
+    - predicted_ev            <- entry_reasons['ev_per_dollar']
+    - kelly_weight_applied    <- entry_reasons['kelly_weight_applied'] (no
+      live path applies a Kelly weight to size today -> blank, honestly)
+    - compound_size_multiplier<- entry_reasons['compound_size_multiplier'],
+      falling back to ``compound_fallback`` (legacy in-memory cache)
+    - funding_rate_entry / open_interest_entry / premium_entry <- the numeric
+      funding/OI snapshot stamped at open (blank when the collector had no
+      row for the symbol, e.g. NEAR before 2026-10-08).
+
+    Gated by LEDGER_FIELD_COMPLETION for the funding trio (existing revert
+    switch). Pure logging; never raises.
+    """
+    er = entry_reasons if isinstance(entry_reasons, dict) else {}
+    if not er and isinstance(entry_reasons, str):
+        try:
+            import json as _json
+            _p = _json.loads(entry_reasons)
+            er = _p if isinstance(_p, dict) else {}
+        except Exception:
+            er = {}
+    completion = os.getenv("LEDGER_FIELD_COMPLETION", "true").lower() in ("1", "true", "yes")
+    compound = er.get("compound_size_multiplier")
+    if compound is None or str(compound).strip() == "":
+        compound = compound_fallback
+    return {
+        "predicted_ev": _cell(er.get("ev_per_dollar")),
+        "kelly_weight_applied": _cell(er.get("kelly_weight_applied")),
+        "compound_size_multiplier": _cell(compound),
+        "funding_rate_entry": _cell(er.get("funding_rate_entry")) if completion else "",
+        "open_interest_entry": _cell(er.get("open_interest_entry")) if completion else "",
+        "premium_entry": _cell(er.get("premium_entry")) if completion else "",
+    }
+
+
 class TradeLedger:
     """Append-only trade attribution ledger backed by CSV.
 

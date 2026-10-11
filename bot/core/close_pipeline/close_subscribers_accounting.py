@@ -288,12 +288,13 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
 
     entry_reasons = ev.entry_reasons or {}
 
-    kelly_weight_applied = ""
-    if ctx.kelly_engine is not None and ev.strategy:
-        try:
-            kelly_weight_applied = str(ctx.kelly_engine.compute_kelly_weight(ev.strategy))
-        except Exception:
-            kelly_weight_applied = ""
+    # LEDGER_ENTRY_SIZING_FIELDS (2026-10-11): same entry-time source as the
+    # live writer (feedback.trade_ledger.ledger_entry_fields) -- the six
+    # entry cells come from the persisted entry_reasons, never a close-time
+    # recomputation (the old close-time compute_kelly_weight(strategy) was
+    # neither an entry value nor ever applied to size).
+    from feedback.trade_ledger import ledger_entry_fields
+    _entry_cells = ledger_entry_fields(entry_reasons, compound_fallback=ev.compound_mult)
 
     # running_equity: sourced from the FROZEN ev.equity_after snapshot, NOT
     # a live ctx.risk_mgr.equity read (see close_context.py's field note
@@ -309,18 +310,6 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
     # off. Revert: LEDGER_FIELD_COMPLETION=false.
     _mf_on = _os.getenv("LEDGER_FIELD_COMPLETION", "true").lower() in ("1", "true", "yes")
     _regime_4h_val = (entry_reasons.get("regime_4h", "") or "") if _mf_on else ""
-    _funding_rate_entry = (
-        "" if not _mf_on or entry_reasons.get("funding_rate_entry") is None
-        else str(entry_reasons.get("funding_rate_entry"))
-    )
-    _open_interest_entry = (
-        "" if not _mf_on or entry_reasons.get("open_interest_entry") is None
-        else str(entry_reasons.get("open_interest_entry"))
-    )
-    _premium_entry = (
-        "" if not _mf_on or entry_reasons.get("premium_entry") is None
-        else str(entry_reasons.get("premium_entry"))
-    )
 
     row = {
         "symbol": ev.symbol,
@@ -330,8 +319,8 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
         "agreement_level": str(entry_reasons.get("num_agree", 1)),
         "contributing_factors": ",".join(_contributing_factors(ev)),
         "confidence_score": str(ev.confidence),
-        "kelly_weight_applied": kelly_weight_applied,  # FIELD-GAP: T2 collaborator
-        "compound_size_multiplier": "" if ev.compound_mult is None else str(ev.compound_mult),
+        "kelly_weight_applied": _entry_cells["kelly_weight_applied"],
+        "compound_size_multiplier": _entry_cells["compound_size_multiplier"],
         "leverage": str(ev.leverage),
         "hold_hours": f"{(ev.hold_time_s or 0.0) / 3600:.2f}",
         "exit_type": ev.close_type,
@@ -344,14 +333,14 @@ def on_close_ledger(ev: TradeClosed, ctx: CloseCtx) -> None:
         "net_pnl": str(round(total_pnl, 2)),
         "running_equity": running_equity,
         "session_dd_pct": session_dd_pct,
-        "predicted_ev": str(entry_reasons.get("ev_per_dollar", "")),
+        "predicted_ev": _entry_cells["predicted_ev"],
         "realized_rr": str(realized_rr),
         "win": "1" if total_pnl > 0 else "0",
         "position_id": ev.position_id,
         # MEASUREMENT-FLOOR: numeric funding/OI captured at open.
-        "funding_rate_entry": _funding_rate_entry,
-        "open_interest_entry": _open_interest_entry,
-        "premium_entry": _premium_entry,
+        "funding_rate_entry": _entry_cells["funding_rate_entry"],
+        "open_interest_entry": _entry_cells["open_interest_entry"],
+        "premium_entry": _entry_cells["premium_entry"],
         # STOP_GEOMETRY (LEDGER_RR_FIX): stop at open vs stop at close.
         "stop_initial": str(original_sl) if original_sl else "",
         "stop_final": str(ev.stop_final) if ev.stop_final else "",

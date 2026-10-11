@@ -4244,7 +4244,19 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             # Pure logging -- nothing downstream trades on it.
                             from feedback.trade_ledger import ledger_rr_fields as _lrf
                             _rr_cells = _lrf(pos, total_pnl, event.qty)
-                            _predicted_ev = pos.entry_reasons.get("ev_per_dollar", "") if pos.entry_reasons else ""
+                            # LEDGER_ENTRY_SIZING_FIELDS (2026-10-11): all six
+                            # entry-time cells come from the Position's persisted
+                            # entry_reasons (restart-safe), not close-time state.
+                            # kelly_weight_applied previously re-computed
+                            # kelly_engine.compute_kelly_weight(event.strategy) AT
+                            # CLOSE (not an entry value, never applied to size; blank
+                            # on every row since 2026-07-24); compound_size_multiplier
+                            # popped a cache only the mechanical path fills.
+                            from feedback.trade_ledger import ledger_entry_fields as _lef
+                            _entry_cells = _lef(
+                                pos.entry_reasons if pos else None,
+                                compound_fallback=self._compound_mult_cache.pop(symbol, None),
+                            )
                             # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION, 2026-07-27):
                             # source regime_4h + numeric funding/OI from the entry
                             # snapshot threaded onto entry_reasons at open (see
@@ -4258,12 +4270,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             _er_mf = pos.entry_reasons if (pos and isinstance(pos.entry_reasons, dict)) else {}
                             if _ledger_completion:
                                 _regime_4h_val = _er_mf.get("regime_4h", "") or self._tick_regime_cache.get(f"{symbol}_4h", "")
-                                _funding_rate_entry = "" if _er_mf.get("funding_rate_entry") is None else str(_er_mf.get("funding_rate_entry"))
-                                _open_interest_entry = "" if _er_mf.get("open_interest_entry") is None else str(_er_mf.get("open_interest_entry"))
-                                _premium_entry = "" if _er_mf.get("premium_entry") is None else str(_er_mf.get("premium_entry"))
                             else:
                                 _regime_4h_val = self._tick_regime_cache.get(f"{symbol}_4h", "")
-                                _funding_rate_entry = _open_interest_entry = _premium_entry = ""
                             self.trade_ledger.record_trade({
                                 "symbol": symbol,
                                 "side": event.side,
@@ -4272,11 +4280,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "agreement_level": str(_num_agree),
                                 "contributing_factors": _factors_str,
                                 "confidence_score": str(pos.confidence),
-                                "kelly_weight_applied": str(
-                                    self.kelly_engine.compute_kelly_weight(event.strategy)
-                                    if self.kelly_engine and event.strategy else ""
-                                ),
-                                "compound_size_multiplier": str(self._compound_mult_cache.pop(symbol, "")),
+                                "kelly_weight_applied": _entry_cells["kelly_weight_applied"],
+                                "compound_size_multiplier": _entry_cells["compound_size_multiplier"],
                                 "leverage": str(pos.leverage),
                                 "hold_hours": f"{_hold_hours:.2f}",
                                 "exit_type": event.action,
@@ -4292,7 +4297,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "net_pnl": str(round(total_pnl, 2)),
                                 "running_equity": str(round(self.risk_mgr.equity, 2)),
                                 "session_dd_pct": str(_session_dd),
-                                "predicted_ev": str(_predicted_ev),
+                                "predicted_ev": _entry_cells["predicted_ev"],
                                 "realized_rr": _rr_cells["realized_rr"],
                                 "win": "1" if total_pnl > 0 else "0",
                                 # POSITION_IDENTITY (Phase 0.3b): stamps this
@@ -4306,9 +4311,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 # MEASUREMENT-FLOOR (LEDGER_FIELD_COMPLETION):
                                 # numeric funding/OI captured at open (blank
                                 # when the feed was unavailable or the flag off).
-                                "funding_rate_entry": _funding_rate_entry,
-                                "open_interest_entry": _open_interest_entry,
-                                "premium_entry": _premium_entry,
+                                "funding_rate_entry": _entry_cells["funding_rate_entry"],
+                                "open_interest_entry": _entry_cells["open_interest_entry"],
+                                "premium_entry": _entry_cells["premium_entry"],
                                 # STOP_GEOMETRY (LEDGER_RR_FIX): stop at open
                                 # vs stop at close (breakeven/trailing moves).
                                 "stop_initial": _rr_cells["stop_initial"],
@@ -7073,6 +7078,17 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # LEDGER_FIELD_COMPLETION=false.
         self._capture_measurement_floor_fields(entry_reasons, symbol, signal_result.metadata)
 
+        # LEDGER_ENTRY_SIZING_FIELDS (2026-10-11, LOGGING ONLY): persist the
+        # vol-target compound mult on the Position itself so the close-time
+        # ledger write survives a restart (the in-memory _compound_mult_cache
+        # does not). Same value the cache already holds; nothing reads it to trade.
+        try:
+            _cm_entry = self._compound_mult_cache.get(symbol)
+            if _cm_entry is not None:
+                entry_reasons["compound_size_multiplier"] = _cm_entry
+        except Exception:
+            pass
+
         # Track portfolio correlation risk for LLM learning feedback
         if self.portfolio_risk and len(open_pos) >= 2:
             try:
@@ -9373,6 +9389,26 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Use actual fill price and qty from exchange
         actual_entry = order_result.fill_price if order_result.fill_price > 0 else actual_entry
         qty = order_result.fill_qty if order_result.fill_qty > 0 else qty
+
+        # LEDGER_ENTRY_SIZING_FIELDS (2026-10-11, LOGGING ONLY): the ledger's
+        # compound_size_multiplier was read from self._compound_mult_cache,
+        # which only the MECHANICAL _process_symbol path fills (vol-target
+        # block) -- every live LLM-first open left it empty, so the column was
+        # blank on 294/294 rows. Stamp the entry-time value here instead:
+        # final opened qty / the LLM risk-sized qty (coordinator's
+        # risk_pct*equity/stop_width), i.e. the compound of every post-LLM
+        # adjustment (probe mult, notional caps, min-notional floor, adaptive
+        # stops, living-edge side mult). Computed AFTER qty is final and read
+        # by nothing that trades. kelly_weight_applied is deliberately NOT
+        # stamped: no Kelly weight is applied to size on this path (KellyEngine
+        # is never consulted for sizing; the Quant-agent Kelly is shadow-only
+        # under QUANT_AGENT_ENFORCE=false), so the column stays blank.
+        try:
+            from feedback.trade_ledger import stamp_entry_sizing_fields as _sesf
+            _sesf(entry_reasons, qty, entry_decision.position_qty,
+                  getattr(entry_decision, "size_multiplier", None))
+        except Exception:
+            pass
 
         # Record fill quality for execution analytics (mirrors mechanical path)
         if hasattr(self, 'execution_analytics') and self.execution_analytics:

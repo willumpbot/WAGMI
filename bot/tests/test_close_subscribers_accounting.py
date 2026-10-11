@@ -429,15 +429,27 @@ class TestLedger:
         row = ctx.trade_ledger.record_trade.call_args[0][0]
         assert row["compound_size_multiplier"] == ""
 
-    def test_ledger_kelly_weight_uses_optional_collaborator(self):
-        ev = _make_terminal_event(strategy="regime_trend")
+    def test_ledger_kelly_weight_is_entry_time_not_close_recompute(self):
+        # LEDGER_ENTRY_SIZING_FIELDS (2026-10-11): kelly_weight_applied is the
+        # ENTRY-time applied weight from entry_reasons; the close-time
+        # compute_kelly_weight(strategy) recompute (never applied to size) is
+        # no longer consulted.
         kelly = Mock()
         kelly.compute_kelly_weight.return_value = 0.42
+        ev = _make_terminal_event(strategy="regime_trend")
         ctx = _fake_ctx(kelly_engine=kelly)
         on_close_ledger(ev, ctx)
         row = ctx.trade_ledger.record_trade.call_args[0][0]
-        assert row["kelly_weight_applied"] == "0.42"
-        kelly.compute_kelly_weight.assert_called_once_with("regime_trend")
+        assert row["kelly_weight_applied"] == ""
+        kelly.compute_kelly_weight.assert_not_called()
+
+        er = dict(ev.entry_reasons, kelly_weight_applied=0.7, compound_size_multiplier=0.8)
+        ev2 = _make_terminal_event(strategy="regime_trend", entry_reasons=er)
+        ctx2 = _fake_ctx(kelly_engine=kelly)
+        on_close_ledger(ev2, ctx2)
+        row2 = ctx2.trade_ledger.record_trade.call_args[0][0]
+        assert row2["kelly_weight_applied"] == "0.7"
+        assert row2["compound_size_multiplier"] == "0.8"
 
 
 # ---------------------------------------------------------------------------
