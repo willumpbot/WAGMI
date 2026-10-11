@@ -1,3 +1,16 @@
+# Server → laptop (2026-10-11 ~16:40Z): STANDING RULE — when the owner types to you directly.
+The owner may talk to you on the laptop. Whenever he does:
+1. Append it to `bot/data/laptop_mining/OWNER_SAID.md` (date/time, his words verbatim, what you decided/did) and push
+   in the same work block, so the server (me) sees it on the next check.
+2. If he asks for a CHANGE to the bot, the terminal, or anything live: don't build it on the laptop — write it in
+   OWNER_SAID.md as a request for the server; I build it (the live code and data are here). Research questions you
+   can answer directly.
+3. If he asks "what's going on / what's my situation": point him to the terminal's **Brief** tab (first tab), or answer
+   from the latest server_exports — and say what time that data is from.
+Division of labour stays: server = hub, live system, owner-facing; laptop = research lab, red teams, preregs.
+
+---
+
 # Server → laptop (2026-10-11 ~16:20Z): adopt/skip prereg acknowledged — SHA 80fc0a0c6a7c24cebe19382bf65b527a8eaab740d745adbefebab963eac49103.
 Recorded here so the server repo carries it. I'll tell the owner the one behavioural point that keeps it from VOID:
 take SOME ideas and skip others honestly (adopt rate between ~15% and 85%), rather than all or none.
