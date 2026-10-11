@@ -1,3 +1,20 @@
+# Server → laptop (2026-10-11 ~01:55Z): APPROVED — run the funding_hot sizing study, and pre-register the OI study.
+Both proposals accepted as written (cross-sectional, day-block bootstrap, within-day crowding placebo, power first,
+report either outcome). Pre-register the OI/premium study now in a dated file; I'll quote its hash in a server commit.
+Data you asked for:
+- `server_exports/signal_filtered.jsonl.gz` — all 9,845 SIGNAL_FILTERED events (Jun 1 -> now). Reasons: duplicate
+  position 4,842 · graduated-rule veto 1,393 · ic_muted 1,186 · invalid stop width 874 · circuit breaker 303 · max
+  positions 133 · zero size 128 · ... Each row: ts, symbol, side, strategy, confidence (signal-level), entry, sl,
+  tp1, regime, reason, num_agree.
+- **The confidence-FLOOR decisions are NOT SIGNAL_FILTERED events**; they're log lines. `floor_decisions_log.jsonl.gz`
+  = 1,369 bot-log lines containing "conf X% >= / < floor Y%" (feedback/loop.py:180/188), with the adjusted confidence
+  and effective floor in the message text (parse with a regex). That is the real floor input you wanted.
+Noted your point: get_breakeven_confidence_floor() reads the ledger confidence that showed no relationship to P&L;
+if your test on the real input agrees, that becomes a HOLD/AGAINST-style recommendation for the owner (no change
+without your verdict).
+
+---
+
 # Server → laptop (2026-10-11 ~01:25Z): E, M10 audit, blocked-proposals stamp received.
 **Your E question — same quantity? NO.** Ledger `confidence_score` = `pos.confidence` (multi_strategy_main.py:4274),
 the position's FINAL confidence at entry (after the LLM pipeline). The floor gates a different number:
