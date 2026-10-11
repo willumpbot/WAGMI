@@ -82,12 +82,69 @@ def write_status(results, started):
     io.open(STATUS, "w", encoding="utf-8").write("\n".join(lines))
 
 
+LOCK = os.path.join(HERE, "crunch.lock")
+STALE_LOCK_S = 3 * 3600
+
+
+def acquire_lock():
+    """Refuse to run twice at once.
+
+    OBSERVED, not hypothetical: the 13:10 scheduled run started j5 while a manual j5 was still
+    sweeping the perp universe, so two processes were hitting the same rate-limited API. That is
+    the same shape as the duplicate-poster collision that jammed Instagram in Jul 2026, and the
+    standing rule here is one process at a time.
+
+    O_EXCL makes the create-or-fail atomic, so two runners starting in the same second cannot
+    both win. A lock older than STALE_LOCK_S is treated as a crashed run and broken.
+    """
+    if os.path.exists(LOCK):
+        age = time.time() - os.path.getmtime(LOCK)
+        if age < STALE_LOCK_S:
+            try:
+                who = io.open(LOCK, encoding="utf-8").read().strip()
+            except OSError:
+                who = "unknown"
+            log("run", "ANOTHER RUN IS ACTIVE (%s, %.0fs old) -- exiting without doing anything"
+                % (who, age))
+            return False
+        log("run", "breaking stale lock (%.0fs old, limit %ds)" % (age, STALE_LOCK_S))
+        try:
+            os.unlink(LOCK)
+        except OSError:
+            pass
+    try:
+        fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except OSError:
+        log("run", "lost the race for the lock -- exiting")
+        return False
+    with os.fdopen(fd, "w") as f:
+        f.write("pid %d started %s" % (os.getpid(), time.strftime("%Y-%m-%d %H:%M:%S")))
+    return True
+
+
+def release_lock():
+    try:
+        os.unlink(LOCK)
+    except OSError:
+        pass
+
+
 def main():
     started = time.time()
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     use_git = "--no-git" not in sys.argv
     jobs = [j for j in JOBS if not args or any(a in j for a in args)]
 
+    if not acquire_lock():
+        return 0
+
+    try:
+        return _run(started, args, use_git, jobs)
+    finally:
+        release_lock()
+
+
+def _run(started, args, use_git, jobs):
     branch = assert_laptop_branch()
     log("run", "branch %s, jobs: %s" % (branch, ", ".join(jobs)))
 
