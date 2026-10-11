@@ -3,12 +3,7 @@
 _Written by `crunch/j4_integrity.py` every hour. Reports presence, growth, fill
 rates and gaps. Flags regressions; does not interpret them._
 
-
-## 🔴 REGRESSIONS THIS RUN
-
-- confidence_state.json snapshot stale 22.4h
-- syndicate_calls_anon.jsonl shrank 1 rows (append-only: a row drop is real)
-_Updated 2026-10-11 18:19._
+_Updated 2026-10-11 18:49._
 
 ## Growth -- is each export still being written?
 
@@ -16,44 +11,44 @@ _Updated 2026-10-11 18:19._
 |---|---|---|---|
 | `LIQ_MAGNET_RECHECK.md` | 1797 bytes | reference | reference — present |
 | `README_DATA_RESPONSE.md` | 2908 bytes | reference | reference — present |
-| `agent_grades_resolved.jsonl` | 1745 rows | append | +21 rows |
+| `agent_grades_resolved.jsonl` | 1745 rows | append | unchanged |
 | `ai_plans.json` | 3884 bytes | snapshot | snapshot — ok |
 | `archive` | 161105 rows+bytes | append | unchanged |
-| `candles_5m` | 33228 rows+bytes | append | +90 rows+bytes |
+| `candles_5m` | 33228 rows+bytes | append | unchanged |
 | `chief.py` | 12373 bytes | reference | reference — present |
 | `chief_calls.jsonl` | 128 rows | append | unchanged |
 | `chief_scorecard.json` | 547 bytes | snapshot | snapshot — ok |
-| `confidence_state.json` | 3181 bytes | snapshot | snapshot — **stale 22.4h** |
+| `confidence_state.json` | 3181 bytes | snapshot | snapshot — stale 22.9h — EXPECTED: written on trade close and the last close was 23.4h ago. Not a fault. |
 | `copilot_call_ledger.jsonl` | 385 rows | append | unchanged |
 | `copilot_call_ledger_resolved.jsonl` | 364 rows | append | unchanged |
-| `ctx_snapshots` | 19758 rows+bytes | append | +890 rows+bytes |
+| `ctx_snapshots` | 19758 rows+bytes | append | unchanged |
 | `entry_gate_log.jsonl.gz` | 5383 rows | append | unchanged |
-| `entry_mom.jsonl` | 1075 rows | append | +300 rows |
+| `entry_mom.jsonl` | 1075 rows | append | unchanged |
 | `execution_analytics.csv` | 173 rows | append | unchanged |
 | `exit_decisions.jsonl` | 1324 rows | append | unchanged |
-| `expmove_log.jsonl` | 60 rows | append | +1 rows |
+| `expmove_log.jsonl` | 60 rows | append | unchanged |
 | `floor_decisions_log.jsonl.gz` | 1369 rows | append | unchanged |
-| `funding_oi_history.jsonl.gz` | 49985 rows | append | +48 rows |
+| `funding_oi_history.jsonl.gz` | 49985 rows | append | unchanged |
 | `geometry_shadow.json` | 629 bytes | snapshot | snapshot — ok |
-| `geometry_shadow_results.jsonl` | 378 rows | append | +6 rows |
+| `geometry_shadow_results.jsonl` | 378 rows | append | unchanged |
 | `ic_dropped_resolved.jsonl` | 998 rows | append | unchanged |
 | `live_scorecard.json` | 1345 bytes | snapshot | snapshot — ok |
 | `llm_exits_resolved.jsonl` | 29 rows | append | unchanged |
-| `owner_fills.jsonl` | 3 rows | append | +1 rows |
+| `owner_fills.jsonl` | 3 rows | append | unchanged |
 | `owner_plans.jsonl` | 5 rows | append | unchanged |
 | `plans.json` | 7691 bytes | snapshot | snapshot — ok |
 | `position_journal.jsonl` | 3105 rows | append | unchanged |
 | `position_manager.py` | 137439 bytes | reference | reference — present |
 | `scan_grades.json` | 9187 bytes | snapshot | snapshot — ok |
-| `scan_log.jsonl` | 275 rows | append | +4 rows |
+| `scan_log.jsonl` | 275 rows | append | unchanged |
 | `scanner.py` | 10667 bytes | reference | reference — present |
 | `signal_filtered.jsonl.gz` | 9845 rows | append | unchanged |
 | `state` | 529782 rows+bytes | append | unchanged |
-| `syndicate_calls_anon.jsonl` | 198 rows | append | **SHRANK 1 rows** |
+| `syndicate_calls_anon.jsonl` | 198 rows | append | unchanged |
 | `syndicate_paths_anon.jsonl.gz` | 56 rows | append | unchanged |
 | `trade_ledger.csv` | 295 rows | append | unchanged |
 | `trades.csv` | 237 rows | append | unchanged |
-| `uptime.jsonl` | 77 rows | append | +5 rows |
+| `uptime.jsonl` | 77 rows | append | unchanged |
 
 ## Known failure modes
 
@@ -73,9 +68,9 @@ _Updated 2026-10-11 18:19._
 _The jobs report what they did. Nothing reported whether the SCHEDULER fired, and a
 stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing changed`._
 
-- fresh -- previous run was 1.0 h ago, inside the 2.5 h alarm Scheduler says: state **Running**, last result **267009**, next 10/11/2026 7:10:00 PM, missed 0.
+- fresh -- previous run was 1.5 h ago, inside the 2.5 h alarm Scheduler says: state **Ready**, last result **1** (NOT success), next 10/11/2026 7:10:00 PM, missed 0.
 
-- server feed fresh -- `.last_sync` 0.2 h old, alarm at 3 h
+- server feed fresh -- `.last_sync` 0.7 h old, alarm at 3 h
 
 - all three reports are trackable by git, so the hourly commit can carry them
 
@@ -86,3 +81,5 @@ stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing chan
 - `candles_5m` 33228 rows, 6 coins, 19.2 days pooled span  (every coin current within 3 days)
 - `ctx` 19758 rows, 178 coins, 1.0 days pooled span  (every coin current within 3 days)
 - `funding_hist` 1507840 rows, 178 coins, 365.2 days pooled span  (every coin current within 3 days)
+
+No regressions this run.

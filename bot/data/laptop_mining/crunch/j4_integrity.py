@@ -9,6 +9,7 @@ THIS JOB EXISTS BECAUSE BAD DATA HAS ALREADY PRODUCED FALSE ALERTS AND FALSE CON
 So this reports, per export: whether it is present, whether it is GROWING, its fill rates, and
 its gaps. It flags regressions rather than interpreting them.
 """
+import csv
 import glob
 import subprocess
 import gzip
@@ -187,8 +188,41 @@ def file_class(p):
     return "reference"
 
 
+def last_trade_close_age_h():
+    """Hours since the newest row of trade_ledger.csv -- the EXPECTED cause of staleness in
+    any file the bot only writes when a trade closes."""
+    p = os.path.join(EXP, "trade_ledger.csv")
+    if not os.path.exists(p):
+        return None
+    newest = None
+    try:
+        with io.open(p, encoding="utf-8", errors="replace") as f:
+            rd = csv.DictReader(f)
+            for r in rd:
+                try:
+                    v = float(r.get("timestamp") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if v and (newest is None or v > newest):
+                    newest = v
+    except OSError:
+        return None
+    return None if newest is None else (time.time() - newest) / 3600.0
+
+
+# files the bot writes ONLY on a trade close, so their staleness is explained by the ledger
+CLOSE_DRIVEN = ("confidence_state.json",)
+
+
 def snapshot_health(p):
-    """A snapshot is healthy if it parses and is fresh. Size is not evidence either way."""
+    """A snapshot is healthy if it parses and is fresh. Size is never evidence either way.
+
+    AND STALENESS NEEDS A CAUSE BEFORE IT NEEDS AN ALARM. `confidence_state.json` is written on
+    trade close, so with no close for a day it is correctly old -- I alarmed on it twice and the
+    server had to explain it twice. Their suggestion, taken: read the ledger's last close and
+    report that as the expected cause, so "stale because nothing closed" reads differently from
+    "stale because the writer died".
+    """
     try:
         age = time.time() - os.path.getmtime(p)
     except OSError:
@@ -197,7 +231,20 @@ def snapshot_health(p):
         json.load(io.open(p, encoding="utf-8"))
     except (ValueError, OSError):
         return "UNPARSEABLE"
-    return "stale %.1fh" % (age / 3600.0) if age > SNAPSHOT_STALE_S else "ok"
+    if age <= SNAPSHOT_STALE_S:
+        return "ok"
+    if os.path.basename(p) in CLOSE_DRIVEN:
+        lag = last_trade_close_age_h()
+        if lag is None:
+            return ("stale %.1fh — written on trade close, but trade_ledger.csv is unreadable "
+                    "so the cause cannot be confirmed" % (age / 3600.0))
+        # within an hour of the last close explains it; beyond that the writer may be stuck
+        if abs(age / 3600.0 - lag) < 1.5:
+            return ("stale %.1fh — EXPECTED: written on trade close and the last close was "
+                    "%.1fh ago. Not a fault." % (age / 3600.0, lag))
+        return ("🔴 stale %.1fh but the last trade closed %.1fh ago — the gap is NOT explained "
+                "by the ledger, so the writer may be stuck" % (age / 3600.0, lag))
+    return "stale %.1fh" % (age / 3600.0)
 
 
 def measure(p):
@@ -325,9 +372,12 @@ def main():
         elif cls == "snapshot":
             # judged on parse + freshness, never on size: a status flipping shrinks the file
             h = snapshot_health(p)
-            ch = "snapshot — %s" % h
-            if h != "ok":
-                ch = "snapshot — **%s**" % h
+            # An EXPLAINED staleness is not a regression. Counting it as one means the job
+            # reports FAILED every hour for a file behaving exactly as designed, which trains
+            # a reader to ignore the whole report -- the same cost as a false alarm.
+            explained = h == "ok" or "EXPECTED" in h
+            ch = "snapshot — %s" % h if explained else "snapshot — **%s**" % h
+            if not explained:
                 regress.append("%s snapshot %s" % (name, h))
         elif old is None:
             ch = "new" if o is None else "unit changed to %s — not compared" % unit

@@ -128,20 +128,29 @@ def main():
         calls.append({"ca": d["ca"], "call_ts": int(d["call_ts"])})
     calls.sort(key=lambda c: c["call_ts"])
 
+    # RESUME ON `ca`, NOT ON THE LIST INDEX. The first version keyed on `i`, the position in
+    # the sorted list -- and the server then made the anon call list append-only and restored
+    # rows that had aged out of its 30-day window. Any row added to the middle shifts every
+    # later index, so an index-keyed resume would silently re-fetch some calls and skip others.
+    # The contract address is the natural key and is stable under list growth.
     done = set()
     if os.path.exists(OUT):
         for line in io.open(OUT, encoding="utf-8"):
             try:
-                done.add(json.loads(line)["i"])
+                d = json.loads(line)
             except Exception:
                 continue
+            if d.get("ca"):
+                done.add(d["ca"])
+            elif isinstance(d.get("i"), int) and d["i"] < len(calls):
+                done.add(calls[d["i"]]["ca"])      # migrate old index-keyed rows
     print("%d calls, %d already done, %d to go" % (len(calls), len(done),
                                                    len(calls) - len(done)), flush=True)
     f = io.open(OUT, "a", encoding="utf-8")
     ok = fail = 0
     t0w = time.time()
     for i, c in enumerate(calls):
-        if i in done:
+        if c["ca"] in done:
             continue
         pool = best_pool(c["ca"])
         if not pool:
