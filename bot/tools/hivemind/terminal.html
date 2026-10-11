@@ -1051,7 +1051,7 @@ function brief(){
   const bots = SYMS.map(s => [s, botPos(s)]).filter(x => x[1]);
   const A = DATA.away || {}, closes = (A.bot_closes||[]).filter(t => Date.parse(t.ts)/1000 > now - 86400);
   const net = closes.reduce((a,t) => a + t.pnl, 0);
-  const b1 = `${bots.length ? bots.map(([s,b]) => `<b>${s}</b> ${b.side} open, ${b.total>=0?"+":""}$${b.total.toFixed(2)}`).join(" · ") : "No open trades."} Last 24h: ${closes.length} closed, <span class="${net>=0?"up":"dn"}">${net>=0?"+":""}$${net.toFixed(2)}</span>. Paper money; the bot stays mostly flat by design (nothing it can trade has a proven edge).`;
+  const b1 = `${bots.length ? bots.map(([s,b]) => `<b>${s}</b> ${b.side} open, ${b.total>=0?"+":""}$${b.total.toFixed(2)}`).join(" · ") : "No open trades."} Last 24h: ${closes.length} closed, <span class="${net>=0?"up":"dn"}">${net>=0?"+":""}$${net.toFixed(2)}</span>.`;
   // 2. your plans
   const act = PLANS.filter(q => ["waiting","open"].includes((q.result||{}).status));
   const b2 = (act.length ? act.map(q => `<b>${q.coin} ${q.side}</b> ${q.result.status==="open"?"open":"waiting for "+fmt(q.entry)}`).join(" · ") : "No active plans.")
@@ -1059,7 +1059,7 @@ function brief(){
   // 3. Claude's ideas
   const AI = DATA.aiPlans || {}, ideas = (AI.ideas||[]).filter(i => (i.result||{}).status === "waiting");
   const b3 = (ideas.length ? ideas.map(i => `<b>${i.coin} ${i.side}</b> at ${fmt(i.entry)} (stop ${fmt(i.stop)}, target ${fmt(i.target)})`).join(" · ") + ` <button onclick="showTab('t_plans')" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:2px 8px;cursor:pointer">see / take</button>` : "No open ideas right now.")
-    + `<div class="mut" style="font-size:11.5px">Take the ones you'd actually take. Grading is sealed; first verdict ~January.</div>`;
+    + ``;
   // 4. Syndicate
   const T = DATA.tgTrack || {}, R = T.callers || {}, calls = Object.values(T.calls||{}).filter(c => c.call_ts > now - 86400).sort((a,b) => (b.x_peak||0) - (a.x_peak||0));
   const b4 = calls.length ? `${calls.length} calls in 24h. Best: ${calls.slice(0,3).map(c => `<b>${esc(c.sym||"?")}</b> ${(c.x_peak||0).toFixed(1)}× (${esc(c.caller||"?")}${(R[c.caller]||{}).watch?" ★":""})`).join(", ")}. Rule that historically worked: sell all at 1.5×.` : "No calls in the last 24h.";
@@ -1075,9 +1075,22 @@ function brief(){
   // 8. what we know
   const M = ((DATA.history||{}).milestones||[]).filter(m => m.kind === "proven").slice(-5).reverse();
   const b8 = M.map(m => `<div>✔ <b>${esc(m.title)}</b> <span class="mut">${esc(m.what)}</span></div>`).join("") || "–";
-  $("brief").innerHTML = `<div class="mut" style="font-size:12px;margin-bottom:6px">Everything in one screen, refreshed every 15 min. Questions about any of it: ask Claude on the PC.</div>
+  // ONE action, chosen by priority (owner 10-11: "what should I do right now", not a list of state)
+  const up = (DATA.uptime || {});
+  const undecided = ideas.filter(i => !PLANS.some(q => q.source_idea_id === i.id));
+  const openMine = PLANS.filter(q => (q.result||{}).status === "open");
+  let todo, why = "";
+  if (up.can_trade === false) { todo = up.alive === false ? "The bot is down. Tell Claude on the PC." : "The bot's AI isn't working. On the PC, type /login."; }
+  else if (D.length) { todo = `Answer one question: ${esc(D[0].title)}.`; why = esc(D[0].ask); }
+  else if (undecided.length) { const i = undecided[0]; todo = `Look at Claude's ${i.coin} ${i.side.toLowerCase()} idea and decide: take it or skip it.`; why = esc(i.reason); }
+  else if (openMine.length) { const g = {}; openMine.forEach(q => { const k = q.coin + " " + q.side.toLowerCase(); g[k] = (g[k]||0) + 1; });
+    const parts = Object.entries(g).map(([k,n]) => n > 1 ? `${n} ${k}s` : k);
+    todo = "Nothing to do. Your " + parts.join(" and ") + (openMine.length > 1 ? " are" : " is") + " running; stops and targets are set."; }
+  else { todo = "Nothing to do right now. Check back later or plan a trade if you have a read."; }
+  $("brief").innerHTML = `<div class="box" style="border:2px solid var(--accent);margin-bottom:10px;padding:12px 14px"><div class="mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase">Do this now</div><div style="font-size:18px;font-weight:700;margin-top:2px">${todo}</div>${why?`<div class="mut" style="font-size:12.5px;margin-top:4px">${why}</div>`:""}${undecided.length && !D.length && up.can_trade !== false ? ` <button onclick="showTab('t_plans')" style="margin-top:8px;background:var(--accent);border:0;border-radius:6px;color:var(--bg);font-weight:700;padding:5px 12px;cursor:pointer">Open Claude's ideas</button>` : ""}</div>
+    <details><summary class="mut" style="cursor:pointer;font-size:12px;margin-bottom:6px">Everything else (only if you want it)</summary>
     <div class="two"><div>${sec("🤖","The bot", b1)}${sec("📝","Your plans", b2)}${sec("💡","Claude's trade ideas", b3)}${sec("📣","Syndicate", b4)}</div>
-    <div>${sec("🧭","Market read (chief)", b5)}${sec("✋","Waiting for your yes/no", b7)}${sec("🔬","Laptop is working on", b6)}${sec("✅","What we know for sure", b8)}</div></div>`;
+    <div>${sec("🧭","Market read (chief)", b5)}${sec("✋","Waiting for your yes/no", b7)}${sec("🔬","Laptop is working on", b6)}${sec("✅","What we know for sure", b8)}</div></div></details>`;
 }
 function callerCell(h){
   const R = ((DATA.tgTrack||{}).callers||{})[h]; if (!h) return "–"; if (!R) return esc(h);

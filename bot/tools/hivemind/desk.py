@@ -268,6 +268,16 @@ def _away_data():
     return out
 
 
+def _last_uptime():
+    try:
+        with open(HM / "uptime.jsonl", "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 2000))
+            return json.loads(f.read().decode("utf-8", "ignore").strip().splitlines()[-1])
+    except Exception:
+        return {}
+
+
 def build_terminal():
     """The trading terminal: one self-contained page, data embedded, live prices fetched in the browser."""
     import voices as vz
@@ -290,6 +300,7 @@ def build_terminal():
             "away": _away_data(),
             "aiPlans": _load(HM / "ai_plans.json", {}) or {},
             "history": _load(HM / "history.json", {}) or {},
+            "uptime": _last_uptime(),
             "levelStats": ((_load(BOT / "data" / "laptop_mining" / "levels.json", {}) or {}).get("levels") or {}),
             "safeLev": ((_load(BOT / "data" / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table") or {})}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")
