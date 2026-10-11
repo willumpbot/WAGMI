@@ -1,0 +1,154 @@
+{
+ "LIQ_MAGNET_RECHECK.md": {
+  "v": 1797,
+  "u": "bytes"
+ },
+ "README_DATA_RESPONSE.md": {
+  "v": 2908,
+  "u": "bytes"
+ },
+ "agent_grades_resolved.jsonl": {
+  "v": 1672,
+  "u": "rows"
+ },
+ "ai_plans.json": {
+  "v": 2528,
+  "u": "bytes"
+ },
+ "archive": {
+  "v": 0,
+  "u": "rows+bytes"
+ },
+ "candles_5m": {
+  "v": 32982,
+  "u": "rows+bytes"
+ },
+ "chief.py": {
+  "v": 11981,
+  "u": "bytes"
+ },
+ "chief_calls.jsonl": {
+  "v": 122,
+  "u": "rows"
+ },
+ "chief_scorecard.json": {
+  "v": 547,
+  "u": "bytes"
+ },
+ "confidence_state.json": {
+  "v": 3181,
+  "u": "bytes"
+ },
+ "copilot_call_ledger.jsonl": {
+  "v": 385,
+  "u": "rows"
+ },
+ "copilot_call_ledger_resolved.jsonl": {
+  "v": 364,
+  "u": "rows"
+ },
+ "ctx_snapshots": {
+  "v": 17088,
+  "u": "rows+bytes"
+ },
+ "entry_gate_log.jsonl.gz": {
+  "v": 5383,
+  "u": "rows"
+ },
+ "entry_mom.jsonl": {
+  "v": 175,
+  "u": "rows"
+ },
+ "execution_analytics.csv": {
+  "v": 173,
+  "u": "rows"
+ },
+ "exit_decisions.jsonl": {
+  "v": 1324,
+  "u": "rows"
+ },
+ "floor_decisions_log.jsonl.gz": {
+  "v": 61,
+  "u": "rows"
+ },
+ "funding_oi_history.jsonl.gz": {
+  "v": 49890,
+  "u": "rows"
+ },
+ "geometry_shadow.json": {
+  "v": 630,
+  "u": "bytes"
+ },
+ "geometry_shadow_results.jsonl": {
+  "v": 360,
+  "u": "rows"
+ },
+ "ic_dropped_resolved.jsonl": {
+  "v": 998,
+  "u": "rows"
+ },
+ "live_scorecard.json": {
+  "v": 1345,
+  "u": "bytes"
+ },
+ "llm_exits_resolved.jsonl": {
+  "v": 29,
+  "u": "rows"
+ },
+ "owner_fills.jsonl": {
+  "v": 1,
+  "u": "rows"
+ },
+ "owner_plans.jsonl": {
+  "v": 5,
+  "u": "rows"
+ },
+ "plans.json": {
+  "v": 7414,
+  "u": "bytes"
+ },
+ "position_journal.jsonl": {
+  "v": 3105,
+  "u": "rows"
+ },
+ "position_manager.py": {
+  "v": 137439,
+  "u": "bytes"
+ },
+ "scan_grades.json": {
+  "v": 8354,
+  "u": "bytes"
+ },
+ "scan_log.jsonl": {
+  "v": 267,
+  "u": "rows"
+ },
+ "scanner.py": {
+  "v": 10461,
+  "u": "bytes"
+ },
+ "signal_filtered.jsonl.gz": {
+  "v": 9845,
+  "u": "rows"
+ },
+ "syndicate_calls_anon.jsonl": {
+  "v": 199,
+  "u": "rows"
+ },
+ "syndicate_paths_anon.jsonl.gz": {
+  "v": 56,
+  "u": "rows"
+ },
+ "trade_ledger.csv": {
+  "v": 295,
+  "u": "rows"
+ },
+ "trades.csv": {
+  "v": 237,
+  "u": "rows"
+ },
+ "uptime.jsonl": {
+  "v": 62,
+  "u": "rows"
+ }
+}

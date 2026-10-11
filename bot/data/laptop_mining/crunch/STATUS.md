@@ -4,13 +4,19 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-11 15:08, took 1s._
+_Last run 2026-10-11 16:00, took 3006s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
+| `j1_panels` | ok | 880787 | 2 |  |
+| `j5_backfill` | **FAILED** | 913852 | 2998 | 177 coins ok, 1 failed / BNB:API failed after 4 tries: HTTP Error 429 |
+| `j2_trackers` | ok | 3 | 0 |  |
+| `j4_integrity` | ok | 38 | 4 |  |
 | `j3_replications` | ok | 54 | 1 | 54 obs, 5 source-missing, 2 oos day-blocks, no verdicts |
 
-All jobs succeeded.
+## 🔴 1 job(s) failed this run
+
+- `j5_backfill`: 177 coins ok, 1 failed | BNB:API failed after 4 tries: HTTP Error 429
 
 ## What each job does
 
