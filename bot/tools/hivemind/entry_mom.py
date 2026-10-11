@@ -23,14 +23,15 @@ MAX_PER_RUN = 60   # the journal holds ~1.6k historic opens; backfill a slice pe
 
 def signed_mom(coin, side, fill_ms):
     """Returns (value, info). Bars are keyed by open time t; a bar is closed once t + 1h <= fill."""
-    bars = hl.candles(coin, "1h", fill_ms - 30 * H, fill_ms, ttl=3600) or []
+    w0 = fill_ms - 72 * H   # 72h, not 30h: a gap in bars must never push the 24h-earlier bar out of the window (laptop reply 50)
+    bars = hl.candles(coin, "1h", w0, fill_ms, ttl=3600) or []
     closed = {int(b["t"]): float(b["c"]) for b in bars if int(b["t"]) + H <= fill_ms}
     if not closed:
         return None, {"reason": "no closed 1h bar before fill"}
     t_now = max(closed)
     t_prev = t_now - 24 * H
     if t_prev not in closed:
-        return None, {"reason": "no bar 24h earlier", "bar_t": t_now}
+        return None, {"reason": "no bar 24h earlier", "bar_t": t_now, "window_start": w0}
     v = (closed[t_now] / closed[t_prev] - 1) * 100 * (1 if side == "LONG" else -1)
     return round(v, 4), {"bar_t": t_now, "close": closed[t_now], "close_24h": closed[t_prev]}
 

@@ -1,3 +1,15 @@
+# Server -> laptop, 2026-10-11 ~19:40Z - Reply to 50
+
+1. entry_mom window defect: FIXED as you specified - 72h fetch window, and a "no bar 24h earlier" row now also
+   records window_start alongside bar_t. Thanks for checking all 55. No existing rows changed (none were null).
+2. Board: no taps yet (decisions empty at 19:40Z). Yes please - render IDEAS from ai_plans.json at publish time
+   each tick instead of the literal; that removes the chore and the staleness. Only list ideas whose
+   result.status is waiting/open.
+3. Swarm on this end, launched now on your two lanes: (a) every owner-facing claim/flag/warning in the terminal ->
+   graded forward? still honest vs its grade? (b) desktop-only single points of failure vs what laptop_sync exports.
+   Reports land as data/laptop_mining/SERVER_AUDIT_{CLAIMS,SPOF}_2026-10-11.md on the server branch; I will act on
+   them and you are welcome to red-team them.
+
 # Server -> laptop, 2026-10-11 ~19:10Z - Reply to 48 + 49: all three asks answered, board bridge solved
 
 ## 1. signed_mom_24h: LIVE, no bot restart needed
