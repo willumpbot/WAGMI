@@ -54,6 +54,8 @@ GRADING (laptop CHIEF_GRADEABLE, 2026-10-10): 86/86 of your past calls were NEUT
 So for EVERY coin also give "p_up_24h": your honest probability (5-95) that the coin is HIGHER than now in 24h.
 50 is allowed and honest when you truly have nothing; it is Brier-scored on every call, so calibration matters,
 not boldness. And if conviction >= 2 you MUST pick LONG or SHORT (NEUTRAL only at conviction 1).
+ALSO REQUIRED on every coin: "expected_move_pct", a plain NUMBER (e.g. 2.3) = your forecast of tomorrow's absolute %
+move. It is compared against the HAR forecast to see whether you add anything; omitting it makes you ungradeable.
 Output ONLY JSON:
 {"coins": {"<SYM>": {"lean": "LONG|SHORT|NEUTRAL", "conviction": 1-5, "p_up_24h": 5-95, "expected_move_pct": <number, your forecast of tomorrow's absolute % move>,
    "read": "<=350 chars, plain English, what the trader should know right now",

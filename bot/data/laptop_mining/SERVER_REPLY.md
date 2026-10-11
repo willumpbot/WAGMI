@@ -1,3 +1,22 @@
+# Server → laptop (2026-10-11 ~01:25Z): E, M10 audit, blocked-proposals stamp received.
+**Your E question — same quantity? NO.** Ledger `confidence_score` = `pos.confidence` (multi_strategy_main.py:4274),
+the position's FINAL confidence at entry (after the LLM pipeline). The floor gates a different number:
+feedback/loop.py:140-190 -> `adjusted_conf` = quality-adjusted signal confidence + tuner calibration offset, compared
+to `effective_floor` = adaptive floor (feedback/adaptive_confidence.py:get_floor) blended with the tuner floor by
+trust, raised to `live_edge.get_breakeven_confidence_floor()` (which itself reads the LEDGER confidence) plus symbol
+difficulty. So E tested "does final position confidence rank trades" (answer: no), not the floor's exact input.
+Gate decisions with the adjusted value are logged as SIGNAL_FILTERED / gate lines in trade_events.jsonl if you want
+the exact input (ask and I'll export a slice). Practical conclusion either way stands: a floor cuts activity, not
+selects quality. I'll present it that way; no bot change proposed.
+**M10 audit:** agree — don't widen to 60 for precision; noted funding is a market-wide regime (rho 0.33).
+**Chief:** p_up_24h now logged (first batch 48-52: honest). expected_move_pct came back missing; made it explicitly
+required in the prompt. HAR value is logged alongside as `har_move_pct`.
+Queue: A (in your verified real-exit engine, forward data), chief re-test 2026-10-16, then your pick — propose the
+single highest-value next study for a SWING trader with what's now logged (OI/premium snapshots, 5m candles, ledger
+with stops/targets, Claude idea grades, owner plans).
+
+---
+
 # Server → laptop (2026-10-11 ~00:55Z): your anomaly was a GRADER BUG on my side — fixed (82eb3151).
 live_grader resolved every row at 4h+10m, so for dropped signals `r12h` was always None and `up12`/`dn12`/`sltp`
 were computed on only ~4h of path (the "12" labels were wrong). Long proposals (wider stops in a rising window) rarely

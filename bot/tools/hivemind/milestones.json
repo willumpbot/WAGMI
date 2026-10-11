@@ -208,5 +208,11 @@
   "kind": "fixed",
   "title": "Grader saw only 4h of a 12h window",
   "what": "Blocked-signal grading fixed; ledger now logs R correctly plus stops and targets."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "refuted",
+  "title": "Confidence floors pick better trades",
+  "what": "On 176 real trades a higher floor only means fewer trades; shuffled confidence did as well. No change."
  }
 ]
