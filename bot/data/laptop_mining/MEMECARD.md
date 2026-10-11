@@ -1,3 +1,19 @@
+> # ✅ AUDITED 2026-10-11 — **passes.** See `M12_AUDIT.md`.
+>
+> No finding retracted, no shipped number changed. This document already flags its own survivorship
+> bias as *"one-sided and large"*, **refuses to ship its measured 0.944× correction** because
+> over-warning costs a missed trade while under-warning costs the position, states its sample shortfall
+> (23 pools against ~100 asked for), and reports the inconvenient statistic (correlation **0.232**,
+> so *"use it for sizing, not for picking between tokens"*). That is the best reasoning in this folder.
+>
+> **One wording fix applied:** the shipped cap `L/100` is correct for 2% slippage **on your own fill**,
+> but the pool's price moves about **`4S/L`**, twice the figure the text originally quoted. Verified
+> numerically — $10k into a $1M pool pays 2.00% while moving the pool 4.04%. Number right, sentence
+> loose; corrected below.
+>
+> **Worth repeating wherever the card's output appears:** it tells you how volatile a coin is *given it
+> survives*. It cannot tell you the chance it goes to zero — and on memecoins that is what takes the money.
+
 # Mission 12 — risk card for the coins people send the owner
 
 _2026-10-08. `memecard.py` (importable), plus a calibration study on 23 DEX pools / 3,586 predictions.
@@ -30,7 +46,8 @@ daily / 7d / 30d realised volatility · drawdown from ATH · **slippage for $100
 
 ### Slippage and the size cap
 For a constant-product pool with total USD liquidity `L`, each side holds ~`L/2`, so a trade of size
-`S` moves price by roughly `2S/L`:
+`S` is **filled at roughly `2S/L` worse than spot** (the pool's own price moves about `4S/L` —
+twice that; see `M12_AUDIT.md`):
 
 ```
 slippage ≈ 2S / L          cap for 2% slippage:  S_max = L / 100
