@@ -966,8 +966,9 @@ function renderScan(){
   document.querySelectorAll("#scan tbody tr").forEach(tr => tr.onclick = () => adhoc(tr.dataset.c));
 }
 function setupsNow(){
-  const F = SCAN.flags || {}, rows = (SCAN.coins || []).filter(r => r.flags.some(k => k !== "funding_cold")).slice(0, 8);
-  $("setups").innerHTML = rows.length ? rows.map(r => `<span class="mv" data-c="${r.coin}" title="${esc(r.flags.map(k => (F[k]||{}).why).join(" "))}"><b>${r.coin}</b><span class="mut" style="flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis">${r.flags.filter(k => k !== "funding_cold").map(k => (F[k]||{}).label || k).join(", ")}</span></span>`).join("")
+  const HIDE = new Set(["funding_cold", "momentum_small"]);   // momentum_small: graded in the background, not shown (owner 10-11)
+  const F = SCAN.flags || {}, rows = (SCAN.coins || []).filter(r => r.flags.some(k => !HIDE.has(k))).slice(0, 8);
+  $("setups").innerHTML = rows.length ? rows.map(r => `<span class="mv" data-c="${r.coin}" title="${esc(r.flags.map(k => (F[k]||{}).why).join(" "))}"><b>${r.coin}</b><span class="mut" style="flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis">${r.flags.filter(k => !HIDE.has(k)).map(k => (F[k]||{}).label || k).join(", ")}</span></span>`).join("")
     : `<span class="mut" style="font-size:11.5px">Nothing flagged right now.</span>`;
   document.querySelectorAll("#setups .mv").forEach(el => el.onclick = () => adhoc(el.dataset.c));
 }

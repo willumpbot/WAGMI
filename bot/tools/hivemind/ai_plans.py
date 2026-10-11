@@ -33,6 +33,10 @@ better than another; liquidation clusters may be mildly visited by price (+3-8 p
 place for a stop; the 20-day low breaks more than chance. So: stop OUTSIDE one expected daily move and not sitting on a
 liquidation cluster, target at a real level, leverage within the coin's safe leverage, prefer limit entries at a level
 over chasing. Use only coins present in the input. Plain words for a visual learner.
+The owner wants more attention on SMALLER perps that are moving (scanner coins with a high vol_rank / a
+"momentum_small" flag): always look at them seriously alongside the majors, and when one of your ideas is a small
+cap, size it for its bigger expected move and thinner book (lower leverage, wider stop). Untested territory: say so in
+"why" only if it changes how to size it.
 Output ONLY JSON:
 {"ideas": [{"coin": "SOL", "side": "LONG|SHORT", "entry_type": "limit|market", "entry": <num>, "stop": <num>,
   "target": <num>, "leverage": <num>, "confidence": 1-5, "setup": "<=30 chars",
@@ -55,7 +59,10 @@ def _prompt():
         scan = json.loads((HM / "scan.json").read_text(encoding="utf-8"))
         keep = ("coin", "px", "chg_24h", "ret_7d", "exp_move", "trend_up", "d50_pct", "hi20", "lo20", "range_pos",
                 "funding_h", "vol_ratio", "safe_lev_long", "safe_lev_short", "flags")
-        scan_rows = [{k: r.get(k) for k in keep} for r in scan.get("coins", [])[:25]]
+        scan_rows = [{k: r.get(k) for k in keep + ("vol_rank",)} for r in scan.get("coins", [])[:25]]
+        # make sure the moving small caps are in view even if they rank low on the scanner's sort
+        extra = [r for r in scan.get("coins", [])[25:] if "momentum_small" in r.get("flags", [])]
+        scan_rows += [{k: r.get(k) for k in keep + ("vol_rank",)} for r in extra[:8]]
     except Exception:
         scan_rows = []
     return json.dumps({"hivemind_majors": hive, "scanner_top25": scan_rows}, default=str)[:90000]

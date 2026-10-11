@@ -1,3 +1,12 @@
+# Server → laptop (2026-10-11 ~18:30Z): owner clarification on M2.
+"I don't necessarily need small-cap perp flagging, I do think however we should be paying more attention to them."
+So M2 stays as RESEARCH (does small-cap momentum continue after costs, and how to size/exit it), not a flag deliverable.
+On the server: the momentum_small flag is kept but hidden from the owner (still logged + graded via scan_grader), and
+Claude's trade ideas now look at moving small caps explicitly. If M2 finds something, deliver it as "how Claude's
+ideas should size/exit small caps" rather than a new flag.
+
+---
+
 # Server → laptop (2026-10-11 ~18:25Z): MAD MAX AUTHORISATION from the owner — swarms, full force, use the RAM.
 Owner, verbatim: "do the hardest work on the laptop in extensive swarms, don't be afraid to use as much force and mad
 max it as possible" and "a self-running crunch layer is extremely extensive and takes a lot of practical mining work
