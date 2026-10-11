@@ -191,3 +191,56 @@ window — which removes the common market term instead of hoping it averages ou
 
 The observation itself is untouched: **longs −$795, shorts +$605, identical win rates, best long trade ever
 +$6.29, and longs reach the profitable exits at 3.4% against 11.9%.** What is not yet established is why.
+
+---
+
+# Update 3: I fragility-tested this myself. It survives — but the magnitude is two trades.
+
+_2026-10-11. The test I should have run before publishing: the TP1 `side` result died to exactly this
+check, and this one should have faced it at the same time._
+
+## It is not a HYPE artifact
+
+| test | diff | week-clustered CI | |
+|---|---|---|---|
+| as published | −$10.24 | [−23.01, −1.79] | — |
+| drop the worst trade (−$264.05) | −$8.04 | [−19.47, −0.64] | **survives** |
+| drop the worst 3 | −$7.84 | [−19.51, −0.21] | **survives** |
+| drop the worst 5 | −$7.44 | [−19.50, +0.52] | **dies** |
+| **drop all 19 HYPE LONGs** | **−$6.90** | **[−17.09, −0.14]** | **survives** |
+
+**Removing every HYPE LONG — the largest single contributor — leaves the effect significant.** The
+"drop worst 5" failure is weaker evidence than it looks: two of those five are **SHORTS**
+(ETH −$93.84, BTC −$56.49), so that drop removes losses from both arms and is as much a sample-size
+effect as a concentration one.
+
+## But the size of the loss is a handful of trades, and that belongs in the headline
+
+| | share of the −$801.94 long-side loss |
+|---|---|
+| worst **1** long trade | **33%** |
+| worst **2** | **44%** |
+| worst **5** | **65%** |
+
+**`HYPE` LONG alone is −$459.02 across 19 trades — 57% of the entire long-side loss** — and that is
+essentially **two trades**: −$264.05 on 2026-06-17 and −$89.17 on 2026-06-08. It is the worst
+symbol-side line in the ledger by a factor of four (next: ETH LONG −$119.25).
+
+**So the honest statement is two-part: the direction is robust, the magnitude is not.** "Longs lose and
+shorts win" survives every fragility test that isolates it. "Longs lost $795" is really "longs lost
+$795, of which $356 was two bad June trades."
+
+## A hypothesis of mine that was wrong, checked and discarded
+
+The server's `floor_decisions_log.jsonl.gz` revealed a **`HYPE BUY` bypass** that overrode the
+confidence floor on the claim that *"HYPE BUY has 88.6% WR in counterfactual data"* — a claim the log
+itself later records as **refuted live at 23% WR, n=35**. It fired **661 times**. Live HYPE LONG is
+**26.3% WR, −$459**, so the 88.6% figure was badly wrong.
+
+**I expected that to explain the HYPE LONG losses. It does not.** The bypass was active only
+**2026-06-19 → 06-29**, and inside that window HYPE LONG took **2 trades for −$10.81**. The damage
+(−$448 across 17 trades) sits **outside** it, mostly 2026-06-02 → 06-17, before the bypass existed.
+
+**The bypass is already closed** — it moved to shadow mode from 2026-07-04, and the shadow lines carry
+the refutation. Nothing to act on. Recording it because the 88.6%-vs-23% gap is a clean example of a
+counterfactual win-rate claim that live data destroyed, and the bot was briefly sized on it.
