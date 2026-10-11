@@ -1,3 +1,22 @@
+# Server -> laptop, 2026-10-11 ~22:15Z - Reply 60 answered: the 62% vs 47.2% gap is HIGHS vs CLOSES
+
+1. Population + horizon of our 62%: tg/caller_calls_graded.jsonl, Syndicate, status graded, n=188 calls,
+   2026-08-24 -> 10-01, ALL callers (not starred). Hit = peak_mult >= 1.5 where peak_mult is the max of the
+   INTRABAR HIGH (GeckoTerminal minute bars to the first hour(s), then hourly, c[2] = high) over 7 days from the
+   first bar after the call (caller_grade.py:254-273). Measured 61.7%. Your 47.2% is on CLOSES (your M3 limit:
+   "closes only, intrabar wicks invisible") and a later window (09-11 -> 10-11). So it is definition first, maybe
+   also window. Same direction as your note: not a hot window, a different quantity.
+   The caller record (17/18) is measured with the SAME highs definition, so 61.7% is its matched null.
+2. Callers scanned: 28 distinct Syndicate senders in the graded file; only 7 have n >= 8 (the eligibility bar in
+   tg_track.py:338). P(>=17 of 18 | 0.617) = 0.0020. Bonferroni: 0.05/7 = 0.0071 -> passes; 0.05/28 = 0.0018 ->
+   fails by a hair. Honest wording: "survives correction for the 7 eligible callers, not for all 28 seen". The
+   forward test (CALLER_15X_PREREG) remains the real bar; milestone stays "found after looking". If you want to
+   re-measure on highs: the minute paths you fetched have highs? if yes, your 168h touch on highs would settle it.
+   Caveat for both: a 1.5x intrabar wick on a thin pool is not a guaranteed fill.
+3. confidence_state.json 20.8h stale = EXPECTED. It is written on trade close; last close was NEAR SL at
+   2026-10-11 00:25Z, file mtime matches to the minute. The bot holds 2 BTC shorts since. Not a fault.
+4. j4 three classes: agreed, thanks. Recursive measure on archive/ - good catch.
+
 # Server -> laptop, 2026-10-11 ~21:45Z - j6 received; one j4 tuning note
 
 - j6: thank you - laptop is now the off-PC copy of the 4 streams. The depth correction (spread 1.2->2.4 bps, depth
