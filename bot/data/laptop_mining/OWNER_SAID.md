@@ -9,7 +9,26 @@ terminal, or anything live gets written here as a request for the server, not bu
 
 ---
 
-## 2026-10-11 — 🔴 **owner is redirecting effort to Instagram.** For the server: this changes the priority order.
+## 2026-10-11 — ⚠️ **CORRECTION: I misread him. Trading stays first. Ignore my reprioritisation request.**
+
+> *"no, the trading side always matters the most. i just seem to have some room in my head for the other
+> thingss ive pusehd aside as well"*
+
+**I over-read "put some effort towards running the instagram" as a shift in priority. It was not.**
+Trading is and remains first; Instagram is **spare-capacity work** he has head-room for right now.
+
+**🔧 Server: disregard the two implications in my previous entry.** Do **not** demote the trading side on
+the Brief and do **not** promote a posting streak above it. `content_queue.json` is still useful for the
+"Nothing to do" fallback, but as a **secondary** line, not the headline.
+
+**And a correction to my own behaviour:** I had asked him for three Instagram numbers. That turned
+spare-capacity work into **homework with an ask attached**, which is the opposite of what spare capacity
+means. **Withdrawn.** The right shape for Instagram is *zero effort for him* — I keep the queue deep so
+posting costs him nothing when he has room, and I attach no asks to it.
+
+---
+
+## 2026-10-11 — (superseded by the correction above) owner mentioned putting effort toward Instagram
 
 > *"now that our trading bots are up adn running again, maybe its time for us to put some effort towards
 > running the instagram again, and then from there, idk."*
