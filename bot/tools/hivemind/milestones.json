@@ -226,5 +226,11 @@
   "kind": "fixed",
   "title": "Safe leverage was ~15% too generous",
   "what": "It came from too few bad days to see the true worst ones. The terminal now shows the corrected, safer number."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "fixed",
+  "title": "Bot-down alerts reach your phone",
+  "what": "In September a 3-day crash was detected but nobody saw it. Now 'bot down' or 'AI degraded' goes to your Telegram Saved Messages."
  }
 ]

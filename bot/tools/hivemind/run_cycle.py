@@ -29,10 +29,35 @@ def _uptime_ping():
         age = time.time() - float(h.get("epoch") or 0)
     except Exception:
         h, age = {}, None
+    alive = age is not None and age < 600
+    llm_ok = alive and not bool(h.get("llm_first_degraded"))      # laptop 10-11: Oct 5-7 the bot was UP but its AI was down
     row = {"t": int(time.time()), "hb_age_s": None if age is None else round(age), "pid": h.get("pid"),
-           "scans": h.get("scan_count"), "alive": age is not None and age < 600}
-    with open(HERE.parents[1] / "data" / "hivemind" / "uptime.jsonl", "a", encoding="utf-8") as f:
+           "scans": h.get("scan_count"), "alive": alive, "llm_ok": llm_ok, "can_trade": alive and llm_ok}
+    hm = HERE.parents[1] / "data" / "hivemind"
+    with open(hm / "uptime.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(row) + chr(10))
+    # Alert the owner on his phone (Telegram Saved Messages via tg_listener's outbox) when the bot stops being able
+    # to trade, every 6h while it lasts, and once when it recovers. In September the watchdog detected a 3-day crash
+    # and nobody saw it.
+    st_p = hm / "uptime_alert_state.json"
+    try:
+        st = json.loads(st_p.read_text(encoding="utf-8"))
+    except Exception:
+        st = {"bad_since": None, "last_alert": 0}
+    now, msg = time.time(), None
+    if not row["can_trade"]:
+        why = "the bot process is DOWN (no heartbeat for %s min)" % (round(age / 60) if age else "?") if not alive             else "the bot is running but its AI is DEGRADED (likely the Claude login expired: run /login on the PC)"
+        if st.get("bad_since") is None:
+            st["bad_since"] = now
+        if now - st.get("last_alert", 0) > 6 * 3600:
+            msg, st["last_alert"] = "Bot can't trade: " + why + ".", now
+    elif st.get("bad_since") is not None:
+        msg = "Bot is back to normal after %.1f h." % ((now - st["bad_since"]) / 3600)
+        st = {"bad_since": None, "last_alert": 0}
+    if msg:
+        with open(hm / "tg" / "outbox.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"t": int(now), "text": msg}) + chr(10))
+    st_p.write_text(json.dumps(st), encoding="utf-8")
 
 
 def main():

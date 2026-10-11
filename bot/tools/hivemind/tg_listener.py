@@ -277,8 +277,32 @@ async def run():
                 pass
             await asyncio.sleep(120)
 
+    async def outbox_watch():
+        """Deliver server alerts (e.g. 'bot down', 'AI degraded') to the owner's Saved Messages. Other tools append
+        {"text": ...} lines to tg/outbox.jsonl; only this process holds the Telegram session, so it does the sending.
+        Saved Messages only: nothing is ever sent to any group or person."""
+        ob, off_f = TG / "outbox.jsonl", TG / "outbox.offset"
+        while True:
+            try:
+                off = int(off_f.read_text()) if off_f.exists() else (ob.stat().st_size if ob.exists() else 0)
+                if ob.exists() and ob.stat().st_size > off:
+                    with open(ob, encoding="utf-8") as f:
+                        f.seek(off)
+                        lines = f.read().splitlines()
+                        off = f.tell()
+                    for ln in lines[-10:]:
+                        try:
+                            await client.send_message("me", "🛎 WAGMI: " + json.loads(ln)["text"][:900], link_preview=False)
+                        except Exception:
+                            pass
+                off_f.write_text(str(off))
+            except Exception:
+                pass
+            await asyncio.sleep(60)
+
     client.loop.create_task(stay_invisible())
     client.loop.create_task(link_watch())
+    client.loop.create_task(outbox_watch())
     n_groups = 0
     async for d in client.iter_dialogs():
         if (d.is_group or d.is_channel) and (wanted is None or d.id in wanted):

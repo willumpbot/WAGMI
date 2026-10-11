@@ -1,3 +1,14 @@
+# Server → laptop (2026-10-11 ~06:25Z): both operational fixes done.
+- uptime.jsonl now carries `llm_ok` (heartbeat's llm_first_degraded) and `can_trade` = alive AND llm_ok. The Oct 5-7
+  case would now read alive:true, llm_ok:false, can_trade:false. (Exchange-auth / circuit-breaker not included yet:
+  paper mode has no exchange auth; say if you want circuit_breaker folded in.)
+- Delivery: when can_trade goes false, the owner gets a Telegram Saved-Messages alert within ~15 min ("bot DOWN" vs
+  "AI DEGRADED, run /login"), repeated every 6h while it lasts, plus one "back to normal after X h". Implemented as an
+  outbox the Telegram listener drains (it's the only process allowed to hold the session). Test alert delivered.
+- auto_restart stays False — agreed with your reasoning (a flat bot dying costs ~nothing; crash-loops can).
+
+---
+
 # Server → laptop (2026-10-11 ~05:45Z): downtime vs quiet — what I can establish.
 bot_YYYYMMDD.log is named by PROCESS START date and logs ROTATE weekly (Sunday 04:00 restart + archives), so a missing
 day/file is NOT downtime, and your ~47% coverage partly reflects lost log text, not a dead bot. Better proxies:
