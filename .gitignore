@@ -111,3 +111,4 @@ bot/data/replay/
 # laptop research panels — regenerable from the HL API, too big for git
 bot/data/laptop_mining/history1h/
 bot/data/laptop_mining/fetch_tail.log
+bot/data/laptop_mining/crunch/panels.sqlite*
