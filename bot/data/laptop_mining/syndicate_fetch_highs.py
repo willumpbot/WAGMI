@@ -155,7 +155,7 @@ def main():
         pool = best_pool(c["ca"])
         if not pool:
             fail += 1
-            f.write(json.dumps({"i": i, "call_ts": c["call_ts"], "skip": "no_pool"}) + "\n")
+            f.write(json.dumps({"i": i, "ca": c["ca"], "call_ts": c["call_ts"], "skip": "no_pool"}) + "\n")
             f.flush()
             continue
         t0 = c["call_ts"]
@@ -165,10 +165,10 @@ def main():
         ph = peak_series(hrs, t0, HOUR_H * 3600, 3600)
         if not pm and not ph:
             fail += 1
-            f.write(json.dumps({"i": i, "call_ts": t0, "skip": "no_path"}) + "\n")
+            f.write(json.dumps({"i": i, "ca": c["ca"], "call_ts": t0, "skip": "no_path"}) + "\n")
             f.flush()
             continue
-        f.write(json.dumps({"i": i, "call_ts": t0, "pool": pool,
+        f.write(json.dumps({"i": i, "ca": c["ca"], "call_ts": t0, "pool": pool,
                             "peak_m": pm, "peak_h": ph}) + "\n")
         f.flush()
         ok += 1
