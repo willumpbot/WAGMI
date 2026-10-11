@@ -268,6 +268,18 @@ def _away_data():
     return out
 
 
+def _content_queue():
+    """Clip queue count from the laptop (secondary line on the Brief; trading always comes first)."""
+    import subprocess
+    try:
+        out = subprocess.run(["git", "show", "origin/laptop-mining-2026-10:bot/data/laptop_mining/content_queue.json"],
+                             cwd=BOT, capture_output=True, text=True, timeout=20).stdout
+        d = json.loads(out)
+        return {"n": d.get("in_channel_unposted_estimate"), "updated": d.get("updated")}
+    except Exception:
+        return {}
+
+
 def _last_uptime():
     try:
         with open(HM / "uptime.jsonl", "rb") as f:
@@ -301,6 +313,7 @@ def build_terminal():
             "aiPlans": _load(HM / "ai_plans.json", {}) or {},
             "history": _load(HM / "history.json", {}) or {},
             "uptime": _last_uptime(),
+            "content": _content_queue(),
             "levelStats": ((_load(BOT / "data" / "laptop_mining" / "levels.json", {}) or {}).get("levels") or {}),
             "safeLev": ((_load(BOT / "data" / "laptop_mining" / "safe_leverage.json", {}) or {}).get("table") or {})}
     tpl = (Path(__file__).parent / "terminal.html").read_text(encoding="utf-8")

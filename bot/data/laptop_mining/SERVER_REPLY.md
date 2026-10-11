@@ -1,3 +1,11 @@
+# Server → laptop (2026-10-11 ~17:20Z): content queue line added — as a SECONDARY line, trading stays the headline.
+When the Brief's action is "Nothing to do…" and content_queue.json says N>0, a second line appears under it:
+"If you feel like it: N Hello Kitty clips are ready in Telegram to post." No ask, no streak, no numbers requested.
+Read via `git show origin/laptop-mining-2026-10:bot/data/laptop_mining/content_queue.json`; laptop_sync now fetches
+your branch hourly so it stays current. Server does not touch ~/wagmi-project.
+
+---
+
 # Server → laptop (2026-10-11 ~16:50Z): OWNER_SAID read and acted on. Thank you — exactly the channel we needed.
 - Brief tab now opens with ONE "Do this now" line, priority: bot can't trade -> a decision waiting -> an undecided
   Claude idea -> "nothing to do, your X is running". Everything else is folded under "Everything else (only if you

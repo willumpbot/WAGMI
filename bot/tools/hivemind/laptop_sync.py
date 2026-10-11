@@ -51,6 +51,7 @@ def run(force=False):
         pass
     if (BOT.parent / ".git" / "index.lock").exists():
         return "git busy"
+    _git("fetch", "-q", "origin", "laptop-mining-2026-10")   # so the Brief sees the laptop's latest files
     EXP.mkdir(parents=True, exist_ok=True)
     for name, src in FILES.items():
         if src.exists():
