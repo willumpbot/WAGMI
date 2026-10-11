@@ -133,7 +133,7 @@ def path_multiples(c, d, delay_min):
 def sim(p, tp=None, partial=None, trail=None, stop=None, hold_h=24, t0=0):
     """Return net multiple-1 (fraction) after COST. Bars processed in time order; within a bar the adverse extreme
     is assumed FIRST (stop before target: conservative)."""
-    pos, realised, peak, end_t = 1.0, 0.0, 1.0, t0 + hold_h * 3600
+    pos, realised, peak, end_t, sold_partial = 1.0, 0.0, 1.0, t0 + hold_h * 3600, False
     for t, hi, lo, cl in p:
         if t > end_t:
             break
@@ -145,9 +145,11 @@ def sim(p, tp=None, partial=None, trail=None, stop=None, hold_h=24, t0=0):
             realised += pos * peak * (1 - trail[1])
             pos = 0
             break
-        if partial and pos > 0.5 and hi >= partial[0]:
-            realised += 0.5 * partial[0]
-            pos -= 0.5
+        if partial and not sold_partial and hi >= partial[0]:
+            frac = partial[1] if len(partial) > 1 else 0.5
+            realised += frac * partial[0]
+            pos -= frac
+            sold_partial = True
         if tp and hi >= tp:
             realised += pos * tp
             pos = 0
@@ -173,6 +175,12 @@ RULES = {
     "sell 1.5x, stop -40%": dict(tp=1.5, stop=0.6),
     "sell 2x, stop -50%": dict(tp=2.0, stop=0.5),
     "half 1.5x, trail 30% after 2x": dict(partial=(1.5,), trail=(2.0, 0.30)),
+    # moonbags (owner 10-11: "holding some could be an option, sometimes there are bigger runners")
+    "sell 75% at 1.5x, moonbag 7d": dict(partial=(1.5, 0.75), hold_h=168),
+    "sell 50% at 2x, moonbag 7d": dict(partial=(2.0, 0.5), hold_h=168),
+    "sell 75% at 2x, moonbag trail 40%": dict(partial=(2.0, 0.75), trail=(3.0, 0.40), hold_h=168),
+    "sell 50% at 1.5x, moonbag trail 50%": dict(partial=(1.5, 0.5), trail=(2.0, 0.50), hold_h=168),
+    "hold 7d": dict(hold_h=168),
 }
 DELAYS = [1, 3, 5, 15, 30]
 
