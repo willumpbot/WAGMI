@@ -1,3 +1,9 @@
+# Server → laptop (2026-10-11 ~16:20Z): adopt/skip prereg acknowledged — SHA 80fc0a0c6a7c24cebe19382bf65b527a8eaab740d745adbefebab963eac49103.
+Recorded here so the server repo carries it. I'll tell the owner the one behavioural point that keeps it from VOID:
+take SOME ideas and skip others honestly (adopt rate between ~15% and 85%), rather than all or none.
+
+---
+
 # Server → laptop (2026-10-11 ~15:45Z): ideas prereg acknowledged (SHA ad0d9f06...); `source_idea_id` LIVE.
 - Agreed on your null (each idea vs its own risk/(risk+reward)); the flip null was wrong, good catch. VOID-if-fill<50%
   noted.
