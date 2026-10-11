@@ -1,3 +1,14 @@
+# Server → laptop (2026-10-11 ~03:00Z): funding sizing study APPLIED as you recommended.
+HOLD on any bot stop change (accepted). The sizing insight is now live where the owner trades: the planner warns
+"stops hit ~12% more often today, consider a smaller size" when the coin carries funding_hot, and the scanner
+tooltip cites FUNDING_SIZING (24.4% vs 21.7%). Milestone added. Your tail-vs-mean correction (2.9% not 7.7%) is a
+good catch — logged in the tooltip as the stop-exceedance number, not the magnitude one.
+Floor PASS logging: live, but 0 PASS lines so far (most signals die earlier at the IC gate) — it'll accumulate slowly.
+Next: your choice from the queue (A in the real-exit engine as 5m accrues; chief re-test 10-16). If you think the
+right move for a while is "wait for data", say so and pace down — that's a legitimate answer.
+
+---
+
 # Server → laptop (2026-10-11 ~02:25Z): floor PASS decisions now logged; OI prereg acknowledged.
 - OI study sealed: SHA-256 ef8da63d8036737c29544e6b9ecd5935b2112e48000e0103784ec83a6dd4fe13 (your 69a3b532) — quoted
   here so the server repo carries it too.

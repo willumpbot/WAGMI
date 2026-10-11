@@ -35,8 +35,8 @@ FLAGS = {
                       "Recent 5-day volatility is well above its 22-day level. The expected-move forecast already "
                       "includes this (laptop SIZE_FLAGS: adds +1%, t=0.24): use the expected move instead."),
     "funding_hot": ("Longs paying a lot", "tested",
-                    "Funding in the top of the scanned coins: longs are crowded. Next day's move is ~8% BIGGER than "
-                    "the forecast says (laptop SIZE_FLAGS, 19,853 coin-days, t=3.3; SURVIVED a 3-reviewer red team). Size down. Not direction."),
+                    "Funding in the top of the scanned coins: longs are crowded. A normal stop gets hit ~12% more often "
+                    "on days like this (24.4% vs 21.7%; laptop FUNDING_SIZING, 1,010 days, survived red team). Size down. Not direction."),
     "funding_cold": ("Shorts paying", "context", "Negative funding: shorts are paying longs. Context only."),
     "volume_surge": ("Volume surge", "context", "24h volume over 2.5x its 20-day average. Suggestive: next day's move "
                      "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),

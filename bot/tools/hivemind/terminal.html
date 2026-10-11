@@ -567,6 +567,8 @@ function calc(){
   if (side==="LONG" ? liq>=st : liq<=st) w.push("Liquidation comes before your stop: lower the leverage.");
   if (margin > acct) w.push("Margin exceeds the account.");
   { const x = safeLev(sel); if (x) { const sl = side==="LONG" ? x.long : x.short; if (lev > sl) w.push(`${lev}× is above the safe ${sl.toFixed(1)}× for ${sel} right now: one bad day could liquidate you.`); } }
+  { const sr = ((typeof SCAN !== "undefined" && SCAN.coins) || []).find(r => r.coin === sel);
+    if (sr && sr.flags.includes("funding_hot")) w.push(`Longs are paying a lot of funding on ${sel} right now. On days like this a normal stop gets hit about 12% more often (tested on 1,010 days, 17 coins). Consider a smaller size.`); }
   if (dist*100 < a) w.push(`Stop is closer than a normal day's move (±${a.toFixed(1)}%): stops this tight got hit a lot in testing. Try about ${(2*a).toFixed(1)}%.`);
   $("c_warn").textContent = w.join(" ");
   $("c_safe").innerHTML = w.length
