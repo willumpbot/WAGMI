@@ -1,4 +1,26 @@
-> # DOWNGRADED 2026-10-11 — the live flag is a different, stricter condition. See `FUNDING_STOP_AUDIT.md`.
+> # RESOLVED 2026-10-11 — the live flag now matches a definition I measured. Aligned figure: **+2.68 pp, week t 3.04**.
+>
+> **Sequence:** `scanner.py` landed → the live flag was top **decile** + an absolute floor, not the top
+> quintile this study used → **downgraded** (the audit table in `FUNDING_STOP_AUDIT.md` shows t spanning
+> 1.21–3.31 across variants) → the server moved the flag to the tested definition → **then found my
+> recommendation had a flaw**: Hyperliquid parks most coins at a default funding rate, so `>= quantile(0.80)`
+> flagged ~85% of the live cross-section. **My own panel had the same tie mass and I had not checked:**
+> **18.64%** of my funding values sit exactly at the default. The server's fix is `>` rather than `>=`.
+>
+> **The finding survives the alignment:**
+>
+> | definition | fires | effect | week t |
+> |---|---|---|---|
+> | `>=` 80th pct — as published below | 26.33% | +2.64 pp | 3.31 |
+> | **`>` 80th pct — LIVE now** | **18.92%** | **+2.68 pp** | **3.04** |
+> | `>` plus a default-rate floor | 12.83% | +2.47 pp | 2.17 |
+>
+> **The effect is not driven by the tied rows** (+2.64 → +2.68 when they are removed), and the terminal's
+> `+2 points` wording is conservative against it. **Read the figures below as the `>=` variant;** the
+> live-aligned numbers are the middle row. The sensitivity caveat stands: this is one point in a range,
+> not a robust constant.
+>
+> **Also do not re-add an absolute floor** — it costs fire rate and significance for no gain.
 >
 > `scanner.py` finally landed in the export and **the live `funding_hot` is top DECILE plus an absolute
 > funding floor** (`scanner.py:159-163`). **This study used top QUINTILE with no floor** — the definition

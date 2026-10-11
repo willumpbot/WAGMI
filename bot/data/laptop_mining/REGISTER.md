@@ -77,7 +77,11 @@ on crowded-funding days instead.
 | **Absence read as evidence** | floor log "stopped"; 23 silent days; `scan_log` 3 days; uptime 61 min "stale" — **all rotation, rolling windows or sync cadence** | **Prefer files that never rotate; pick thresholds from the cadence** |
 | **Unstated power** | nulls with MDEs of **90–128%/yr** reported as "nothing survived"; a p99 that was a sample max | **State the MDE before the verdict, every time** |
 
-**Two more rules earned the hard way:**
+| **Tie mass under a threshold** | `funding_hot` as `>= quantile(0.80)` swallowed the 18.6% of coin-days parked at Hyperliquid's default funding rate — flagging ~85% of the live cross-section | **Check for repeated values before thresholding; use `>` on anything with a platform default** |
+
+**Three more rules earned the hard way:**
+- **Never test a production flag from its description.** Read the implementation or say you could not.
+  Two studies measured `funding_hot` from a docstring; the live code was a different condition.
 - **Never convert a mean-level effect into a threshold-level action analytically.** Solve the threshold
   on the data — assuming linearity over-corrected by **2.7×** on the funding stop.
 - **A zero exit code is not evidence of success.** Check the side effect. (The owner's clip queue sat
