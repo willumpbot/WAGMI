@@ -1,0 +1,101 @@
+{
+ "lb1h": {
+  "n_trades": 294,
+  "n_days": 59,
+  "pct_with_momentum": 31.0,
+  "slope": 1.7294,
+  "ci": [
+   -12.6152,
+   12.0543
+  ],
+  "mde": 17.621,
+  "ci_excludes_zero": false,
+  "sign_as_predicted": false,
+  "terciles": [
+   {
+    "mean": -4.11,
+    "median": -1.08,
+    "n": 98,
+    "winrate": 30.6
+   },
+   {
+    "mean": -1.9,
+    "median": -0.15,
+    "n": 98,
+    "winrate": 34.7
+   },
+   {
+    "mean": 4.01,
+    "median": -0.12,
+    "n": 98,
+    "winrate": 42.9
+   }
+  ]
+ },
+ "lb4h": {
+  "n_trades": 294,
+  "n_days": 59,
+  "pct_with_momentum": 43.5,
+  "slope": 4.8388,
+  "ci": [
+   0.5978,
+   9.7572
+  ],
+  "mde": 6.5425,
+  "ci_excludes_zero": true,
+  "sign_as_predicted": false,
+  "terciles": [
+   {
+    "mean": -4.71,
+    "median": -2.01,
+    "n": 98,
+    "winrate": 17.3
+   },
+   {
+    "mean": -2.24,
+    "median": -0.16,
+    "n": 98,
+    "winrate": 36.7
+   },
+   {
+    "mean": 4.95,
+    "median": 0.1,
+    "n": 98,
+    "winrate": 54.1
+   }
+  ]
+ },
+ "lb24h": {
+  "n_trades": 294,
+  "n_days": 59,
+  "pct_with_momentum": 74.5,
+  "slope": 2.3683,
+  "ci": [
+   1.1267,
+   4.3108
+  ],
+  "mde": 2.2744,
+  "ci_excludes_zero": true,
+  "sign_as_predicted": false,
+  "terciles": [
+   {
+    "mean": -9.46,
+    "median": -1.76,
+    "n": 98,
+    "winrate": 22.4
+   },
+   {
+    "mean": -3.2,
+    "median": -0.28,
+    "n": 98,
+    "winrate": 36.7
+   },
+   {
+    "mean": 10.65,
+    "median": 0.0,
+    "n": 98,
+    "winrate": 49.0
+   }
+  ]
+ }
+}
