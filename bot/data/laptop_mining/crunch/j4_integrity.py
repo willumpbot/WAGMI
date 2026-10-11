@@ -10,6 +10,7 @@ So this reports, per export: whether it is present, whether it is GROWING, its f
 its gaps. It flags regressions rather than interpreting them.
 """
 import glob
+import subprocess
 import gzip
 import io
 import json
@@ -89,6 +90,66 @@ def check_ctx_gaps():
     return "`ctx_snapshots/` " + "; ".join(out)
 
 
+CADENCE_S = 3600          # the scheduled task is hourly
+STALE_AFTER_S = 2.5 * 3600
+
+
+def check_self_freshness():
+    """Is this layer still being run at all?
+
+    THRESHOLD IS PICKED FROM THE CADENCE, not by feel: hourly cadence, so two consecutive
+    missed runs (2.5h) is the alarm. One missed run is a reboot or a long j5 sweep and is not
+    news; two means the scheduler is not firing.
+
+    The run ledger is the evidence, and the PREVIOUS run is what matters -- this very run is
+    about to insert its own row, so a check against `now` would always look fresh.
+    """
+    try:
+        c = db()
+        rows = c.execute("SELECT started, job FROM runs ORDER BY started DESC LIMIT 400").fetchall()
+        c.close()
+    except Exception as e:
+        return "**cannot read the run ledger** (%s) -- freshness unknown, which is itself a problem" \
+            % str(e)[:80]
+    if not rows:
+        return "run ledger is **empty** -- no job has ever recorded a run"
+    now = time.time()
+    # the newest run belonging to an EARLIER wall-clock hour than this one
+    this_hour = int(now // CADENCE_S)
+    prior = [r[0] for r in rows if int(r[0] // CADENCE_S) < this_hour]
+    if not prior:
+        return ("only this hour's runs are in the ledger (%d rows) -- too new to judge freshness"
+                % len(rows))
+    age = now - max(prior)
+    verdict = ("🔴 **STALE: the layer has not run for %.1f h** (alarm at %.1f h, which is two "
+               "missed hourly runs). Check the scheduled task: "
+               "`schtasks /query /tn WAGMI-LaptopCrunch /fo LIST`"
+               % (age / 3600.0, STALE_AFTER_S / 3600.0)) if age > STALE_AFTER_S else \
+              ("fresh -- previous run was %.1f h ago, inside the %.1f h alarm"
+               % (age / 3600.0, STALE_AFTER_S / 3600.0))
+    # and what the scheduler itself thinks, which is the only direct evidence
+    sched = ""
+    try:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "$i=Get-ScheduledTaskInfo -TaskName 'WAGMI-LaptopCrunch' -ErrorAction Stop;"
+             "$t=Get-ScheduledTask -TaskName 'WAGMI-LaptopCrunch';"
+             "'{0}|{1}|{2}|{3}' -f $t.State,$i.LastTaskResult,$i.NextRunTime,$i.NumberOfMissedRuns"],
+            capture_output=True, text=True, timeout=30)
+        out = (r.stdout or "").strip().splitlines()
+        if out and "|" in out[-1]:
+            st, res, nxt, miss = (out[-1].split("|") + ["", "", "", ""])[:4]
+            bad = res.strip() not in ("0", "267009")      # 0 = ok, 267009 = currently running
+            sched = (" Scheduler says: state **%s**, last result **%s**%s, next %s, missed %s."
+                     % (st.strip(), res.strip(), " (NOT success)" if bad else "",
+                        nxt.strip() or "?", miss.strip() or "?"))
+        else:
+            sched = " Scheduler **did not answer** -- the task may have been removed."
+    except Exception:
+        sched = " Could not query the scheduler."
+    return verdict + sched
+
+
 def main():
     t0 = time.time()
     prev = {}
@@ -155,6 +216,12 @@ def main():
             else "no always-empty columns. ",
             ("under-50%% filled: %s" % ", ".join("`%s` %.0f%%" % (k, pc)
                                                  for k, pc in thin[:8])) if thin else ""))
+
+    lines += ["", "## Is the layer itself still running?", "",
+              "_The jobs report what they did. Nothing reported whether the SCHEDULER fired, and a",
+              "stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing changed`._",
+              ""]
+    lines += ["- " + check_self_freshness(), ""]
 
     lines += ["", "## Panel store", ""]
     try:
