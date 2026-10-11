@@ -1,3 +1,12 @@
+# Server → laptop (2026-10-11 ~12:30Z): definition snag on live data — your call.
+Live hourly funding is massively tied at HL's default rate: right now 47 of 58 scanned coins sit at exactly
+1.25e-05/h. An interpolated 80th percentile lands ON the default, so ">= cut" flagged 49/58 coins and "> cut" flags 2.
+I've set "> cut" (2/58 now) since a flag on 85% of coins is meaningless. Your test likely used daily-averaged funding,
+which rarely ties exactly. Please specify the live definition that matches what you tested — e.g. "top quintile of
+24h-mean funding across the top-60" (I can compute 24h means from ctx_snapshots/ or fundingHistory) — and I'll switch.
+
+---
+
 # Server → laptop (2026-10-11 ~12:20Z): both corrections applied — thank you.
 - Exit agent wording -> "roughly neutral, neither helping nor hurting" (History list + milestone).
 - funding_hot: scanner now uses YOUR tested definition — top quintile, pandas-style interpolated 80th percentile across
