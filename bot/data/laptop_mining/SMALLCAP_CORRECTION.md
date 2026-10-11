@@ -129,12 +129,46 @@ Shorting the ≥4% tail, 682 events, 140 coins, 132 days — mean 72h move **−
 $572k/day perp is small enough that a 5.8% edge is small absolute money, and anything above 2×
 leverage hands back a tenth of the book to liquidations.
 
-**And funding is not in this estimate at all.** On a perp in a blow-off, funding runs against a
-short at roughly **1%/day**, so a 72-hour hold plausibly gives back **~3% of the 5.8%** — over half
-the edge, before slippage on a $572k/day book. **That single unmeasured term could account for most
-of what is left.** j5 now archives `fundingHistory` for every perp, so this is answerable from
-tomorrow; it was not answerable before today, which is exactly why the number is absent rather than
-estimated.
+**UPDATE, same day — funding is now MEASURED, and my guess was 4× too pessimistic.**
+
+I wrote here that funding plausibly ran ~1%/day against a short, giving back ~3% of the 5.8%. A
+four-lane swarm with three adversarial refuters measured it on realised `fundingHistory` across the
+actual 72-hour holding windows:
+
+| | |
+|---|---|
+| **realised funding cost** | **−0.73%/72h** (envelope across clusterings [−1.58, −0.17]) |
+| **net of funding and fees** | **+4.9%/72h**, CI [+1.4, +8.9], z +2.7, MDE 4.96% |
+| break-even funding | −5.6% off pooled gross — the measured cost is **7.5× smaller** |
+| my −3%/72h guess | **ruled out**, 11.6 se away |
+
+**So funding does not kill it.** The sign convention was hand-verified on one coin (Σ hourly rate
+→ +1.5005%/72h; net = gross + funding − fees), coverage is complete (682/682 events ≥98.6%, **zero
+exclusions**), and the funding table was confirmed bit-identical to an independent fetch.
+
+**But three refutations landed, and they change what the trade IS:**
+
+1. **My +7.47% equal-weighted headline is partly a thin-day artifact.** `corr(events/day, day mean
+   net)` is **−0.12 Pearson / −0.21 Spearman** — I had asserted the opposite. The 30 single-event
+   days (4.4% of events) supply **37%** of the headline, and **on the 15 days holding 43% of all
+   events the trade is −1.45%.** Drop days with ≤3 events and it collapses to **+4.67%**. The edge
+   lives on **low-breadth days**, so the deployable figure is ~+4.9%, not +7.5%.
+2. **Wrong bootstrap block — a repeat of the error §3 of this very document fixed.** `boot()`
+   resampled single days iid at a 72h horizon with daily ρ₁ = +0.30. se inflates ×1.25 to ×1.44,
+   so every z and MDE in the funding work was understated 25–48%.
+3. **"The cost is not endogenous" is refuted.** Pearson −0.005 reproduces, but **Spearman is
+   −0.31**: gross short return is +10.3% in the worst funding decile versus −5.4% in the best, and
+   the worst 5% of events run funding −12.18% / gross +10.54% / **net −1.82%**. The funding tail
+   lands on exactly the shorts whose price leg worked — and **every ex-ante funding filter tested
+   loses money**, so there is no escape hatch.
+
+**And my placebo claim was overstated:** "21.2 placebo-sd" measured against the resampling mean's
+own spread rather than the estimator's se. Against the right denominator it is **z ≈ 4.0** — still
+decisive, not astronomical.
+
+**What still binds, unchanged:** market impact in a $572k/day perp is **SOURCE-MISSING, not zero**,
+against a median clip that is 2% of a day's volume; per-event net 5th percentile is **−24%** with
+**10.3% liquidated at 2×**. **+4.9% is real and is not harvestable at leverage.**
 
 **One more constraint on what may be claimed:** the effect is measured **relative to other small
 caps at the same hour**. Against the *same coin's* full history a breakout actually looks *better*,
@@ -165,9 +199,11 @@ and is what §1 of `SMALLCAP_MOMENTUM.md` should have said.
   (Bonferroni \|z\| > 3.55) and the tail clears that bar by a wide margin, with monotone gradients in
   three independent strength variables rather than one best bin — but it was still found by looking,
   which is exactly why §6 seals a forward test instead of claiming it.
-- **Survivorship now runs in my favour and I should say so loudly:** delisted pumpers are missing
-  and they went to zero, so the true underperformance is **worse** than measured. A result helped by
-  a bias needs more scepticism, not less.
+- **STRUCK: "survivorship runs in my favour".** I argued delisted pumpers went to zero so the true
+  underperformance must be worse. The direction is plausible but it was never measured, and **0 of
+  169 series in the panel end early** — it is a pure current-listing snapshot with no delisted
+  series to check the claim against. Survivorship here is **unquantified**, full stop. A bias I
+  cannot measure is not a bias that helps me.
 - **Funding and borrow are unmeasured**, and on a pumping small-cap perp they are exactly where a
   short edge goes to die.
 - **132 days, one regime.** The market-down conditional (−3.8% to −5.4%) versus flat/up (≈0) says
