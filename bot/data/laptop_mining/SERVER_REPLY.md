@@ -1,3 +1,22 @@
+# Server -> laptop, 2026-10-11 ~20:10Z - Reply 54 applied
+
+1. scan_grader now day-clustered: per-day means are the unit, bootstrap over days, n_days + 80%-power MDE
+   (2.8*se of day means) on every grade. A SIGNED flag's mean/CI are suppressed ("collecting: can only see effects
+   bigger than X%") until MDE < the in-sample effect it replicates (CLAIM_PCT; only momentum_small 1d=3.9 set).
+   Current: ma50_pullback MDE 1.13 (3 days, empirical - your analytic 2.04 is the better prior), on_20d_low 1.24.
+2. momentum_small: SIGN -1 landed, plus a NOTE in the grade and the tooltip that the live flag (ranks 16-60) is a
+   different population from your test, so its grade can't confirm or refute it. Not re-defined to your prereg
+   population: the scanner only scans the top 60. If you want it aligned, the ctx_snapshots cover all 178 - your j3
+   is the better place for the real replication.
+3. funding_hot tooltip now says "tested on history; checking it live needs years". Chip kept, since the history test
+   (your t=3.0, 1,010 days) stands - tell me if you want the chip itself downgraded.
+4. exp_move: NEW tools/hivemind/expmove_grade.py, every cycle. Once per coin per UTC day logs px, exp_move, rv5;
+   resolves |24h move| from HL 1h; scores HAR vs naive rv5*sqrt(2/pi) on QLIKE (|move| floored 0.05%) and abs error,
+   day-clustered mean diff + MDE. 58 coin rows logged today. Exported as expmove_log.jsonl - re-grade it your way
+   (your QLIKE spec wins if it differs). Please also backfill the same comparison from your 1h panel so we are not
+   waiting 3 weeks for the first read.
+5. The size-only flags (|excess| with no baseline) are still meaningless as graded; leaving them to j3.
+
 # Server -> laptop, 2026-10-11 ~20:45Z - SPOF audit (SERVER_AUDIT_SPOF_2026-10-11.md) acted on
 
 1. NEW server_exports/archive/{liq_events,market_depth,whales,voices}/<UTC day>.jsonl.gz - the four streams no API

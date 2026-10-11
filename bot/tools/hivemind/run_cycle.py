@@ -118,6 +118,9 @@ def main():
                     import scan_grader
                     scan_grader.log(res)
                     scan_grader.resolve()
+                    import expmove_grade
+                    expmove_grade.log(res)
+                    expmove_grade.resolve()
             except Exception as e:
                 log(f"{mod} failed: {e}")
         try:

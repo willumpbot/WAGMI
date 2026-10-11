@@ -40,6 +40,7 @@ FILES = {
     "board_decisions.jsonl": BOT / "data" / "hivemind" / "board_decisions.jsonl",   # phone taps on the laptop's board, read by server Claude
     "copilot_call_ledger.jsonl": BOT / "data" / "copilot" / "call_ledger.jsonl",   # forward-proof ledger: timestamps ARE the evidence
     "copilot_call_ledger_resolved.jsonl": BOT / "data" / "copilot" / "call_ledger_resolved.jsonl",
+    "expmove_log.jsonl": BOT / "data" / "hivemind" / "expmove_log.jsonl",   # exp_move vs rv5 per coin-day (laptop reply 54)
     "entry_mom.jsonl": BOT / "data" / "hivemind" / "entry_mom.jsonl",   # signed_mom_24h per entry (PREREG_ENTRY_TIMING s3)
 }
 

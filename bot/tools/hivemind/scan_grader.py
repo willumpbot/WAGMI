@@ -6,7 +6,8 @@ the same window (so a market-wide rally/dump doesn't count), signed by the flag'
   ma50_pullback  -> long  (support from above should hold)
   on_20d_low     -> short (the 20d low breaks more than chance)
   everything else -> unsigned (graded on |excess move|, i.e. does it flag bigger-than-usual moves)
-Writes data/hivemind/scan_grades.json: per flag n, mean excess %, hit rate, bootstrap 95% CI, verdict.
+Writes data/hivemind/scan_grades.json: per flag n, n_days, 80%-power MDE, day-clustered CI, verdict. A signed
+flag's mean is hidden until its MDE is below the in-sample effect it replicates (laptop reply 54).
 A flag needs n>=300 graded (laptop: n=30 can only detect edges 4-12x any plausible one) and a CI clear of zero before it is called "earned". Never trades anything.
 """
 import json
@@ -22,7 +23,13 @@ BOT = Path(__file__).resolve().parents[2]
 HM = BOT / "data" / "hivemind"
 LOG = HM / "scan_log.jsonl"
 OUT = HM / "scan_grades.json"
-SIGN = {"ma50_pullback": 1, "on_20d_low": -1}
+SIGN = {"ma50_pullback": 1, "on_20d_low": -1, "momentum_small": -1}
+# The live momentum_small flag covers scanner ranks 16-60; the laptop's fade test covered ~150 perps outside the top 15.
+# Different populations: its grade must never be read as confirming or refuting that finding (laptop reply 54).
+NOTE = {"momentum_small": "different population from the laptop's small-cap test: cannot confirm or refute it"}
+# In-sample effect each signed flag is meant to replicate (% per horizon). A point estimate is only shown once the
+# forward test could see an effect that size (80%-power MDE below it); before that it is "collecting".
+CLAIM_PCT = {"momentum_small": {"1d": 3.9}}
 HORIZONS = {"1d": 1, "5d": 5}
 FEE_PCT = 0.09
 
@@ -71,6 +78,14 @@ def _ci(xs, n_boot=2000):
     return [round(ms[int(0.025 * n_boot)], 3), round(ms[int(0.975 * n_boot)], 3)]
 
 
+def _by_day(pairs):
+    """pairs: [(day, y)] -> per-day means. The DAY is the unit: coins flagged together are not independent."""
+    d = {}
+    for day, y in pairs:
+        d.setdefault(day, []).append(y)
+    return [statistics.mean(v) for _, v in sorted(d.items())]
+
+
 def resolve():
     try:
         rows = [json.loads(l) for l in LOG.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -104,20 +119,29 @@ def resolve():
     for f in flags:
         out["flags"][f] = {}
         for h in HORIZONS:
-            xs = [v for k, v in done.items() if k.split("|")[2] == f and k.endswith("|" + h)]
+            pr = [(k.split("|")[0], v) for k, v in done.items() if k.split("|")[2] == f and k.endswith("|" + h)]
             sg = SIGN.get(f)
-            ys = [sg * x - FEE_PCT for x in xs] if sg else [abs(x) for x in xs]
-            if not ys:
+            pr = [(d, sg * x - FEE_PCT) if sg else (d, abs(x)) for d, x in pr]
+            if not pr:
                 continue
-            ci = _ci(ys)
-            if sg:
-                verdict = ("earned" if len(ys) >= 300 and ci and ci[0] > 0 else
-                           "backwards" if len(ys) >= 300 and ci and ci[1] < 0 else "collecting" if len(ys) < 300 else "no edge")
-            else:
+            ys = [y for _, y in pr]
+            dm = _by_day(pr)
+            se = statistics.stdev(dm) / len(dm) ** 0.5 if len(dm) >= 3 else None
+            mde = round(2.8 * se, 2) if se else None          # 80% power, two-sided 5%
+            claim = (CLAIM_PCT.get(f) or {}).get(h)
+            visible = bool(sg and mde is not None and claim is not None and mde < claim)
+            ci = _ci(dm) if len(dm) >= 5 else None
+            if not sg:
                 verdict = "size-only flag (graded on move size, not direction)"
-            out["flags"][f][h] = {"n": len(ys), "mean_pct": round(statistics.mean(ys), 3), "ci95": ci,
-                                  "hit": round(sum(y > 0 for y in ys) / len(ys), 3) if sg else None,
-                                  "direction": {1: "long", -1: "short"}.get(sg, "none"), "verdict": verdict}
+            elif not visible:
+                verdict = f"collecting: can only see effects bigger than {mde}%" if mde else "collecting: too few days"
+            else:
+                verdict = ("earned" if ci and ci[0] > 0 else "backwards" if ci and ci[1] < 0 else "no edge seen")
+            out["flags"][f][h] = {"n": len(ys), "n_days": len(dm), "mde_pct": mde, "claim_pct": claim,
+                                  "mean_pct": round(statistics.mean(dm), 3) if (visible or not sg) else None,
+                                  "ci95_day_clustered": ci if (visible or not sg) else None,
+                                  "direction": {1: "long", -1: "short"}.get(sg, "none"), "verdict": verdict,
+                                  "note": NOTE.get(f)}
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(json.dumps(out), encoding="utf-8")
     tmp.replace(OUT)

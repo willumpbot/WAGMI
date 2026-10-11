@@ -37,7 +37,7 @@ FLAGS = {
     "funding_hot": ("Longs paying a lot", "tested",
                     "Funding in the top 20% of the scanned coins: longs are crowded. In testing a normal stop got hit somewhat more "
                     "often on days like this (+2.7 pts, ~24% vs ~22%; t=3.0 on 1,010 days with exactly this definition). "
-                    "Size down a little. Not direction."),
+                    "Size down a little. Not direction. (Tested on history; checking it live needs years of data.)"),
     "funding_cold": ("Shorts paying", "context", "Negative funding: shorts are paying longs. Context only."),
     "volume_surge": ("Volume surge", "context", "24h volume over 2.5x its 20-day average. Suggestive: next day's move "
                      "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),
@@ -47,7 +47,8 @@ FLAGS = {
                        "Not one of the 15 biggest coins, just broke above its 20-day high with a volume surge or a big "
                        "day. Tested on 164 coins (laptop M2, corrected): these tend to FALL BACK vs other small caps "
                        "over the next 1-7 days, more the further above the high they are. Don't chase them long. "
-                       "(Shorting them is not proven: funding and thin books may eat it.)"),
+                       "(Shorting them is not proven: funding and thin books may eat it.) This live flag covers coins ranked "
+                       "16-60, a different group from the test, so its live grade can't confirm the finding."),
     "above_20d_high": ("Above 20d high", "context", "Trading above the 20-day high. In testing the 20-day high "
                        "meant nothing either way."),
 }
