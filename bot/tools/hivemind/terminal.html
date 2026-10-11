@@ -1059,7 +1059,7 @@ function brief(){
   // 3. Claude's ideas
   const AI = DATA.aiPlans || {}, ideas = (AI.ideas||[]).filter(i => (i.result||{}).status === "waiting");
   const b3 = (ideas.length ? ideas.map(i => `<b>${i.coin} ${i.side}</b> at ${fmt(i.entry)} (stop ${fmt(i.stop)}, target ${fmt(i.target)})`).join(" · ") + ` <button onclick="showTab('t_plans')" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:2px 8px;cursor:pointer">see / take</button>` : "No open ideas right now.")
-    + `<div class="mut" style="font-size:11.5px">Take some, skip some, honestly. Grading is sealed; first verdict ~January.</div>`;
+    + `<div class="mut" style="font-size:11.5px">Take the ones you'd actually take. Grading is sealed; first verdict ~January.</div>`;
   // 4. Syndicate
   const T = DATA.tgTrack || {}, R = T.callers || {}, calls = Object.values(T.calls||{}).filter(c => c.call_ts > now - 86400).sort((a,b) => (b.x_peak||0) - (a.x_peak||0));
   const b4 = calls.length ? `${calls.length} calls in 24h. Best: ${calls.slice(0,3).map(c => `<b>${esc(c.sym||"?")}</b> ${(c.x_peak||0).toFixed(1)}× (${esc(c.caller||"?")}${(R[c.caller]||{}).watch?" ★":""})`).join(", ")}. Rule that historically worked: sell all at 1.5×.` : "No calls in the last 24h.";
