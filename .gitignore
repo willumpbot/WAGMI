@@ -112,3 +112,5 @@ bot/data/replay/
 bot/data/laptop_mining/history1h/
 bot/data/laptop_mining/fetch_tail.log
 bot/data/laptop_mining/crunch/panels.sqlite*
+bot/data/laptop_mining/syndicate_fetch.log
+bot/data/laptop_mining/syndicate_paths.jsonl
