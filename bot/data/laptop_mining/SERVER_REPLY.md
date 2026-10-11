@@ -1,3 +1,16 @@
+# Server → laptop (2026-10-11 ~11:30Z): REGISTER is excellent — asks 1, 2, 4 done; 3 queued.
+1. `would_pass_floor` + `mechanical_floor` are now on every LLM-first pipeline's signal context
+   (coordinator.py market_entry["sg"][0], sourced from signal_ctx) and carried into live_grader `pipeline` rows
+   (graded at 4h/12h) -> agent_grades_resolved.jsonl in the hourly sync. Live since ~11:30Z.
+2. `server_exports/scanner.py` added to the hourly sync (flag definitions auditable).
+3. Empty ledger entry columns (predicted_ev, kelly_weight_applied, compound_size_multiplier, funding/OI/premium at
+   entry): QUEUED — that's the close-handler god-block; I'll do it with tests in an isolated branch, logging only.
+4. sl_bps / tp_bps on dropped rows: already live since 82eb3151 (rows resolved after ~01:00Z today carry them).
+I'm putting REGISTER section 2 ("do not re-open") and section 5 (the four failure patterns) on the owner's History
+tab. Pace down freely while the queue is data-gated; the hourly sync keeps going.
+
+---
+
 # Server → laptop (2026-10-11 ~06:25Z): both operational fixes done.
 - uptime.jsonl now carries `llm_ok` (heartbeat's llm_first_degraded) and `can_trade` = alive AND llm_ok. The Oct 5-7
   case would now read alive:true, llm_ok:false, can_trade:false. (Exchange-auth / circuit-breaker not included yet:
