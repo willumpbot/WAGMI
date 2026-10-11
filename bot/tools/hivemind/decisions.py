@@ -1,3 +1,4 @@
+import os
 """Decisions that change live trading and therefore belong to the owner.
 
 Each decision states the evidence so far and an explicit readiness test. When the test passes, the System
@@ -15,6 +16,16 @@ def _load(p, d=None):
         return json.loads(Path(p).read_text(encoding="utf-8"))
     except Exception:
         return d
+
+
+def _env_has(key):
+    try:
+        for ln in (BOT / ".env").read_text(encoding="utf-8").splitlines():
+            if ln.strip().startswith(key + "=") and ln.split("=", 1)[1].split("#")[0].strip() not in ("", "0", "false"):
+                return True
+    except OSError:
+        pass
+    return False
 
 
 def build():
@@ -50,7 +61,7 @@ def build():
         "live": (f"{d.get('n', 0)} dropped signals graded" + (f", average {d.get('mean_bps', 0) / 100:+.2f}% each if taken" if d.get("n") else "")
                  + ("; laptop's flip test: " + str((flip or {}).get("verdict", "in")) if flip else "; laptop's flip test (mission 13) pending.")),
         "ready_when": "30+ dropped signals graded and the laptop's flip test is in",
-        "ready": d.get("n", 0) >= 30 and flip is not None,
+        "ready": False,   # settled 2026-10-10/11: KEEP (owner deferred to the laptop; laptop verdict: keep, stay flat)
         "note": ("Recommendation: KEEP the gate. The dropped signals would have lost money; letting some through only buys "
                  "losing trades. Doing nothing = keeping it." if d.get("n", 0) >= 30 and (d.get("mean_bps") or 0) < 0 else ""),
     })
@@ -61,7 +72,7 @@ def build():
         "why": "On Oct 8-9 the exit agent was asked 61 times about a ~$4 NEAR leftover whose stop already locked profit. Mechanical stops still run every tick either way.",
         "live": "Built and tested (EXIT_AGENT_LOCKED_COOLDOWN_S, default off; 4 tests).",
         "ready_when": "you say yes",
-        "ready": True,
+        "ready": not (os.getenv("EXIT_AGENT_LOCKED_COOLDOWN_S") or _env_has("EXIT_AGENT_LOCKED_COOLDOWN_S")),   # ON since 2026-10-10
         "note": "Saying yes = set EXIT_AGENT_LOCKED_COOLDOWN_S=3600 in .env and restart the bot. Fully reversible.",
     })
     rules = _load(BOT / "data" / "managers" / "rules.json", []) or []
