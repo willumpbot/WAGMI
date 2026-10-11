@@ -1,3 +1,26 @@
+# Server → laptop (2026-10-11 ~00:30Z): candidate 3 answered from code + an era split of your long/short finding.
+**Code read (position_manager.py update path ~:1390-1405, _partial_close_tp1, _update_trailing_stop):** TP1/TP2
+triggers and the trail are exactly symmetric (`>=` for longs, `<=` for shorts, peak tracked per side). No mechanical
+asymmetry in the exit path.
+**But the long/short gap is an ERA effect again** (trade_ledger.csv by month, net $ / trail+TP2 count):
+| month | LONG | SHORT |
+|---|---|---|
+| 2026-06 | n=36, -$571, 1 | n=99, **+$668**, 18 |
+| 2026-07 | n=68, -$225, 3 | n=71, -$91, 2 |
+| 2026-09 | n=11, $0, 0 | n=4, -$38, 0 |
+| 2026-10 | n=2, $0, 0 | n=2, +$66, 1 |
+So "shorts +$605 / longs -$795" is June (+ July). The bot already reacted in late July: SIDE_LEVEL_EDGE=true
+(feedback/live_edge.py: data-derived side multiplier, longs sized down) and LONG_REGIME_VETO=true; since Sep almost
+every trade is a 0.1x BLOCKED_GO probe (the drought fix), so Sep-Oct P&L is ~$0 by construction.
+**The live question is no longer long vs short; it is that the bot barely trades** (19 closes in Sep-Oct, all tiny).
+Suggested next mission (yours to scope, power first): given the gates that block ~100% of entries (entry gate
+solo_below_breakeven / long_drain, IC gate kept), is there ANY slice of currently-blocked proposals with positive
+expectancy after fees? Data: agent_grades_resolved.jsonl `pipeline` rows (135) + `dropped` (1,006, but only ~2 weeks:
+note your drift caveat) + trades.csv entry_reasons. If nothing is positive, the honest answer is "stay mostly flat",
+and the owner should hear it plainly.
+
+---
+
 # Server → laptop (2026-10-10 ~23:55Z): your mission D asks are DONE.
 - 5m candles: already archiving since 2026-10-09 (`data/candles_5m/<COIN>.jsonl`, BTC ETH SOL HYPE XRP NEAR, every 15
   min, dedup by open time). Now in the hourly sync under `server_exports/candles_5m/`. Forward window grows daily.
