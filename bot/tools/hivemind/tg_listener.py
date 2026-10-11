@@ -57,6 +57,50 @@ def _env(name):
     return None
 
 
+_HL = {"t": 0, "coins": set()}
+TICKER_RE = re.compile(r"\$([A-Za-z][A-Za-z0-9]{1,9})\b")
+
+
+def hl_universe():
+    """Hyperliquid perp names, refreshed hourly (for $TICKER perp calls)."""
+    if time.time() - _HL["t"] > 3600:
+        try:
+            import urllib.request
+            req = urllib.request.Request("https://api.hyperliquid.xyz/info", data=b'{"type":"meta"}',
+                                         headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                _HL["coins"] = {u["name"].upper() for u in json.loads(r.read())["universe"] if not u.get("isDelisted")}
+            _HL["t"] = time.time()
+        except Exception:
+            pass
+    return _HL["coins"]
+
+
+def perp_calls(text, sender=None):
+    """Hyperliquid perp calls in a message (owner 10-11: Syndicate also calls perps like STRK).
+    Rules (tightened after a history pass found mostly false positives): human senders only (not price bots), no
+    contract address in the message (those are meme tokens that share a ticker), and either a $TICKER or a bare
+    UPPERCASE ticker next to perp words (long/short/perp/leverage/entry/tp/sl/hyperliquid). Returns [(ticker, side)]."""
+    t = text or ""
+    if sender and str(sender).lower().endswith("bot"):
+        return []
+    if extract(t):
+        return []
+    uni = hl_universe()
+    low = t.lower()
+    perpish = re.search(r"\b(long|longs|longing|short|shorts|shorting|perp|perps|lev|leverage|entry|tp|sl|stop|hyperliquid|hl|[0-9]+x)\b", low)
+    cands = [m.upper() for m in TICKER_RE.findall(t)]
+    if perpish:
+        cands += re.findall(r"\b([A-Z][A-Z0-9]{1,9})\b", t)
+    out = []
+    for k in cands:
+        if k in uni and k not in [x[0] for x in out]:
+            side = ("LONG" if re.search(r"\b(long|longs|longing|buy|bid)\b", low)
+                    else "SHORT" if re.search(r"\b(short|shorts|shorting|sell)\b", low) else None)
+            out.append((k, side))
+    return out[:3]
+
+
 def extract(text):
     """Contract addresses in a message. Base58 strings must mix digits and letters to avoid matching words."""
     found = []
@@ -218,6 +262,44 @@ async def run():
     notify = None if "notify" not in conf else set(int(x) for x in conf["notify"])
 
     @client.on(events.NewMessage(incoming=True))
+    async def on_perp_calls(ev, pcs):
+        """Log + card a $TICKER perp call (HL price, funding, safe-leverage hint)."""
+        import urllib.request
+        chat = await ev.get_chat()
+        sender = await ev.get_sender()
+        chat_t = getattr(chat, "title", None) or str(ev.chat_id)
+        snd = (getattr(sender, "username", None) and "@" + sender.username) or getattr(sender, "first_name", None) or str(ev.sender_id)
+        try:
+            req = urllib.request.Request("https://api.hyperliquid.xyz/info", data=b'{"type":"metaAndAssetCtxs"}',
+                                         headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                meta, ctxs = json.loads(r.read())
+            ctx = {u["name"].upper(): c for u, c in zip(meta["universe"], ctxs)}
+        except Exception:
+            ctx = {}
+        for tk, side in pcs:
+            key = f"{ev.chat_id}|perp|{tk}"
+            if time.time() - recent.get(key, 0) < DEDUPE_S:
+                continue
+            recent[key] = time.time()
+            c = ctx.get(tk) or {}
+            px = float(c.get("markPx") or 0) or None
+            row = {"ts": time.time(), "chat_id": ev.chat_id, "chat": chat_t, "sender_id": ev.sender_id, "sender": snd,
+                   "kind": "perp", "ticker": tk, "side": side, "price": px, "funding_h": c.get("funding"),
+                   "oi": c.get("openInterest"), "msg": (ev.raw_text or "")[:300],
+                   "notified": notify is None or ev.chat_id in notify}
+            with open(CALLS, "a", encoding="utf-8") as f:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            if row["notified"]:
+                fund = float(c.get("funding") or 0) * 100
+                txt = (f"📈 Perp call: ${tk}{' ' + side if side else ''} by {snd} in {chat_t}\n"
+                       f"HL price {px} · funding {fund:+.4f}%/h · 24h vol ${float(c.get('dayNtlVlm') or 0) / 1e6:.1f}M\n"
+                       f"Open it in the WAGMI Terminal (search {tk}) for stop, size and safe leverage.")
+                try:
+                    await client.send_message("me", txt, link_preview=False)
+                except Exception:
+                    pass
+
     async def handler(ev):
         if not (ev.is_group or ev.is_channel):
             return
@@ -225,6 +307,11 @@ async def run():
             return
         cas = extract(ev.raw_text)
         if not cas:
+            _snd = await ev.get_sender()
+            _sn = (getattr(_snd, 'username', None) or getattr(_snd, 'first_name', None) or '')
+            pcs = perp_calls(ev.raw_text, _sn) if (wanted is None or ev.chat_id in wanted) else []
+            if pcs:
+                await on_perp_calls(ev, pcs)
             return
         chat = await ev.get_chat()
         sender = await ev.get_sender()

@@ -235,6 +235,37 @@ def _exact_peaks(calls, prev, now, budget=24):
             c["x_peak"] = round(max(c.get("x_peak") or 0, c["gt_peak_x"]), 2)
 
 
+def _perp_calls(now):
+    """$TICKER perp calls from Syndicate (listener kind='perp'), tracked on HL 1h candles: best and worst move since the
+    call and now, signed by the stated side (unsigned if no side). Last 14 days."""
+    import hl
+    rows = []
+    try:
+        for l in (TG / "calls.jsonl").read_text(encoding="utf-8").splitlines():
+            r = json.loads(l)
+            if r.get("kind") == "perp" and r.get("price") and now - r["ts"] < 14 * 86400 and                     (r.get("chat_id") == SYNDICATE or r.get("chat") == "Syndicate 2.0"):
+                rows.append(r)
+    except OSError:
+        return []
+    out = []
+    for r in rows:
+        try:
+            bars = hl.candles(r["ticker"], "1h", r["ts"] * 1000, ttl=600) or []
+        except Exception:
+            bars = []
+        p0 = float(r["price"])
+        after = [b for b in bars if b["t"] / 1000 >= r["ts"] - 3600]
+        hi = max((float(b["h"]) for b in after), default=p0)
+        lo = min((float(b["l"]) for b in after), default=p0)
+        last = float(after[-1]["c"]) if after else p0
+        sg = -1 if r.get("side") == "SHORT" else 1
+        out.append({"ticker": r["ticker"], "side": r.get("side"), "caller": r.get("sender"), "ts": r["ts"], "price": p0,
+                    "best_pct": round(((lo / p0 - 1) * -100) if sg < 0 else (hi / p0 - 1) * 100, 2),
+                    "worst_pct": round(((hi / p0 - 1) * -100) if sg < 0 else (lo / p0 - 1) * 100, 2),
+                    "now_pct": round(sg * (last / p0 - 1) * 100, 2)})
+    return out
+
+
 def run():
     now = time.time()
     rows = []
@@ -319,7 +350,8 @@ def run():
             r["fwd_2x"] = r.get("fwd_2x", 0) + (c["x_peak"] >= 2)
             r["fwd_15x"] = r.get("fwd_15x", 0) + (c["x_peak"] >= 1.5)
     _ai_verdicts(calls, prev, records, now)
-    out = {"updated": now, "calls": calls, "callers": records, "ai_stats": _ai_stats(calls)}
+    out = {"updated": now, "calls": calls, "callers": records, "ai_stats": _ai_stats(calls),
+           "perp_calls": _perp_calls(now)}
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(json.dumps(out), encoding="utf-8")
     tmp.replace(OUT)
