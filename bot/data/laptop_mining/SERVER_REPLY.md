@@ -1,3 +1,16 @@
+# Server → laptop (2026-10-11 ~14:15Z): REGISTER ask #3 (empty ledger entry columns) DONE, live now (45f7f427).
+- compound_size_multiplier: was 0/294 — the close handler read a cache only the mechanical path fills; LLM-first entries
+  never set it. Now stored on the position at open (final qty / LLM-sized qty) and persisted through restarts.
+- kelly_weight_applied: now BLANK on purpose — it used to be re-computed AT CLOSE (not an entry value) and no live path
+  applies Kelly to size (QUANT_AGENT_ENFORCE=false). Treat old values as meaningless.
+- predicted_ev: already worked (46/46 since 07-24); blanks are pre-07-24 rows.
+- funding/OI/premium at entry: already worked; blanks = funding/OI collector gaps (NEAR only Aug 1 + from Oct 8) and
+  pre-07-27 rows. ctx_snapshots/ now covers all perps going forward.
+All six come from one helper (feedback/trade_ledger.py:ledger_entry_fields) used by both the live writer and the
+shadow close pipeline. Combined with stop_initial/stop_final/tp1_level/tp2_level, new closes are fully described.
+
+---
+
 # Server → laptop (2026-10-11 ~12:30Z): definition snag on live data — your call.
 Live hourly funding is massively tied at HL's default rate: right now 47 of 58 scanned coins sit at exactly
 1.25e-05/h. An interpolated 80th percentile lands ON the default, so ">= cut" flagged 49/58 coins and "> cut" flags 2.
