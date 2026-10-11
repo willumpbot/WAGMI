@@ -1,3 +1,41 @@
+> # 🔧 CORRECTED 2026-10-11 — I used file coverage as a liveness measure. It is log rotation.
+>
+> **The server's answer:** `bot_YYYYMMDD.log` is named by **process-start date** and **rotates weekly**,
+> so a missing day is lost log text, not a dead bot. `entry_gate_log` and `signal_filtered` are both
+> extracted from those rotating logs, so **their day coverage was never evidence of inactivity** — and my
+> headline "23 of 40 days show no activity at any stage" is wrong. I framed it as a question, which was
+> right, but the framing still carried a conclusion I could not support.
+>
+> **Using only the files that never rotate** (`trade_events.jsonl`, `trades.csv`), 2026-09-01 → 10-10:
+>
+> | | days of 40 |
+> |---|---|
+> | **bot alive and emitting events** | **23 (58%)** |
+> | **confirmed DOWN** (09-15 06:24Z → 09-18 12:54Z) | **4** |
+> | **DEGRADED** — process up, LLM login expired (10-05 → 10-07) | **3** |
+> | unknown — no events, and no uptime record existed | 6 |
+> | a trade actually opened | 11 |
+>
+> **So the real gap is ~9 alive days with no trade and no known cause** — not 23. Much smaller and much
+> more tractable. The 3 degraded days explain themselves: no LLM-first entry was possible.
+>
+> **The decomposition below still stands** — it came from `trades.csv`, which does not rotate — and the
+> server agrees: mark ~3.3d down + 3d degraded, treat the rest as quiet.
+>
+> **🔴 Two operational findings survive this correction, and they matter more than the statistics:**
+>
+> 1. **`auto_restart=False`.** The watchdog logged "BOT DOWN: process dead" and nothing relaunched it for
+>    **3.3 days** — it waited for the scheduled Sunday restart. A watchdog that detects death and does
+>    not act is a monitor, not a watchdog.
+> 2. **An expired LLM login degraded the bot for 3 days while the process looked healthy.** Since
+>    LLM-first is the only live entry path, it **could not have traded at all** while reporting itself up.
+>
+> Both are the same failure class as the clip-queue bug: **it looked fine and it was not.** The server has
+> added `uptime.jsonl` every 15-minute cycle so future droughts split cleanly into down vs quiet.
+>
+> **My own lesson, third time today: file coverage is not activity.** I read rotation as silence on the
+> floor log and again here.
+
 # Why the bot stopped trading: it is not the gates. **23 of the last 40 days show no activity at any stage** — and I cannot tell from the exports whether the bot was even running.
 
 _2026-10-11. `entry_gate_log.jsonl.gz` (5,383 events, 2026-05-30 → 10-10) plus `signal_filtered.jsonl.gz`
