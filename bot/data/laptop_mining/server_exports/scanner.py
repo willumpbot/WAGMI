@@ -43,6 +43,11 @@ FLAGS = {
                      "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),
     "squeeze": ("Tight range", "context", "The 20-day range is under 4 expected daily moves wide: coiled. "
                 "Breakout direction is not predictable from this."),
+    "momentum_small": ("Small-cap breakout", "context",
+                       "Not one of the 15 biggest coins, just broke above its 20-day high with a volume surge or a big "
+                       "day. Tested on 164 coins (laptop M2, corrected): these tend to FALL BACK vs other small caps "
+                       "over the next 1-7 days, more the further above the high they are. Don't chase them long. "
+                       "(Shorting them is not proven: funding and thin books may eat it.)"),
     "above_20d_high": ("Above 20d high", "context", "Trading above the 20-day high. In testing the 20-day high "
                        "meant nothing either way."),
 }
@@ -171,6 +176,15 @@ def run():
         if cut is not None and r["funding_h"] > cut:
             r["flags"].append("funding_hot")
         r["n_tested"] = sum(FLAGS[k][1] == "tested" for k in r["flags"])
+    by_vol = sorted(rows, key=lambda r: -r["vol24_usd"])
+    big15 = {r["coin"] for r in by_vol[:15]}
+    for r in rows:
+        r["vol_rank"] = by_vol.index(r) + 1
+        em = r.get("exp_move") or 0
+        if (r["coin"] not in big15 and r["px"] > r["hi20"]
+                and ((r.get("vol_ratio") or 0) > 2.0 or (em and abs(r["chg_24h"]) > 1.5 * em and r["chg_24h"] > 0))):
+            r["flags"].append("momentum_small")
+            r["n_tested"] = sum(FLAGS[k][1] == "tested" for k in r["flags"])
     rows.sort(key=lambda r: (-r["n_tested"], -len(r["flags"]), -r["vol24_usd"]))
     out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "n": len(rows), "errors": errors,
            "flags": {k: {"label": v[0], "evidence": v[1], "why": v[2]} for k, v in FLAGS.items()}, "coins": rows}

@@ -4,13 +4,15 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-11 14:27, took 1s._
+_Last run 2026-10-11 15:05, took 3s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j3_replications` | ok | 54 | 1 | 54 obs, 6 source-missing, 2 oos day-blocks, no verdicts |
+| `j4_integrity` | **FAILED** | 38 | 2 | entry_gate_log.jsonl.gz shrank 265 bytes; floor_decisions_log.jsonl.gz shrank 10 bytes |
 
-All jobs succeeded.
+## 🔴 1 job(s) failed this run
+
+- `j4_integrity`: entry_gate_log.jsonl.gz shrank 265 bytes; floor_decisions_log.jsonl.gz shrank 10 bytes
 
 ## What each job does
 
