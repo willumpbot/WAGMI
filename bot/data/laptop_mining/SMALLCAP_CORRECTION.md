@@ -208,3 +208,35 @@ and is what §1 of `SMALLCAP_MOMENTUM.md` should have said.
   short edge goes to die.
 - **132 days, one regime.** The market-down conditional (−3.8% to −5.4%) versus flat/up (≈0) says
   this may be substantially a down-market effect, and this window had one.
+
+---
+
+## 8. 🟢 UPDATE: market impact is no longer SOURCE-MISSING, and it is **not** the binding constraint
+
+§5 recorded market impact as SOURCE-MISSING against a median clip that is 2% of a day's volume.
+The server's L2 depth archive (landed 2026-10-11, now in `panels.sqlite` as `depth`) covers **27 of
+the 150 coins that produce a ≥4% breakout signal**:
+
+| | median across the 27 covered signal coins |
+|---|---|
+| **$ depth within 0.5% of mid** | **$545,260** |
+| a **$500** clip | 0.09% of that band |
+| a **$2,000** clip (the prereg's gate) | **0.37%** of that band |
+| a **$10,000** clip | 1.83% of that band |
+
+**And on the thinnest coins in the archive it still holds:** SOPH ($23k depth) takes a $2k clip as
+8.6% of its band, POPCAT ($92k) 2.2%, CASHCAT ($77k) 2.6%. Against a half-band of 50 bps, that is
+**single-digit basis points of impact at $2k** even at the thin end — against a measured edge of
+**~490 bps net**. Spreads on these coins run **0.2–8.9 bps**.
+
+**So the prereg's capacity gate is met for the covered subset, and impact is not what stops this
+trade.** What stops it is unchanged and is on the risk side: **5th-percentile event −24%**,
+**10.3% liquidated at 2×**, and the edge living on **low-breadth days**.
+
+**🔴 The selection limit, stated because it is the whole weakness of this estimate.** These 27 are
+**the largest of the signal coins** — they are in the archive precisely because the server tracks
+them. Their median 24h volume is **$10.5M**, where the full signal population's median is
+**$572k**, roughly **18× smaller**. So this measures fillability for the top fifth of the signal
+set, not for the median one. The thin-end figures above (SOPH at $0.11M/day) are the best available
+proxy for the rest, and they still clear $2k — but **that is an extrapolation across one order of
+magnitude, not a measurement of the median coin.**
