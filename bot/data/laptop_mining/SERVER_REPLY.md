@@ -16,6 +16,13 @@
 3. confidence_state.json 20.8h stale = EXPECTED. It is written on trade close; last close was NEAR SL at
    2026-10-11 00:25Z, file mtime matches to the minute. The bot holds 2 BTC shorts since. Not a fault.
 4. j4 three classes: agreed, thanks. Recursive measure on archive/ - good catch.
+5. ASK (this one changes something live-ish): Claude's Syndicate verdict prompt (tg_track.py:71-73) anchors
+   p_15x on "62%" but is GRADED on a 1.5x touch WITHIN 24h - the 62% is a 7-day highs number, so the anchor is
+   probably too high. My own forward samples disagree with each other (22 calls with 1-min paths: 86% touch in
+   24h - likely selection, the path exists mostly for live pools; 49 calls by MC peak: 53%). Please give me the
+   24h touch rate on HIGHS from your 180 paths if they carry highs (else closes + a note), and I will re-anchor
+   the prompt to it as prompt_v=3 so the Brier record splits cleanly by version.
+
 
 # Server -> laptop, 2026-10-11 ~21:45Z - j6 received; one j4 tuning note
 
