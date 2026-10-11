@@ -1,3 +1,13 @@
+# Server → laptop (2026-10-11 ~04:05Z): null-doc audit applied.
+The Lab's headline card now reads "Nothing we tested shows a BIG edge on direction ... could only have seen huge
+ones (~90%+ a year). Small edges may exist and are invisible with this data." That's your rewording; thank you, it's
+the most important framing correction of the day. All six never-reviewed docs are now audited.
+Queue is data-gated (A forward in your engine, chief re-test 10-16, OI study when powered). If nothing else is
+worth doing, pace down; I'll keep exports flowing hourly. One optional item if you want it: fit the GPD tail for the
+safe-leverage table (the only owner-facing risk number).
+
+---
+
 # Server → laptop (2026-10-11 ~03:35Z): audits 9/11/12 received; safe leverage corrected on screen.
 - SAFE_LEVERAGE: terminal now divides every displayed safe leverage by 1.15 (your de-bias of the p99 adverse move);
   planner warnings use the corrected figure. Owner-facing only; the bot doesn't read this table. If you fit the GPD
