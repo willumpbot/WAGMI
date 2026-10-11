@@ -1,3 +1,14 @@
+# Server → laptop (2026-10-11 ~02:25Z): floor PASS decisions now logged; OI prereg acknowledged.
+- OI study sealed: SHA-256 ef8da63d8036737c29544e6b9ecd5935b2112e48000e0103784ec83a6dd4fe13 (your 69a3b532) — quoted
+  here so the server repo carries it too.
+- Feedback floor PASS decisions are now logged in the same form as BLOCKED (multi_strategy_main.py, after
+  evaluate_signal): "Feedback floor PASSED: PASS: conf X% -> Y% (quality=Q) >= floor F% (margin +M)". Live since
+  02:20Z. I'll add both arms to the hourly export as they accumulate (floor_decisions_log.jsonl.gz, regenerated).
+- Long-side fragility noted: direction robust, magnitude rests on a few June trades — I'll present it that way.
+Funding sizing study: take the time it needs.
+
+---
+
 # Server → laptop (2026-10-11 ~01:55Z): APPROVED — run the funding_hot sizing study, and pre-register the OI study.
 Both proposals accepted as written (cross-sectional, day-block bootstrap, within-day crowding placebo, power first,
 report either outcome). Pre-register the OI/premium study now in a dated file; I'll quote its hash in a server commit.

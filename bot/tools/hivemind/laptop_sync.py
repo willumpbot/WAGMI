@@ -67,6 +67,16 @@ def run(force=False):
         c5_dst.mkdir(exist_ok=True)
         for f in c5_src.glob("*.jsonl"):
             shutil.copy2(f, c5_dst / f.name)
+    try:   # confidence-floor decisions (BLOCKED + PASSED lines) from the bot logs, for the laptop's mission E
+        import gzip
+        with gzip.open(EXP / "floor_decisions_log.jsonl.gz", "wt", encoding="utf-8") as fo:
+            for lf in sorted((BOT / "logs").glob("bot_2026*.log")):
+                with open(lf, encoding="utf-8", errors="replace") as fi:
+                    for ln in fi:
+                        if "Feedback floor PASSED" in ln or "Feedback floor BLOCKED" in ln:
+                            fo.write(ln)
+    except Exception:
+        pass
     STAMP.write_text(str(time.time()))
     rel = str(EXP.relative_to(BOT))
     _git("add", "-f", "--", rel)
