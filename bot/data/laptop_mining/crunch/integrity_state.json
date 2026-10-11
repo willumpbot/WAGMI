@@ -8,11 +8,11 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 1672,
+  "v": 1696,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 2528,
+  "v": 3883,
   "u": "bytes"
  },
  "archive": {
@@ -20,7 +20,7 @@
   "u": "rows+bytes"
  },
  "candles_5m": {
-  "v": 32982,
+  "v": 33066,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -48,7 +48,7 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 17088,
+  "v": 17978,
   "u": "rows+bytes"
  },
  "entry_gate_log.jsonl.gz": {
@@ -56,7 +56,7 @@
   "u": "rows"
  },
  "entry_mom.jsonl": {
-  "v": 175,
+  "v": 475,
   "u": "rows"
  },
  "execution_analytics.csv": {
@@ -67,12 +67,16 @@
   "v": 1324,
   "u": "rows"
  },
+ "expmove_log.jsonl": {
+  "v": 58,
+  "u": "rows"
+ },
  "floor_decisions_log.jsonl.gz": {
-  "v": 61,
+  "v": 1369,
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 49890,
+  "v": 49907,
   "u": "rows"
  },
  "geometry_shadow.json": {
@@ -80,7 +84,7 @@
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 360,
+  "v": 366,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -88,7 +92,7 @@
   "u": "rows"
  },
  "live_scorecard.json": {
-  "v": 1345,
+  "v": 1344,
   "u": "bytes"
  },
  "llm_exits_resolved.jsonl": {
@@ -104,7 +108,7 @@
   "u": "rows"
  },
  "plans.json": {
-  "v": 7414,
+  "v": 7413,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -116,15 +120,15 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 8354,
+  "v": 8928,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 267,
+  "v": 268,
   "u": "rows"
  },
  "scanner.py": {
-  "v": 10461,
+  "v": 10667,
   "u": "bytes"
  },
  "signal_filtered.jsonl.gz": {
@@ -148,7 +152,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 62,
+  "v": 67,
   "u": "rows"
  }
 }
