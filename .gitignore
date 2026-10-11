@@ -107,3 +107,7 @@ _system_cleanup_*/
 # entire separate codebase copy). The `!bot/data/**/*.py` negation above would
 # otherwise drag ~11.4k of its .py files into the repo. Runtime fixture, not source.
 bot/data/replay/
+
+# laptop research panels — regenerable from the HL API, too big for git
+bot/data/laptop_mining/history1h/
+bot/data/laptop_mining/fetch_tail.log
