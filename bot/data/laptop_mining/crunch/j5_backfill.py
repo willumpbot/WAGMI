@@ -68,21 +68,47 @@ def fetch_1h(conn, coin):
     return upsert(conn, "candles_1h", ["coin", "t", "o", "h", "l", "c", "v"], rows)
 
 
+FUNDING_PAGES = 12          # 12 x ~500-1500 rows covers well over a year of hourly funding
+
+
 def fetch_funding(conn, coin):
+    """Page funding history FORWARD until it reaches the present.
+
+    THE BUG THIS REPLACES, measured: the old version issued ONE request from
+    `now - 365d` and stopped. Hyperliquid caps a response at ~500-1500 rows, which at hourly
+    funding is about two months -- so every coin's table ended roughly a year ago and never
+    advanced. 176 of 178 coins held no row newer than 2026-09, 175 of them with exactly 1498
+    rows, while INTEGRITY.md reported "365.0 days" because it measured the POOLED span across
+    coins instead of per-coin recency. A stale table that looks complete is worse than an empty
+    one, and j3 was correctly reporting SOURCE-MISSING for every funding-dependent metric
+    because of it.
+
+    Stops when a page returns nothing new, so a caught-up coin costs exactly one request.
+    """
     have = newest(conn, "funding_hist", coin)
-    start = have if have else int(time.time() * 1000) - 365 * 86_400_000
-    try:
-        h = post({"type": "fundingHistory", "coin": coin, "startTime": start})
-    except RuntimeError:
-        return 0
-    rows = []
-    for r in h or []:
+    start = have if have else int(time.time() * 1000) - 400 * 86_400_000
+    now = int(time.time() * 1000)
+    total = 0
+    for _ in range(FUNDING_PAGES):
+        if start >= now:
+            break
         try:
-            rows.append((coin, int(r["time"]), float(r["fundingRate"]),
-                         float(r.get("premium") or 0)))
-        except (KeyError, TypeError, ValueError):
-            continue
-    return upsert(conn, "funding_hist", ["coin", "t", "rate", "premium"], rows)
+            h = post({"type": "fundingHistory", "coin": coin, "startTime": start})
+        except RuntimeError:
+            break
+        rows, newest_t = [], start
+        for r in h or []:
+            try:
+                t = int(r["time"])
+                rows.append((coin, t, float(r["fundingRate"]), float(r.get("premium") or 0)))
+                newest_t = max(newest_t, t)
+            except (KeyError, TypeError, ValueError):
+                continue
+        if not rows or newest_t <= start:
+            break                       # no forward progress: either caught up or the coin is done
+        total += upsert(conn, "funding_hist", ["coin", "t", "rate", "premium"], rows)
+        start = newest_t + 1
+    return total
 
 
 def main():

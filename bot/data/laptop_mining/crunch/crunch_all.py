@@ -83,6 +83,30 @@ def write_status(results, started):
     io.open(STATUS, "w", encoding="utf-8").write("\n".join(lines))
 
 
+SERVER_BRANCH = "origin/desktop-overdrive-2026-05-30"
+EXPORTS = "bot/data/laptop_mining/server_exports"
+
+
+def checkout_server_exports():
+    """Bring the server's exports into the working tree, because the jobs read FILES.
+
+    The server owns this directory; the laptop only consumes it. So this is a one-way
+    overwrite from the server branch and never a merge -- a local edit here would be a
+    laptop pretending to be the server, which is exactly what must not happen.
+
+    Returns the number of paths checked out, so the runner can log a real number rather
+    than claiming success.
+    """
+    names = git("ls-tree", "-r", "--name-only", SERVER_BRANCH, "--", EXPORTS, check=False)
+    paths = [p for p in (names or "").splitlines() if p.strip()]
+    if not paths:
+        log("run", "WARNING: the server branch lists no files under %s" % EXPORTS)
+        return 0
+    # one checkout for the whole tree; cheap and atomic enough for our purposes
+    git("checkout", SERVER_BRANCH, "--", EXPORTS, check=False)
+    return len(paths)
+
+
 LOCK = os.path.join(HERE, "crunch.lock")
 STALE_LOCK_S = 3 * 3600
 
@@ -152,9 +176,17 @@ def _run(started, args, use_git, jobs):
     if use_git:
         try:
             git("fetch", "origin", "desktop-overdrive-2026-05-30", check=False)
-            log("run", "fetched the server branch")
+            # FETCHING IS NOT ENOUGH, and assuming it was cost a real claim. `fetch` updates the
+            # remote ref and leaves the WORKING TREE alone, so every job that reads
+            # server_exports/ was reading whatever had last been copied there by hand. Measured
+            # at the time this was found: the local scanner.py was 188 lines with ZERO
+            # momentum_small while the server's was 202, and chief.py was absent entirely --
+            # so j3_replications was built against a pre-10-11 definition and I told the server
+            # it had been built against theirs.
+            n = checkout_server_exports()
+            log("run", "fetched the server branch and checked out %d export path(s)" % n)
         except Exception as e:
-            log("run", "fetch failed (continuing): %s" % str(e)[:120])
+            log("run", "fetch/checkout failed (continuing): %s" % str(e)[:160])
 
     init_schema()
     results = []

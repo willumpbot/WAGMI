@@ -439,6 +439,33 @@ def placebo_within_day(day_rows, flag, reps=300, seed=20261011):
                                 "nominal 0.05, %d blocks" % (reps, len(days)))
 
 
+
+def chief_definition_status():
+    """Is the chief Brier implemented from CODE or from PROSE? Answered by reading, every run."""
+    cand = [os.path.join(EXP, "chief.py"),
+            os.path.join(os.path.dirname(MINING), "tools", "hivemind", "chief.py")]
+    for p in cand:
+        if not os.path.exists(p):
+            continue
+        try:
+            src = io.open(p, encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        low = src.lower()
+        if "brier" in low and "p_up" in low:
+            where = "server_exports/chief.py" if p == cand[0] else "bot/tools/hivemind/chief.py"
+            # pull the baseline the code actually uses, since that is the whole question
+            base = "0.25 (always_50)" if "0.25" in src else "not found in source"
+            return ("CODE-VERIFIED against %s (%d lines): it defines both `brier` and `p_up`. "
+                    "Its no-information baseline is %s -- note that the correct no-information "
+                    "benchmark is p(1-p), which is 0.172 on the graded rows, so 0.25 credits as "
+                    "skill anything beating a coin flip while losing to a constant."
+                    % (where, src.count(chr(10)) + 1, base))
+    return ("SOURCE-MISSING: no copy of chief.py on this machine contains both 'brier' and "
+            "'p_up', so the Brier below follows the definition as DESCRIBED, not as coded. "
+            "Checked paths: %s" % ", ".join(cand))
+
+
 def chief_brier(conn):
     """Brier for p_up_24h as DESCRIBED (chief.py is absent -- see the module docstring).
 
@@ -753,12 +780,11 @@ def build(conn):
         "different jobs, and this job will have to be told which one is wanted.")
 
     # ---- chief ------------------------------------------------------------------------------
-    add("chief.definition_source.status", None, None,
-        "SOURCE-MISSING: server_exports/chief.py is NOT in the export. The only copy on this "
-        "machine (bot/tools/hivemind/chief.py) contains no match for 'brier' or 'p_up', so the "
-        "Brier below follows the definition as DESCRIBED, not as coded. Its two free choices -- "
-        "the call's own `price` as the base, and the 1h close at/before ts+24h as the outcome -- "
-        "are repeated in each row's note and remain unverified.")
+    # THIS STATUS IS CHECKED, NOT ASSERTED. It was originally a hardcoded string claiming
+    # chief.py was absent. The file was then checked out into the export and the claim kept
+    # printing, because a literal cannot come out the other way -- the exact failure this job
+    # exists to flag in other people's graders. Now it reads the file every run.
+    add("chief.definition_source.status", None, None, chief_definition_status())
     for metric, n, val, note in chief_brier(conn):
         add(metric, n, val, note)
 

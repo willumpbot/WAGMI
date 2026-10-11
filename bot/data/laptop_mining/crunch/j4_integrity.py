@@ -268,7 +268,25 @@ def main():
                 lines.append("- `%s` not created yet" % tbl)
                 continue
             span = (q[3] - q[2]) / 86_400_000.0 if q[2] else 0
-            lines.append("- `%s` %d rows, %d coins, %.1f days" % (tbl, q[0], q[1], span))
+            # POOLED SPAN IS A LIE WHEN COINS DIFFER. It ran from the oldest coin's first row
+            # to the newest coin's last row and reported "365.0 days" for a funding table where
+            # 176 of 178 coins had stopped a year earlier. So recency is now reported per coin.
+            try:
+                stale = conn.execute(
+                    "SELECT COUNT(*) FROM (SELECT coin, MAX(t) m FROM %s GROUP BY coin) "
+                    "WHERE m < ?" % tbl,
+                    (int((time.time() - 3 * 86_400) * 1000),)).fetchone()[0]
+            except Exception:
+                stale = None
+            tail = ""
+            if stale:
+                tail = ("  🔴 **%d of %d coins have no row newer than 3 days** -- the span above "
+                        "is the POOLED min-to-max and does not mean the table is current"
+                        % (stale, q[1]))
+            elif stale == 0:
+                tail = "  (every coin current within 3 days)"
+            lines.append("- `%s` %d rows, %d coins, %.1f days pooled span%s"
+                         % (tbl, q[0], q[1], span, tail))
         conn.close()
     except Exception as e:
         lines.append("- panel db unreadable: %s" % str(e)[:120])
