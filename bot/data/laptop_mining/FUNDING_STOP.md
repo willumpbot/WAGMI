@@ -1,0 +1,82 @@
+# Funding-conditional stops: the effect is **real** and survives everything I threw at it. The lever is **2.9%** — decide if that is worth shipping.
+
+_2026-10-11. `funding_stop.py`. 15,653 coin-days, 17 perps, **1,010 distinct days**, 2024-01-01 →
+2026-10-06. Server-approved study. Placebo calibrated. Survives all 17 leave-one-coin-out tests._
+
+---
+
+## 🔴 The answer
+
+**`funding_hot` days hit a 1.65-expected-move stop more often, and the result is solid:**
+
+| | value |
+|---|---|
+| baseline stop-exceedance (unflagged) | **21.72%** |
+| matched within-cell difference | **+2.64 pp** (so ~24.4% on hot days) |
+| relative increase | **+12.2%** |
+| week-clustered t | **+3.31** (145 weeks) |
+| pooled over 2,269 cells | **+2.74 pp** — agrees with the equal-weighted figure |
+| placebo size | **0.058** against a nominal 0.05 — **calibrated** |
+| 80%-power MDE | **~0.01** in exceedance probability — observed effect is 2.6× that |
+| leave-one-coin-out | **survives all 17**, weakest t = 2.55 (drop WLD) |
+
+**And the decision number: a 2.9% wider stop on `funding_hot` days restores the baseline survival
+rate.** Solved empirically — K\* = 1.698 against the standard 1.65.
+
+## Why this is the first thing here that is both real and a lever
+
+Everything that has survived review in this project so far has been a **fact**: funding is persistent,
+funding-crowded days run bigger, don't tighten the stop. None of them told you what to *change*.
+
+This one does, because it is measured on the axis the live code already uses — **stop-exceedance** —
+rather than on move magnitude. It inherits the matched design that survived the red team: compared
+**within the same date AND the same expected-move quintile**, which is the control mission 3 proved you
+need both halves of.
+
+## ⚠️ But the lever is small, and I am not going to dress it up
+
+**2.9% wider.** On a stop at 1.78% of entry that is **1.83%** — a five-basis-point change. That is
+plausibly inside execution noise, and it is the server's and owner's call whether it is worth the
+config change and the added conditional complexity.
+
+**What is clearly worth knowing regardless:** on crowded-funding days your stop is hit **12% more
+often in relative terms**. If a 2.9% stop change is not worth making, the same information argues for
+**taking slightly less size** on those days instead — same survival logic, no change to the stop
+geometry that has already been validated.
+
+## 🔧 Correcting myself: the naive translation would have been wrong by 2.6×
+
+My own proposal said the stop should need widening by the **+7.7%** that `funding_hot` moves run bigger.
+**It needs 2.9%.** My script's consistency check printed "the two agree" — that check used an arbitrary
+±5 tolerance and barely passed at 4.8. **It does not agree, and I am flagging it rather than keeping a
+convenient pass.**
+
+The reason is substantive and worth carrying: **exceedance is a tail property, not a mean property.**
+A 7.7% lift in the average move does not scale the distribution's tail beyond 1.65 em by 7.7%.
+Translating a magnitude finding into a stop change by assuming linearity **over-corrects by 2.6× here**
+— which would have meant widening stops nearly three times more than the data supports, and the
+project's other surviving finding says stop distance is already right.
+
+**General rule from this:** never convert a mean-level effect into a threshold-level action
+analytically. Solve for the threshold empirically, as done here.
+
+## Trader rules — one number each
+1. **Crowded-funding days hit your stop 12% more often** (21.7% → 24.4%), matched for date and
+   forecast, t = 3.31, placebo calibrated at 0.058.
+2. **The fix is 2.9% wider — not 7.7%.** K\* = 1.698. Or take ~proportionally less size instead.
+3. **It is real but small.** Survives all 17 leave-one-coin-out tests, and is still only five basis
+   points on a 1.78% stop.
+
+## Limits
+- **1,010 days, 17 perps, but effective n tracks days** — the M10 audit put cross-coin funding
+  correlation at **ρ = 0.33**. Week-clustering handles this (resampling a week resamples all its
+  coins), which is why the reported t is 3.31 rather than the much larger naive figure.
+- **`funding_hot` fires on 26.3% of rows**, so this applies to roughly a quarter of days.
+- The panel is pinned by assertion to **17 perps** to stay comparable with `size_flags.py`; if the
+  universe changes the script fails rather than silently drifting.
+- **The outcome is next-day close-to-close |move| > K × em**, not an intraday path. A real stop can be
+  hit intraday by a move that closes back inside — so this **understates** true exceedance. The
+  comparison between arms is unaffected, but the absolute rates are a floor, not the truth.
+- `em` uses the same HAR coefficients as `size_flags.py`. If the live forecast differs, K\* shifts.
+- **Not red-teamed.** Given this project's record, treat the 2.9% as the estimate and the direction as
+  the finding.
