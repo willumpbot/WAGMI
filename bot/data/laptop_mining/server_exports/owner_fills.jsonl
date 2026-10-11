@@ -1,0 +1,1 @@
+{"kind": "open", "plan_id": "11624f4364", "coin": "BTC", "side": "SHORT", "entry": 83776.1, "qty": 0.03442, "sl": 85600.0, "tp1": 82688.1, "tp2": 81600.0, "risk_usd": 62.7786, "position_id": "860611533d414adaa63dce34555ab399", "ts": 1791734596.3155267, "pnl_lev": 1.0, "reason": "limit 83550 crossed (last 83784.5)"}
