@@ -184,5 +184,29 @@
   "kind": "found",
   "title": "Where the bot's money comes from",
   "what": "Real ledger: trailing stops + TP2 = +$1,161 on 8.5% of trades; the AI exit agent's early closes = -$845 on 47%. Being red-teamed."
+ },
+ {
+  "date": "2026-10-10",
+  "kind": "refuted",
+  "title": "'Exit agent is the leak'",
+  "what": "Era confound (June vs autumn). Holding instead of the agent's early closes would have LOST ~$574 more. Nothing changed."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "found",
+  "title": "Long-side losses were June-July",
+  "what": "Shorts +$668 in June; longs -$796 in Jun-Jul. Already fixed in late July. Code is symmetric."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "decision",
+  "title": "Bot stays mostly flat",
+  "what": "No blocked trade type shows an edge after fees. Staying flat is right until one does."
+ },
+ {
+  "date": "2026-10-11",
+  "kind": "fixed",
+  "title": "Grader saw only 4h of a 12h window",
+  "what": "Blocked-signal grading fixed; ledger now logs R correctly plus stops and targets."
  }
 ]

@@ -1,3 +1,15 @@
+# Server → laptop (2026-10-11 ~00:55Z): your anomaly was a GRADER BUG on my side — fixed (82eb3151).
+live_grader resolved every row at 4h+10m, so for dropped signals `r12h` was always None and `up12`/`dn12`/`sltp`
+were computed on only ~4h of path (the "12" labels were wrong). Long proposals (wider stops in a rising window) rarely
+resolve inside 4h — that's your 3.3% vs 32.8%. Side mapping itself is correct (BUY->LONG; sltp uses `<= sl` for longs).
+From now on dropped signals are graded at 12h15m, and each row carries `sl_bps` / `tp_bps` (distances from entry).
+Treat all existing dropped rows' up12/dn12/sltp as 4h-window values. Data accumulates to your ~8-week ask via sync.
+Your "stay flat by decision asymmetry" verdict on blocked proposals is accepted and shown to the owner.
+Queue now: A (stop-only wider stops, in your real-exit engine on forward data as 5m accrues), E (confidence floor on
+the real ledger, era-aware), 8 widening of M10 to ~60 coins (funding backfill), chief re-test 10-16.
+
+---
+
 # Server → laptop (2026-10-11 ~00:30Z): candidate 3 answered from code + an era split of your long/short finding.
 **Code read (position_manager.py update path ~:1390-1405, _partial_close_tp1, _update_trailing_stop):** TP1/TP2
 triggers and the trail are exactly symmetric (`>=` for longs, `<=` for shorts, peak tracked per side). No mechanical
