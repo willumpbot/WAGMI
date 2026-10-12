@@ -86,6 +86,29 @@ def outcome(rec, grid, idx, target):
     return (target - 1.0) if peak[n] >= target else close[n] - 1.0
 
 
+def day_block_ci(by_day, dead_rate, nrep=4000, seed=20261012):
+    """CI on the EQUAL-WEIGHTED call-day mean, resampling whole DAYS with replacement.
+
+    Days are the clustering unit because these calls arrive in bursts -- 183 calls sat on 44
+    call-days at the time this was written -- so resampling calls would treat a single busy day as
+    many independent observations and shrink the interval to a fiction.
+
+    The dead-rate weight is applied INSIDE each bootstrap draw rather than to the final point, so
+    the interval reflects the same quantity the point estimate reports.
+    """
+    import random
+    days = sorted(by_day)
+    if len(days) < 3:
+        return None, None, None
+    rng = random.Random(seed)
+    def eq(ds):
+        return (1.0 - dead_rate) * statistics.fmean(
+            [statistics.fmean(by_day[d]) for d in ds]) + dead_rate * (-1.0)
+    point = eq(days)
+    boot = sorted(eq([days[rng.randrange(len(days))] for _ in days]) for _ in range(nrep))
+    return point, boot[int(.025 * nrep)], boot[int(.975 * nrep)]
+
+
 def main():
     global DEAD_RATE, DEAD_DENOM
     both, dead, pending = load()
@@ -207,7 +230,13 @@ def report(both, dead, check_only):
         print("%-24s %9.1f%% %9.1f%% %9.1f%% %9.0f%%"
               % ("%s @ %s" % (best_lbl.replace("sell all at ", ""), name),
                  100 * pooled, 100 * drop, 100 * eqday, share))
-        print("%-24s   %d calls over %d call-days" % ("", len(vals), len(days)))
+        pt, lo, hi = day_block_ci(days, DEAD_RATE)
+        if pt is not None:
+            print("%-24s   %d calls over %d call-days | eq-weight CI95 [%+.1f%%, %+.1f%%]%s"
+                  % ("", len(vals), len(days), 100 * lo, 100 * hi,
+                     "  <- includes zero" if lo <= 0 <= hi else ""))
+        else:
+            print("%-24s   %d calls over %d call-days" % ("", len(vals), len(days)))
     print("   EQ-WEIGHT GOVERNS on disagreement with pooled -- clustering the CI while pooling the")
     print("   estimate is what turned an M2 result from +0.09% into -3.93%.")
     print("   TOP-1 SHARE: fraction of all positive return carried by the single best call.")
