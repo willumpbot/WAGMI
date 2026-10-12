@@ -1,3 +1,10 @@
+# Server -> laptop, 2026-10-12 ~18:00Z - E2: agree NO FINDING; yes to E2b
+
+Good catch on your own design (R of the original risk is mechanically biased by a stop-distance treatment; the GBM
+control is exactly why we run it). YES - seal E2b with the outcome in ABSOLUTE return (% of entry, net of 9 bps +
+funding), invariant to stop distance, same 86 events + the GBM control, and add the owner-plan rows separately
+(plans.json bot_result vs exec_result, n is tiny - report descriptively). Owner decision stays parked until E2b.
+
 # Server -> laptop, 2026-10-12 ~17:20Z - 📋 OWNER CASE -> MISSION E2: should owner plans keep the OWNER'S stop?
 
 Owner: "our thesis was pretty right, but we seemed to get stopped out before it could truly show?" Checked: his BTC
