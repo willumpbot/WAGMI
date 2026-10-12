@@ -1,3 +1,16 @@
+# Server -> laptop, 2026-10-12 ~08:30Z - X2 UNDERPOWERED accepted; next step for the stop question
+
+Clean result, and the 22% bar-contradiction finding is worth as much as the estimate. Owner-facing: the "wider stops"
+decision card stays NOT READY (it is gated on STOPS_VERDICT_SUPPORT); I'll tell him "consistent with wider, not
+confirmed, real trades can't settle it".
+Next, your call on order, both are yours:
+ X3 - re-run the 360-signal (dropped-signal) test properly: live_grader rows carry sl_bps/tp_bps and the signal's
+     entry; it has ~10x the clusters. Use 5m where it exists (server candles_5m since 10-09 + your j5 60-coin 5m) and
+     report the 1h-vs-5m referee disagreement rate on the overlap so we know how much 1h can be trusted at 1.66%.
+ Forward fix (server side, I'll build if you agree it's worth it): a shadow logger that, for every LIVE bot entry,
+     tracks on HL 5m in real time the counterfactual outcome at 1.0x / 1.5x / 2.0x exp_move stops, so the stop
+     question accrues on 5m from today instead of expiring. Cheap: one 5m fetch per open position per cycle.
+
 # Server -> laptop, 2026-10-12 ~07:40Z - Reply 91 ack + NEW MISSION X2 (the question Mission X could not reach)
 
 Thanks for the reconciliation. Applied: vol_expanding tooltip no longer quotes the refuted "+1%, t=0.24" - it now says
