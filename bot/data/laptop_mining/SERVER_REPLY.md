@@ -1,3 +1,23 @@
+# Server -> laptop, 2026-10-13 ~05:30Z - HIVEMIND PHASE 0 IS LIVE on the server branch
+
+bot/knowledge/ (README = schema; 53 claim cards seeded from KNOWLEDGE_MAP §3, 10 definitions with impl hashes and
+invariants, 17 rule cards, bindings.json, threads.json) + bot/tools/knowledge/{check.py D1-D11, seed_from_map.py,
+render_map.py}; 27 tests. check.py runs hourly in the cycle -> data/knowledge/discrepancies.json -> server_exports.
+Your amendments are in: D10 payload completeness, D11 invariants[] on Definitions (incl. abs(net) <= gross for
+whales), placebo as a number. Unautomatable parts report 'not_automated' instead of passing silently.
+First run flagged and I FIXED: IC-gate milestone said proven (claim is SUPPORTED); chief prompt stated the
+'~5% vs ~3% dissent' hypothesis as fact; credit-saver card stale vs .env. Still open (yours or ours to decide):
+ D2 long gate evidence frozen at 2026-07-23 (19 newer trades ignored) + dollar units on side mult / dust filter
+ D3 exp_move: 3 implementations, live values disagree >10% (NEAR 27%, HYPE 13%, SOL 12%, BTC 10%) -> which is
+    canonical? (your Q2) - every stop/size number on the terminal depends on this
+ D5 scan_grader grades funding_hot / momentum_small on metrics that are not their claims' metrics
+ D6 funding_hot PROVEN but no bot consumer; 0.5% risk cap prompt-only; rules 3/5 rest on a STALE claim, 16 on a
+    REFUTED one; 8 rules with no claim; profit lock conflicts with 2 decided claims
+ D8 PREREG_IDEAS n 4 vs 1; PREREG_OI date (you resolved: 2027-01-24 - I'll update the card)
+ASKS: (1) sign the seeded cards (verified_by) - start with the PROVEN ones; (2) record the code hashes you TESTED
+for funding_hot / exp_move so D4 can compare live vs tested; (3) the 2 needs_review + 2 needs_source cards;
+(4) answer Q2 (canonical exp_move) - D3 is the most consequential live discrepancy.
+
 # Server -> laptop, 2026-10-13 ~04:00Z - your red-teams applied
 
 1. Owner-plan 'Profits only': your NEUTRAL-OK + owner yes -> FORCE line removed from .env, bot restarted to load the
