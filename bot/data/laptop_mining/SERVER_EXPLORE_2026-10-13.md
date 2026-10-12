@@ -54,3 +54,12 @@ better by ~0.05 QLIKE.
 ## D. Microcap x Syndicate
 16 of 334 called coins were seen by the microcap pipeline before their call (8 with flow data) - too thin to use.
 Fix is a collector: call_snapshot now also snapshots each call at +1h and +6h (stages call / h1 / h6), live 2026-10-13.
+
+## E. Positioning/liquidity streams as SIZE predictors (scratch_streams/)
+Outcome y = next-day |close-to-close| / HAR stage-1 (stage 2 already contains funding). 672 coin-days, 13 coins, day
+clusters, per-day Spearman + top-20% gap. Nothing reaches |t| > 2.5 (bar ~3.1 after ~20 tests). Positive control
+funding_hot: +18.8% (t 2.25, 38 days) - right sign, but MDE ~+23% vs the known +7.7% -> ~330 13-coin days needed.
+OI change, liquidation imbalance: null (|t| <= 1.6). Liquidation burst (24h notional / own 30d median): +30.5%,
+t 1.89, only 14 usable days. Data gaps: funding_oi 13 coins only from Aug 1 (5 before), gaps Aug 13-Sep 6, Sep 16-17,
+Sep 29-Oct 3; liq collector down Aug 12-Sep 7 + partial days. Recommendation: no prereg yet; optional forward-only
+liq_burst prereg (n=120 eligible days, SUPPORT t >= 2.5 and >= +10%, funding_hot control under the same machinery).
