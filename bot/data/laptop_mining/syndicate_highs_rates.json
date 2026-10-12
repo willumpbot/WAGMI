@@ -1,0 +1,37 @@
+{
+ "n_with_path": 181,
+ "n_missing": 18,
+ "n_total": 199,
+ "touch_1_5x": {
+  "1h": {
+   "excl_missing_pct": 14.36,
+   "incl_missing_pct": 13.07,
+   "hits": 26,
+   "n": 181
+  },
+  "6h": {
+   "excl_missing_pct": 23.76,
+   "incl_missing_pct": 21.61,
+   "hits": 43,
+   "n": 181
+  },
+  "24h": {
+   "excl_missing_pct": 41.44,
+   "incl_missing_pct": 37.69,
+   "hits": 75,
+   "n": 181
+  },
+  "72h": {
+   "excl_missing_pct": 64.09,
+   "incl_missing_pct": 58.29,
+   "hits": 116,
+   "n": 181
+  },
+  "168h": {
+   "excl_missing_pct": 65.75,
+   "incl_missing_pct": 59.8,
+   "hits": 119,
+   "n": 181
+  }
+ }
+}
