@@ -73,6 +73,10 @@
   [
    "Counter-trend bot entries lose more",
    "retracted: measured at the trade's close instead of its entry; at the real entry time the win-rate gap is null"
+  ],
+  [
+   "Buying every Syndicate/DTN call with a take-profit rule",
+   "best rule is about break-even over 7-14 days before fees (loses ~10% within 24h); holding is worst. Runners are real but arrive late"
   ]
  ]
 }

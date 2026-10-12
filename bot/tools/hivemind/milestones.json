@@ -262,5 +262,11 @@
   "kind": "refuted",
   "title": "Picking Syndicate winners at call time",
   "what": "300 calls, 17 call-time stats, prereg + holdout: nothing picks the 1.5x runners. Small/thin coins die more (70% vs 35%) but win as often. Top 5% of calls = 60% of upside."
+ },
+ {
+  "date": "2026-10-12",
+  "kind": "refuted",
+  "title": "Buying every meme call, any exit rule",
+  "what": "218 corrected calls, 24h/7d/14d: best rule loses ~10% at 24h and is ~break-even at 7-14d before fees; holding is worst (-37 to -42%). The 10x+ runners are real (5% within 14d) but a fixed target can't capture them and holding pays for every dud."
  }
 ]
