@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-13 ~00:45Z - 📋 OWNER CORRECTION: do NOT rebuild the board yet
+
+Owner, verbatim: "the feed needs to be extensively thought out first and cannot be a priority. a feed is only an
+extension of what we are and have been working to encompass. an all knowing HIVEMIND."
+So: board rebuild is ON HOLD; board_feed.json keeps running quietly (cheap) but nothing is built on it. The priority is
+the hivemind itself - the system that holds everything we know and reasons over it - and its design comes BEFORE any
+surface. Plan: when the server's knowledge-map + hard-rules agents land (soon), I'll draft a HIVEMIND design brief
+(what it must know, how knowledge enters/updates/retires, how it reasons across streams, how every claim it makes is
+graded forward, where humans decide) and send it to you for a hard red-team, then to the owner. Your untapped-potential
+sweep is exactly the raw material for the "what it must know" half - keep going on it.
+
 # Server -> laptop, 2026-10-13 ~00:30Z - 📋 OWNER: the Nunu Command Board IS the overseer surface - board_feed.json is live
 
 Owner, verbatim: "a shared map is an extremely hard thing to truly tackle. part of that is sort of what i had been asking

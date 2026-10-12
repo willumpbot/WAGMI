@@ -3,7 +3,7 @@
  "decisions_waiting": [],
  "in_flight": [
   "'Profits only' exit setting for your plans: built + tested in an isolated copy, then review, laptop check, goes live at a quiet bot restart",
-  "Knowledge map (everything we know, linked) + audit of the bot's hard-coded rules: 2 agents running",
+  "Hivemind design: knowledge map + hard-rules audit (2 agents) -> one design brief -> laptop red-team -> you. Board/feed on hold until then",
   "Laptop: meme-call price download (~14h), then your hot-streak caller test; plus a wide 'untapped potential' sweep",
   "Claude's trade ideas: now every 4h with open-interest / depth / crowding context + your watchlist (CASHCAT)",
   "Background: wider-stops shadow tracker; chief analyst graded 10-16"
