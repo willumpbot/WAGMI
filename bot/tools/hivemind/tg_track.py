@@ -69,15 +69,19 @@ def _dex(addrs):
 
 VERDICT_SYSTEM = """You estimate, for a meme-coin call just posted in the owner's Telegram group (Solana), the probability
 that price reaches 1.5x and 2x of the price at the call within 24 hours.
-CALIBRATION IS EVERYTHING: you are scored with a Brier score on every call. Base rates in this chat (graded history):
-about 62% of calls touch 1.5x and about 41% touch 2x. Your average p_15x across many calls should land near 62%.
-Start from 62% and move it only for concrete evidence in the data: order-flow (buyers vs sellers, volume vs
+CALIBRATION IS EVERYTHING: you are scored with a Brier score on every call. Base rate in this chat, measured on
+intrabar highs over 199 calls with dead pools counted as misses (laptop, 10-12): about 38% of calls touch 1.5x WITHIN
+24 HOURS (13% within 1h, 22% within 6h; 60% within 7 days - do not confuse the windows). 2x within 24h is rarer still
+(about 21% on closing prices, somewhat more on spikes). So "no touch" is the most common outcome.
+Start from 38% and move it only for concrete evidence in the data: order-flow (buyers vs sellers, volume vs
 liquidity over 5m/15m/1h), how far it already ran before the call, liquidity size, red flags (churn, tiny liquidity,
 mint/freeze risks), the price path since the call, and the caller's graded record. A coin that has already run hard
-is LESS likely to add another 50%; a fresh launch with strong net buying is MORE likely. Do not default to low numbers.
+is LESS likely to add another 50%; a fresh launch with strong net buying is MORE likely. Your average p_15x across
+many calls should land near 38%. A touch on a thin pool is not a guaranteed fill - say so in the plan when liquidity
+is small.
 Output ONLY JSON: {"p_15x": 5-95, "p_2x": 5-95,
  "plan": "<=90 chars: if someone takes it, how to sell (e.g. 'sell all at 1.5x; out if -35% in the first hour')",
- "why": "<=160 chars plain, cite the numbers that moved you off 62%"}"""
+ "why": "<=160 chars plain, cite the numbers that moved you off 38%"}"""
 
 
 def _ai_verdicts(calls, prev, records, now):
@@ -133,8 +137,9 @@ def _ai_verdicts(calls, prev, records, now):
             except (TypeError, ValueError):
                 p15 = None
             # verdict is DERIVED from the calibrated probability (the label alone was 7/7 "avoid" on 10-11)
-            verdict = None if p15 is None else ("runner" if p15 >= 75 else "avoid" if p15 <= 40 else "coin flip")
-            c["ai"] = {"verdict": verdict, "p_15x": v.get("p_15x"), "p_2x": v.get("p_2x"), "prompt_v": 2,
+            # prompt_v3 thresholds sit around the 38% base rate (v2 used 75/40 around a mistaken 62% anchor)
+            verdict = None if p15 is None else ("runner" if p15 >= 55 else "avoid" if p15 <= 25 else "coin flip")
+            c["ai"] = {"verdict": verdict, "p_15x": v.get("p_15x"), "p_2x": v.get("p_2x"), "prompt_v": 3,
                        "plan": str(v.get("plan") or "")[:120], "why": str(v.get("why") or "")[:200], "ts": now}
         except Exception:
             continue
@@ -152,10 +157,11 @@ def _ai_stats(calls):
             s["n"] += 1
             s["ran"] += bool(a["ran_2x"])
             s["ran15"] += bool(a.get("ran_15x"))
-            if a.get("p_15x") is not None and a.get("prompt_v") == 2:
-                s.setdefault("brier_sum", 0.0)
-                s["brier_sum"] += (float(a["p_15x"]) / 100 - (1.0 if a.get("ran_15x") else 0.0)) ** 2
-                s["brier_n"] = s.get("brier_n", 0) + 1
+            if a.get("p_15x") is not None and a.get("prompt_v") in (2, 3):   # Brier kept per prompt version
+                k = "" if a.get("prompt_v") == 2 else "_v3"
+                s.setdefault("brier_sum" + k, 0.0)
+                s["brier_sum" + k] += (float(a["p_15x"]) / 100 - (1.0 if a.get("ran_15x") else 0.0)) ** 2
+                s["brier_n" + k] = s.get("brier_n" + k, 0) + 1
     return out
 
 

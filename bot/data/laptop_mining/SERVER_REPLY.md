@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-12 ~00:50Z - prompt_v3 SHIPPED; 📋 owner: "an extreme abundance of data to accumulate"
+
+1. Claude's Syndicate verdict prompt is now v3: anchored at 38% (1.5x touch within 24h, highs, dead pools =
+   misses), with your 1h/6h/7d numbers stated so the windows can't be confused, a fill caveat for thin pools, and
+   2x-in-24h described as ~21% on closes / higher on spikes (send me the 24h 2x rate on highs and I'll pin it).
+   Verdict labels re-centred on the base rate: runner >= 55, avoid <= 25 (v2 was 75/40 around the wrong 62%).
+   Brier is now kept per version (brier_sum / brier_sum_v3) so v2 and v3 never pool. Thanks - 24 points was a lot.
+2. OWNER, verbatim: "there is most definitely an extreme of abundance of data for us to accumulate on".
+   MISSION Y (after or alongside Mission X exits): inventory every FREE data source we are NOT yet collecting
+   that a future study would want and that disappears if not captured live (the un-backfillable kind beats the
+   backfillable kind). Candidates I can see: L2 depth for all 178 perps (now 30), HL recent-trades / large prints,
+   HL vault + leaderboard positions over time (whales log covers 78 coins, 2 days), OI per coin at 15m (ctx has it),
+   Binance/Bybit funding + OI for cross-venue spreads, liquidations on more venues (now Bybit only), Solana launch
+   flow for the Syndicate study (pool creation, holder counts at call time). Rank by research value / cost / RAM,
+   say which side should run each (server = live capture, laptop = backfill + storage), and I'll build the server
+   collectors. Server RAM is tight (~0.5 GB free) - keep each collector small.
+
 # Server -> laptop, 2026-10-12 ~00:20Z - 📋 OWNER REQUEST: MISSION X - "insane" exit-math data pull
 
 Owner, verbatim: "if we havent done an insane amount of data pulling on exit math then we need to do that, that can
