@@ -84,13 +84,17 @@ def ingest_ctx(conn, rescan):
                     # seconds here, milliseconds in the candle files: one time base
                     t = int(t) * 1000 if int(t) < 1e11 else int(t)
                     g = lambda k: (float(d[k]) if d.get(k) not in (None, "") else None)
+                    # `orc` (oracle price) is logged by the scanner and was being dropped here.
+                    # Mark blends the oracle, so mark-vs-oracle is a free basis measure and it
+                    # cannot be back-filled once the snapshot files rotate.
                     rows.append((coin, t, g("mark"), g("oi"), g("fund"), g("prem"),
-                                 g("ib"), g("ia"), g("vol")))
+                                 g("ib"), g("ia"), g("vol"), g("orc")))
         except (OSError, EOFError) as e:
             log("j1", "skipping unreadable %s: %s" % (os.path.basename(p), e))
             continue
         total += upsert(conn, "ctx",
-                        ["coin", "t", "mark", "oi", "funding", "premium", "ib", "ia", "dayvlm"],
+                        ["coin", "t", "mark", "oi", "funding", "premium", "ib", "ia", "dayvlm",
+                         "orc"],
                         rows)
         mark(conn, p, len(rows))
     return total, skipped

@@ -134,7 +134,19 @@ def rows_of(stream, path):
                 if not isinstance(v, (list, tuple)) or len(v) < 4:
                     continue
                 rs.append((sym, t, v[0], v[1], v[2], v[3]))
-        return ("whales", ["symbol", "t", "short_usd", "long_usd", "n_short", "n_long"], rs)
+        # COLUMN NAMES WERE WRONG AND IT WOULD HAVE INVERTED ANY WHALE RESULT.
+        # tools/hivemind/whales.py writes, in this order:
+        #     [v["net"], v["gross"], v["long"], v["short"]]
+        # net is SIGNED notional (+ = net long); gross is total notional; long/short are TRADER
+        # COUNTS off a 60-name leaderboard. This stored them positionally as
+        # (short_usd, long_usd, n_short, n_long) -- so every one of the four was mislabelled, and
+        # the two notional columns were not even the same quantity as their names.
+        #
+        # Proven four ways on the 21,495 archived rows before renaming: gross > 0 on every row;
+        # |net| <= gross on every row (0 violations); min(gross) = $50,003, matching the producer's
+        # `gross > 50_000` filter exactly; and when the long count is 0, net == -gross exactly
+        # (4,756 rows), which is only possible if those columns are net and gross.
+        return ("whales", ["symbol", "t", "net_usd", "gross_usd", "n_long", "n_short"], rs)
 
     if stream == "voices":
         rs = []
