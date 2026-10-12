@@ -45,11 +45,27 @@ def schema():
               PRIMARY KEY (venue, symbol, t, price, qty_base)) WITHOUT ROWID;
 
             -- the one that unblocks the reachability question
+            -- WAS KEEPING 11 OF ~30 FIELDS. The market_depth export carries four blocks --
+            -- l2, trades, taker_15m, futures_ctx -- and this ingester read only `l2`, and only
+            -- two of its three depth bands. Silently discarded, every 15 minutes, for 77 days:
+            --   * the 1% depth band (the band the server's own idea generator uses)
+            --   * trade flow: count, buy/sell volume, largest trade, buy ratio
+            --   * OKX 15m taker volume in USD -- actual directional flow
+            --   * OKX futures context: basis_bps, long_short_account_ratio, taker_buy_sell_ratio
+            -- The last of those is a cross-venue POSITIONING series with 77 days of history, which
+            -- is the best cluster count in the archive. All of it is recoverable because the 77
+            -- daily shards are still on disk; only the ingest threw it away.
             CREATE TABLE IF NOT EXISTS depth (
               symbol TEXT NOT NULL, t INTEGER NOT NULL,
               mid REAL, spread REAL, spread_bps REAL,
               bid_01 REAL, ask_01 REAL, imb_01 REAL,
               bid_05 REAL, ask_05 REAL, imb_05 REAL,
+              bid_1 REAL, ask_1 REAL, imb_1 REAL,
+              trade_count INTEGER, buy_vol REAL, sell_vol REAL,
+              largest_trade REAL, buy_ratio REAL,
+              tk_buy_usd REAL, tk_sell_usd REAL, tk_ratio REAL,
+              ok_mark REAL, ok_index REAL, ok_funding REAL,
+              basis_bps REAL, ls_acct_ratio REAL, tk_bs_ratio REAL,
               PRIMARY KEY (symbol, t)) WITHOUT ROWID;
 
             CREATE TABLE IF NOT EXISTS whales (
@@ -116,12 +132,28 @@ def rows_of(stream, path):
             l2 = d.get("l2") or {}
             if t is None or not d.get("symbol") or not l2:
                 continue
+            tr = d.get("trades") or {}
+            tk = d.get("taker_15m") or {}
+            fx = d.get("futures_ctx") or {}
             rs.append((d["symbol"], t, l2.get("mid"), l2.get("spread"), l2.get("spread_bps"),
                        l2.get("bid_depth_0_1pct"), l2.get("ask_depth_0_1pct"),
                        l2.get("imbalance_0_1pct"), l2.get("bid_depth_0_5pct"),
-                       l2.get("ask_depth_0_5pct"), l2.get("imbalance_0_5pct")))
+                       l2.get("ask_depth_0_5pct"), l2.get("imbalance_0_5pct"),
+                       l2.get("bid_depth_1pct"), l2.get("ask_depth_1pct"),
+                       l2.get("imbalance_1pct"),
+                       tr.get("trade_count"), tr.get("buy_vol"), tr.get("sell_vol"),
+                       tr.get("largest_trade"), tr.get("buy_ratio"),
+                       tk.get("buy_vol_usd"), tk.get("sell_vol_usd"), tk.get("buy_ratio"),
+                       fx.get("mark_price"), fx.get("index_price"), fx.get("funding_rate"),
+                       fx.get("basis_bps"), fx.get("long_short_account_ratio"),
+                       fx.get("taker_buy_sell_ratio")))
         return ("depth", ["symbol", "t", "mid", "spread", "spread_bps", "bid_01", "ask_01",
-                          "imb_01", "bid_05", "ask_05", "imb_05"], rs)
+                          "imb_01", "bid_05", "ask_05", "imb_05",
+                          "bid_1", "ask_1", "imb_1",
+                          "trade_count", "buy_vol", "sell_vol", "largest_trade", "buy_ratio",
+                          "tk_buy_usd", "tk_sell_usd", "tk_ratio",
+                          "ok_mark", "ok_index", "ok_funding",
+                          "basis_bps", "ls_acct_ratio", "tk_bs_ratio"], rs)
 
     if stream == "whales":
         rs = []
