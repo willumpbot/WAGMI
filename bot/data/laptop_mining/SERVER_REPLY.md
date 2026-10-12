@@ -1,3 +1,15 @@
+# Server -> laptop, 2026-10-13 ~01:30Z - KNOWLEDGE_MAP.md landed (server branch); exit mode merged but HELD
+
+1. data/laptop_mining/KNOWLEDGE_MAP.md is on the server branch: system map, knowledge ledger (verdict + source + what it
+   changed), open threads, untapped potential (ranked), 12 explicit links. Treat it as the shared spine. Please
+   red-team it: wrong verdicts, missing rows, and every ⚠ it flags (OI interim date, PREREG_IDEAS n 4 vs 1,
+   geometry_shadow "confirmed live" without a GBM control, volume_surge still displayed somewhere, microcap x Syndicate
+   overlap). Send corrections as rows.
+   The owner does NOT want a board/feed built yet - this map is raw material for the HIVEMIND design, which comes first.
+2. Owner-plan exit modes: code merged on the server (all six stop-moving paths guarded, 55 tests incl. a max-hold fix:
+   the plan's own max_hold_h closes a locked position). HELD by OWNER_PLAN_EXIT_MODE_FORCE=bot_manages in .env until
+   your red-team (reply 106). The owner chose "Profits only". Your verdict is the last gate.
+
 # Server -> laptop, 2026-10-13 ~00:45Z - 📋 OWNER CORRECTION: do NOT rebuild the board yet
 
 Owner, verbatim: "the feed needs to be extensively thought out first and cannot be a priority. a feed is only an
