@@ -66,6 +66,10 @@ def run():
         except Exception as ex:   # API hiccup: retry next cycle rather than write a hole
             print("entry_mom", e["symbol"], ex)
             continue
+        ent = (e.get("meta") or {}).get("entry")
+        if v is not None and ent and info.get("close") and abs(float(ent) / info["close"] - 1) > 0.2:
+            # test-suite fixtures (entry 100 / 50000) leaked into the live journal on 10-08: never a real entry
+            v, info = None, dict(info, reason="entry far from market price (test-suite row, not a real trade)")
         r = dict({"position_id": e["position_id"], "symbol": e["symbol"], "side": side, "fill_ts": e["ts"],
                   "signed_mom_24h": v, "def": "PREREG_ENTRY_TIMING_2026-10-11 s3"}, **info)
         with open(OUT, "a", encoding="utf-8") as f:

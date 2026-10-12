@@ -124,7 +124,63 @@ def _archive_streams():
         src = BOT / "data" / rel
         if src.exists():
             shutil.copy2(src, st / rel.replace("/", "__"))
+    _archive_appends(today)
     ARCH_STAMP.write_text(today)
+
+
+# The bot's own big logs (owner 10-12: "send everything to the laptop"). Shards by what was APPENDED since the last
+# run, not by row date: several files append rows long after the date stamped on them (resolutions), so date-sharding
+# would silently drop those. State = byte offset per file; a file that shrinks (rewritten/rotated) restarts at 0
+# and its shard is marked .rewrite so the laptop can dedupe.
+APPENDS = {n: BOT / "data" / r for n, r in {
+    "decisions": "llm/decisions.jsonl", "counterfactual_resolved": "llm/counterfactual_resolved.jsonl",
+    "agent_performance": "llm/agent_performance.jsonl", "thesis_history": "llm/thesis_history.jsonl",
+    "trade_events": "trade_events.jsonl", "sniper_rejections": "manual/sniper_rejections.jsonl",
+    "missed_trades": "missed_trades.jsonl", "missed_trades_resolved": "missed_trades_resolved.jsonl",
+    "graded_decisions": "agent_grades/graded_decisions.jsonl", "microcap_wash": "microcap/wash_signal.jsonl",
+    "microcap_flow": "microcap/flow_signal.jsonl", "microcap_liquidity": "microcap/liquidity_snapshots.jsonl",
+    "microcap_discovery": "microcap/discovery_log.jsonl", "exit_closes": "logs/exit_closes.jsonl",
+    "signal_outcomes": "logs/signal_outcomes.jsonl", "exit_regret": "logs/exit_regret_scores.jsonl",
+    "safety_events": "logs/safety_events.jsonl"}.items()}
+APPEND_STATE = BOT / "data" / "hivemind" / ".append_offsets.json"
+
+
+def _archive_appends(today):
+    import json as _json
+    try:
+        st = _json.loads(APPEND_STATE.read_text(encoding="utf-8"))
+    except Exception:
+        st = {}
+    for name, src in APPENDS.items():
+        if not src.exists():
+            continue
+        size, off = src.stat().st_size, int(st.get(name, 0))
+        tag = ""
+        if size < off:
+            off, tag = 0, ".rewrite"
+        if size == off:
+            continue
+        # copy only up to the LAST complete line, so a row being written right now goes into tomorrow's shard whole
+        with open(src, "rb") as fi:
+            fi.seek(max(off, size - 65536))
+            tail = fi.read(size - max(off, size - 65536))
+        cut = tail.rfind(b"\n")
+        if cut < 0:
+            continue
+        end = max(off, size - 65536) + cut + 1
+        dst = EXP / "bulk" / name
+        dst.mkdir(parents=True, exist_ok=True)
+        with open(src, "rb") as fi, _gz(dst / f"{today}{tag}.jsonl.gz") as fo:
+            fi.seek(off)
+            left = end - off
+            while left > 0:
+                chunk = fi.read(min(1 << 20, left))
+                if not chunk:
+                    break
+                fo.write(chunk)
+                left -= len(chunk)
+        st[name] = end
+    APPEND_STATE.write_text(_json.dumps(st), encoding="utf-8")
 
 
 def _git(*args):

@@ -243,6 +243,42 @@ def lab_data():
     }
 
 
+def _trade_history():
+    """Closed trades for the Positions tab: the bot's own (trades.csv) and the owner's plans the bot executed
+    (owner_fills.jsonl, grouped per position - these are kept out of the bot's ledger by design)."""
+    import csv
+    from datetime import datetime
+    out = {"bot": [], "plans": []}
+    try:
+        for r in list(csv.DictReader(open(BOT / "data" / "trades.csv", encoding="utf-8")))[-40:]:
+            try:
+                out["bot"].append({"ts": datetime.fromisoformat(r["timestamp"]).timestamp(), "sym": r["symbol"],
+                                   "side": r["side"], "entry": float(r["entry"]), "exit": float(r["exit"]),
+                                   "pnl": float(r.get("pnl") or 0), "fees": float(r.get("fees") or 0),
+                                   "lev": r.get("leverage"), "reason": r.get("exit_type") or r.get("outcome") or ""})
+            except (KeyError, ValueError):
+                continue
+    except OSError:
+        pass
+    try:
+        g = {}
+        for l in (HM / "owner_fills.jsonl").read_text(encoding="utf-8").splitlines():
+            f = json.loads(l)
+            if f.get("kind") not in ("partial", "final"):
+                continue
+            x = g.setdefault(f.get("position_id") or f.get("plan_id"), {"sym": f["coin"], "side": f["side"],
+                             "entry": f["entry"], "pnl": 0.0, "r": 0.0, "legs": 0, "opened": f.get("opened_at")})
+            x["pnl"] += f.get("pnl") or 0
+            x["r"] += f.get("r") or 0
+            x["legs"] += 1
+            if f["kind"] == "final":
+                x["exit"], x["reason"], x["ts"] = f.get("exit"), f.get("reason"), f.get("ts")
+        out["plans"] = sorted((v for v in g.values() if v.get("ts")), key=lambda v: v["ts"])[-20:]
+    except OSError:
+        pass
+    return out
+
+
 def _away_data():
     """Inputs for the terminal's "While you were away" strip: bot closes, laptop activity."""
     import csv
@@ -309,7 +345,7 @@ def build_terminal():
             "journal": _load(HM / "journal.json", {}) or {},
             "scan": _load(HM / "scan.json", {}) or {}, "plans": _load(HM / "plans.json", {}) or {},
             "tgTrack": _load(HM / "tg" / "track.json", {}) or {},
-            "away": _away_data(),
+            "away": _away_data(), "tradeHist": _trade_history(),
             "aiPlans": _load(HM / "ai_plans.json", {}) or {},
             "history": _load(HM / "history.json", {}) or {},
             "uptime": _last_uptime(),

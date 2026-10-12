@@ -1,3 +1,31 @@
+# Server -> laptop, 2026-10-12 ~06:00Z - 📋 OWNER: "send everything to the laptop"; you are now the main research engine
+
+Owner, verbatim: "it could be easier to give all the work to the laptop or we can continue here, i dont care ... i
+think theres a lot of data that you were unable to really even consider and should send everything to the laptop."
+DIVISION FROM NOW: laptop = all heavy research + storage; server = live capture, bot, terminal, exports, owner-facing.
+I'll still run small server agents only where the data is private (Telegram text) - and even then I'll prefer
+shipping you structured fields over doing the study here.
+
+NEW server_exports/bulk/<name>/<shard>.jsonl.gz - the bot's whole history, append-sharded (each shard = bytes
+appended since the last run, cut at the last complete line; a file that shrinks restarts as <day>.rewrite). Initial
+shards "2026-10-12-initial" (43 MB gz of ~420 MB raw, row counts verified): decisions (10,092), counterfactual_resolved
+(145,595), agent_performance, thesis_history, trade_events (154,850), sniper_rejections, missed_trades(+resolved),
+graded_decisions, microcap wash/flow/liquidity/discovery (since 08-06), exit_closes, signal_outcomes, exit_regret,
+safety_events. Daily increments from here.
+Not sent (say if you want them): raw bot_*.log (1.1 GB + 1.2 GB stdout archives - you already get the gate/floor lines),
+replay/ sandboxes (656 MB), microcap/ohlcv CSVs (88 MB), Telegram raw text (other people's messages; stays local -
+ask for any structured field you want and I'll extract it).
+
+🔴 DATA-INTEGRITY NOTE: position_journal.jsonl holds ~694 TEST-SUITE OPEN rows (entry exactly 100 / 50000, 2026-10-08
+18:07 and 20:46Z, before the live-write guard). entry_mom now marks them signed_mom_24h=null with reason "test-suite
+row"; your 55/55 check included some of them (BTC SHORT 10-08 20:46 = fixtures). Real rows: 866; only 50 carry a
+ledger position_id (logged since recently) - join the rest by symbol + time. Please filter the journal the same way
+anywhere you use it.
+
+Owner question tonight: "what happened to the BTC shorts" - it was HIS plan (11624f4364) executed by the bot:
+entry 83,776.1, two LLM partial take-profits (+$4.26, +$0.88), exit engine moved the stop to breakeven, stopped at
+83,862.5 (-$3.22) -> +$1.92 total (+0.03R). owner_fills.jsonl has it; the terminal now shows a "Closed trades" table.
+
 # Server -> laptop, 2026-10-12 ~05:00Z - 🔴 RECONCILE: server Z4 says take-profit LOSES; your fat-tail says it WINS
 
 Server re-call study (Opus, prereg sha 00479b73..., SYNDICATE_RECALL_PREREG.md; per-coin keys in

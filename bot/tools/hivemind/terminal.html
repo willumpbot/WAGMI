@@ -193,6 +193,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     <div class="tabp" id="t_pos">
       <div class="box"><h3>Bot's open positions (paper, the bot manages these itself) <span class="sp"></span><span class="mut" id="botnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="botpos"></div></div>
       <div class="box" id="posbox" style="display:none"><h3>My position on <span id="pb_sym" style="color:var(--ink)"></span></h3><div id="pb_body"></div></div>
+      <div class="box"><h3>Closed trades <span class="sp"></span><span class="mut" style="text-transform:none;letter-spacing:0">newest first · paper</span></h3><div id="tradehist"></div></div>
       <div class="box"><h3>My Hyperliquid account <span class="sp"></span><span class="mut" id="acctnote" style="text-transform:none;letter-spacing:0"></span></h3><div id="acct"></div></div>
     </div>
     <div class="tabp" id="t_jr"><div class="box"><h3>My trading journal <span class="sp"></span><span class="mut" id="jr_note" style="text-transform:none;letter-spacing:0"></span></h3><div id="jr"></div></div></div>
@@ -982,6 +983,15 @@ function botPos(s){
   const stopPnl = b.sl ? (b.sl-b.entry)*sg*b.qty : null;
   return {...b, now, open, mv, stopPnl, total: (b.realized_pnl||0) + (open||0)};
 }
+function tradeHist(){
+  const T = DATA.tradeHist || {}, d = t => new Date(t*1000).toISOString().slice(5,16).replace("T"," ");
+  const P = (T.plans||[]).slice().reverse(), B = (T.bot||[]).slice().reverse().slice(0,25);
+  const why = r => ({SL:"stop hit",TP1:"first target",TP2:"second target",LLM_EXIT_HIGH:"bot closed early",LLM_EXIT_PARTIAL:"bot took part off"}[r] || (r||"").toLowerCase().replace(/_/g," "));
+  let h = "";
+  if (P.length) h += `<div class="mut" style="font-size:11px;margin:2px 0">Your plans the bot ran (kept out of the bot's own record)</div><table class="pos num"><tr><th>Closed</th><th>Coin</th><th>Entry</th><th>Last exit</th><th>Result</th><th>How it ended</th></tr>${P.map(x=>`<tr><td class="mut">${d(x.ts)}</td><td><b>${x.sym}</b> <span class="${x.side==="SHORT"?"dn":"up"}">${x.side}</span></td><td>${fmt(x.entry)}</td><td>${fmt(x.exit)}</td><td class="${x.pnl>=0?"up":"dn"}">${x.pnl>=0?"+":""}$${x.pnl.toFixed(2)} (${x.r>=0?"+":""}${x.r.toFixed(2)}R)</td><td class="mut">${x.legs>1?(x.legs-1)+" partial take-profit"+(x.legs>2?"s":"")+", then ":""}${why(x.reason)}</td></tr>`).join("")}</table>`;
+  h += `<div class="mut" style="font-size:11px;margin:8px 0 2px">The bot's own trades</div>` + (B.length ? `<table class="pos num"><tr><th>Closed</th><th>Coin</th><th>Entry</th><th>Exit</th><th>Net</th><th>How it ended</th></tr>${B.map(x=>`<tr><td class="mut">${d(x.ts)}</td><td><b>${x.sym}</b> <span class="${x.side==="SHORT"?"dn":"up"}">${x.side}</span></td><td>${fmt(x.entry)}</td><td>${fmt(x.exit)}</td><td class="${x.pnl>=0?"up":"dn"}">${x.pnl>=0?"+":""}$${x.pnl.toFixed(2)}</td><td class="mut">${why(x.reason)}</td></tr>`).join("")}</table>` : `<span class="mut">none yet</span>`);
+  $("tradehist").innerHTML = h;
+}
 function renderBotPos(){
   const rows = SYMS.map(s => [s, botPos(s)]).filter(x => x[1]);
   $("pos_badge").innerHTML = rows.length ? `<span class="pill nt">${rows.length}</span>` : "";
@@ -1246,7 +1256,7 @@ document.addEventListener("keydown",ev=>{ if (ev.key==="/" && ev.target.tagName!
   const tfk = {"1":"15m","2":"1h","3":"4h","4":"1d","5":"1w","d":"1d","D":"1d"}[ev.key];
   if (tfk) document.querySelector(`.seg button[data-tf="${tfk}"]`).click(); });
 window.addEventListener("resize", ()=>{ if (!window.LightweightCharts) drawChart(); });
-topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); tgTrack(); aiPlans(); historyTab(); brief(); renderBoard(); renderDetail(); loadPlans().then(awayStrip); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
+topbar(); renderScan(); setupsNow(); renderPlans(); renderBotPos(); tradeHist(); tgTrack(); aiPlans(); historyTab(); brief(); renderBoard(); renderDetail(); loadPlans().then(awayStrip); setInterval(loadPlans, 30000); lab(); decisionsStrip(); journalBox(); poll(); loadUniverse().then(()=>{ if (location.hash.length>1) adhoc(decodeURIComponent(location.hash.slice(1))); });
 setInterval(poll, 3000); setInterval(topbar, 1000); setInterval(nearLevels, 10000); setTimeout(nearLevels, 1500); setInterval(book, 2000); setInterval(account, 10000); book(); account();
 setInterval(()=>{ if (!window.LightweightCharts && !document.querySelector("#chart:hover")) drawChart(); levels(); calc(); }, 15000);
 setTimeout(()=>location.reload(), 15*60*1000);
