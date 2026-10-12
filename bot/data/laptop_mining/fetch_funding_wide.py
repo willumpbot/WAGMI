@@ -49,7 +49,15 @@ MAX_PAGES = 200          # ~8.3 years of hourly funding; a longer walk is a bug
 CHECKPOINT = 15          # flush to disk every N pages so an interruption keeps the work
 HOUR = 3600000
 
-_tp = {"pause": PAUSE, "n429": 0}
+#   v2 defect, found while it ran: the pause only ever INCREASED. A single 429 burst pinned it at
+#   PAUSE_MAX=3.0s for the whole run and pushed the ETA from ~4.5h to ~6.5h, even though the burst
+#   had passed and 0 further 429s were arriving. A throttle that cannot come back down does not find
+#   the sustainable rate, it finds the floor. Now AIMD: multiplicative back-off on a 429, gentle
+#   decay after a run of clean pages, floored at PAUSE so it never returns to v1's 0.35s.
+DECAY_AFTER = 40         # consecutive clean pages before easing off
+DECAY = 0.85
+
+_tp = {"pause": PAUSE, "n429": 0, "clean": 0}
 
 
 def post(body, tries=6):
@@ -61,10 +69,16 @@ def post(body, tries=6):
                 data=json.dumps(body).encode(),
                 headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(rq, timeout=45) as r:
-                return json.loads(r.read().decode())
+                out = json.loads(r.read().decode())
+            _tp["clean"] += 1
+            if _tp["clean"] >= DECAY_AFTER and _tp["pause"] > PAUSE:
+                _tp["pause"] = max(PAUSE, _tp["pause"] * DECAY)
+                _tp["clean"] = 0
+            return out
         except urllib.error.HTTPError as e:
             if e.code == 429:
                 _tp["n429"] += 1
+                _tp["clean"] = 0
                 _tp["pause"] = min(PAUSE_MAX, _tp["pause"] * 1.3)
                 ra = (e.headers.get("Retry-After") or "").strip()
                 time.sleep(float(ra) if ra.isdigit() else min(60.0, 5.0 * (i + 1)))
