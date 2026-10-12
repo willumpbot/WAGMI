@@ -39,6 +39,7 @@ import gzip
 import io
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -50,6 +51,44 @@ GT = "https://api.geckoterminal.com/api/v2/networks/solana"
 PAUSE = 2.1              # starting guess only -- see adapt() below, it self-tunes
 APILOCK = "geckoterminal.lock"
 _state = {"pause": PAUSE, "n": 0, "n429": 0}
+
+
+def _holder_alive():
+    """Is the pid recorded in the lock file still running?
+
+    Age alone cannot answer "is the holder dead", and treating it as though it could is what
+    made the old stale-break dangerous. On Windows OpenProcess is the honest check; if we
+    cannot tell, we say ALIVE -- refusing to break a lock we are unsure about is the safe
+    direction, since the failure mode of breaking wrongly is two consumers hammering one API.
+    """
+    try:
+        txt = io.open(APILOCK, encoding="utf-8").read()
+        pid = int(re.search(r"pid (\d+)", txt).group(1))
+    except Exception:
+        return True
+    if pid == os.getpid():
+        return True
+    try:
+        import ctypes
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        h = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not h:
+            return False                      # no such process
+        code = ctypes.c_ulong()
+        ok = ctypes.windll.kernel32.GetExitCodeProcess(h, ctypes.byref(code))
+        ctypes.windll.kernel32.CloseHandle(h)
+        STILL_ACTIVE = 259
+        return (not ok) or code.value == STILL_ACTIVE
+    except Exception:
+        return True
+
+
+def heartbeat():
+    """Touch the lock so its mtime tracks liveness rather than creation."""
+    try:
+        os.utime(APILOCK, None)
+    except OSError:
+        pass
 
 
 def api_lock_wait():
@@ -78,8 +117,9 @@ def api_lock_wait():
                 age = time.time() - os.path.getmtime(APILOCK)
             except OSError:
                 pass
-            if age > 2 * 3600:          # a crashed holder must not block forever
-                print("breaking stale API lock (%.0fs old)" % age, flush=True)
+            if age > 600 and not _holder_alive():
+                print("breaking API lock: holder is gone (%.0fs since its last "
+                      "heartbeat)" % age, flush=True)
                 try:
                     os.unlink(APILOCK)
                 except OSError:
@@ -277,12 +317,36 @@ def load_calls():
         per.setdefault(c["chat"], []).append(c)
     for k in per:
         per[k].sort(key=lambda c: -c["call_ts"])
-    out, keys = [], sorted(per, key=lambda k: -len(per[k]))
-    i = 0
-    while any(per[k] for k in keys):
-        k = keys[i % len(keys)]
-        if per[k]:
-            out.append(per[k].pop(0))
+    # ERA INTERLEAVE, added after measuring the corpus rather than assuming it.
+    #
+    # Round-robin across chats alone was still newest-first WITHIN each chat, and the corpus is
+    # not spread evenly in time: dtn_hitters is 93% a 2025 chat (7,295 of 7,821 calls) and
+    # syndicate exists only in 2026-08..10. So chat-balanced-but-newest-first delivered an
+    # all-2026 prefix -- 211 of 211 fetched calls were 2026 -- and the 2025 bulk, which is most
+    # of the corpus, would have arrived days later.
+    #
+    # That mattered once the holdout turned out to be confounded: syndicate sits 421 days after
+    # dtn_hitters' median call, so the cross-chat test is also a 14-month forward test, and the
+    # clean comparison is instead WITHIN 2025 (both DTN chats ran concurrently on 277 shared
+    # days). Interleaving half-year buckets inside each chat makes BOTH tests runnable on a
+    # partial pull instead of only the confounded one.
+    def era(c):
+        t = time.gmtime(c["call_ts"])
+        return (t.tm_year, 1 if t.tm_mon <= 6 else 2)
+
+    buckets = {}
+    for k in per:
+        for c in per[k]:
+            buckets.setdefault((k, era(c)), []).append(c)
+    for b in buckets:
+        buckets[b].sort(key=lambda c: -c["call_ts"])
+
+    order = sorted(buckets, key=lambda b: (-len(buckets[b]), str(b)))
+    out, i = [], 0
+    while any(buckets[b] for b in order):
+        b = order[i % len(order)]
+        if buckets[b]:
+            out.append(buckets[b].pop(0))
         i += 1
     return out
 
@@ -318,13 +382,14 @@ def main():
     print("  optimistic floor %.1f h (at the %.1fs starting pause); MEASURED expectation "
           "~%.0f h / %.1f days once the throttle settles at its 12s cap with ~21%% rejections"
           % (floor_h, PAUSE, real_h, real_h / 24.0), flush=True)
-    print("  order is stratified round-robin across chats, so the cross-chat test is runnable "
-          "on partial output rather than only at the end", flush=True)
+    print("  order is round-robin across (chat x half-year), so BOTH the cross-chat test and "
+          "the within-2025 test are runnable on partial output", flush=True)
 
     f = io.open(OUT, "a", encoding="utf-8")
     ok = dead = 0
     t0w = time.time()
     for i, c in enumerate(todo):
+        heartbeat()                           # the lock's mtime must mean "still alive"
         net, neterr = network_for(c["ca"])
         if not net:
             dead += 1
