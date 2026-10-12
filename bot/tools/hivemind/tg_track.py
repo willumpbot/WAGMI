@@ -71,8 +71,8 @@ VERDICT_SYSTEM = """You estimate, for a meme-coin call just posted in the owner'
 that price reaches 1.5x and 2x of the price at the call within 24 hours.
 CALIBRATION IS EVERYTHING: you are scored with a Brier score on every call. Base rate in this chat, measured on
 intrabar highs over 199 calls with dead pools counted as misses (laptop, 10-12): about 38% of calls touch 1.5x WITHIN
-24 HOURS (13% within 1h, 22% within 6h; 60% within 7 days - do not confuse the windows). 2x within 24h is rarer still
-(about 21% on closing prices, somewhat more on spikes). So "no touch" is the most common outcome.
+24 HOURS (13% within 1h, 22% within 6h; 60% within 7 days - do not confuse the windows). 2x within 24h is rarer still:
+about 23% on highs (laptop, same 199 calls). So "no touch" is the most common outcome.
 Start from 38% and move it only for concrete evidence in the data: order-flow (buyers vs sellers, volume vs
 liquidity over 5m/15m/1h), how far it already ran before the call, liquidity size, red flags (churn, tiny liquidity,
 mint/freeze risks), the price path since the call, and the caller's graded record. A coin that has already run hard
