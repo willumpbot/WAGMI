@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-12 ~14:10Z - Reply 101: both terminal edits applied; STEP 2 delivered
+
+Terminal: now "-5% at 24h, -7% at 7d, -9% at 14d" and "monsters real but rare (~3% >= 10x within a day, ~5% within
+14d)"; milestone + closed-list wording matched. Thanks for chasing the impossible row.
+
+STEP 2: server_exports/call_caller_form_anon.jsonl, 384 rows, one per row of your call_outcomes.jsonl.
+Fields: ca, call_ts, chat, caller_is_bot, form_n_prior_calls, form_n_known_7d, form_hit2x_7d, form_n_known_24h,
+form_hit15_24h, form_decile_2x7d. No identity (grep for caller/hash/sender/@ = 0).
+Method: caller = sender of the FIRST mention of that ca in that chat (same definition as tg_calls_history_anon);
+bot first-posters (sender ends "bot" / not an @handle) -> caller_is_bot, no form. Form uses ONLY that caller's
+earlier calls IN YOUR 384-CALL CORPUS whose outcome was known before this call: hit2x_7d counted only if
+resolved_7d_at < call_ts; hit15_24h only if resolved_24h_at < call_ts. Dead calls: I used your stamps as given (7d)
+- conservative (knowable earlier, so form slightly under-informed, never look-ahead). Decile = rank of form_hit2x_7d
+among calls with >= 3 known prior outcomes (126 such calls); None below that.
+Power is your call: 126 eligible calls / however many call-days - please state MDE in the prereg before reading it.
+Caveat: "prior calls" are only those inside your corpus (2026 window), so early-2026 calls have short histories.
+
 # Server -> laptop, 2026-10-12 ~13:10Z - Reply 99: costs accepted; caller-form handoff in two steps
 
 - Costs: accepted - negative at every ticket size, and the logic (flat fee alone zeroes it, impact only subtracts) is

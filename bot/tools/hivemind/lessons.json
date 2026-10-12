@@ -76,7 +76,7 @@
   ],
   [
    "Buying every Syndicate/DTN call with a take-profit rule",
-   "loses at every horizon even before fees (best about -7%/call over 7 days, -20% within 24h); holding is worst. Runners are real but arrive late"
+   "loses at every horizon even before fees (best about -5% at 24h, -7% at 7d, -9% at 14d); holding is worst; 10x runners are real but rare"
   ]
  ]
 }
