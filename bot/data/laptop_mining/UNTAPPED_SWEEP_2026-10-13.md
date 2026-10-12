@@ -133,3 +133,82 @@ dates**, so "limited" was my framing error, not a property of the data. **The th
 limited; the OHLCV and funding panels are not**, and the first prereg belongs there. **The highest-value action remains what it was in
 reply 102: make sure every collector is running, complete, and correctly labelled** — because three
 of the four streams were silently degraded and nobody would have noticed from a dashboard.
+
+## 2d. 🟢 FOURTH CORRECTION — the owner was right again, §2c is dead, and the gain is real but NOT where I first said
+
+**Owner, after I claimed the deep universe was capped at 17 perps: "i tihnk theres probably always
+another angle or a way around a problem."**
+
+**He was right, and §2c was wrong the same way §2b was: I mistook a directory listing for the data.**
+`history/` held 17 perp `_1d.csv` files, so I read 17 as the universe. It was a cache someone built.
+Hyperliquid caps a `candleSnapshot` response at ~5,000 bars — **208 days at 1h, but ~13.7 YEARS at
+1d.** Nobody had asked it for daily on the other 161 coins. `fetch_1d_wide.py` asked: **161 fetched,
+0 failed.**
+
+**`size_flags.py` never hardcoded 17 — it globs `history/*_1d.csv`.** Its universe widened the moment
+the files landed, with no code change: **173 perps now pass its own filters** (24 spot excluded, 5
+under 200 bars, **0 dropped as stale** — the new series are clean).
+
+### The honest power accounting — I had this wrong once already in this very section
+
+My first draft of §2d said "160 → 322 week-clusters, a bit over 2×." **That was wrong**, and it was
+the exact error I had just warned about one paragraph earlier. **The design sets `START =
+"2023-01-01"`**, so the 2,246-date span is not the usable window:
+
+| | `SIZE_FLAGS` | **wide panel, same filters & START** | gain |
+|---|---|---|---|
+| perps | 17 | **173** | 10.2× |
+| coin-days | 19,853 | **167,680** | 8.4× |
+| **week-clusters available** | **160** | **199** | **+24%, not 2×** |
+| **coins per date (median)** | ≤17 | **119** (p10 64, max 173) | **the real gain** |
+
+**The cluster count barely moves, because weeks were never the binding constraint — cross-section
+was.** This design compares flagged vs unflagged coins *within the same date AND em-quintile*. With
+17 coins split into quintiles there were **~3.4 coins per cell**, and `funding_hot` is a
+**cross-sectional top quintile**, so a typical cell held 0 or 1 flagged coins and got **discarded** by
+`matched()`'s `f.all() or not f.any()` guard. **That is why SIZE_FLAGS reached only 160 of ~199
+available weeks.** At 119 coins per date a cell holds ~24 coins with ~5 flagged, so **nearly every
+cell survives.**
+
+**So the power gain is in within-week precision, not cluster count** — more usable cells per week
+shrinks each week's mean error, which shrinks the SE across weeks, which lowers the MDE. That is a
+genuine and probably large improvement, **but it must be claimed as precision and measured by the
+script's own injected-effect power table, never asserted from the 8.4×.** Coin-days are not
+independent units; alts co-move, and the clustering standard applies to the number being acted on.
+
+### 🔴 The treatment itself changes, and that must be pre-specified
+
+**`funding_hot` is a relative rank, not a threshold** — top quintile per date, needing ≥5 coins with
+funding. **Top 20% of 17 coins and top 20% of 173 coins are different treatments.** Widening the
+universe silently redefines the thing under test. Both readings are defensible and they answer
+different questions, so the prereg fixes the primary arm **before** anything is computed.
+
+### Funding was the next cache limit, and it falls the same way
+
+`SIZE_FLAGS` reads `history/<COIN>_funding.csv`; only **40** of 178 coins had one (kPEPE/LTC/BNB at
+29,331 hourly rows back to 2023 — the source of the 160 weeks). `fundingHistory` caps a response at
+**500 rows** but **pages forward without limit**, probed on WIF and FARTCOIN, both uncached.
+**`fetch_funding_wide.py` is walking the missing 138 now**, seeding each coin's start from its listing
+date in the new `_1d.csv` so no coin gets a blind four-year walk. Verified on the first new files:
+**sorted, zero duplicate timestamps, modal gap exactly 60 min, |rate| median 1.3e-05 — identical to
+the cached files**, so no unit error.
+
+**Until that walk finishes, #1 must not run.** The predictor would exist for 40 coins and the outcome
+for 173, and **a missing source is never a zero** — `load_funding` returns `{}` for a missing file,
+which silently makes those coins permanently unflagged and biases the comparison.
+
+### 📌 Provenance flag, for whoever next touches `START`
+
+**48 coins carry pre-2023 daily bars, and 865 of them start on exactly 2020-08-19** — the same count
+and same date for ATOM, BNB, BTC, DOGE, ETH, LTC. **Hyperliquid did not exist in 2020.** That is
+backfill from some other venue, served through the same endpoint. `START = "2023-01-01"` excludes all
+of it, so nothing today is affected — **but do not extend `START` backwards to buy the extra 123 weeks
+without first establishing where those bars came from.**
+
+### The pattern, now four deep on one ranking
+
+Four errors, all the same one: **I asserted a limit from what was on disk instead of asking what the
+source would serve.** §2c even drew the lesson "count the clusters first, rank second" and still got
+it wrong, because counting what is *cached* is not counting what is *available*. **The rule that
+works: before calling anything a limit, ask the source once.** One request per coin was the entire
+cost of finding 8.4× more data.
