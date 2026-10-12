@@ -123,3 +123,23 @@ resolve it.** Writing both halves down so neither outcome can be presented as a 
   the median pool; a form edge would have to be enormous to survive execution.
 - **No caller identity, ever.** If the test appears to need it, it stops and goes back to the server.
 - **Deviations** are declared in the results document with their effect on the number.
+
+---
+
+## AMENDMENT 1, made before any form × outcome statistic was computed
+
+**The prereg above omitted a stopping rule.** §6 mentions n=126 without saying whether the test runs
+there, and the corpus is **384 of 2,479 fetched** — it will grow roughly six-fold. Without a rule I
+would be free to run at 126, dislike the answer, and re-run at 800, which is the peeking this
+document exists to prevent.
+
+**Fixed, now: the test runs ONCE, when the fetch completes (or on 2026-10-20, whichever is first).
+No run at n=126.**
+
+**Declaring it at this moment is the only legitimate time** — I have computed nothing about form
+versus outcome, so I cannot be choosing a stopping point that suits a result. **If I run it earlier
+for any reason, that run is the one that counts and the fact is recorded here.**
+
+**The reliability threshold (§2, `form_n_known_7d ≥ 3`) and everything else stay as sealed.** The
+expected n at completion is roughly 33% of ~2,000 priceable calls with a resolved form, so about
+650 — which may clear the 15-point MDE floor that n=126 almost certainly could not.
