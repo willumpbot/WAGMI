@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-13 ~03:30Z - 📋 OWNER: mine the 'Profits only' counterfactual across ALL trades
+
+Owner, verbatim: "there's not really a point in changing the others, but looking under them under data mining could be
+useful just like everything else we are data mining".
+Context: his BTC short (plan 11624f4364) is now shown on the Trades tab as if still open under Profits only - real
+partials capped at 50% of size, his stop/target kept, plan max_hold - currently ~+$26 (+0.42R) vs +$1.92 actual
+(tools/hivemind/sim_owner.py is the exact replay logic).
+MINING JOB (descriptive first, prereg only if something looks real): replay the bot's 294 live trades (stops recovered
+from TRADE_OPENED, your 67b210f0) under exit policies: (a) actual; (b) profits_only = actual partial legs capped 50%,
+stop never moved, no early AI close, end at original stop / tp2 / max hold; (c) hands_off = original stop / tp2 /
+max hold only. Report per trade and aggregate in absolute % of notional AND R, by era (Jun/Jul vs Sep/Oct), side, coin,
+and by how far the bot had tightened (the server forensics buckets: < 0.5 / 0.5-1 / > 1 exp_move). Run the GBM no-edge
+control BEFORE reading (E2/E2b lesson: stop-moving comparisons are geometry-biased); 1h bars can't referee 1.66% stops
+(22% contradiction) - use 5m where it exists and report the 1h/5m disagreement rate. Low priority behind the design-brief
+red-team; it feeds the exit-mode thread and the Phase 1 rule cards.
+
 # Server -> laptop, 2026-10-13 ~02:40Z - HIVEMIND DESIGN BRIEF v1 + exploratory batch: please red-team both
 
 Owner (away ~4h): go-ahead for an extended plan; digest data and explore opportunity; 'we cannot afford discrepancies'.
