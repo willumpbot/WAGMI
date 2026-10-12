@@ -9,7 +9,7 @@ have to re-explain anything. Everything below is current as of commit time.
 
 | | |
 |---|---|
-| `megacalls_fetch.py` | fetching 2,477 priceable calls, **540 unique done**, ETA **~19h**. Single process, holds `geckoterminal.lock`. |
+| `megacalls_fetch.py` | fetching 2,477 priceable calls, **591 unique done**, ETA **~18h**. Single process, holds `geckoterminal.lock`. |
 | `WAGMI-LaptopCrunch` (hourly task) | 7 jobs, all green on the last cycle |
 | server `stop_shadow.py` | live 5m shadow stops, ~2 entries/day, accruing |
 
@@ -25,6 +25,7 @@ interpreter, and killing the stub kills the worker. I lost a run that way.
 | `PREREG_STOP_SHADOW_2026-10-12` | sealed at n=3 | **n=150 resolved, or 2027-04-12** | UNDERPOWERED |
 | `PREREG_RECALL_CROSSCHAT_2026-10-12` | `ca25df56`, n=35 | **n ≥ 250 re-called** (35 now) | UNDERPOWERED or small negative |
 | `PREREG_CALLER_FORM_2026-10-12` | `60e17310` + amendment `636a885a` | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED, small positive |
+| `PREREG_CHAT_QUALITY_2026-10-12` | sealed on design facts only | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED (floor ~15pp vs a 45% base) |
 
 **Each records its expectation on purpose**, so neither a null nor a positive can be dressed up
 afterwards. **Running any of them early makes that run the one that counts** — stated in the
@@ -89,10 +90,11 @@ files failed to.
 ## 6. What is genuinely open
 
 1. **The fetch** (~18h) → then the caller-form test, and the re-call test once 250 re-called accrue.
-2. **Chat-vs-chat outcome differences** — the "which calls" half. **Needs no identity.** But the
-   three chats barely overlap in time (`dtn` ends 06-21, `syndicate` starts 08-24, **zero shared
-   days**), so it is confounded with calendar time and only ~24–32 shared day-clusters exist per
-   usable pair. **Prereg before looking.**
+2. **Chat-vs-chat outcome differences** — **now prereged** (`PREREG_CHAT_QUALITY_2026-10-12`), runs
+   once at fetch completion. Two facts from the design alone: **`dtn` and `syndicate` can NEVER be
+   compared** (dtn ends 06-21, syndicate starts 08-24 — zero shared days, permanently), and **`dtn`
+   posts 204 calls across 7 days**, so anything involving it rests on ~7 independent observations
+   whatever its call count. Best usable pair is `dtn_hitters` × `syndicate` at ~32 shared days.
 3. **`PREREG_OI`** — open interest now has 178 coin-days of a stream that was declared permanently
    unrecoverable. Worth revisiting once it has a few weeks.
 
