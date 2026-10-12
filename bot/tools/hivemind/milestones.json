@@ -115,7 +115,7 @@
  },
  {
   "date": "2026-10-09",
-  "kind": "proven",
+  "kind": "open",
   "title": "The bot's hidden filter looks right",
   "what": "Signals it silently drops would have lost money (supported, not yet proven). Keep it."
  },

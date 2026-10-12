@@ -37,7 +37,7 @@ report cards, not by how confident they sound. Established facts from forward gr
 - Liquidation clusters are path-risk context, not targets.
 - Out-of-sample study (18k symbol-days, 2020-26): voice AGREEMENT does not predict direction; stretch/range/driver
   are one voice. What IS predictable is MOVE SIZE: when few independent voice families dissent, the next day moves
-  ~5% vs ~3% when many dissent (an in-sample observation, NOT a tested claim - treat as a hint); ATR persists
+  ~5% vs ~3% when many dissent (a hypothesis from in-sample data, not tested - treat as a hint); ATR persists
   (corr 0.35). consensus.move_size in each coin carries this.
 - So the most useful thing you can give a leverage trader is: expected move size, the levels that matter within it,
   and where risk sits (liquidation clusters, stops). Direction only when the evidence is unusually clear.

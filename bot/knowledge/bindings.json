@@ -31,7 +31,7 @@
    "id": "milestone_the_bot_s_hidden_filter_is_right",
    "surface": "tools/hivemind/milestones.json",
    "locator": {
-    "title": "The bot's hidden filter is right"
+    "title": "The bot's hidden filter looks right"
    },
    "claim_id": "ic_gate_keep",
    "polarity": "claim"
@@ -261,8 +261,8 @@
    "pattern": "~5% vs ~3% when many dissent",
    "claim_id": "voice_agreement_size",
    "polarity": "claim",
-   "asserted_tier": "proven",
-   "why": "Stated to the chief as a fact, with no qualifier."
+   "asserted_tier": "hypothesis",
+   "why": "Qualified 2026-10-13: \"a hypothesis from in-sample data, not tested\"."
   }
  ],
  "graders": [

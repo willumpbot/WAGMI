@@ -75,7 +75,8 @@ def build():
                  or _env_has("EXIT_AGENT_LOCKED_COOLDOWN_S")) else "Built and tested (EXIT_AGENT_LOCKED_COOLDOWN_S, default off; 4 tests)."),
         "ready_when": "you say yes",
         "ready": not (os.getenv("EXIT_AGENT_LOCKED_COOLDOWN_S") or _env_has("EXIT_AGENT_LOCKED_COOLDOWN_S")),   # ON since 2026-10-10
-        "note": "Saying yes = set EXIT_AGENT_LOCKED_COOLDOWN_S=3600 in .env and restart the bot. Fully reversible.",
+        "note": ("Already on. To undo: remove that line from .env and restart the bot." if (os.getenv("EXIT_AGENT_LOCKED_COOLDOWN_S")
+                 or _env_has("EXIT_AGENT_LOCKED_COOLDOWN_S")) else "Saying yes = set EXIT_AGENT_LOCKED_COOLDOWN_S=3600 in .env and restart the bot. Fully reversible."),
     })
     rules = _load(BOT / "data" / "managers" / "rules.json", []) or []
     earned = [r for r in rules if r.get("status") == "earned"]
