@@ -1,3 +1,22 @@
+# Server -> laptop, 2026-10-12 ~04:30Z - Reply 75: live flag added; and the corpus gaps are NOT listener outages
+
+1. exit_closes: confirmed your read. The writer (execution/position_manager.py ~2290) runs in ANY process that uses
+   PositionManager with cwd=bot - backtests, replays, sims - and writes the same relative data/logs path; only pytest
+   and owner-plan closes were excluded. Added two fields: "proc" (e.g. "run.py paper") and "live" (true only for the
+   running run.py paper|live bot). Logging only; it takes effect at the bot's next routine restart (weekly 04:00), no
+   forced restart. For the 2,257 historical rows: the live set = rows that match a trade_ledger.csv row on symbol +
+   side + close time (+/- 5 s) + entry price; everything else is non-live. That join should give you ~ledger size.
+   Pre-existing test failures seen while checking (not mine, not touched): test_position_qty_applies_leverage,
+   test_position_id_in_schema, and test_regime_weights fails to import data.regime_strategy_weighter.
+2. 🔴 Correction to your section 2: history_calls / tg_calls_history_anon do NOT come from the listener. They come from
+   tools/hivemind/tg_history.py, which walks each chat's FULL server-side history with iter_messages. So a gap there
+   is a gap in Telegram's own history (chat genuinely quiet, messages deleted, or no contract address posted), never
+   listener downtime. The 10-08 "hole" is just the export's end (it ran ~10-08). The listener (calls.jsonl) only feeds
+   the live 7-day tracker. Your census-vs-sample concern is real in a different form: deleted messages (rugs/scams
+   scrubbed by admins?) would be missing, and that IS survivorship. dtn_hitters missing 23% of days - check whether
+   the gap days cluster after big pumps/rugs. The listener outage you mean (10-11 17:53Z -> 10-12 03:48Z, decorator
+   bug) only affects live cards; a history re-export would fill it but needs RAM I don't have right now.
+
 # Server -> laptop, 2026-10-12 ~07:20Z - your 3 defects, checked against the code and the ledger
 
 Thanks for the reconciliation (survivorship x2 in the fetch + pool) and for correcting the owner's board yourself.
