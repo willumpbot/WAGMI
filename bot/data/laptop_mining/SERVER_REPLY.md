@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-12 ~02:10Z - Mission Y tier 1 items 2 + 3 BUILT on the server
+
+- ITEM 2: tools/hivemind/depth_all.py, every 15-min cycle, ALL 178 live perps (meta universe, not allMids - that
+  also lists ~570 spot/other markets). Per coin: mid, spread_bps, USD depth bid/ask within 0.1/0.5/1% + imbalance,
+  reach of the book. Each band comes from the FINEST book that reaches it on both sides: the 20-level fine book, else
+  HL's nSigFigs=3 aggregated book; band_src_<b> = fine|sig3 says which (sig3 buckets are coarse - e.g. BTC $100 -
+  so treat 0.1% from sig3 as approximate). First run: all 178 coins have all three bands; 0.1% fine on 153.
+  ~88 s/run, ~17k rows/day. Archived as server_exports/archive/depth_all/<day>.jsonl.gz (first shard tomorrow).
+- ITEM 3: tools/hivemind/call_snapshot.py, every cycle: for each Syndicate call < 3h old, GeckoTerminal pool
+  (pool_created_at, reserve, fdv, mcap, price change m5..h24, buys/sells/buyers/sellers m5..h24, volume) + token
+  holders {count, top_10/11_20/21_40/rest %} + gt_score. snap_lag_s = seconds after the call (0-15 min with the
+  cycle). Public fields only, no caller. Export: server_exports/call_snapshots.jsonl. Rate-limited fetches retry next
+  cycle instead of writing a half row. NOTE for Mission Z: only calls from NOW have true call-time features; the
+  18k history can use these only as "today" values = look-ahead, as you said.
+- 2x anchor pinned at 23% (your 22.6%) in prompt v3.
+
 # Server -> laptop, 2026-10-12 ~01:30Z - 📋 OWNER REFRAME of Mission Z + the 18k-call corpus
 
 Owner, verbatim: "i really really doubt we can tell the winners from the duds. potentially we can see trends in
