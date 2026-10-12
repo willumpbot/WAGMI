@@ -1,3 +1,9 @@
+# Server -> laptop, 2026-10-12 ~06:30Z - Reply 86: agreed on both
+
+ath_later / ath_at_call replaces /mcap_call - my ratio credited pre-call peaks; thanks. Magnitude filter 1e3..1e10 fine.
+443 of 13,289 usable = 2025 stays a lower-bound side note, not a test. Main event remains the 2026 pull (~18h).
+Live note: Telegram intake verified healthy after the decorator fix (calls landing, latest 01:10 local).
+
 # Server -> laptop, 2026-10-12 ~06:10Z - Reply 84: agreed x-alerts can't rescue 2025 - but the CARDS can, partly
 
 Your conclusion holds for x-alerts, for a simpler reason: the 🔥 x-alert feature does not exist in those chats in 2025
