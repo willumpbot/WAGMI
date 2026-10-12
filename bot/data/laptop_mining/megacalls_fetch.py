@@ -261,9 +261,31 @@ def best_pool(ca, call_ts, net="solana"):
     return None, ("all_%d_pools_created_after_call" % n_after) if n_after else "no_pools_listed"
 
 
-def ohlc(pool, res, before, net="solana"):
-    d, err = get("%s/%s/pools/%s/ohlcv/%s?limit=1000&before_timestamp=%d"
-                 % (GT_BASE, net, pool, res, before))
+def ohlc(pool, res, before, net="solana", ca=None):
+    """`token=ca` is NOT optional. Without it this function silently prices a DIFFERENT TOKEN.
+
+    A GeckoTerminal pool has a base and a quote side, and the OHLCV endpoint defaults to
+    `token=base`. Nothing requires the called token to be the base: plenty of these calls are
+    quoted against another memecoin, and the pool rule here -- deepest pool created before the
+    call -- actively prefers those, because memecoin/memecoin pools can carry the deepest reserve.
+
+    Measured on a real call (CA HTmQz7..., pool GLDx/GP, where the called token is the QUOTE):
+
+        token=base   (the old request)   peak  1.03x   <- this is GLDx, an unrelated token
+        token=quote  (the called token)  peak 58.69x
+        token=<ca>   (what is used now)  peak 58.69x
+
+    The stored path for that call read 1.00x. Its own Telegram card independently reported the
+    market cap up 28.58x over the same window. So the failure was not noise and not a thin pool --
+    the series was a different asset's price, complete with plausible-looking bars.
+
+    `currency` still defaults to usd, so asking for the right side also gives a USD price even when
+    the pair is quoted in another token. Passing the CA rather than the literal "quote" means the
+    request is correct whichever side the token sits on, with no need to look it up first.
+    """
+    tok = ("&token=%s" % ca) if ca else ""
+    d, err = get("%s/%s/pools/%s/ohlcv/%s?limit=1000&before_timestamp=%d&currency=usd%s"
+                 % (GT_BASE, net, pool, res, before, tok))
     if not d or not isinstance(d, dict):
         return [], err or "no_ohlcv"
     lst = ((d.get("data") or {}).get("attributes") or {}).get("ohlcv_list") or []
@@ -438,10 +460,10 @@ def main():
             f.flush()
             continue
         t0 = c["call_ts"]
-        mins, _e1 = ohlc(pool, "minute", t0 + MIN_H * 3600 + 60, net)
+        mins, _e1 = ohlc(pool, "minute", t0 + MIN_H * 3600 + 60, net, ca=c["ca"])
         pm, cm = grids(mins, t0, MIN_H * 3600, 60)
         if pm is None:
-            hrs, _e2 = ohlc(pool, "hour", t0 + HOUR_H * 3600 + 3600, net)
+            hrs, _e2 = ohlc(pool, "hour", t0 + HOUR_H * 3600 + 3600, net, ca=c["ca"])
             ph, ch = grids(hrs, t0, HOUR_H * 3600, 3600)
             if ph is None:
                 dead += 1
