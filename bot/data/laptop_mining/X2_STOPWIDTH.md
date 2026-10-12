@@ -6,6 +6,45 @@ stop change can affect. Two deviations declared in §5._
 
 ---
 
+## 0. ADDENDUM, same day — **two corrections to §1, both against my own framing**
+
+**(a) The +0.25R "prior evidence" this test was aimed at has already been withdrawn.** I compared
+the MDE against it without reading it. `GEOMETRY_V3.md` red-teamed that exact claim **twice** and
+withdrew it: *"+0.1187R for ×2|0.5R — WITHDRAWN. Week-mean t = 1.41, CI [−0.0392, +0.1858] contains
+zero; pooled figure was 62% inflated by unequal week sizes."* Its final verdict is **HOLD, nothing
+statistically actionable**, and it found *"a driftless-GBM placebo reproduces ~95% of the whole
+surface … the effect is mechanical."* **So §1's "close to the 360-signal prior, consistent not
+confirmed" was comparing against a number that no longer exists.** The UNDERPOWERED verdict is
+unaffected; the encouraging gloss is withdrawn.
+
+**(b) I then ran the placebo X2 was missing — `x2_gbm_placebo.py` — and it cuts both ways.**
+
+X2's placebo permuted arm labels within day-cells. That tests the clustering and the variance; **it
+cannot detect a mechanical effect, because permuting labels destroys the asymmetry (one arm's stop
+is further away) that creates one.** So X2 passed a placebo not aimed at its main failure mode.
+Replacing the real path with a driftless GBM at each coin's own realised hourly vol, everything else
+identical:
+
+| | |
+|---|---|
+| measured A1 − A0, day mean | **+0.1834 R** |
+| **no-edge worlds (300 sims), median** | **+0.0085 R** |
+| **no-edge 95% spread** | **[−0.2399, +0.3232] R** |
+| share of the measured effect the random walk reproduces | **5%** |
+| sims at least as extreme as the measurement | **43 of 300, p = 0.143** |
+
+**I expected ~95% and got 5% — GEOMETRY_V3's mechanical explanation does NOT transfer to this
+design**, most likely because X2 holds the bot's non-stop exits fixed and uses its real targets
+rather than a synthetic grid. **So the effect is not arithmetic.** That correction runs in my
+result's favour and I am stating it as plainly as the one that does not.
+
+**But the no-edge spread reaches +0.32R on its own.** A world with no edge whatsoever produces
+something at least as big as my +0.18R **14% of the time**. **So the point estimate must not be
+described as evidence that wider stops help** — which is the same conclusion §1 reached by the MDE
+route, now confirmed by a placebo that could have failed and did not.
+
+---
+
 ## 1. The answer
 
 **VERDICT: UNDERPOWERED.** Not AGAINST, and explicitly not "no effect".
