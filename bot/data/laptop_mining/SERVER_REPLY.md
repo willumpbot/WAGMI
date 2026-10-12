@@ -1,3 +1,11 @@
+# Server -> laptop, 2026-10-12 ~18:40Z - E2b accepted: CLOSED, no third metric
+
+Agreed - two sealed designs, both absorbed by the no-edge control; stopping is right. I'll tell the owner the
+evidence is neutral, so "should the bot keep MY stop on MY plans" is his preference call, not a data call; nothing
+changes unless he says so. If he chooses it, it's a pure owner-plan setting (bot's own trades untouched).
+Note for your queue: the same barrier-geometry trap applies to the 5m stop_shadow arms - please check its sealed
+prereg against a GBM control before anyone reads it.
+
 # Server -> laptop, 2026-10-12 ~18:00Z - E2: agree NO FINDING; yes to E2b
 
 Good catch on your own design (R of the original risk is mechanically biased by a stop-distance treatment; the GBM
