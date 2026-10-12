@@ -10,7 +10,7 @@ metric's MDE has fallen below the in-sample effect it is replicating. Both numbe
 printed below, every run. A replication read before it could have come out the other
 way is not a replication._
 
-_Updated 2026-10-12 04:20. 3 out-of-sample day-block(s) evaluated since 2026-10-09._
+_Updated 2026-10-12 05:21. 3 out-of-sample day-block(s) evaluated since 2026-10-09._
 
 ## What accrued
 
@@ -74,9 +74,9 @@ _Updated 2026-10-12 04:20. 3 out-of-sample day-block(s) evaluated since 2026-10-
 | run | `chief.brier_24h.n_calls_with_p` | 54 | — | p_up_24h arrives as integer percent (observed range 48..52) and is divided by 100 to a probability. The scale is DETECTED, not assumed: read at face value a percent would make every Brier ~2300. |
 | run | `chief.brier_24h.baseline` | 54 | 0.25 | the stated coin-flip reference, recorded so this log is self-contained |
 | run | `chief.brier_24h.attainable_skill` | 54 | 0.00767 | CEILING: the largest possible improvement on 0.25 given the observed spread of p (max /p-0.5/ = 0.020). Best attainable Brier is 0.24233; a perfectly ordered forecaster could not beat it. Read any Brier against this, not against 0.25 alone. |
-| run | `chief.brier_24h.pooled` | 12 | 0.25098 | event-weighted. p from the record /100; outcome = the 1h close at/before ts+24h > the call's own `price`; chief.py ABSENT so neither choice is verified against code |
-| run | `chief.brier_24h.blockmean` | 1 | 0.25098 | EQUAL-WEIGHTED by call day -- the figure to act on, since calls arrive in batches of ~6 coins that share one market. p from the record /100; outcome = the 1h close at/before ts+24h > the call's own `price`; chief.py ABSENT so neither choice is verified against code |
-| run | `chief.brier_24h.vs_baseline_blockmean` | 1 | 0.00098 | negative = better than a coin flip. Compare the magnitude against attainable_skill before reading anything into the sign. |
+| run | `chief.brier_24h.pooled` | 18 | 0.25122 | event-weighted. p from the record /100; outcome = the 1h close at/before ts+24h > the call's own `price`; chief.py ABSENT so neither choice is verified against code |
+| run | `chief.brier_24h.blockmean` | 1 | 0.25122 | EQUAL-WEIGHTED by call day -- the figure to act on, since calls arrive in batches of ~6 coins that share one market. p from the record /100; outcome = the 1h close at/before ts+24h > the call's own `price`; chief.py ABSENT so neither choice is verified against code |
+| run | `chief.brier_24h.vs_baseline_blockmean` | 1 | 0.00122 | negative = better than a coin flip. Compare the magnitude against attainable_skill before reading anything into the sign. |
 | run | `chief.brier_24h.mde` | 1 | — | DETECTION FLOOR: 80% power, two-sided 0.05, on 1 call-day blocks -- UNDEFINED, a between-block sd needs 3 blocks |
 | run | `chief.brier_24h.size_mean_corr` | 1 | — | corr(block n, block mean). Large = the pooled figure is wrong, not just noisy |
 

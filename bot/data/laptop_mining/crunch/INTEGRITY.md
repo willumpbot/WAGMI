@@ -3,7 +3,7 @@
 _Written by `crunch/j4_integrity.py` every hour. Reports presence, growth, fill
 rates and gaps. Flags regressions; does not interpret them._
 
-_Updated 2026-10-12 04:20._
+_Updated 2026-10-12 05:20._
 
 ## Growth -- is each export still being written?
 
@@ -14,28 +14,28 @@ _Updated 2026-10-12 04:20._
 | `SYNDICATE_DUDS_PREREG.md` | 4026 bytes | reference | reference — present |
 | `SYNDICATE_DUDS_REPORT.md` | 3478 bytes | reference | reference — present |
 | `SYNDICATE_RECALL_PREREG.md` | 3896 bytes | reference | reference — present |
-| `agent_grades_resolved.jsonl` | 2004 rows | append | +39 rows |
+| `agent_grades_resolved.jsonl` | 2004 rows | append | unchanged |
 | `ai_plans.json` | 4870 bytes | snapshot | snapshot — ok |
 | `archive` | 176978 rows+bytes | append | unchanged |
 | `bulk` | 835223 rows+bytes | append | unchanged |
 | `call_snapshots.jsonl` | 1 rows | append | unchanged |
-| `candles_5m` | 33966 rows+bytes | append | +84 rows+bytes |
+| `candles_5m` | 33966 rows+bytes | append | unchanged |
 | `chief.py` | 12373 bytes | reference | reference — present |
-| `chief_calls.jsonl` | 146 rows | append | +6 rows |
+| `chief_calls.jsonl` | 146 rows | append | unchanged |
 | `chief_scorecard.json` | 660 bytes | snapshot | snapshot — ok |
-| `confidence_state.json` | 3204 bytes | snapshot | snapshot — ok |
+| `confidence_state.json` | 3204 bytes | snapshot | snapshot — stale 3.2h — EXPECTED: written on trade close and the last close was 4.0h ago. Not a fault. |
 | `copilot_call_ledger.jsonl` | 385 rows | append | unchanged |
 | `copilot_call_ledger_resolved.jsonl` | 364 rows | append | unchanged |
-| `ctx_snapshots` | 27590 rows+bytes | append | +1068 rows+bytes |
+| `ctx_snapshots` | 27590 rows+bytes | append | unchanged |
 | `entry_gate_log.jsonl.gz` | 5386 rows | append | unchanged |
 | `entry_mom.jsonl` | 1632 rows | append | unchanged |
 | `execution_analytics.csv` | 174 rows | append | unchanged |
 | `exit_decisions.jsonl` | 1336 rows | append | unchanged |
-| `expmove_log.jsonl` | 120 rows | append | +1 rows |
+| `expmove_log.jsonl` | 120 rows | append | unchanged |
 | `floor_decisions_log.jsonl.gz` | 1369 rows | append | unchanged |
-| `funding_oi_history.jsonl.gz` | 50384 rows | append | +41 rows |
+| `funding_oi_history.jsonl.gz` | 50384 rows | append | unchanged |
 | `geometry_shadow.json` | 629 bytes | snapshot | snapshot — ok |
-| `geometry_shadow_results.jsonl` | 439 rows | append | +6 rows |
+| `geometry_shadow_results.jsonl` | 439 rows | append | unchanged |
 | `ic_dropped_resolved.jsonl` | 998 rows | append | unchanged |
 | `live_scorecard.json` | 1345 bytes | snapshot | snapshot — ok |
 | `llm_exits_resolved.jsonl` | 29 rows | append | unchanged |
@@ -45,7 +45,7 @@ _Updated 2026-10-12 04:20._
 | `position_journal.jsonl` | 3110 rows | append | unchanged |
 | `position_manager.py` | 138005 bytes | reference | reference — present |
 | `scan_grades.json` | 11701 bytes | snapshot | snapshot — ok |
-| `scan_log.jsonl` | 351 rows | append | +5 rows |
+| `scan_log.jsonl` | 351 rows | append | unchanged |
 | `scanner.py` | 10683 bytes | reference | reference — present |
 | `signal_filtered.jsonl.gz` | 9845 rows | append | unchanged |
 | `state` | 532100 rows+bytes | append | unchanged |
@@ -59,7 +59,7 @@ _Updated 2026-10-12 04:20._
 | `tg_mentions_anon.jsonl.gz` | 50447 rows | append | unchanged |
 | `trade_ledger.csv` | 296 rows | append | unchanged |
 | `trades.csv` | 238 rows | append | unchanged |
-| `uptime.jsonl` | 121 rows | append | +6 rows |
+| `uptime.jsonl` | 121 rows | append | unchanged |
 
 ## Known failure modes
 
@@ -79,18 +79,18 @@ _Updated 2026-10-12 04:20._
 _The jobs report what they did. Nothing reported whether the SCHEDULER fired, and a
 stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing changed`._
 
-- fresh -- previous run was 1.0 h ago, inside the 2.5 h alarm Scheduler says: state **Running**, last result **267009**, next 10/12/2026 5:10:00 AM, missed 0.
+- fresh -- previous run was 1.0 h ago, inside the 2.5 h alarm Scheduler says: state **Running**, last result **267009**, next 10/12/2026 6:10:00 AM, missed 0.
 
-- server feed fresh -- `.last_sync` 0.1 h old, alarm at 3 h
+- server feed fresh -- `.last_sync` 1.1 h old, alarm at 3 h
 
 - all three reports are trackable by git, so the hourly commit can carry them
 
 
 ## Panel store
 
-- `candles_1h` 878568 rows, 178 coins, 209.1 days pooled span  (every coin current within 3 days)
-- `candles_5m` 321060 rows, 62 coins, 19.7 days pooled span  (every coin current within 3 days)
-- `ctx` 26522 rows, 178 coins, 1.4 days pooled span  (every coin current within 3 days)
-- `funding_hist` 1509620 rows, 178 coins, 365.6 days pooled span  (every coin current within 3 days)
+- `candles_1h` 878751 rows, 178 coins, 209.1 days pooled span  (every coin current within 3 days)
+- `candles_5m` 321804 rows, 62 coins, 19.7 days pooled span  (every coin current within 3 days)
+- `ctx` 27590 rows, 178 coins, 1.4 days pooled span  (every coin current within 3 days)
+- `funding_hist` 1509797 rows, 178 coins, 365.6 days pooled span  (every coin current within 3 days)
 
 No regressions this run.
