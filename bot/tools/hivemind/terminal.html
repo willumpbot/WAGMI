@@ -1047,7 +1047,7 @@ function posRow(p){
     <td><span style="color:${col}">${sg<0?"-":""}${p.qty}</span> ${p.coin}</td>
     <td>$${(p.qty*p.mark).toLocaleString(undefined,{maximumFractionDigits:2})}</td>
     <td>${fmt(p.entry)}</td><td>${fmt(p.mark)}</td>
-    <td class="${up(p.total)}"><b>${sgn(p.total)}$${Math.abs(p.total).toFixed(2)}</b>${roe!=null?` <span style="font-size:11px">(${sgn(roe)}${roe.toFixed(1)}%)</span>`:""}</td>
+    <td class="${up(p.total)}"><b>${p.total>=0?"+":"-"}$${Math.abs(p.total).toFixed(2)}</b>${roe!=null?` <span style="font-size:11px">(${sgn(roe)}${roe.toFixed(1)}%)</span>`:""}</td>
     <td><span class="up">${p.target?fmt(p.target):"--"}</span> / <span class="dn">${p.stop?fmt(p.stop):"--"}</span></td>
     <td class="mut" style="font-size:11px">${p.note||""}</td></tr>`;
 }
