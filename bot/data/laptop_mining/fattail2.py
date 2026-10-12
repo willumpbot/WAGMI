@@ -58,11 +58,27 @@ TARGETS = [1.5, 2.0, 3.0, 5.0, None]
 
 
 def load():
-    both, dead, pending = [], 0, 0
+    """DEDUPE BY CA, LAST WINS -- the file legitimately holds more than one row per call.
+
+    The horizon upgrade appends a NEW complete row (24h grid carried forward + the new 14d grid)
+    and leaves the original minute-only row in place, because the fetch only ever appends. So an
+    upgraded call appears TWICE. Counting rows instead of calls put the same call in both the
+    "complete" and the "pending" bucket, which inflated the death-rate denominator and therefore
+    UNDERSTATED the death rate applied to every mean.
+
+    Last-wins is correct here and not arbitrary: the upgrade row is written later and is a strict
+    superset of the row it supersedes. That is exactly why the upgrade was built to carry the
+    minute grid forward -- see the note in megacalls_fetch.load_calls.
+    """
+    by_ca = {}
     for line in io.open(PATHS, encoding="utf-8"):
         if not line.strip():
             continue
         d = json.loads(line)
+        if d.get("ca"):
+            by_ca[d["ca"]] = d
+    both, dead, pending = [], 0, 0
+    for d in by_ca.values():
         m = d.get("peak_m") if isinstance(d.get("peak_m"), list) else None
         h = d.get("peak_h") if isinstance(d.get("peak_h"), list) else None
         if m and h:

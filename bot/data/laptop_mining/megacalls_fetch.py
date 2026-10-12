@@ -252,10 +252,10 @@ def best_pool(ca, call_ts, net="solana"):
     """
     d, err = get("%s/%s/tokens/%s/pools" % (GT_BASE, net, ca))
     if not d or not isinstance(d, dict):
-        return None, err or "no_pool_response"
+        return None, err or "no_pool_response", None
     pools = d.get("data") or []
     if not pools:
-        return None, "no_pools_listed"
+        return None, "no_pools_listed", None
     best, bestliq, n_after = None, -1.0, 0
     for p in pools:
         a = p.get("attributes") or {}
@@ -271,8 +271,9 @@ def best_pool(ca, call_ts, net="solana"):
         if pid and liq > bestliq:
             best, bestliq = pid, liq
     if best:
-        return best, None
-    return None, ("all_%d_pools_created_after_call" % n_after) if n_after else "no_pools_listed"
+        return best, None, bestliq
+    return None, (("all_%d_pools_created_after_call" % n_after) if n_after
+                  else "no_pools_listed"), None
 
 
 def ohlc(pool, res, before, net="solana", ca=None):
@@ -483,7 +484,7 @@ def main():
                                 "dead": neterr}) + "\n")
             f.flush()
             continue
-        pool, err = best_pool(c["ca"], c["call_ts"], net)
+        pool, err, liq = best_pool(c["ca"], c["call_ts"], net)
         if not pool:
             dead += 1
             f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
@@ -506,7 +507,13 @@ def main():
             f.flush()
             continue
         rec = {"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
-               "pool": pool, "net": net}
+               "pool": pool, "net": net,
+               # reserve_in_usd was already being parsed to PICK the pool and then discarded.
+               # Storing it costs nothing and is what the cost study needs for constant-product
+               # impact. NOTE it is TODAY's reserve, not the reserve at the call -- for an older
+               # call that is a stale proxy, and the direction of the staleness is unknown
+               # (dead pools shrink, pumped pools grow). Labelled, not laundered.
+               "reserve_usd_now": liq}
         if pm is None and c.get("carry"):
             pm, cm = c["carry"]                       # preserved from the pre-upgrade row
         if pm is not None:

@@ -1,3 +1,42 @@
+# 🔴 CORRECTED — **the death rate was understated (12.5% → 20.8%) by a double-counting bug in my own loader, and the corrected answer is simpler: buying every call loses at EVERY horizon, before fees.**
+
+**The bug.** The horizon upgrade appends a *new* complete row and leaves the original minute-only row
+in the file, because the fetch only appends. My loader counted **rows, not calls**, so an upgraded
+call landed in both the "complete" and the "pending" bucket. That inflated the death-rate
+denominator — **80 dead of 615 rows (12.5%) instead of 80 dead of 384 calls (20.8%)** — and every
+mean below was correspondingly too kind. Fixed by deduping on `ca`, last-wins, which is sound
+because the upgrade row is a strict superset of the row it supersedes.
+
+**The corrected answer, n=261 calls over 63 call-days, death rate 20.8%, still before fees:**
+
+| horizon | best rule | pooled | **eq-weighted** | **CI95** | verdict |
+|---|---|---|---|---|---|
+| **24h** | 1.5× | −23.0% | **−19.9%** | **[−28.6%, −11.7%]** | **LOSES** |
+| **7d** | 2.0× | −7.8% | **−6.7%** | [−19.3%, +5.7%] | negative, interval grazes zero |
+| **14d** | 1.5× | −8.0% | **−9.1%** | **[−18.5%, −0.8%]** | **LOSES** |
+
+**Holding is still worst everywhere:** −49.9% / −46.4% / −42.5%.
+
+**So the "roughly break-even at 7–14 days" reading is gone.** Two of three horizons now exclude
+zero on the governing statistic, the third is negative, **and none of this includes fees** — a 2%
+round-trip swap fee takes about two points off each, and price impact only subtracts further.
+
+**What does NOT change:** §2's finding that the runners are real and arrive late. ≥10× still goes
+**0.5% → 5.0%**, the max is still **74.47×**, and **67%** of calls still peak higher after day one.
+**The mechanism half of the owner's hunch survives every correction; the strategy half is now
+clearly negative rather than ambiguous.**
+
+**This is the third correction to this result.** Every one has come from my own checks rather than
+from being caught, and every one has moved the picture the same way — toward the simpler, worse
+answer. **The direction of that travel is itself information.**
+
+---
+
+_Original write-up follows unedited. **Its headline figures used the 12.5% death rate and are
+superseded by the table above.**_
+
+---
+
 # The fat-tail question, settled at three horizons: **the big winners are real and they live past day one — and buying every call still does not clear zero.** Both halves are true.
 
 _2026-10-12. `fattail2.py`, **218 calls over 55 call-days**, 2026 only, inside the free-data window.
