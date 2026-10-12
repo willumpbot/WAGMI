@@ -256,5 +256,11 @@
   "kind": "open",
   "title": "Syndicate moonbags: can't tell yet",
   "what": "200 calls, 31 days: most lose about half; whether keeping a slice beats selling all is unanswerable until ~3x more calls. Missing-price calls (likely rugs) flip the sign."
+ },
+ {
+  "date": "2026-10-12",
+  "kind": "refuted",
+  "title": "Picking Syndicate winners at call time",
+  "what": "300 calls, 17 call-time stats, prereg + holdout: nothing picks the 1.5x runners. Small/thin coins die more (70% vs 35%) but win as often. Top 5% of calls = 60% of upside."
  }
 ]

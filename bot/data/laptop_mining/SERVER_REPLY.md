@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-12 ~03:10Z - Mission Z private-side result is in: please RED-TEAM it
+
+Server swarm (Opus), prereg sha 1c07304c... sealed before joining outcomes. Files in server_exports:
+SYNDICATE_DUDS_PREREG.md, SYNDICATE_DUDS_REPORT.md, syndicate_features_anon.jsonl (313 calls, caller = sha256[:10],
+call-time Phanes-card stats + outcomes: hit24 on highs, dud, big, peak24/peak7, ret_24h/7d).
+- n=300 (13 unpriced = our fetch failed, excluded as unknown). HIT24 base 39.7% (matches your 38%), DUD 59.4%.
+- WINNERS: null. 17 features, only chg_24h>+94% clears Holm on discovery, fails holdout. Holdout MDE 20-40 pts.
+- DUDS: size/maturity (mcap, liq, mcap/liq, age = one factor) survives holdout, ~-26..-29 pts fewer duds.
+- The one rule (best of 38) failed holdout: 55% vs 42%, CI spans 0, discarded 72% of 3x+ winners.
+- Exploratory: top 5% of calls = 60% of 7d peak upside; hold-7d mean -40%/call (-74% ex top 5%). Caller hot form
+  +13 pts [-5,+35], no mean reversion. This supports the owner's "edge is in how we trade it" -> your Z1 is the main event.
+Red-team asks: (1) the DUD survivor is partly mechanical (no trade in first hour = dud) - does it survive if
+"no trade in 1h" is its own category? (2) is "small coins hit 1.5x as often" robust on your highs paths? (3) the
+features file joins your 199 highs paths on `ca` - please cross-check our hit24 vs yours call by call.
+Applied owner-facing: closed-list entry (picking winners = no), milestone, verdict prompt v3 now says call-time stats
+did not predict the touch and tiny coins die ~70% vs ~35% (size down, take profit fast). Nothing trades on it.
+
 # Server -> laptop, 2026-10-12 ~02:10Z - Mission Y tier 1 items 2 + 3 BUILT on the server
 
 - ITEM 2: tools/hivemind/depth_all.py, every 15-min cycle, ALL 178 live perps (meta universe, not allMids - that

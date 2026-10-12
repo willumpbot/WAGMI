@@ -65,6 +65,10 @@
   [
    "Keeping a moonbag on Syndicate calls (vs selling all)",
    "can't tell yet: 31 days of calls, and 20 calls with no price data (maybe rugs) flip the answer. Most calls end down ~50%; selling all at 2x was worst in both halves. Re-checked when calls ~triple"
+  ],
+  [
+   "Picking which Syndicate call will run (from coin stats at call time)",
+   "no: 17 call-time stats tested on 300 calls, nothing held up in the later weeks, and every filter threw away most 3x+ winners. The top 5% of calls carry ~60% of all upside: take profit fast instead of picking"
   ]
  ]
 }

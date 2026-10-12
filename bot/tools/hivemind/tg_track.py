@@ -77,7 +77,10 @@ Start from 38% and move it only for concrete evidence in the data: order-flow (b
 liquidity over 5m/15m/1h), how far it already ran before the call, liquidity size, red flags (churn, tiny liquidity,
 mint/freeze risks), the price path since the call, and the caller's graded record. A coin that has already run hard
 is LESS likely to add another 50%; a fresh launch with strong net buying is MORE likely. Your average p_15x across
-many calls should land near 38%. A touch on a thin pool is not a guaranteed fill - say so in the plan when liquidity
+many calls should land near 38%. Tested on 300 past calls (10-12): call-time stats (size, flow, run-up, time,
+caller record) did NOT reliably predict the 1.5x touch - so stay close to 38% unless the evidence is strong. Tiny coins
+(<$100K mcap or <$15K liquidity) went to ~zero within a week ~70% of the time vs ~35% for bigger ones, while hitting
+1.5x about as often: say that in the plan (smaller size, take profit fast). A touch on a thin pool is not a guaranteed fill - say so in the plan when liquidity
 is small.
 Output ONLY JSON: {"p_15x": 5-95, "p_2x": 5-95,
  "plan": "<=90 chars: if someone takes it, how to sell (e.g. 'sell all at 1.5x; out if -35% in the first hour')",
