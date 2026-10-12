@@ -45,6 +45,19 @@ import time
 import urllib.error
 import urllib.request
 
+# GeckoTerminal's free tier serves OHLCV only for roughly the last 180 days; older windows return
+# HTTP 401, not empty data. Probed both timeframes on a 2025 call whose pool is demonstrably alive:
+#
+#     hour bars @ call+7d   -> 401 Unauthorized
+#     day  bars @ call+7d   -> 401 Unauthorized      (so day bars do not rescue it either)
+#     hour bars @ now       -> 200 with data         (control: pool and endpoint are fine)
+#
+# So a call older than the window cannot be priced at any aggregation, and fetching it spends the
+# same 2 requests and 24s of throttle to learn nothing. 15,952 of the 18,437 calls are in that
+# region -- 87% of the corpus -- so without this floor roughly six of the pull's seven days buy
+# nothing. The floor carries 10 days of headroom because the window slides forward while the pull
+# runs: a call 179 days old today is 185 days old when a week-long fetch reaches it.
+FLOOR_DAYS = 170
 SRC = os.path.join("server_exports", "tg_calls_history_anon.jsonl.gz")
 OUT = "megacalls_paths.jsonl"
 GT = "https://api.geckoterminal.com/api/v2/networks/solana"
@@ -303,6 +316,25 @@ def load_calls():
             if d.get("ca") and d.get("call_ts"):
                 calls.append({"ca": d["ca"], "call_ts": int(d["call_ts"]),
                               "chat": d.get("chat") or "?"})
+
+    # Drop what the free tier cannot price, and SAY how much -- a silent 87% cut would read as
+    # "the corpus is 2,485 calls" to whoever reads the log next.
+    floor = time.time() - FLOOR_DAYS * 86400
+    walled = [c for c in calls if c["call_ts"] < floor]
+    calls = [c for c in calls if c["call_ts"] >= floor]
+    if walled:
+        wc = {}
+        for c in walled:
+            wc[c["chat"]] = wc.get(c["chat"], 0) + 1
+        print("  PAYWALL FLOOR %s: skipping %d of %d calls (%.0f%%) older than %d days -- they "
+              "return 401 at every aggregation, not empty data"
+              % (time.strftime("%Y-%m-%d", time.gmtime(floor)), len(walled),
+                 len(walled) + len(calls), 100.0 * len(walled) / (len(walled) + len(calls)),
+                 FLOOR_DAYS), flush=True)
+        print("    unpriceable by chat: %s" % wc, flush=True)
+        print("    those calls remain usable for anything price-free (cadence, re-call structure, "
+              "and the bot's own x-alert multiples, which are outcomes Phanes reports for free)",
+              flush=True)
     # STRATIFIED INTERLEAVE, not pure newest-first.
     #
     # Newest-first was wrong for the question. The headline test is CROSS-CHAT TRANSFER -- fit on
@@ -382,8 +414,9 @@ def main():
     print("  optimistic floor %.1f h (at the %.1fs starting pause); MEASURED expectation "
           "~%.0f h / %.1f days once the throttle settles at its 12s cap with ~21%% rejections"
           % (floor_h, PAUSE, real_h, real_h / 24.0), flush=True)
-    print("  order is round-robin across (chat x half-year), so BOTH the cross-chat test and "
-          "the within-2025 test are runnable on partial output", flush=True)
+    print("  order is round-robin across (chat x half-year). The within-2025 test it was built "
+          "for is dead -- the free tier paywalls 2025 at 401 -- but the bucketing is kept because "
+          "the surviving window still spans two half-years and three chats", flush=True)
 
     f = io.open(OUT, "a", encoding="utf-8")
     ok = dead = 0
