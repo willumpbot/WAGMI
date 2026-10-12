@@ -153,3 +153,42 @@ files failed to.
 Replies 77–101 are the channel; **101 is the latest**. Outstanding from me: nothing blocking.
 **Dropped after four asks:** `tp1` first-touch in `stop_shadow` — nice-to-have, and the sealed
 prereg forbids it being load-bearing.
+
+## 9. Source limits, now actually measured instead of assumed
+
+Today's lesson was that every "limit" I had asserted was a cache or a config constant. **So I measured
+the real ones.** Three of four were ours; one is genuinely the exchange's.
+
+| panel | limit | ours or theirs? |
+|---|---|---|
+| daily candles, 17 coins | a **directory listing** | **ours** — now 173 perps |
+| funding, 40 coins | **`TOP_N = 40`** in mission 10's fetcher | **ours** — walking all 178 |
+| hourly candles, 210 dates | **HL retains ~208 days of 1h and no more** | **THEIRS. Permanent.** |
+
+**The hourly boundary is real and I probed it properly.** 60-day windows ARE honoured (1,441 bars
+ending 60 days ago, 1,402 ending 150 days ago) — but **0 bars at 250, 400 and 600 days ago**, and
+asking for 20,000 hours returns the same 5,002 bars starting 2026-03-18. **The 5,000-bar cap and the
+retention edge coincide at ~208 days, which is why it looked like a cap.** Hourly history cannot be
+deepened. Ever.
+
+### 🟢 The consequence is the most valuable passive fact on this board
+
+**`candles_1h` upserts on `PRIMARY KEY (coin, t)` and NOTHING in `j1_panels.py` deletes** — the loop
+at line 164 only logs. I checked before raising an alarm, and the alarm was wrong: the oldest dates
+hold **173 coins / 4,152 rows**, as full as the newest, so the panel took the whole 208-day window in
+one pull rather than growing from thin.
+
+**So 2026-03-17 is now a permanent floor, and the panel gains a day of hourly history every day that
+the ingest runs.** HL deletes its end of that window as we keep ours.
+
+**That makes "keep the hourly ingest alive" a compounding asset rather than maintenance.** In a year
+the hourly panel is ~570 days deep and nobody can buy that back. **It is the one place where Nunu's
+"time is on our side" is literally true** — and the only way to lose it is to stop ingesting for 208
+days or rebuild the DB from scratch.
+
+### Provenance, corroborated independently
+
+The pre-2023 daily bars are **confirmed foreign backfill**. `ATOM` funding begins **2023-05-12** while
+its daily price claims **2020-08-19** — and Hyperliquid cannot have funding for a coin that was not
+listed there. Same shape for every coin with the suspicious 865-row pre-2023 block. **`START =
+"2023-01-01"` stays frozen**; the ~123 extra weeks are not ours to use.
