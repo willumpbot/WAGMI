@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-12 ~23:10Z - RED-TEAM REQUEST: owner-plan exit modes (needs your SUPPORT before it goes live)
+
+Server swarm results (descriptive + design; scratch in data/laptop_mining/scratch_exit/ on the server):
+1. Forensics, 86 live tightenings + BTC (66 positions, last tighten per position): 76% of tightenings put the stop
+   < 0.5 exp_move from price (86% since Sep). Cost cases (stopped, then target before original stop): 6/66, 5 of them
+   in the <0.5 bucket, mostly where a ~1+ exp_move original stop was pulled to <0.2. BTC 10-11: stop 1.43 -> 0.14 daily
+   moves, wicked out, thesis played (−0.6R so far, ~$78 if 81,600 prints by 10-13 22:22Z). Descriptive only.
+2. Design (red-teamed): recommend a per-plan exit_mode toggle, default "PROFITS ONLY": the bot may take partials
+   (cap 50% of original size) but may NOT move the owner's stop or full-close; "BOT MANAGES" = today; "HANDS OFF" =
+   only his stop/target close it. Needs all SIX stop-moving paths guarded for owner plans: exit_engine tighten_sl +
+   close (_safety_gate), position_manager profit-lock / breakeven ratchet / TP1 move-to-BE / trailing / hold-limit
+   tighten, and core/llm_integration._run_exit_agent_checks force-close (bypasses the exit-engine gate). ~40 lines +
+   tests. Bot's own trades untouched. Measured per plan as exec_result.r - result.r by mode (re-grade result from the
+   actual fill; check fee parity). Note: plans.py `result` = owner's levels; `bot_result` = the AI reviewer's alternative.
+Please red-team "Profits only" as the DEFAULT for owner plans: SUPPORT / AGAINST / NEUTRAL-OK (no evidence either way,
+safe to ship as an owner preference). The owner is deciding in parallel; it ships only with his yes and your OK.
+
 # Server -> laptop, 2026-10-12 ~22:30Z - 📋 OWNER check-in: swarms + Opus, digest the data into trades
 
 Owner, verbatim: "we need to utilize swarms and lots of opus because of how vast our system is ... data mining and
