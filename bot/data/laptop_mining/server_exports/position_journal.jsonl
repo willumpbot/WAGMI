@@ -3104,3 +3104,5 @@
 {"position_id": "2ab44bab9378478e9d6ea373bc13fa37", "phase": "CLOSED_BOOKED", "ts": "2026-10-11T00:25:57.561540+00:00", "symbol": "NEAR"}
 {"position_id": "860611533d414adaa63dce34555ab399", "phase": "OPEN", "ts": "2026-10-11T16:03:26.610587+00:00", "symbol": "BTC", "meta": {"side": "SHORT", "entry": 83776.1, "qty": 0.03442}}
 {"position_id": "7d1d2f48149844ed9ed880de83b9d3bc", "phase": "OPEN", "ts": "2026-10-11T23:46:21.426471+00:00", "symbol": "NEAR", "meta": {"side": "LONG", "entry": 5.881, "qty": 2.8}}
+{"position_id": "860611533d414adaa63dce34555ab399", "phase": "CLOSING", "ts": "2026-10-12T00:40:06.195013+00:00", "symbol": "BTC", "meta": {"action": "SL", "price": 83862.5}}
+{"position_id": "860611533d414adaa63dce34555ab399", "phase": "CLOSED_BOOKED", "ts": "2026-10-12T00:40:06.321496+00:00", "symbol": "BTC"}
