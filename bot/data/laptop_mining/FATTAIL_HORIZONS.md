@@ -1,3 +1,64 @@
+# 🔴 CORRECTED AGAIN (4th) — **the three horizons were not sharing a base or a data source. On one consistent grid, 24h is NOT clearly negative and the horizon effect on peaks is half what I reported.**
+
+**Caught by the outcomes export for the server**, which produced a row with `peak_24h` 3.72 and
+`peak_7d` 2.76 — **impossible**, since a 7-day window contains the 24-hour one. Two defects
+underneath it:
+
+1. **Different denominators.** `grids()` sets `base` to the first bar's close *inside* the window.
+   The minute grid's first bar is ~1 minute after the call; the hourly grid's is up to an **hour**
+   after. So `peak_m` and `peak_h` were normalised to different prices. Measured spread of
+   `base_h / base_m`: **p10 0.15, median 0.90, p90 1.58.** **29% of calls had a 7d peak below their
+   own 24h peak.**
+2. **The minute grid never covered 24h.** `ohlc()` requests `limit=1000`, and 1,000 *minute* bars is
+   **16.7 hours**, after which `grids()` forward-fills a constant. The column labelled "24h" was
+   really **"~17h, then flat."**
+
+**Fixed** by taking all three horizons from the hourly grid (`peak_h` at indices 24 / 168 / 336), so
+they share one base and one source. **Honest cost:** the hourly base is the close of the first hourly
+bar at/after the call, so entry is up to an hour late — **a consistent bias across horizons instead
+of a varying one between them**, which is what a cross-horizon comparison requires.
+
+**And a standing guard now halts on this:** `assert_monotone()` refuses to report if any longer-window
+peak is below a shorter one. It would have caught this on the first run rather than the fourth.
+
+## The corrected numbers, n=261 over 63 call-days, death rate 20.8%, before fees
+
+| horizon | best rule | pooled | **eq-weighted** | **CI95** | verdict |
+|---|---|---|---|---|---|
+| **24h** | 2.0× | −7.0% | **−4.9%** | [−15.5%, +5.1%] | **negative, spans zero** |
+| **7d** | 2.0× | −7.8% | **−6.7%** | [−19.3%, +5.7%] | negative, spans zero |
+| **14d** | 1.5× | −8.0% | **−9.1%** | **[−18.5%, −0.8%]** | **LOSES** |
+
+**What this overturns in my own earlier reporting:**
+
+| claim | was | **is** |
+|---|---|---|
+| 24h best rule | −19.9%, excludes zero | **−4.9%, spans zero** |
+| ≥10× within 24h | 0.5% | **2.7%** |
+| ≥5× within 24h | 3.7% | **6.9%** |
+| max within 24h | 10.99× | **74.47×** |
+| ≥10× horizon effect | 0.5% → 5.0% (**tenfold**) | **2.7% → 5.4% (a doubling)** |
+
+**So "the monsters only appear after day one" was overstated.** A 74× move happened *inside* 24
+hours; the minute grid could not see it because it stopped at 16.7h and used a different base. **The
+horizon effect is real but roughly a doubling, not a tenfold.**
+
+**What still stands:** all three horizons are negative; **14d still excludes zero**; holding is still
+worst everywhere; **67% of calls still peak higher after day one** (median ×1.22); and costs still
+make every ticket size clearly negative.
+
+**Fourth correction to this result in one day.** Every one came from a consistency check I built
+rather than from being caught, and the pattern is now unmistakable: **I have been reporting before
+validating the instrument, then validating it afterwards.** The monotonicity guard is the first of
+these checks that runs *before* the report rather than after.
+
+---
+
+_Everything below predates this correction. Read its horizon columns as mixed-base and its 24h
+column as ~17h._
+
+---
+
 # 🔴 CORRECTED — **the death rate was understated (12.5% → 20.8%) by a double-counting bug in my own loader, and the corrected answer is simpler: buying every call loses at EVERY horizon, before fees.**
 
 **The bug.** The horizon upgrade appends a *new* complete row and leaves the original minute-only row

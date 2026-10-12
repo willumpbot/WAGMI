@@ -53,7 +53,24 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PATHS = os.path.join(HERE, "megacalls_paths.jsonl")
 MIN_COMPLETE = 200          # the n I committed to before reporting any horizon comparison
 
-HORIZONS = [("24h", "m", 1440), ("7d", "h", 168), ("14d", "h", 336)]
+# ONE GRID FOR EVERY HORIZON -- the hourly one. Forced by two defects found when the outcomes
+# export produced an impossible row (a 7d peak BELOW its own 24h peak, on 29% of calls):
+#
+# 1. DIFFERENT DENOMINATORS. grids() sets base = the first bar's close INSIDE the window. The
+#    minute grid's first bar is ~1 minute after the call; the hourly grid's is up to an HOUR
+#    after. So peak_m and peak_h were normalised to different prices and were never comparable.
+#    Measured spread of base_h/base_m: p10 0.15, median 0.90, p90 1.58.
+#
+# 2. THE MINUTE GRID DOES NOT COVER 24h. ohlc() requests limit=1000, and 1000 MINUTE bars is
+#    16.7 hours, after which grids() forward-fills a constant. So the column labelled "24h" was
+#    really "~17h, then flat" -- which is also why rescaling by close_m[1440]/close_h[24] only
+#    repaired 46 of the 75 impossible rows: those two values are not the same instant.
+#
+# Using peak_h/close_h at index 24 for the 24h figure makes all three horizons share one base and
+# one data source. The cost is honest and stated: the hourly base is the close of the first hourly
+# bar at or after the call, so entry is up to an hour late. That is a consistent bias across
+# horizons rather than a varying one between them, which is what a cross-horizon comparison needs.
+HORIZONS = [("24h", "h", 24), ("7d", "h", 168), ("14d", "h", 336)]
 TARGETS = [1.5, 2.0, 3.0, 5.0, None]
 
 
@@ -138,6 +155,7 @@ def main():
           "property of\n  the upgrade clock, not of the data -- including them would make the 24h "
           "column a bigger sample\n  than the 14d column." % (len(both) + dead, pending))
 
+    assert_monotone(both)
     if len(both) < MIN_COMPLETE:
         print("\nn=%d complete, below the %d I committed to before reporting a horizon comparison."
               % (len(both), MIN_COMPLETE))
@@ -149,6 +167,24 @@ def main():
 
 DEAD_RATE = 0.0
 DEAD_DENOM = 0
+
+
+def assert_monotone(both):
+    """A longer window CONTAINS a shorter one, so its running peak cannot be lower. Checking that
+    costs nothing and would have caught the mixed-grid bug the first time it was reported instead
+    of the fourth: peak_7d < peak_24h on 29% of calls, because the two grids had different bases
+    and the minute grid only covered 16.7h of its nominal 24.
+
+    This halts rather than warns. A printed warning is a warning I will read after publishing.
+    """
+    bad = [d for d in both
+           if max(d["peak_h"][:169]) < max(d["peak_h"][:25]) * 0.999
+           or max(d["peak_h"][:337]) < max(d["peak_h"][:169]) * 0.999]
+    if bad:
+        raise SystemExit("IMPOSSIBLE: %d calls have a longer-window peak BELOW a shorter one. "
+                         "The horizons are not sharing a base or a source. Refusing to report."
+                         % len(bad))
+    print("monotonicity check: PASSED -- 24h <= 7d <= 14d peak on all %d calls" % len(both))
 
 
 def report(both, dead, check_only):
