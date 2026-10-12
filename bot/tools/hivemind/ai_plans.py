@@ -22,7 +22,7 @@ BOT = HERE.parents[1]
 HM = BOT / "data" / "hivemind"
 IDEAS = HM / "ai_plans.jsonl"
 OUT = HM / "ai_plans.json"
-EVERY_H = 11.5
+EVERY_H = 4.0   # was 11.5; owner 10-12: digest the data into trades more often (~6 Opus calls/day)
 
 SYSTEM = """You are the WAGMI desk's trade-idea generator for a discretionary swing trader on Hyperliquid perps
 (1-2 day holds). He often has no read of his own, so you propose up to TWO complete trades he could take, or NONE if
@@ -40,10 +40,15 @@ a small cap that just broke out above its 20-day high tends to FALL BACK vs othe
 the further above the high the worse (8%+ above: about -15% vs peers in 3 days). So NEVER propose a long on a small cap
 sitting well above its 20-day high; a small-cap idea needs its own reason (level, positioning, funding). A short fading
 such a breakout is NOT proven (funding and thin books may eat it) - only if it also has its own reason, with a wide stop.
+CONTEXT LABELS (be honest about them): oi_chg_4h_pct / oi_chg_24h_pct = open-interest change, UNTESTED as a signal
+(a sealed test is accruing); depth_1pct_usd / spread_bps = how much size the book holds within 1% - execution context:
+size down where thin, never a direction signal; funding_hot flag = TESTED: bigger move and stop risk, not direction;
+oi_usd vs vol24_usd = how crowded a coin is relative to its trading. Coins with owner_watchlist=true are coins the
+owner is personally interested in: always assess them (an idea, or one line in "note" on why not).
 Output ONLY JSON:
 {"ideas": [{"coin": "SOL", "side": "LONG|SHORT", "entry_type": "limit|market", "entry": <num>, "stop": <num>,
   "target": <num>, "leverage": <num>, "confidence": 1-5, "setup": "<=30 chars",
-  "why": "<=220 chars, one plain sentence first", "invalidation": "<=100 chars"}],
+  "why": "<=220 chars, one plain sentence first", "invalidation": "<=100 chars", "used": ["which context fields drove this idea"]}],
  "note": "<=160 chars: why these, or why none"}"""
 
 
@@ -54,21 +59,81 @@ def _rows():
         return []
 
 
+def _positioning(coins):
+    """Per-coin context the idea generator never saw before (data-to-trades audit, 10-12): open-interest change over
+    ~4h and ~24h (all perps, ctx_snapshots) and order-book depth within 1% (depth_all). Labelled honestly: OI change
+    is UNTESTED (PREREG_OI sealed, accruing); depth is execution context, not direction."""
+    import gzip
+    want, out = set(coins), {}
+    snaps = sorted((BOT / "data" / "ctx_snapshots").glob("*.jsonl.gz"))[-2:]
+    hist = {}
+    for f in snaps:
+        try:
+            with gzip.open(f, "rt", encoding="utf-8") as fh:
+                for ln in fh:
+                    try:
+                        o = json.loads(ln)
+                    except ValueError:
+                        continue
+                    if o.get("c") in want:
+                        hist.setdefault(o["c"], []).append((o["t"], float(o["oi"]) * float(o["mark"])))
+        except OSError:
+            continue
+    for c, pts in hist.items():
+        pts.sort()
+        t1, v1 = pts[-1]
+        def ago(h):
+            old = [v for t, v in pts if t <= t1 - h * 3600]
+            return round((v1 / old[-1] - 1) * 100, 1) if old and old[-1] else None
+        out[c] = {"oi_usd": round(v1), "oi_chg_4h_pct": ago(4), "oi_chg_24h_pct": ago(24)}
+    try:
+        with open(BOT / "data" / "hivemind" / "depth_all.jsonl", "rb") as fh:
+            fh.seek(0, 2)
+            fh.seek(max(0, fh.tell() - 400_000))
+            tail = fh.read().decode("utf-8", "replace").splitlines()[1:]
+        for ln in tail:
+            try:
+                o = json.loads(ln)
+            except ValueError:
+                continue
+            if o.get("coin") in want:
+                out.setdefault(o["coin"], {}).update(depth_1pct_usd={"bid": o.get("bid_usd_1.0"), "ask": o.get("ask_usd_1.0")},
+                                                     spread_bps=o.get("spread_bps"))
+    except OSError:
+        pass
+    return out
+
+
 def _prompt():
     import chief
     st = json.loads((HM / "state" / "_all.json").read_text(encoding="utf-8"))
     hive = json.loads(chief._compact(st))
     try:
+        watch = [str(c).upper() for c in json.loads((HM / "owner_watchlist.json").read_text(encoding="utf-8"))]
+    except Exception:
+        watch = []
+    try:
         scan = json.loads((HM / "scan.json").read_text(encoding="utf-8"))
         keep = ("coin", "px", "chg_24h", "ret_7d", "exp_move", "trend_up", "d50_pct", "hi20", "lo20", "range_pos",
-                "funding_h", "vol_ratio", "safe_lev_long", "safe_lev_short", "flags")
-        scan_rows = [{k: r.get(k) for k in keep + ("vol_rank",)} for r in scan.get("coins", [])[:25]]
+                "funding_h", "vol_ratio", "safe_lev_long", "safe_lev_short", "flags", "oi_usd", "vol24_usd", "rv5", "rv22")
+        allc = scan.get("coins", [])
+        scan_rows = [{k: r.get(k) for k in keep + ("vol_rank",)} for r in allc[:25]]
         # make sure the moving small caps are in view even if they rank low on the scanner's sort
-        extra = [r for r in scan.get("coins", [])[25:] if "momentum_small" in r.get("flags", [])]
+        extra = [r for r in allc[25:] if "momentum_small" in r.get("flags", [])]
         scan_rows += [{k: r.get(k) for k in keep + ("vol_rank",)} for r in extra[:8]]
+        # the owner's own watchlist always in view
+        have = {r["coin"] for r in scan_rows}
+        scan_rows += [dict({k: r.get(k) for k in keep + ("vol_rank",)}, owner_watchlist=True)
+                      for r in allc if r["coin"] in watch and r["coin"] not in have]
+        for r in scan_rows:
+            if r["coin"] in watch:
+                r["owner_watchlist"] = True
+        pos = _positioning([r["coin"] for r in scan_rows])
+        for r in scan_rows:
+            r.update(pos.get(r["coin"], {}))
     except Exception:
         scan_rows = []
-    return json.dumps({"hivemind_majors": hive, "scanner_top25": scan_rows}, default=str)[:90000]
+    return json.dumps({"hivemind_majors": hive, "scanner": scan_rows}, default=str)[:90000]
 
 
 def generate(force=False):
@@ -110,7 +175,8 @@ def generate(force=False):
                         "entry_type": etype, "entry_window_h": 24.0, "max_hold_h": 48.0,
                         "leverage": float(i.get("leverage") or 1), "confidence": int(i.get("confidence") or 1),
                         "setup": str(i.get("setup") or "")[:40], "reason": str(i.get("why") or "")[:260],
-                        "invalidation": str(i.get("invalidation") or "")[:120]})
+                        "invalidation": str(i.get("invalidation") or "")[:120],
+                        "used": [str(u)[:40] for u in (i.get("used") or [])][:8]})
     else:
         run["error"] = str(resp.error)[:200]
     run["n"] = len(out)
