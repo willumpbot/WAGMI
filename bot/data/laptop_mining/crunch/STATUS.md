@@ -4,20 +4,18 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-11 22:10, took 1s._
+_Last run 2026-10-11 22:20, took 649s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | running… | — | 0 | not started yet |
-| `j6_archive` | running… | — | 0 | not started yet |
-| `j5_backfill` | running… | — | 0 | not started yet |
-| `j2_trackers` | running… | — | 0 | not started yet |
-| `j4_integrity` | running… | — | 0 | not started yet |
-| `j3_replications` | running… | — | 0 | not started yet |
+| `j1_panels` | ok | 0 | 1 | 178 source files skipped as unchanged |
+| `j6_archive` | ok | 0 | 0 |  |
+| `j5_backfill` | ok | 712 | 639 | 178 coins ok, 0 failed, 780 5m rows over the top 60 |
+| `j2_trackers` | ok | 3 | 0 |  |
+| `j4_integrity` | ok | 48 | 6 |  |
+| `j3_replications` | ok | 63 | 2 | 63 obs, 4 source-missing, 3 oos day-blocks, no verdicts |
 
-🟡 **A run is IN PROGRESS as of the timestamp above.** If this line is still
-here more than an hour later, the run died mid-loop -- which is exactly the
-case the old write-at-the-end order could not show.
+All jobs succeeded.
 
 ## What each job does
 
