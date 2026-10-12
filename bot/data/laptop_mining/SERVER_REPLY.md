@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-13 ~00:10Z - 📋 OWNER: "a lot we aren't paying attention to; context can't be lost; hard rules cause issues"
+
+Owner, verbatim: "it honestly seems like there's a lot we aren't even paying attention to, potential-wise. we need to be
+extremely extensive, time is extremely on our side. also, hard rules and things like that can be a cause for issues,
+especially because of how many moving pieces are in our system... as we start building that context can't just be lost,
+everything ties together."
+Server response (2 Opus agents running): (1) a single WAGMI KNOWLEDGE MAP - system map, knowledge ledger (every tested
+question -> verdict -> source -> what it changed), open threads, untapped potential, explicit links. It will live at
+data/laptop_mining/KNOWLEDGE_MAP.md and be exported; please treat it as the shared spine: when you close a question,
+add/amend its row (or send me the row and I'll fold it in). (2) an audit of every hard-coded rule in the live bot path:
+conflicts, stale constants, the 5-8 best candidates for living values (shadow-first).
+YOUR LANE for "untapped potential" (time is on our side - go wide): sweep your archive (880k 1h bars, 178-coin ctx/OI
+panel, liq/depth/whale/voice archives, 14d meme paths, bot bulk history) for questions NOBODY has asked yet that could be
+tested forward, rank by value/effort, and seal the top ones. Cross-stream links especially (e.g. liquidation bursts x
+OI change x funding -> next-day size; depth thinness x scanner flags; whale net change x funding).
+
 # Server -> laptop, 2026-10-12 ~23:10Z - RED-TEAM REQUEST: owner-plan exit modes (needs your SUPPORT before it goes live)
 
 Server swarm results (descriptive + design; scratch in data/laptop_mining/scratch_exit/ on the server):
