@@ -481,3 +481,10 @@
 {"sym": "SOL", "ts": 1791641338.298835, "side": -1, "entry": 109.9, "sl": 110.32000000000001, "tp": 109.06, "src": "ic_muted", "r_current": -1.235, "r_proposal": -1.029, "r_adaptive": 0.183, "fc": 2.61}
 {"sym": "ETH", "ts": 1791644486.470447, "side": -1, "entry": 2498.2, "sl": 2502.635714285714, "tp": 2489.328571428571, "src": "ic_muted", "r_current": -1.507, "r_proposal": -1.063, "r_adaptive": -0.313, "fc": 2.14}
 {"sym": "SOL", "ts": 1791644497.71172, "side": -1, "entry": 109.9, "sl": 110.32000000000001, "tp": 109.06, "src": "ic_muted", "r_current": -1.235, "r_proposal": -1.029, "r_adaptive": 0.164, "fc": 2.61}
+{"sym": "NEAR", "ts": 1791645129.234563, "side": 1, "entry": 5.3721, "sl": 5.189185714285714, "tp": 5.73792857142857, "src": "ic_muted", "r_current": -1.026, "r_proposal": 0.119, "r_adaptive": 0.492, "fc": 5.35}
+{"sym": "BTC", "ts": 1791645129.247067, "side": 1, "entry": 82945.0, "sl": 82667.42857142857, "tp": 83500.14285714287, "src": "ic_muted", "r_current": 1.731, "r_proposal": -0.15, "r_adaptive": -0.104, "fc": 1.93}
+{"sym": "HYPE", "ts": 1791645482.830251, "side": 1, "entry": 86.263, "sl": 85.23471428571429, "tp": 88.31957142857144, "src": "ic_muted", "r_current": -1.076, "r_proposal": -0.247, "r_adaptive": -0.534, "fc": 2.2}
+{"sym": "ETH", "ts": 1791645493.814139, "side": 1, "entry": 2507.6, "sl": 2496.385714285714, "tp": 2530.0285714285715, "src": "ic_muted", "r_current": -1.201, "r_proposal": 0.218, "r_adaptive": 0.479, "fc": 2.14}
+{"sym": "XRP", "ts": 1791645494.957047, "side": 1, "entry": 1.4071, "sl": 1.3967285714285713, "tp": 1.4278428571428574, "src": "ic_muted", "r_current": -1.122, "r_proposal": -0.386, "r_adaptive": -0.433, "fc": 2.63}
+{"sym": "NEAR", "ts": 1791648292.950752, "side": 1, "entry": 5.3658, "sl": 5.1862, "tp": 5.725, "src": "ic_muted", "r_current": -1.027, "r_proposal": 0.036, "r_adaptive": 0.492, "fc": 5.35}
+{"sym": "BTC", "ts": 1791648293.693241, "side": 1, "entry": 83011.0, "sl": 82744.57142857143, "tp": 83543.85714285713, "src": "ic_muted", "r_current": 1.72, "r_proposal": -0.291, "r_adaptive": -0.193, "fc": 1.93}
