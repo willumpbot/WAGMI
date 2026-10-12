@@ -71,7 +71,8 @@ def build():
         "title": "Exit-agent credit saver",
         "ask": "Once a bot trade's stop already locks in profit, ask the AI exit agent at most once an hour instead of every ~10 minutes?",
         "why": "On Oct 8-9 the exit agent was asked 61 times about a ~$4 NEAR leftover whose stop already locked profit. Mechanical stops still run every tick either way.",
-        "live": "Built and tested (EXIT_AGENT_LOCKED_COOLDOWN_S, default off; 4 tests).",
+        "live": ("ON since 2026-10-10 (EXIT_AGENT_LOCKED_COOLDOWN_S=3600 in .env; 4 tests)." if (os.getenv("EXIT_AGENT_LOCKED_COOLDOWN_S")
+                 or _env_has("EXIT_AGENT_LOCKED_COOLDOWN_S")) else "Built and tested (EXIT_AGENT_LOCKED_COOLDOWN_S, default off; 4 tests)."),
         "ready_when": "you say yes",
         "ready": not (os.getenv("EXIT_AGENT_LOCKED_COOLDOWN_S") or _env_has("EXIT_AGENT_LOCKED_COOLDOWN_S")),   # ON since 2026-10-10
         "note": "Saying yes = set EXIT_AGENT_LOCKED_COOLDOWN_S=3600 in .env and restart the bot. Fully reversible.",

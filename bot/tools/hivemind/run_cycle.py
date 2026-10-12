@@ -4,6 +4,7 @@
   pythonw tools/hivemind/run_cycle.py --chief    # every 4h: also the Opus chief read + grading
 """
 import sys
+import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
@@ -123,6 +124,16 @@ def main():
                     expmove_grade.resolve()
             except Exception as e:
                 log(f"{mod} failed: {e}")
+        try:   # HIVEMIND phase 0: discrepancy checks D1-D11, hourly (tools/knowledge/check.py -> data/knowledge/discrepancies.json)
+            stamp = HERE.parents[1] / "data" / "knowledge" / ".last_check"
+            if not stamp.exists() or time.time() - stamp.stat().st_mtime > 3600:
+                import subprocess
+                subprocess.run([sys.executable, str(HERE.parent / "knowledge" / "check.py")], cwd=str(HERE.parents[1]),
+                               capture_output=True, timeout=600)
+                stamp.parent.mkdir(parents=True, exist_ok=True)
+                stamp.write_text(str(time.time()))
+        except Exception as e:
+            log(f"knowledge check failed: {e}")
         try:
             import decisions
             decisions.build()

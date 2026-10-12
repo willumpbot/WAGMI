@@ -116,8 +116,8 @@
  {
   "date": "2026-10-09",
   "kind": "proven",
-  "title": "The bot's hidden filter is right",
-  "what": "Signals it silently drops would have lost money. Keep it."
+  "title": "The bot's hidden filter looks right",
+  "what": "Signals it silently drops would have lost money (supported, not yet proven). Keep it."
  },
  {
   "date": "2026-10-09",
