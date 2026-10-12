@@ -4,20 +4,18 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-11 18:19, took 583s._
+_Last run 2026-10-11 19:19, took 569s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | ok | 883703 | 3 |  |
+| `j1_panels` | ok | 52334 | 0 | 170 source files skipped as unchanged |
 | `j6_archive` | ok | 0 | 0 |  |
-| `j5_backfill` | ok | 710 | 574 | 178 coins ok, 0 failed |
+| `j5_backfill` | ok | 716 | 563 | 178 coins ok, 0 failed |
 | `j2_trackers` | ok | 3 | 0 |  |
-| `j4_integrity` | **FAILED** | 40 | 4 | confidence_state.json snapshot stale 22.4h; syndicate_calls_anon.jsonl shrank 1 rows (append-only: a row drop is real) |
+| `j4_integrity` | ok | 40 | 3 |  |
 | `j3_replications` | ok | 59 | 2 | 59 obs, 5 source-missing, 3 oos day-blocks, no verdicts |
 
-## 🔴 1 job(s) failed this run
-
-- `j4_integrity`: confidence_state.json snapshot stale 22.4h; syndicate_calls_anon.jsonl shrank 1 rows (append-only: a row drop is real)
+All jobs succeeded.
 
 ## What each job does
 
