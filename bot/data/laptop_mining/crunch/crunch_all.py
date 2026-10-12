@@ -25,8 +25,8 @@ import traceback
 from common import (HERE, RUNNER_ENV, acquire_lock, assert_laptop_branch, db, git,
                     init_schema, log, release_lock)
 
-JOBS = ["j1_panels", "j6_archive", "j5_backfill", "j2_trackers", "j4_integrity",
-        "j3_replications"]
+JOBS = ["j1_panels", "j6_archive", "j7_bulk", "j5_backfill", "j2_trackers",
+        "j4_integrity", "j3_replications"]
 STATUS = os.path.join(HERE, "STATUS.md")
 
 # committed by the runner; the panel store and the server`s own exports are excluded
