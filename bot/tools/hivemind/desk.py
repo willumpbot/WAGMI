@@ -274,6 +274,18 @@ def _trade_history():
             if f["kind"] == "final":
                 x["exit"], x["reason"], x["ts"] = f.get("exit"), f.get("reason"), f.get("ts")
         out["plans"] = sorted((v for v in g.values() if v.get("ts")), key=lambda v: v["ts"])[-20:]
+        # Owner's BTC short (10-11) shown as if still open under Profits only, so he can watch it play out (request 10-13)
+        try:
+            import sim_owner
+            plans = {p["id"]: p for p in _load(HM / "plans.json", {}).get("plans", [])}
+            out["sims"] = []
+            for pid, p in plans.items():
+                if pid == "11624f4364" and (p.get("exec_result") or {}).get("fills"):   # owner's BTC short only
+                    sm = sim_owner.simulate(pid, p)
+                    if sm:
+                        out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts")))
+        except Exception:
+            out["sims"] = []
     except OSError:
         pass
     return out

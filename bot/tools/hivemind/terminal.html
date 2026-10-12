@@ -1015,6 +1015,13 @@ function tradesTab(){
       prices:`in ${fmt(p.entry)} · stop ${fmt(p.stop)} · target ${fmt(p.target)}`, res:`<span class="${cls(R.r!=null?R.r:R.live_r)}">${grade}</span>`, note:ran,
       live: ["waiting","open"].includes(R.status)});
   }
+  for (const m of ((DATA.tradeHist||{}).sims||[])) {
+    const st = m.status==="open" ? `still OPEN, now <span class="${cls(m.total_usd)}">${usd(m.total_usd)} (${rr(m.r)})</span>` :
+               `${m.status==="target"?"hit your target":m.status==="stop"?"hit your stop":"closed at the time limit"}: <span class="${cls(m.total_usd)}">${usd(m.total_usd)} (${rr(m.r)})</span>`;
+    rows.push({ts: Date.now()/1000+1, who:"me", whoTxt:"Me - simulated with 'Profits only'", coin:m.coin, side:m.side,
+      prices:`in ${fmt(m.entry)} · your stop ${fmt(m.stop)} · target ${fmt(m.target)} · now ${fmt(m.mark)}`, res:st,
+      note:`banked ${usd(m.banked_usd)} from partials, ${m.open_qty} still riding (${usd(m.open_pnl_usd)})${m.status==="open"?" · time limit "+d(m.expires_ts):""}. What would have happened if the bot had kept your stop.`, live: m.status==="open"});
+  }
   for (const x of ((DATA.tradeHist||{}).bot||[])) rows.push({ts:x.ts, who:"bot", whoTxt:"Bot", coin:x.sym, side:x.side,
       prices:`in ${fmt(x.entry)} → out ${fmt(x.exit)}`, res:`<span class="${cls(x.pnl)}">${usd(x.pnl)}</span>`, note:why(x.reason), live:false});
   for (const s of SYMS) { const b = botPos(s); if (b) rows.push({ts:Date.now()/1000, who:"bot", whoTxt:"Bot (open now)", coin:s, side:b.side,
