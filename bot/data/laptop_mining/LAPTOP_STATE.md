@@ -9,7 +9,7 @@ have to re-explain anything. Everything below is current as of commit time.
 
 | | |
 |---|---|
-| `megacalls_fetch.py` | fetching 2,477 priceable calls, **473 unique done**, ETA **~18h**. Single process, holds `geckoterminal.lock`. |
+| `megacalls_fetch.py` | fetching 2,477 priceable calls, **526 unique done**, ETA **~19h**. Single process, holds `geckoterminal.lock`. |
 | `WAGMI-LaptopCrunch` (hourly task) | 7 jobs, all green on the last cycle |
 | server `stop_shadow.py` | live 5m shadow stops, ~2 entries/day, accruing |
 
@@ -34,12 +34,17 @@ documents themselves.
 
 **Buying every call loses, at every horizon, before fees — and no position size is cheap.**
 
-| horizon | best rule | eq-weighted | CI95 |
-|---|---|---|---|
-| 24h | 2.0× | −4.9% | [−15.5%, +5.1%] |
-| 7d | 2.0× | −6.7% | [−19.3%, +5.7%] |
-| **14d** | 1.5× | **−9.1%** | **[−18.5%, −0.8%]** |
-| hold | — | **−42%** | — |
+| horizon | best rule | eq-weighted | CI95 | |
+|---|---|---|---|---|
+| 24h | 3.0× | −9.4% | [−21.4%, +3.3%] | spans zero |
+| **7d** | 1.5× | **−9.6%** | **[−16.7%, −2.7%]** | **excludes zero** |
+| **14d** | 1.5× | **−10.6%** | **[−18.0%, −3.5%]** | **excludes zero** |
+| hold | — | **−45%** | — | |
+
+_Updated at n=402 complete / 83 call-days, death rate 22.4%. Two of three horizons now exclude
+zero where only 14d did at n=261, and **the exit rule has stopped mattering** — 1.5×, 2× and 3× all
+land between −8% and −10%. That is a cleaner statement than any single rule: the problem is not the
+target, it is the assets._
 
 **Costs close it:** on a typical **$5,100** pool, round-trip slippage is **~4% at $100**, ~10% at
 $250, ~20% at $500, **~78% at $2,000**. Even the smallest sensible order costs about what the best
