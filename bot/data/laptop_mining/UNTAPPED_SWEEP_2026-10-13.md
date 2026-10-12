@@ -65,11 +65,34 @@ never been used, plus `funding_hist.premium` (367 dates) which I have never touc
 
 **So the ranking below is reordered: deep-panel questions first.**
 
+
+## 2c. 🔴 THIRD CORRECTION, mine: #1 as written is dead — SIZE_FLAGS already used the whole deep universe
+
+**I checked instead of assuming, and the check killed my own top pick.**
+
+| what I claimed | what is true |
+|---|---|
+| "173 coins vs 17 is a 10× cross-section upgrade" | the 173-coin panel is the **hourly** one at **210 dates**; SIZE_FLAGS ran on **160 week-clusters (~1,296 dates)** of DAILY history. **That is a 5.6× cluster DOWNGRADE, not an upgrade.** |
+| "41 daily files vs 17 used = 2.4× headroom" | **the other 24 are `_spot` and `_wspot` series, not perps.** Distinct perps with deep daily history: ARB AVAX BTC DOGE ENA ETH HYPE LINK NEAR PUMP SOL SUI UNI VVV WLD XRP ZEC = **exactly 17** |
+
+**So `SIZE_FLAGS` used 100% of the deep-history perp universe.** There is no untapped breadth *or*
+depth in the daily panel. **"Re-run it on the full panel" has no fuller panel to run on.**
+
+**Three framing errors in a row on this one ranking**, and worth recording as a pattern rather than
+three mistakes: I kept asserting a power claim and then checking it. The order should be reversed —
+**count the clusters first, rank second.**
+
+**What actually survives as a question:** *does `funding_hot` generalise from the 17 deep perps to the
+178-coin hourly universe?* The 161 extra coins are smaller, newer alts where the effect may well
+differ — that is a real generalisation test. **But it is 210 dates / ~30 weeks against SIZE_FLAGS'
+160 weeks**, so it is a breadth test at reduced depth, and it must be labelled that way. **It cannot
+overturn SIZE_FLAGS; at best it extends it, at worst it is underpowered.**
+
 ## 3. Ranked candidates — value ÷ effort, with power honesty
 
 | # | question | why it ranks here | clusters |
 |---|---|---|---|
-| **1** | **🔴 Does `funding_hot` survive on the FULL 173-coin panel? It was established on 17.** | **The project's only red-team-surviving positive has never been checked on the full panel.** If it is a 17-perp artifact, everything downstream is wrong; if it holds on 173 coins over 210 dates it becomes genuinely trustworthy. **Highest value in the sweep, and it needs no new data.** | **210** |
+| **1** | **Does `funding_hot` GENERALISE from the 17 deep perps to the 178-coin hourly universe?** | **Reframed per §2c — a breadth test at reduced depth, NOT a power upgrade.** The 161 extra coins are smaller, newer alts where the effect may differ. Cannot overturn SIZE_FLAGS (30 weeks vs its 160); at best extends it | **210** |
 | **2** | **Does `funding_hist.premium` (basis) predict next-day \|move\| beyond HAR + funding_hot?** | **367 dates, 63,138 coin-days, and I have never touched this column.** Deepest series we own. Carry/positioning, so not a repackaged HAR input | **367** |
 | **3** | **Does funding PERSISTENCE (consecutive hours extreme) beat funding LEVEL?** | `funding_hot` is a level. Persistence is a different quantity on the same deep panel, and the natural next question after #1 | 367 |
 | **4** | **Does OKX long/short account ratio predict next-day \|move\| beyond HAR + funding_hot?** | **Positioning, not price** — HAR cannot contain it by construction, avoiding the trap that killed `vol_expanding`. Genuinely new. **But 77 days against 210–367 above** | **77** |
