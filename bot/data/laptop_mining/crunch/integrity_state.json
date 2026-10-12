@@ -20,11 +20,11 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 1901,
+  "v": 1933,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 4096,
+  "v": 4095,
   "u": "bytes"
  },
  "archive": {
@@ -35,8 +35,12 @@
   "v": 835223,
   "u": "rows+bytes"
  },
+ "call_snapshots.jsonl": {
+  "v": 1,
+  "u": "rows"
+ },
  "candles_5m": {
-  "v": 33714,
+  "v": 33792,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -48,11 +52,11 @@
   "u": "rows"
  },
  "chief_scorecard.json": {
-  "v": 659,
+  "v": 660,
   "u": "bytes"
  },
  "confidence_state.json": {
-  "v": 3181,
+  "v": 3204,
   "u": "bytes"
  },
  "copilot_call_ledger.jsonl": {
@@ -64,7 +68,7 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 24920,
+  "v": 25632,
   "u": "rows+bytes"
  },
  "entry_gate_log.jsonl.gz": {
@@ -80,7 +84,7 @@
   "u": "rows"
  },
  "exit_decisions.jsonl": {
-  "v": 1335,
+  "v": 1336,
   "u": "rows"
  },
  "expmove_log.jsonl": {
@@ -92,7 +96,7 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 50239,
+  "v": 50287,
   "u": "rows"
  },
  "geometry_shadow.json": {
@@ -100,7 +104,7 @@
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 421,
+  "v": 427,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -108,7 +112,7 @@
   "u": "rows"
  },
  "live_scorecard.json": {
-  "v": 1345,
+  "v": 1344,
   "u": "bytes"
  },
  "llm_exits_resolved.jsonl": {
@@ -128,7 +132,7 @@
   "u": "bytes"
  },
  "position_journal.jsonl": {
-  "v": 3108,
+  "v": 3110,
   "u": "rows"
  },
  "position_manager.py": {
@@ -136,7 +140,7 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 11316,
+  "v": 11358,
   "u": "bytes"
  },
  "scan_log.jsonl": {
@@ -156,7 +160,7 @@
   "u": "rows+bytes"
  },
  "syndicate_calls_anon.jsonl": {
-  "v": 200,
+  "v": 201,
   "u": "rows"
  },
  "syndicate_features_anon.jsonl": {
@@ -184,15 +188,15 @@
   "u": "rows"
  },
  "trade_ledger.csv": {
-  "v": 295,
+  "v": 296,
   "u": "rows"
  },
  "trades.csv": {
-  "v": 237,
+  "v": 238,
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 106,
+  "v": 110,
   "u": "rows"
  }
 }
