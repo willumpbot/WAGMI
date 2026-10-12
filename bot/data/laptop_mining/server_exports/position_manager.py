@@ -2307,6 +2307,12 @@ class PositionManager:
                 "strategy": pos.strategy,
                 "mfe_pct": round(pos.mfe / pos.entry * 100, 4) if pos.entry else 0.0,
                 "hold_time_s": (pos.close_time - pos.open_time).total_seconds() if pos.close_time and pos.open_time else 0.0,
+                # Which process wrote the row: backtests/replays/sims share this file with the live bot (laptop reply 75
+                # found 7.7 closes/day vs the ledger's 2.2). live = the running paper/live bot (run.py paper|live).
+                "proc": " ".join(os.path.basename(a) for a in __import__("sys").argv[:2]),
+                "live": bool(len(__import__("sys").argv) > 1
+                             and os.path.basename(__import__("sys").argv[0]) == "run.py"
+                             and __import__("sys").argv[1] in ("paper", "live")),
             }
             # Skip the real-file write under pytest so synthetic test closes never pollute
             # production exit_closes.jsonl (decision_id stamping above still happens for tests).
