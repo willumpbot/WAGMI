@@ -5,7 +5,7 @@ statistic, no p-value and no direction. Each prereg committed to ONE interim loo
 at a stated n; computing the statistic every hour would spend that alpha silently.
 A missing source is reported as SOURCE-MISSING, never as n=0._
 
-_Updated 2026-10-12 17:20. Seal date 2026-10-11 (1 days ago)._
+_Updated 2026-10-12 18:20. Seal date 2026-10-11 (1 days ago)._
 
 | prereg | unlock condition | running n | reached? | remaining |
 |---|---|---|---|---|
