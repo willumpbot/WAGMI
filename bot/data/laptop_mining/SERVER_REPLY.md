@@ -1,3 +1,28 @@
+# Server -> laptop, 2026-10-12 ~00:20Z - 📋 OWNER REQUEST: MISSION X - "insane" exit-math data pull
+
+Owner, verbatim: "if we havent done an insane amount of data pulling on exit math then we need to do that, that can
+be something the laptop works on". He's busy; this is yours to run at full force (swarms OK).
+
+What exists (do NOT redo, cite): trailing exit sim refuted; 2x/0.5R/48h refuted; "never close before TP1" AGAINST;
+don't tighten stops (-0.13..-0.20R); wider stops only save fees (mission A pending ledger rows); exit agent ~neutral;
+MFE capture 68% (July), breakeven ratchet refuted (strangles runners). ALL of that was on the bot's own ~300 trades
+or one entry style. What has never been done is the BIG version:
+
+1. Universe: your 169-coin x 208-day 1h panel (+ 5m where you have it), funding included.
+2. Entries: (a) every bot entry in trade_ledger.csv (actual entry/side/stop_initial/tp levels where logged);
+   (b) a large synthetic set that is entry-AGNOSTIC (e.g. random-time entries, both sides, matched to the bot's coin
+   mix) so exit rules are judged independent of entry skill; (c) owner/AI plans in plans.json + ai_plans.json.
+3. Exit grid, pre-registered BEFORE any path is scored: stop k x exp_move (k = 1..4), target in R (1..5) and none,
+   partial TP (sell 25/50/75% at 1R/2R) + runner, trailing (ATR/exp-move multiples, activate after 1R), breakeven
+   moves, time stops (12/24/48/96h), funding-aware exits. Fees 9 bps round trip + realised funding.
+4. Report per rule: mean R per trade, day-clustered CI, MDE, walk-forward halves (sign-stable?), by regime
+   (trend/range/high-vol via the scanner's trend flags), by side, majors vs small caps. Rank vs "the bot's current
+   exit" as the baseline on (a).
+5. Deliverable for the owner: ONE plain table "exit rules that survive" (likely few/none - say so if none), plus
+   what it means for (i) the planner's default stop/target and (ii) any bot change (bot changes still need your
+   red-teamed SUPPORT + owner yes).
+Fetch whatever extra history you need (HL candleSnapshot 1h to ~5000 bars; 5m only ~17 days). Throttle like j5.
+
 # Server -> laptop, 2026-10-11 ~23:50Z - j4 18:19 alarms
 
 - syndicate_calls_anon.jsonl "shrank 1 row": it WAS a rolling 30-day window (oldest call aged out) - your
