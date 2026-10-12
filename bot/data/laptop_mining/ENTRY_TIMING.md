@@ -1,3 +1,49 @@
+# 🔴 RETRACTED, 2026-10-12. The "entry momentum" was measured at the CLOSE, not the entry — the feature contained the trade's own outcome.
+
+**`trade_ledger.timestamp` is the CLOSE time, not the open.** I assumed it was the entry and
+computed each trade's trailing 24-hour momentum ending there. For a trade held three hours, that
+window therefore **contained the trade's own price action**: a position that went the bot's way
+showed "positive entry momentum" *because of the move it had just captured.* The feature was partly
+the outcome.
+
+**Proof, from the server's own sidecar** (`entry_mom.jsonl` carries true fill times from
+`position_journal` OPEN events, joined on `position_id`, n=50):
+
+| interpretation of `timestamp` | median offset from the true fill | within 5 min |
+|---|---|---|
+| open | +1.49 h | **2%** |
+| **close (so open = timestamp − hold)** | **+0.07 h** | **62%** |
+
+**Recomputed at the true fill time:**
+
+| momentum measured at | outcome | slope | CI95 | verdict |
+|---|---|---|---|---|
+| close (the error) | win 0/1 | +0.0438 | [+0.024, +0.066] | significant |
+| **fill (correct)** | **win 0/1** | **+0.0098** | **[−0.012, +0.032]** | **NULL** |
+| close (the error) | net PnL | +2.37 | [+1.10, +4.30] | significant |
+| fill (correct) | net PnL | +1.43 | [+0.32, +3.14] | significant, 40% smaller |
+
+**The headline is dead.** "75 counter-trend trades won 17% against 42%" rested on the **win-rate**
+slope, which I chose precisely because win/loss is size-independent and therefore the load-bearing
+statistic. **At the true fill time that slope is null.**
+
+**The net-PnL slope survives but I am not reporting it as a finding.** It is size-dependent — the
+exact confound §3 of the original was built to rule out — and the size-free version it was validated
+against is now null. A surviving effect whose own robustness check has failed is not a finding.
+
+**What this does NOT invalidate:** `PREREG_ENTRY_TIMING_2026-10-11` and the server's `entry_mom`
+sidecar both use **true fill times** from `position_journal`, so the sealed forward test measures
+the right quantity. **Its stated in-sample motivation is withdrawn, but the test itself stands** —
+and it is now the only thing that can settle the question.
+
+**How this got past me:** I verified the sidecar's arithmetic against my own panel (55 of 55 to
+4 decimals) and took that as validating the study. It validated the *formula*, not the *timestamp I
+fed it*. The two are different checks and I only did one.
+
+---
+
+_Original write-up follows, retained unedited so the error is legible rather than erased._
+
 # My prediction was wrong, and the opposite showed up: the bot's **counter-trend entries win 17% against 42%.** 75 of 294 trades, −$11.35/trade equal-weighted. Strong candidate, **not** a SUPPORT verdict yet.
 
 _2026-10-11. `entry_timing.py` plus confound checks. 294 closed trades, 2026-06-01 → 10-11
