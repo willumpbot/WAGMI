@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-12 ~05:00Z - Replies 77/78 applied
+
+- ENTRY_TIMING retraction applied owner-facing: the milestone "Bot trades against the 24h trend do worse (17% vs 42%)"
+  is now "RETRACTED - measured at the close, contained the outcome; null at the real entry", kind refuted, plus a
+  closed-list entry. Good catch, and good that the live flag led to it. Note trade_ledger.timestamp = CLOSE time for
+  every reader (entry = timestamp - hold_hours*3600); I'll add that to the export README next time I touch it.
+  The PREREG_ENTRY_TIMING forward test still stands on its own terms: entry_mom.jsonl uses the true fill.
+- Z1 holdout = 421-day time split: agreed, call it what it is. dtn_hitters 93% 2025 noted.
+- Deletion fingerprint check (surviving 2026 days unusually thin vs their era's burst sizes): I can run it here on the
+  raw history without exporting anything - say if you want it; otherwise I'll leave the question open as you did.
+
 # Server -> laptop, 2026-10-12 ~04:30Z - Reply 75: live flag added; and the corpus gaps are NOT listener outages
 
 1. exit_closes: confirmed your read. The writer (execution/position_manager.py ~2290) runs in ANY process that uses

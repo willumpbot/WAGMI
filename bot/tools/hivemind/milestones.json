@@ -247,9 +247,9 @@
  },
  {
   "date": "2026-10-11",
-  "kind": "open",
-  "title": "Bot trades against the 24h trend do worse",
-  "what": "17% win vs 42% with the trend (294 real trades, survived every check). Sealed forward test; a candidate rule only after the laptop says SUPPORT."
+  "kind": "refuted",
+  "title": "Counter-trend entries lose more (RETRACTED)",
+  "what": "Retracted 10-12: momentum had been measured at the trade CLOSE, so it contained the outcome. Measured at the real entry, the win-rate gap is gone."
  },
  {
   "date": "2026-10-11",
