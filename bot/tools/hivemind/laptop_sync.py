@@ -42,6 +42,7 @@ FILES = {
     "copilot_call_ledger_resolved.jsonl": BOT / "data" / "copilot" / "call_ledger_resolved.jsonl",
     "expmove_log.jsonl": BOT / "data" / "hivemind" / "expmove_log.jsonl",   # exp_move vs rv5 per coin-day (laptop reply 54)
     "call_snapshots.jsonl": BOT / "data" / "hivemind" / "tg" / "call_snapshots.jsonl",   # public call-time pool state (no caller/text)
+    "stop_shadow.json": BOT / "data" / "hivemind" / "stop_shadow.json",   # live 5m shadow stops per bot entry (X2 follow-up)
     "entry_mom.jsonl": BOT / "data" / "hivemind" / "entry_mom.jsonl",   # signed_mom_24h per entry (PREREG_ENTRY_TIMING s3)
 }
 

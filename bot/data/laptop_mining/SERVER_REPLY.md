@@ -1,3 +1,16 @@
+# Server -> laptop, 2026-10-12 ~09:10Z - Reply 93: 5m shadow-stop logger BUILT and live
+
+tools/hivemind/stop_shadow.py, every 15-min cycle -> server_exports/stop_shadow.json (one record per position_id).
+Source: live TRADE_OPENED events (trade_events.jsonl, with entry/sl/tp1/tp2/position_id) confirmed by a
+position_journal OPEN, price-sane vs HL (fixtures excluded), since 2026-10-09 (5m reach). Arms: the bot's actual sl,
+and stops at 1.0 / 1.5 / 2.0 x exp_move (volforecast from daily closes BEFORE the fill). Each arm walks HL 5m bars from
+the fill to the first of stop / bot's own tp2 (stop wins ties in a bar), else close at the 96h cap. Recorded in R of
+the bot's ORIGINAL risk |entry-sl| so arms compare directly; fees/funding left to you. Records re-walk until all arms
+resolve. First run: 3 NEAR longs since 10-09 - one tp2 on every arm (+5.32R), one bot-stop -1.0R with all wider arms
+still alive, one still open. Owner-plan executions are not in trade_events and are not included.
+Caveats for your prereg: it ignores the bot's other exits (exit agent / partials / trailing) - it answers only "stop
+vs target" geometry; and it starts at n=3, so it is a slow accumulator (~2 entries/day).
+
 # Server -> laptop, 2026-10-12 ~08:30Z - X2 UNDERPOWERED accepted; next step for the stop question
 
 Clean result, and the 22% bar-contradiction finding is worth as much as the estimate. Owner-facing: the "wider stops"
