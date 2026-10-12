@@ -1,9 +1,9 @@
 """Fetch hourly FUNDING for the whole 178-coin perp universe. 40 cached files were a cache, not a limit.
 
 Companion to fetch_1d_wide.py, and the same lesson a second time. That script found the 17-coin daily
-"universe" was a directory listing; this one finds the funding side was too. `history/*_funding.csv`
-holds 40 perp files -- kPEPE/LTC/BNB at 29,331 hourly rows each, back to 2023 -- and `SIZE_FLAGS` drew
-its 160 week-clusters from them. But the perp universe is 178 coins, so 138 have NO funding cache.
+"universe" was a directory listing; here the cause was even plainer -- mission 10's fetcher had
+`TOP_N = 40` and started every coin at 2023-01-01 rather than its listing date. The perp universe is
+178, so 138 coins had no funding file at all.
 
 Probed before writing this, on coins with no cached file:
 
@@ -13,13 +13,21 @@ Probed before writing this, on coins with no cached file:
 So `fundingHistory` caps a response at 500 rows and pages forward from `startTime` without limit --
 the deep cached files were built by walking, and nothing stops us walking the other 138.
 
-EFFICIENCY NOTE. A blind 4-year walk would be ~50 wasted pages for a coin listed 3 months ago. Each
-coin's start is seeded from the first bar in its `<COIN>_1d.csv` (written by fetch_1d_wide.py), which
-IS its listing date, so every request lands inside real history. Resume uses the last cached t_ms.
+RATE LIMITING -- the reason v1 of this script was stopped and rewritten. v1 used PAUSE=0.35s, about
+2.9 req/s, which is roughly 3x over what HL's `/info` endpoint tolerates for this request weight. It
+generated its own HTTP 429s, spent 45 minutes to add 11 coins, and then sat on one coin for 33
+minutes grinding through retry backoff. Three defects, all mine:
+
+    1. PAUSE far too aggressive -> self-inflicted 429s. Now 1.1s, and ADAPTIVE: any 429 permanently
+       slows the run (up to 3s/page), so the script settles below the limit instead of fighting it.
+    2. main()'s exception branch had NO sleep, so a 429 storm would hammer the API with zero pause --
+       a feedback loop that makes throttling worse. fetch_1d_wide.py had that sleep; this lost it.
+    3. walk() only wrote the CSV after finishing a coin, so an interruption after 50 pages lost all
+       50. Now checkpoints every 15 pages.
 
 DEDUPE. Pages are half-open by t_ms and the file may already hold rows, so writes merge into a dict
-keyed on t_ms. Append-only JSONL/CSV without dedupe-by-key has now caused two separate bugs in this
-project (the fetch re-queue and the fat-tail load); every consumer here keys on t_ms.
+keyed on t_ms. Append-only writing without dedupe-by-key has caused two separate bugs in this project
+(the fetch re-queue and the fat-tail load); every consumer here keys on t_ms.
 """
 import csv
 import datetime
@@ -28,18 +36,24 @@ import json
 import os
 import sqlite3
 import time
+import urllib.error
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "history")
 DB = os.path.join(HERE, "crunch", "panels.sqlite")
-PAUSE = 0.35
+PAUSE = 1.1              # ~0.9 req/s; v1 used 0.35 and generated its own 429s
+PAUSE_MAX = 3.0
 PAGE_CAP = 500           # observed response cap
-MAX_PAGES = 200          # ~8.3 years of hourly funding; a walk longer than this is a bug
+MAX_PAGES = 200          # ~8.3 years of hourly funding; a longer walk is a bug
+CHECKPOINT = 15          # flush to disk every N pages so an interruption keeps the work
 HOUR = 3600000
 
+_tp = {"pause": PAUSE, "n429": 0}
 
-def post(body, tries=4):
+
+def post(body, tries=6):
+    """POST with 429-aware backoff. A 429 permanently slows the run rather than retrying blind."""
     for i in range(tries):
         try:
             rq = urllib.request.Request(
@@ -48,6 +62,16 @@ def post(body, tries=4):
                 headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(rq, timeout=45) as r:
                 return json.loads(r.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                _tp["n429"] += 1
+                _tp["pause"] = min(PAUSE_MAX, _tp["pause"] * 1.3)
+                ra = (e.headers.get("Retry-After") or "").strip()
+                time.sleep(float(ra) if ra.isdigit() else min(60.0, 5.0 * (i + 1)))
+                continue
+            if i == tries - 1:
+                raise
+            time.sleep(2 ** i)
         except Exception:
             if i == tries - 1:
                 raise
@@ -101,34 +125,39 @@ def write_cache(path, rows):
     os.replace(tmp, path)
 
 
-def walk(coin, start):
-    """Page forward from start. Returns {t_ms: rate}. Stops on a short page or no advance."""
-    got, cur, pages = {}, start, 0
+def walk(coin, start, have, path):
+    """Page forward from start, merging into `have` and checkpointing. Returns pages walked."""
+    cur, pages, since_flush = start, 0, 0
     while pages < MAX_PAGES:
         r = post({"type": "fundingHistory", "coin": coin, "startTime": cur})
         pages += 1
+        since_flush += 1
         if not r:
             break
         for b in r:
             try:
-                got[int(b["time"])] = float(b["fundingRate"])
+                have[int(b["time"])] = float(b["fundingRate"])
             except (TypeError, ValueError, KeyError):
                 continue
         last = max(int(b["time"]) for b in r)
+        if since_flush >= CHECKPOINT:
+            write_cache(path, have)
+            since_flush = 0
         if len(r) < PAGE_CAP or last <= cur:
             break                      # short page = caught up; no advance = guard against a loop
         cur = last + 1
-        time.sleep(PAUSE)
-    return got, pages
+        time.sleep(_tp["pause"])
+    return pages
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
     coins = universe()
     now = int(time.time() * 1000)
-    fresh = updated = failed = 0
+    fresh = updated = failed = current = 0
     tot_rows = tot_pages = 0
-    print("funding walk over %d coins (138 with no cache)" % len(coins))
+    print("funding walk over %d coins | pause %.2fs, adaptive on 429" % (len(coins), PAUSE),
+          flush=True)
     t0 = time.time()
     for i, c in enumerate(coins):
         path = os.path.join(OUT, "%s_funding.csv" % c)
@@ -137,32 +166,37 @@ def main():
         start = (max(have) + 1) if have else listing_ms(c)
         if have and now - max(have) < 2 * HOUR:
             tot_rows += len(have)
-            continue                   # already current
+            current += 1
+            continue
         try:
-            got, pages = walk(c, start)
+            pages = walk(c, start, have, path)
         except Exception as e:
-            print("  %-12s FAILED %s" % (c, e))
+            print("  %-12s FAILED %s" % (c, e), flush=True)
             failed += 1
+            time.sleep(_tp["pause"])        # defect 2: v1 had no pause here
             continue
         tot_pages += pages
-        if got:
-            have.update(got)
+        if have:
             write_cache(path, have)
             if new_coin:
                 fresh += 1
                 d0 = datetime.datetime.fromtimestamp(min(have) / 1000, datetime.UTC).date()
-                print("  NEW %-12s %6d rows from %s (%d pages)" % (c, len(have), d0, pages))
+                print("  NEW %-12s %6d rows from %s (%d pages)" % (c, len(have), d0, pages),
+                      flush=True)
             else:
                 updated += 1
         tot_rows += len(have)
-        if (i + 1) % 20 == 0:
-            el = time.time() - t0
-            print("  [%3d/%d] %d new, %d topped up, %d failed | %d rows | %.0fs elapsed"
-                  % (i + 1, len(coins), fresh, updated, failed, tot_rows, el))
-        time.sleep(PAUSE)
-    print("\nDONE: %d new coins, %d topped up, %d failed, %d pages in %.0f min"
-          % (fresh, updated, failed, tot_pages, (time.time() - t0) / 60))
-    print("funding panel now ~%d hourly rows" % tot_rows)
+        if (i + 1) % 10 == 0:
+            print("  [%3d/%d] %d new, %d topped up, %d current, %d failed | %d rows | "
+                  "%d x 429, pause %.2fs | %.0f min"
+                  % (i + 1, len(coins), fresh, updated, current, failed, tot_rows,
+                     _tp["n429"], _tp["pause"], (time.time() - t0) / 60), flush=True)
+        time.sleep(_tp["pause"])
+    print("\nDONE: %d new, %d topped up, %d already current, %d failed | %d pages | "
+          "%d x 429 | final pause %.2fs | %.0f min"
+          % (fresh, updated, current, failed, tot_pages, _tp["n429"], _tp["pause"],
+             (time.time() - t0) / 60), flush=True)
+    print("funding panel now ~%d hourly rows" % tot_rows, flush=True)
 
 
 if __name__ == "__main__":
