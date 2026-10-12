@@ -8,19 +8,19 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 1764,
+  "v": 1788,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 3884,
+  "v": 3957,
   "u": "bytes"
  },
  "archive": {
-  "v": 161105,
+  "v": 176978,
   "u": "rows+bytes"
  },
  "candles_5m": {
-  "v": 33288,
+  "v": 33372,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -48,7 +48,7 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 20292,
+  "v": 21182,
   "u": "rows+bytes"
  },
  "entry_gate_log.jsonl.gz": {
@@ -56,7 +56,7 @@
   "u": "rows"
  },
  "entry_mom.jsonl": {
-  "v": 1255,
+  "v": 1555,
   "u": "rows"
  },
  "execution_analytics.csv": {
@@ -68,7 +68,7 @@
   "u": "rows"
  },
  "expmove_log.jsonl": {
-  "v": 60,
+  "v": 119,
   "u": "rows"
  },
  "floor_decisions_log.jsonl.gz": {
@@ -76,15 +76,15 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 50018,
+  "v": 50064,
   "u": "rows"
  },
  "geometry_shadow.json": {
-  "v": 629,
+  "v": 630,
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 384,
+  "v": 390,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -100,19 +100,19 @@
   "u": "rows"
  },
  "owner_fills.jsonl": {
-  "v": 3,
+  "v": 4,
   "u": "rows"
  },
  "owner_plans.jsonl": {
-  "v": 5,
+  "v": 6,
   "u": "rows"
  },
  "plans.json": {
-  "v": 7689,
+  "v": 9619,
   "u": "bytes"
  },
  "position_journal.jsonl": {
-  "v": 3106,
+  "v": 3108,
   "u": "rows"
  },
  "position_manager.py": {
@@ -120,11 +120,11 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 9229,
+  "v": 9397,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 279,
+  "v": 321,
   "u": "rows"
  },
  "scanner.py": {
@@ -136,7 +136,7 @@
   "u": "rows"
  },
  "state": {
-  "v": 529782,
+  "v": 532100,
   "u": "rows+bytes"
  },
  "syndicate_calls_anon.jsonl": {
@@ -145,6 +145,10 @@
  },
  "syndicate_paths_anon.jsonl.gz": {
   "v": 56,
+  "u": "rows"
+ },
+ "tg_calls_history_anon.jsonl.gz": {
+  "v": 18437,
   "u": "rows"
  },
  "trade_ledger.csv": {
@@ -156,7 +160,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 80,
+  "v": 85,
   "u": "rows"
  }
 }
