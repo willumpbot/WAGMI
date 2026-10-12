@@ -5,6 +5,8 @@ With OWNER_PLAN_EXEC=true the bot also opens each plan as a PAPER position in it
 tagged strategy="owner_plan", and lets its normal exit machinery (TP1 partial, trailing, exit agent,
 time stops, MFE exits) manage it. plans.py grades the plan as written; this module records what the
 bot's management made of the same plan, so the two can be compared side by side.
+How much of that machinery may act is set per plan by `exit_mode` (see owner_exit_mode() below):
+default profits_only = partial profits only, the owner's stop is never moved and never closed early.
 
 HARD RULE: owner trades never feed the bot's learning or stats. Every close/partial of a tagged position
 is diverted (multi_strategy_main close loop -> record_owner_close -> `continue`) into
@@ -55,6 +57,111 @@ def is_owner_position(pos: Any) -> bool:
 
 def is_owner_event(event: Any) -> bool:
     return event is not None and getattr(event, "strategy", "") == OWNER_STRATEGY
+
+
+# ── per-plan EXIT MODE ──────────────────────────────────────────────────────
+# What the bot's exit machinery may do to an owner position (stored as `exit_mode` on the plan row,
+# copied into pos.entry_reasons["exit_mode"] at open):
+#   profits_only (default) — bot may bank PARTIAL profits (TP1 leg / AI partials, total <= 50% of the
+#                            original qty) but never moves the owner's stop (no breakeven, profit-lock,
+#                            ratchet, trailing, AI tighten, hold-limit tighten) and never fully closes
+#                            early (no AI close, MFE/funding/hold-limit close). Only the owner's stop,
+#                            the owner's target, or the partial legs end it.
+#   hands_off              — as profits_only, and no partials either: pure stop/target.
+#   bot_manages            — the bot's normal exit machinery, no restrictions (pre-2026-10-12 behaviour).
+# Bot-opened positions always resolve to bot_manages, so every guard is inert for them.
+# Kill-switches (no code change needed):
+#   OWNER_PLAN_EXIT_MODE_DEFAULT  mode for plans/positions with no (or an invalid) exit_mode. Default profits_only.
+#   OWNER_PLAN_EXIT_MODE_FORCE    if set to a valid mode, overrides EVERY owner position's mode
+#                                 (e.g. =bot_manages reverts all owner positions to the old behaviour).
+EXIT_PROFITS_ONLY = "profits_only"
+EXIT_HANDS_OFF = "hands_off"
+EXIT_BOT_MANAGES = "bot_manages"
+EXIT_MODES = (EXIT_PROFITS_ONLY, EXIT_HANDS_OFF, EXIT_BOT_MANAGES)
+RESTRICTED_EXIT_MODES = (EXIT_PROFITS_ONLY, EXIT_HANDS_OFF)
+OWNER_PARTIAL_CAP_FRAC = 0.5  # profits_only: total partial-closed qty <= 50% of ORIGINAL qty
+
+
+def normalize_exit_mode(value: Any) -> Optional[str]:
+    v = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    return v if v in EXIT_MODES else None
+
+
+def default_exit_mode() -> str:
+    return normalize_exit_mode(os.getenv("OWNER_PLAN_EXIT_MODE_DEFAULT", EXIT_PROFITS_ONLY)) or EXIT_PROFITS_ONLY
+
+
+def owner_exit_mode(pos: Any) -> str:
+    """profits_only / hands_off / bot_manages for this position. bot_manages for every non-owner position."""
+    if not is_owner_position(pos):
+        return EXIT_BOT_MANAGES
+    forced = normalize_exit_mode(os.getenv("OWNER_PLAN_EXIT_MODE_FORCE", ""))
+    if forced:
+        return forced
+    er = getattr(pos, "entry_reasons", None) or {}
+    mode = normalize_exit_mode(er.get("exit_mode")) if isinstance(er, dict) else None
+    return mode or default_exit_mode()
+
+
+def owner_exit_restricted(pos: Any) -> bool:
+    """True when the bot may NOT move this position's stop or fully close it early."""
+    return owner_exit_mode(pos) in RESTRICTED_EXIT_MODES
+
+
+def owner_partial_allowance(pos: Any) -> float:
+    """Qty the bot may still partially close on this position under its exit mode.
+
+    bot_manages / non-owner: the whole current qty (no cap). hands_off: 0. profits_only:
+    max(0, 50% x original_qty - qty already partial-closed).
+    """
+    qty = float(getattr(pos, "qty", 0) or 0)
+    mode = owner_exit_mode(pos)
+    if mode == EXIT_BOT_MANAGES:
+        return qty
+    if mode == EXIT_HANDS_OFF:
+        return 0.0
+    orig = float(getattr(pos, "original_qty", 0) or 0) or qty
+    already = max(0.0, orig - qty)
+    # round off float dust (0.5 - 0.4 = 0.0999..) so a later round-DOWN of the qty doesn't lose a tick
+    return round(max(0.0, min(qty, OWNER_PARTIAL_CAP_FRAC * orig - already)), 10)
+
+
+def log_owner_exit_block(pos: Any, source: str, action: str, reason: str, once: bool = False) -> None:
+    """Record a blocked bot exit action on an owner position (data/hivemind/owner_exit_decisions.jsonl).
+
+    once=True: write at most one row per (position, source, action) — for paths evaluated every tick.
+    Never raises.
+    """
+    try:
+        if once:
+            seen = getattr(pos, "_owner_exit_blocks_logged", None)
+            if seen is None:
+                seen = set()
+                try:
+                    setattr(pos, "_owner_exit_blocks_logged", seen)
+                except Exception:
+                    pass
+            key = f"{source}:{action}"
+            if key in seen:
+                return
+            seen.add(key)
+        mode = owner_exit_mode(pos)
+        er = getattr(pos, "entry_reasons", None) or {}
+        row = {
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "symbol": getattr(pos, "symbol", ""),
+            "exit_action": action, "applied": False, "source": source, "exit_mode": mode,
+            "details": f"blocked by owner exit_mode={mode}: {reason}",
+            "owner_plan_id": er.get("owner_plan_id") if isinstance(er, dict) else None,
+            "position_side": getattr(pos, "side", ""), "position_sl": getattr(pos, "sl", None),
+            "position_id": getattr(pos, "position_id", ""),
+        }
+        p = Path(HM_DIR) / "owner_exit_decisions.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, default=str) + "\n")
+        logger.info(f"[OWNER-PLAN] {row['symbol']} {source} {action} blocked (exit_mode={mode}): {reason}")
+    except Exception:
+        logger.debug("[OWNER-PLAN] exit-block log failed", exc_info=True)
 
 
 def plans_path() -> Path:
@@ -285,12 +392,12 @@ def drain(bot, trace_id: str = "", now: Optional[float] = None) -> Dict[str, Any
             if res.get("ok"):
                 mark("open", fill_reason, fill_price=res["entry"], qty=res["qty"], tp1=res["tp1"],
                      tp2=res["tp2"], sl=res["sl"], risk_usd=res["risk_usd"], position_id=res["position_id"],
-                     filled_at=now, fills=[])
+                     exit_mode=res.get("exit_mode"), filled_at=now, fills=[])
                 try:
                     _append_fill({"kind": "open", "plan_id": pid, "coin": coin, "side": side, "entry": res["entry"],
                                   "qty": res["qty"], "sl": res["sl"], "tp1": res["tp1"], "tp2": res["tp2"],
                                   "risk_usd": res["risk_usd"], "position_id": res["position_id"], "ts": now,
-                                  "pnl_lev": res.get("pnl_lev", 1.0),
+                                  "pnl_lev": res.get("pnl_lev", 1.0), "exit_mode": res.get("exit_mode"),
                                   "reason": fill_reason})
                 except Exception:
                     logger.debug("[OWNER-PLAN] open row write failed", exc_info=True)
@@ -363,13 +470,15 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
         except Exception:
             prof = None
         regime = (getattr(bot, "_tick_regime_cache", {}) or {}).get(coin, "unknown")
+        exit_mode = normalize_exit_mode(pl.get("exit_mode")) or default_exit_mode()
         pos = pm.open_position(
             symbol=coin, side=side, entry=fill, qty=qty, sl=lv["sl"], tp1=lv["tp1"], tp2=lv["tp2"],
             atr=_atr_1h(bot, coin), leverage=leverage, mode="leverage" if leverage > 1 else "spot",
             strategy=OWNER_STRATEGY, confidence=50.0,
             entry_reasons={"owner_plan_id": pl.get("id"), "owner_trade": True, "llm_action": "owner",
                            "primary_driver": OWNER_STRATEGY, "regime": regime, "setup": pl.get("setup"),
-                           "plan_entry": pl.get("entry"), "plan_stop": stop, "plan_target": target},
+                           "plan_entry": pl.get("entry"), "plan_stop": stop, "plan_target": target,
+                           "exit_mode": exit_mode},
             trade_profile=prof,
             notes=f"THESIS: owner plan {side} {coin} tgt {target:g} inval {stop:g} | setup=owner_plan",
             setup_type=OWNER_STRATEGY,
@@ -378,7 +487,7 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
             return {"ok": False, "reason": "position manager refused (duplicate / cooldown / stop too tight)"}
         return {"ok": True, "entry": pos.entry, "qty": pos.qty, "sl": pos.sl, "tp1": pos.tp1, "tp2": pos.tp2,
                 "risk_usd": round(abs(pos.entry - pos.sl) * pos.qty * (pnl_lev or 1.0), 4),
-                "position_id": pos.position_id, "pnl_lev": pnl_lev or 1.0}
+                "position_id": pos.position_id, "pnl_lev": pnl_lev or 1.0, "exit_mode": exit_mode}
     finally:
         if lock is not None and execs is not None:
             with lock:

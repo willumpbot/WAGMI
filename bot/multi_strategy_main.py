@@ -3636,6 +3636,17 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Collect them here and inject after update_price() so equity/ledger/kelly stay in sync.
         _force_close_events: list = []
 
+        # OWNER_PLAN_EXEC exit mode: an owner position in profits_only/hands_off is never
+        # stop-tightened or discretionarily closed by the blocks below (funding avoidance, MFE
+        # exits/tighten, liquidation-warning tighten). The hard <1.5%-from-liquidation close is
+        # kept (it stands in for the exchange's own liquidation). Always False for bot positions.
+        _owner_locked_ms = False
+        if symbol in open_pos and _owner_plan_exec.is_owner_position(open_pos[symbol]):
+            try:
+                _owner_locked_ms = _owner_plan_exec.owner_exit_restricted(open_pos[symbol])
+            except Exception:
+                _owner_locked_ms = True
+
         # Liquidation distance monitoring: check every tick for leveraged positions
         if symbol in open_pos and open_pos[symbol].leverage > 1.0:
             _liq_pos = open_pos[symbol]
@@ -3670,6 +3681,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             f"[{trace_id}][{symbol}] LIQUIDATION CLOSE FAILED — position still open on exchange. "
                             f"Reconciliation will handle. Result: {_liq_close}"
                         )
+            elif _liq_dist < 0.03 and _owner_locked_ms:
+                _owner_plan_exec.log_owner_exit_block(_liq_pos, "liquidation_warning", "tighten_sl",
+                                                      f"{_liq_dist:.1%} from liquidation", once=True)
             elif _liq_dist < 0.03:
                 # < 3% from liquidation — tighten SL
                 _new_sl = current_price * (0.995 if _liq_pos.side == "LONG" else 1.005)
@@ -3683,7 +3697,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         # D2: Funding-aware hold time optimization
         # Close marginal positions before 8-hour funding payments
-        if symbol in open_pos and open_pos[symbol].leverage > 1.0:
+        # (never an owner position in profits_only/hands_off — not the owner's stop/target)
+        if symbol in open_pos and open_pos[symbol].leverage > 1.0 and not _owner_locked_ms:
             _fund_pos = open_pos[symbol]
             _fr = self._last_funding_rates.get(symbol, 0.0)
             if _fr != 0:
@@ -3726,7 +3741,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             self.pos_mgr.accrue_funding(symbol, _fr)
 
         # MFE-aware exit intelligence: check if we should take profit or cut early
-        if symbol in open_pos:
+        # (never an owner position in profits_only/hands_off: no early close, no stop move)
+        if symbol in open_pos and not _owner_locked_ms:
             _mfe_pos = open_pos[symbol]
             try:
                 from execution.mfe_exit import get_exit_recommendation

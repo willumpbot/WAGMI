@@ -246,6 +246,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
         <label>Entry type<select id="c_etype"><option value="limit">Limit at entry</option><option value="market">Market now</option></select></label>
         <label style="grid-column:1/-1">Setup<select id="c_setup"><option>ai idea</option><option>50d pullback</option><option>breakout</option><option>breakdown</option><option>range fade</option><option>liq magnet</option><option>trend continuation</option><option>other</option></select></label>
         <label style="grid-column:1/-1">Why<input id="c_reason" placeholder="your read, in a few words"></label>
+        <label style="grid-column:1/-1" title="What the bot may do to its paper copy of this plan">Bot's exits<select id="c_exitmode"><option value="profits_only" selected>Profits only (default): may take partial profits, never moves my stop</option><option value="hands_off">Hands off: only my stop or target</option><option value="bot_manages">Bot manages: its full exit system</option></select></label>
       </div>
       <div id="c_safe" style="margin-top:8px"></div>
       <div class="out num" id="c_out"></div><div class="warn" id="c_warn" style="display:none"></div>
@@ -925,7 +926,8 @@ function renderPlans(){
 async function makePlan(){
   const side = $("c_side").value, et = $("c_etype").value, now = px(sel);
   const body = {coin: sel, side, entry: +$("c_entry").value, stop: +$("c_stop").value, target: +$("c_tgt").value, entry_type: et, price: now,
-    leverage: +$("c_lev").value, risk_usd: +$("c_acct").value * +$("c_risk").value / 100, setup: $("c_setup").value, reason: $("c_reason").value};
+    leverage: +$("c_lev").value, risk_usd: +$("c_acct").value * +$("c_risk").value / 100, setup: $("c_setup").value, reason: $("c_reason").value,
+    exit_mode: ($("c_exitmode") && $("c_exitmode").value) || "profits_only"};
   if (window.LOADED_IDEA && window.LOADED_IDEA.coin === sel) { body.source_idea_id = window.LOADED_IDEA.id; body.adopt_mode = "adjust"; }
   try {
     const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken}, body: JSON.stringify(body)});
@@ -1073,7 +1075,7 @@ function aiPlans(){
   document.querySelectorAll(".aiadopt").forEach(b => b.onclick = async () => {
     const q = I.find(x => x.id === b.dataset.id); if (!q) return;
     try { const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken},
-        body: JSON.stringify({coin:q.coin, side:q.side, entry:q.entry, stop:q.stop, target:q.target, entry_type:"limit", price:midOf(q.coin)||q.price_at_plan, leverage:q.leverage, setup:"ai idea", reason:"adopted Claude idea "+q.id+": "+q.reason.slice(0,200), source_idea_id:q.id, adopt_mode:"adopt"})});
+        body: JSON.stringify({coin:q.coin, side:q.side, entry:q.entry, stop:q.stop, target:q.target, entry_type:"limit", price:midOf(q.coin)||q.price_at_plan, leverage:q.leverage, setup:"ai idea", reason:"adopted Claude idea "+q.id+": "+q.reason.slice(0,200), source_idea_id:q.id, adopt_mode:"adopt", exit_mode:"profits_only"})});
       const j = await r.json(); b.textContent = j.ok ? "Added to my plans ✔" : "Couldn't add"; b.disabled = true; loadPlans(); } catch(e) { b.textContent = "API not reachable"; } });
 }
 let HF = null;

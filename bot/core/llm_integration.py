@@ -1270,8 +1270,25 @@ class LLMIntegrationMixin:
                                         )
                                     else:
                                         _exit_pos = _pm.positions.get(symbol)
+                                        _owner_locked = False
+                                        if _exit_pos is not None and getattr(_exit_pos, "strategy", "") == "owner_plan":
+                                            # OWNER_PLAN_EXEC: this force-close bypasses the exit-engine
+                                            # gate, so enforce the plan's exit mode here too.
+                                            try:
+                                                from core.owner_plan_exec import owner_exit_restricted, log_owner_exit_block
+                                                _owner_locked = owner_exit_restricted(_exit_pos)
+                                                if _owner_locked:
+                                                    log_owner_exit_block(
+                                                        _exit_pos, "exit_agent_force_close", "close",
+                                                        f"exit agent {action} urgency={urgency}: {reason[:80]}")
+                                            except Exception:
+                                                _owner_locked = True  # fail-closed for the owner's trade
                                         if not _exit_pos or _exit_pos.qty <= 0:
                                             logger.debug(f"[EXIT-AGENT] {symbol} no open position to close.")
+                                        elif _owner_locked:
+                                            logger.warning(
+                                                f"[EXIT-AGENT] {symbol} owner plan close SKIPPED "
+                                                f"(exit mode keeps the owner's stop/target in charge)")
                                         else:
                                             # Fee-aware exit guard (EXIT_FEE_GUARD, default off; shadow=log-only).
                                             # Avoids paying round-trip fees to close a ~flat low-conviction position.

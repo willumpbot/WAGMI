@@ -49,6 +49,14 @@ def _context(coin):
             "chief_lean": ch.get("lean"), "chief_conv": ch.get("conviction")}
 
 
+EXIT_MODES = ("profits_only", "hands_off", "bot_manages")
+
+
+def _exit_mode(v):
+    v = str(v or "").strip().lower().replace("-", "_").replace(" ", "_")
+    return v if v in EXIT_MODES else "profits_only"
+
+
 def create(p):
     coin = str(p.get("coin", "")).strip()[:20]
     side = str(p.get("side", "")).upper()
@@ -71,7 +79,11 @@ def create(p):
            "reason": str(p.get("reason") or "")[:300], "context": _context(coin),
            # which Claude idea this plan came from (laptop prereg needs it to grade the owner's adopt/skip choice)
            "source_idea_id": str(p.get("source_idea_id") or "")[:20] or None,
-           "adopt_mode": (p.get("adopt_mode") if p.get("adopt_mode") in ("adopt", "adjust") else None)}
+           "adopt_mode": (p.get("adopt_mode") if p.get("adopt_mode") in ("adopt", "adjust") else None),
+           # what the bot may do to the paper position (core/owner_plan_exec.owner_exit_mode):
+           # profits_only (default) = partial profits only, stop never moved, no early close;
+           # hands_off = stop/target only; bot_manages = the bot's full exit machinery.
+           "exit_mode": _exit_mode(p.get("exit_mode"))}
     HM.mkdir(parents=True, exist_ok=True)
     with open(PLANS, "a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")

@@ -94,6 +94,33 @@ class ExitEngine:
         if decision.exit_action == "hold":
             return True, ""
 
+        # Rule 0: OWNER-PLAN EXIT MODE (core/owner_plan_exec.owner_exit_mode). Inert for bot
+        # positions (always bot_manages). profits_only/hands_off: the owner's stop and target are
+        # never moved and the AI never fully closes early; profits_only allows partials up to a
+        # cumulative 50% of the original qty (the decision's partial_pct is clipped to the cap).
+        if getattr(position, "strategy", "") == "owner_plan":
+            from core.owner_plan_exec import (owner_exit_mode, owner_partial_allowance,
+                                              RESTRICTED_EXIT_MODES, EXIT_HANDS_OFF, OWNER_PARTIAL_CAP_FRAC)
+            _om = owner_exit_mode(position)
+            if _om in RESTRICTED_EXIT_MODES:
+                if decision.exit_action in ("tighten_sl", "widen_tp"):
+                    return False, (f"owner plan exit_mode={_om}: the bot may not move the owner's "
+                                   f"{'stop' if decision.exit_action == 'tighten_sl' else 'target'}")
+                if decision.exit_action == "close":
+                    return False, f"owner plan exit_mode={_om}: no early full close (only stop/target end it)"
+                if decision.exit_action == "partial":
+                    if _om == EXIT_HANDS_OFF:
+                        return False, "owner plan exit_mode=hands_off: no partials"
+                    _allow = owner_partial_allowance(position)
+                    _min_q = get_min_qty(position.symbol)
+                    if _allow < _min_q or position.qty <= 0:
+                        return False, (f"owner plan exit_mode={_om}: partial cap reached "
+                                       f"({OWNER_PARTIAL_CAP_FRAC:.0%} of original qty already banked)")
+                    if position.qty * decision.partial_pct > _allow:
+                        decision.partial_pct = _allow / position.qty
+                        logger.info(f"[EXIT-ENGINE] {decision.symbol} owner partial clipped to "
+                                    f"{decision.partial_pct:.1%} of qty ({OWNER_PARTIAL_CAP_FRAC:.0%} cap)")
+
         # Rule 1: SL can only be tightened (moved closer to price)
         if decision.exit_action == "tighten_sl" and decision.new_sl is not None:
             if is_long:
@@ -325,10 +352,13 @@ class ExitEngine:
             if getattr(position, "strategy", "") == "owner_plan":
                 # OWNER_PLAN_EXEC: owner-plan exit decisions stay out of the bot's
                 # exit-decision corpus (graded/learned from); kept beside the plan instead.
-                from core.owner_plan_exec import HM_DIR as _HM_DIR
+                from core.owner_plan_exec import HM_DIR as _HM_DIR, owner_exit_mode as _oem
                 os.makedirs(_HM_DIR, exist_ok=True)
                 _log_file = os.path.join(str(_HM_DIR), "owner_exit_decisions.jsonl")
                 entry["owner_plan_id"] = (getattr(position, "entry_reasons", None) or {}).get("owner_plan_id")
+                entry["exit_mode"] = _oem(position)
+                entry["source"] = "exit_engine"
+                entry["partial_pct"] = decision.partial_pct if decision.exit_action == "partial" else None
             with open(_log_file, "a") as f:
                 f.write(json.dumps(entry) + "\n")
         except Exception as e:
