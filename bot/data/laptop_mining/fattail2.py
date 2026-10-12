@@ -171,6 +171,48 @@ def report(both, dead, check_only):
         print("%11.2fx" % max(v), end="")
     print()
 
+    # ---------------------------------------------------------------- robustness
+    # Written BEFORE the result it judges was visible (n=114 of the 200 committed), deliberately:
+    # a near-breakeven mean carried by one 35x call is an outlier, not a strategy, and the moment to
+    # fix how that gets tested is before there is a number worth protecting.
+    print("")
+    print("ROBUSTNESS of the best rule at each horizon")
+    print("%-24s %10s %10s %10s %10s" % ("", "pooled", "drop best", "eq-weight", "top-1 share"))
+    for name, grid, idx_h in HORIZONS:
+        best_lbl, best_t = None, None
+        for target in TARGETS:
+            lbl = "hold to the end" if target is None else "sell all at %.1fx" % target
+            if best_lbl is None or rows[(lbl, name)] > rows[(best_lbl, name)]:
+                best_lbl, best_t = lbl, target
+        vals, days = [], {}
+        for r in both:
+            v = outcome(r, grid, idx_h, best_t)
+            if v is None:
+                continue
+            vals.append(v)
+            d = int(float(r["call_ts"]) // 86400)
+            days.setdefault(d, []).append(v)
+        if not vals:
+            continue
+
+        def wt(xs):
+            return (1.0 - DEAD_RATE) * statistics.fmean(xs) + DEAD_RATE * (-1.0)
+
+        pooled = wt(vals)
+        drop = wt(sorted(vals)[:-1]) if len(vals) > 1 else float("nan")
+        eqday = (1.0 - DEAD_RATE) * statistics.fmean(
+            [statistics.fmean(v) for v in days.values()]) + DEAD_RATE * (-1.0)
+        pos = [x for x in vals if x > 0]
+        share = (max(vals) / sum(pos) * 100.0) if pos and sum(pos) > 0 else float("nan")
+        print("%-24s %9.1f%% %9.1f%% %9.1f%% %9.0f%%"
+              % ("%s @ %s" % (best_lbl.replace("sell all at ", ""), name),
+                 100 * pooled, 100 * drop, 100 * eqday, share))
+        print("%-24s   %d calls over %d call-days" % ("", len(vals), len(days)))
+    print("   EQ-WEIGHT GOVERNS on disagreement with pooled -- clustering the CI while pooling the")
+    print("   estimate is what turned an M2 result from +0.09% into -3.93%.")
+    print("   TOP-1 SHARE: fraction of all positive return carried by the single best call.")
+    print("   DROP BEST: the same rule with that call removed entirely.")
+
     print("\nWHERE THE PEAK HAPPENS -- the question the 24h study could not see")
     later = sum(1 for r in both
                 if max(r["peak_h"][:337]) > max(r["peak_m"]) * 1.02)
