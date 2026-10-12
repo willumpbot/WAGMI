@@ -158,7 +158,21 @@ def adapt(got429):
         _state["pause"] = max(_state["pause"] * 0.92, 2.0)   # creep back down when clean
     return _state["pause"]
 MIN_H = 24          # minute grid out to 24h -- covers every entry delay and first-hour stop
-HOUR_H = 72         # hourly grid out to 72h -- covers the time stops
+HOUR_H = 336        # hourly grid out to 14 DAYS -- see below
+#
+# HOUR_H was 72h and the hourly grid was only a FALLBACK for when minute data was missing, so 0 of
+# the first 342 fetched rows had one. That made the whole corpus a 24-hour study, and I then misread
+# `peak_m`'s 1,441 minute-steps as 60 days -- a factor of 60 -- and published a fat-tail answer whose
+# horizon label was wrong.
+#
+# The correction matters because the tail is not in the first day. The call that exposed the
+# token-side bug did 1.30x in 24h and 58.69x within 14 days; the owner's question is specifically
+# about multi-week winners. So the hourly grid is now ALWAYS fetched, out to 14 days.
+#
+# Cost, which I had overstated to the server as 2 extra requests: 14 days is 336 hourly bars against
+# the API's 1,000-bar limit, so it is ONE extra request per call. 3 requests per call, not 2 -- a 50%
+# increase, not 100%. A 41-day grid would also fit in one request; 14d is what the server asked for
+# (7d and 14d tables), and a shorter window keeps the dead-pool rate lower.
 
 
 def get(url, tries=3):
@@ -412,16 +426,33 @@ def main():
             limit = int(a.split("=", 1)[1])
     calls = load_calls()
     api_lock_wait()
-    done = set()
+    done, needs_hourly, carry = set(), set(), {}
     if os.path.exists(OUT):
         for line in io.open(OUT, encoding="utf-8"):
             try:
                 d = json.loads(line)
             except Exception:
                 continue
-            if d.get("ca"):
-                done.add(d["ca"])
+            if not d.get("ca"):
+                continue
+            done.add(d["ca"])
+            # A row fetched before the horizon fix has a 24h minute grid and no hourly one. Its
+            # minute data is still correct, so re-requesting it would be waste -- fetch ONLY the
+            # hourly grid for those and let the merge keep both.
+            if d.get("peak_m") and not d.get("peak_h"):
+                # carry the existing minute grid forward so the UPGRADED row is COMPLETE. Without
+                # this the file ends up with two rows per ca -- one minute-only, one hourly-only --
+                # and every reader that keys on ca with last-wins silently loses the 24h grid.
+                needs_hourly.add(d["ca"])
+                carry[d["ca"]] = (d["peak_m"], d.get("close_m"))
     todo = [c for c in calls if c["ca"] not in done]
+    if needs_hourly:
+        up = [dict(c, hourly_only=True, carry=carry.get(c["ca"]))
+              for c in calls if c["ca"] in needs_hourly]
+        print("  HORIZON UPGRADE: %d rows already have the 24h minute grid but no 14d hourly grid; "
+              "fetching the hourly part only (1 request each, minute data not re-requested)"
+              % len(up), flush=True)
+        todo = up + todo
     if limit:
         todo = todo[:limit]
     # Report the OPTIMISTIC FLOOR and the MEASURED expectation separately. The old line printed
@@ -460,24 +491,29 @@ def main():
             f.flush()
             continue
         t0 = c["call_ts"]
-        mins, _e1 = ohlc(pool, "minute", t0 + MIN_H * 3600 + 60, net, ca=c["ca"])
-        pm, cm = grids(mins, t0, MIN_H * 3600, 60)
-        if pm is None:
-            hrs, _e2 = ohlc(pool, "hour", t0 + HOUR_H * 3600 + 3600, net, ca=c["ca"])
-            ph, ch = grids(hrs, t0, HOUR_H * 3600, 3600)
-            if ph is None:
-                dead += 1
-                f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
-                                    "pool": pool, "net": net, "dead": "no_path"}) + "\n")
-                f.flush()
-                continue
+        pm = cm = ph = ch = None
+        if not c.get("hourly_only"):
+            mins, _e1 = ohlc(pool, "minute", t0 + MIN_H * 3600 + 60, net, ca=c["ca"])
+            pm, cm = grids(mins, t0, MIN_H * 3600, 60)
+        # ALWAYS fetch the hourly grid now, not just as a fallback -- the 24h minute grid cannot
+        # see the tail, and the tail is the question.
+        hrs, _e2 = ohlc(pool, "hour", t0 + HOUR_H * 3600 + 3600, net, ca=c["ca"])
+        ph, ch = grids(hrs, t0, HOUR_H * 3600, 3600)
+        if pm is None and ph is None:
+            dead += 1
             f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
-                                "pool": pool, "net": net,
-                                "peak_h": ph, "close_h": ch}) + "\n")
-        else:
-            f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
-                                "pool": pool, "net": net,
-                                "peak_m": pm, "close_m": cm}) + "\n")
+                                "pool": pool, "net": net, "dead": "no_path"}) + "\n")
+            f.flush()
+            continue
+        rec = {"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
+               "pool": pool, "net": net}
+        if pm is None and c.get("carry"):
+            pm, cm = c["carry"]                       # preserved from the pre-upgrade row
+        if pm is not None:
+            rec["peak_m"], rec["close_m"] = pm, cm
+        if ph is not None:
+            rec["peak_h"], rec["close_h"] = ph, ch
+        f.write(json.dumps(rec) + "\n")
         f.flush()
         ok += 1
         if (ok + dead) % 50 == 0:
