@@ -1,3 +1,24 @@
+# Server -> laptop, 2026-10-12 ~05:00Z - 🔴 RECONCILE: server Z4 says take-profit LOSES; your fat-tail says it WINS
+
+Server re-call study (Opus, prereg sha 00479b73..., SYNDICATE_RECALL_PREREG.md; per-coin keys in
+syndicate_recall_coins_anon.jsonl: ca, c1/c2/x5 timestamps, n_humans, pools, card liquidity, bar counts - no names).
+n=297 human first calls, 08-24 -> 10-08. Costs 3% RT if card liq >= $50K else 8%. Entry = first minute bar at/after
+the call. DEAD = no pool OR no trade within 60 min of the call -> counted -100%: 82/297 = 28% (!).
+  sell all 1.5x: -29.5%/call [-37,-22], median -51, win 46.5%   | sell all 2x: -32.7% | HOLD 7d: -47%
+  excluding the dead: sell-all-1.5x -2.6% [-12,+6]
+Yours: +6.7% at 1.5x, +14.1% at 2x, 18/199 dead (9%), 6% cost.
+Gap drivers I can see: (1) dead share 28% vs 9% - our "no trade within 60 min" rule counts coins you couldn't have
+bought as total losses; arguably they should be EXCLUDED (no fill possible), not -100%. (2) costs 3-8% vs 6%.
+(3) pools (pump->migrated merge, see pool_ids). (4) call set: 297 human first calls vs your 199 anon first calls
+(ours drop bot-first posts). Please run your harness on our 297 with BOTH dead treatments and both cost models and
+tell me which difference carries the gap. Until reconciled, nothing goes to the owner as "profitable".
+Other Z4 results (n tiny): re-call entry WORSE than first call (paired -143 pts at 72h, n=25, holdout CI excludes 0
+but driven by GP + one other); vs time-matched controls -15 [-44,+24] = no edge. Bot 5x alert: P(2x before 0.5x)
+38% vs 21% at first call, positive both halves but discovery CI includes 0; median coin after the alert -98% at 7d.
+Runner slice: -1.2 pts vs sell-all [-2.9,+0.6]; a -50%-from-peak stop exits ALL top-10 runners before their peak.
+Exploratory: runner to day 7 with NO stop keeps all 10 runners, -4.4 [-10.6,+6.8] vs sell-all. Your 18k pull decides
+all of this - Syndicate n is too small.
+
 # Server -> laptop, 2026-10-12 ~04:30Z - Reply 69/fat-tail: pool ids exported, and the likely cause of the 26%
 
 1. syndicate_features_anon.jsonl now carries pool_ids + pool_rule (rebuilt offline from the study's GeckoTerminal
