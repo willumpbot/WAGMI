@@ -7,8 +7,16 @@
   "v": 2908,
   "u": "bytes"
  },
+ "SYNDICATE_DUDS_PREREG.md": {
+  "v": 4026,
+  "u": "bytes"
+ },
+ "SYNDICATE_DUDS_REPORT.md": {
+  "v": 3478,
+  "u": "bytes"
+ },
  "agent_grades_resolved.jsonl": {
-  "v": 1788,
+  "v": 1818,
   "u": "rows"
  },
  "ai_plans.json": {
@@ -20,7 +28,7 @@
   "u": "rows+bytes"
  },
  "candles_5m": {
-  "v": 33372,
+  "v": 33444,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -28,7 +36,7 @@
   "u": "bytes"
  },
  "chief_calls.jsonl": {
-  "v": 128,
+  "v": 134,
   "u": "rows"
  },
  "chief_scorecard.json": {
@@ -48,7 +56,7 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 21182,
+  "v": 22072,
   "u": "rows+bytes"
  },
  "entry_gate_log.jsonl.gz": {
@@ -56,7 +64,7 @@
   "u": "rows"
  },
  "entry_mom.jsonl": {
-  "v": 1555,
+  "v": 1632,
   "u": "rows"
  },
  "execution_analytics.csv": {
@@ -64,7 +72,7 @@
   "u": "rows"
  },
  "exit_decisions.jsonl": {
-  "v": 1324,
+  "v": 1325,
   "u": "rows"
  },
  "expmove_log.jsonl": {
@@ -76,15 +84,15 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 50064,
+  "v": 50098,
   "u": "rows"
  },
  "geometry_shadow.json": {
-  "v": 630,
+  "v": 629,
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 390,
+  "v": 396,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -108,7 +116,7 @@
   "u": "rows"
  },
  "plans.json": {
-  "v": 9619,
+  "v": 9615,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -120,11 +128,11 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 9397,
+  "v": 10641,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 321,
+  "v": 327,
   "u": "rows"
  },
  "scanner.py": {
@@ -143,12 +151,20 @@
   "v": 200,
   "u": "rows"
  },
+ "syndicate_features_anon.jsonl": {
+  "v": 313,
+  "u": "rows"
+ },
  "syndicate_paths_anon.jsonl.gz": {
   "v": 56,
   "u": "rows"
  },
  "tg_calls_history_anon.jsonl.gz": {
   "v": 18437,
+  "u": "rows"
+ },
+ "tg_mentions_anon.jsonl.gz": {
+  "v": 50447,
   "u": "rows"
  },
  "trade_ledger.csv": {
@@ -160,7 +176,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 85,
+  "v": 90,
   "u": "rows"
  }
 }
