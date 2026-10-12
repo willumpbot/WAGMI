@@ -18,6 +18,7 @@ TG = HERE.parents[1] / "data" / "hivemind" / "tg"
 OUT = TG / "call_snapshots.jsonl"
 GT = "https://api.geckoterminal.com/api/v2/networks/solana"
 MAX_AGE_S = 3 * 3600      # still informative for a slow cycle; snap_lag_s says how stale it is
+STAGES = (("call", 0, MAX_AGE_S), ("h1", 3600, 3 * 3600), ("h6", 6 * 3600, 9 * 3600))
 PER_RUN = 6               # GeckoTerminal free tier is shared with tg_track and the microcap collector
 
 
@@ -27,7 +28,11 @@ def run():
     except Exception:
         return 0
     try:
-        done = {json.loads(l)["ca"] for l in OUT.read_text(encoding="utf-8").splitlines() if l.strip()}
+        done = set()
+        for l in OUT.read_text(encoding="utf-8").splitlines():
+            if l.strip():
+                o = json.loads(l)
+                done.add((o["ca"], o.get("stage", "call")))
     except OSError:
         done = set()
     now, n = time.time(), 0
@@ -35,7 +40,13 @@ def run():
         if n >= PER_RUN:
             break
         ca = c.get("ca")
-        if not ca or ca in done or now - c["call_ts"] > MAX_AGE_S:
+        if not ca:
+            continue
+        age = now - c["call_ts"]
+        # stage = when the snapshot is taken: at the call, then ~1h and ~6h later (exploratory 10-13: a single call-time
+        # snapshot can't show how flow/holders/liquidity EVOLVE, which is what separates runners from duds)
+        stage = next((st for st, lo, hi in STAGES if lo <= age < hi and (ca, st) not in done), None)
+        if stage is None:
             continue
         pool = c.get("gt_pool")
         if not pool:
@@ -43,7 +54,8 @@ def run():
             pools = got.get("data") or []
             pools.sort(key=lambda p: -float((p.get("attributes") or {}).get("reserve_in_usd") or 0))
             pool = pools[0]["attributes"]["address"] if pools else None
-        row = {"ca": ca, "call_ts": c["call_ts"], "snap_ts": now, "snap_lag_s": round(now - c["call_ts"]), "pool": pool}
+        row = {"ca": ca, "stage": stage, "call_ts": c["call_ts"], "snap_ts": now, "snap_lag_s": round(now - c["call_ts"]),
+               "pool": pool}
         if pool:
             a = ((tg_track._gt(f"{GT}/pools/{pool}") or {}).get("data") or {}).get("attributes") or {}
             if not a:   # rate-limited (GeckoTerminal answers 429 as JSON, not an error): retry next cycle
@@ -56,7 +68,7 @@ def run():
         row["gt_score"] = info.get("gt_score")
         with open(OUT, "a", encoding="utf-8") as f:
             f.write(json.dumps(row) + chr(10))
-        done.add(ca)
+        done.add((ca, stage))
         n += 1
     return n
 
