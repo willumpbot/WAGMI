@@ -1,0 +1,64 @@
+{
+ "replication_ok": true,
+ "missing_features": [
+  "F7  pre_maxdd_60m",
+  "F9  vol_accel",
+  "F11 pre_green_frac_60m"
+ ],
+ "n_candidates": 178,
+ "n_feasible": 19,
+ "sign_stability": {
+  "T1_lift_pp": 19.607843137254903,
+  "T2_lift_pp": 13.65853658536585,
+  "pass": true
+ },
+ "holdout": {
+  "n_ev": 57,
+  "n_keep": 37,
+  "keep_frac": 0.6491228070175439,
+  "keep_rate_pct": 62.16216216216216,
+  "base_pct": 47.368421052631575,
+  "lift_pooled_pp": 14.793741109530584,
+  "lift_pooled_ci": [
+   7.301587301587303,
+   23.007092198581564
+  ],
+  "lift_eqday_pp": 12.681623931623943,
+  "lift_eqday_ci": [
+   2.564102564102566,
+   25.641025641025646
+  ],
+  "corr_day": -0.2412182082704099,
+  "corr_ci": [
+   -0.6992715406455229,
+   0.35725804997385807
+  ],
+  "corr_t": -0.8243732871638836
+ },
+ "runner_recall": {
+  "k": 7,
+  "n": 8,
+  "recall": 0.875,
+  "wilson": [
+   0.5291051942301386,
+   0.9775830911367038
+  ],
+  "discarded_pct": 12.5,
+  "gate_pass": false
+ },
+ "placebo": {
+  "null_median_pp": 0.15592515592515732,
+  "null_p95_pp": 8.65556978233034,
+  "real_pp": 14.793741109530584,
+  "emp_p": 0.008,
+  "infeasible": 0,
+  "leak_ok": true
+ },
+ "verdict": "WORTHLESS (kills runners)",
+ "rule": {
+  "feature": "F10 prox_to_pre_high",
+  "col": "dist_from_6h_high_pre",
+  "direction": -1,
+  "threshold": -0.169184
+ }
+}

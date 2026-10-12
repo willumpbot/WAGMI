@@ -1,0 +1,174 @@
+{
+ "replication_ok": true,
+ "replication": {
+  "WINNER_1.5x_24h  (acted on)": {
+   "hits": 75,
+   "n": 199,
+   "published_pct": 37.69,
+   "primary": true
+  },
+  "WIN3X_24h        (gate)": {
+   "hits": 26,
+   "n": 199,
+   "published_pct": 13.07,
+   "primary": true
+  },
+  "WIN3X_7D  prereg defn": {
+   "hits": 46,
+   "n": 199,
+   "published_pct": 26.63,
+   "primary": false
+  },
+  "WIN3X_7D  published defn": {
+   "hits": 53,
+   "n": 199,
+   "published_pct": 26.63,
+   "primary": false
+  }
+ },
+ "winner": {
+  "all 199 (dead pools = miss)": {
+   "n": 199,
+   "days": 31,
+   "pooled_pct": 37.68844221105528,
+   "pooled_ci": [
+    31.07344632768362,
+    44.39252336448598
+   ],
+   "eqday_pct": 40.843744069550525,
+   "eqday_ci": [
+    31.576246334310852,
+    50.993048170467524
+   ],
+   "corr_size_rate": -0.21554772678058887
+  },
+  "24h-mature (195)": {
+   "n": 195,
+   "days": 30,
+   "pooled_pct": 37.94871794871795,
+   "pooled_ci": [
+    31.521739130434785,
+    45.0
+   ],
+   "eqday_pct": 41.37186887186887,
+   "eqday_ci": [
+    32.07058682058682,
+    52.076895326895325
+   ],
+   "corr_size_rate": -0.23232790495404276
+  },
+  "24h-mature with path (179)": {
+   "n": 179,
+   "days": 30,
+   "pooled_pct": 41.340782122905026,
+   "pooled_ci": [
+    34.523809523809526,
+    48.55072463768116
+   ],
+   "eqday_pct": 43.854316979316984,
+   "eqday_ci": [
+    34.53902116402116,
+    54.407407407407405
+   ],
+   "corr_size_rate": -0.1631165752374927
+  }
+ },
+ "singleton_days": 3,
+ "maturity": {
+  "mature7d": 154,
+  "immature": 45,
+  "source_missing": 0,
+  "dud_set": 154
+ },
+ "dud_components": {
+  "dead": {
+   "hits": 27,
+   "n": 154,
+   "pooled_pct": 17.532467532467532,
+   "eqday_pct": 17.897611647611647,
+   "corr_size_rate": -0.036053199154359596
+  },
+  "silent": {
+   "hits": 13,
+   "n": 154,
+   "pooled_pct": 8.441558441558442,
+   "eqday_pct": 6.720617345617345,
+   "corr_size_rate": 0.3231527650177426
+  },
+  "term80": {
+   "hits": 49,
+   "n": 154,
+   "pooled_pct": 31.818181818181817,
+   "eqday_pct": 36.03624384874385,
+   "corr_size_rate": -0.23842049114692612
+  },
+  "term80_med": {
+   "hits": 51,
+   "n": 154,
+   "pooled_pct": 33.116883116883116,
+   "eqday_pct": 36.77342333592333,
+   "corr_size_rate": -0.2030067728747666
+  },
+  "dud": {
+   "hits": 75,
+   "n": 154,
+   "pooled_pct": 48.701298701298704,
+   "eqday_pct": 53.338617401117396,
+   "corr_size_rate": -0.2628417031171745
+  }
+ },
+ "dud_ci": {
+  "pooled": [
+   38.88888888888889,
+   58.94039735099338
+  ],
+  "eqday": [
+   41.82464526214527,
+   64.65971528471529
+  ]
+ },
+ "joint": {
+  "winner_only": 24,
+  "both": 30,
+  "dud_only": 45,
+  "neither": 55,
+  "n": 154
+ },
+ "joint_eqday": {
+  "BOTH (1.5x then died)": {
+   "pooled_pct": 19.480519480519483,
+   "eqday_pct": 23.72583435083435,
+   "corr_size_rate": -0.2569588940177561
+  },
+  "WINNER only": {
+   "pooled_pct": 15.584415584415584,
+   "eqday_pct": 15.91558904058904,
+   "corr_size_rate": -0.023545010168598265
+  },
+  "DUD only": {
+   "pooled_pct": 29.22077922077922,
+   "eqday_pct": 29.61278305028305,
+   "corr_size_rate": -0.028150014357396686
+  },
+  "NEITHER": {
+   "pooled_pct": 35.714285714285715,
+   "eqday_pct": 30.74579355829356,
+   "corr_size_rate": 0.39465051358282094
+  }
+ },
+ "both_cell": {
+  "winners": 54,
+  "winners_also_dud": 30,
+  "pct_of_winners": 55.55555555555556,
+  "runners_3x24h": 19,
+  "runners_3x24h_also_dud": 8,
+  "runners_3x7d": 38,
+  "runners_3x7d_also_dud": 17
+ },
+ "killer_denoms": {
+  "train_n": 107,
+  "train_3x": 16,
+  "holdout_n": 72,
+  "holdout_3x": 10
+ }
+}
