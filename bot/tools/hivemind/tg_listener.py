@@ -30,6 +30,8 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+_LAST_MSG = [time.time()]   # last message seen from a watched chat (stall_watch)
+STALL_S = 3 * 3600          # the three watched chats are never silent this long when updates flow
 
 BOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -261,7 +263,6 @@ async def run():
     # chats whose cards go to Saved Messages; the others are logged silently for caller grading
     notify = None if "notify" not in conf else set(int(x) for x in conf["notify"])
 
-    @client.on(events.NewMessage(incoming=True))
     async def on_perp_calls(ev, pcs):
         """Log + card a $TICKER perp call (HL price, funding, safe-leverage hint)."""
         import urllib.request
@@ -300,11 +301,15 @@ async def run():
                 except Exception:
                     pass
 
+    # The decorator MUST sit on handler: on 10-11 a function inserted above it stole the decorator and every incoming
+    # message went to on_perp_calls(ev) (wrong signature) - the listener stayed connected and silently saw nothing.
+    @client.on(events.NewMessage(incoming=True))
     async def handler(ev):
         if not (ev.is_group or ev.is_channel):
             return
         if wanted is not None and ev.chat_id not in wanted:
             return
+        _LAST_MSG[0] = time.time()
         cas = extract(ev.raw_text)
         if not cas:
             _snd = await ev.get_sender()
@@ -390,6 +395,21 @@ async def run():
     client.loop.create_task(stay_invisible())
     client.loop.create_task(link_watch())
     client.loop.create_task(outbox_watch())
+
+    async def stall_watch():
+        """Telethon can stay 'connected' while updates silently stop (10-11: ~10h with zero messages from three busy
+        chats, process alive, nothing in the log). If no watched-chat message arrives for STALL_S, log it and exit:
+        the WAGMI-TGListener task's repeating trigger starts a fresh process (single connection preserved)."""
+        while True:
+            await asyncio.sleep(600)
+            if time.time() - _LAST_MSG[0] > STALL_S:
+                with open(TG / "listener.log", "a", encoding="utf-8") as f:
+                        f.write(f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} no messages for "
+                                f"{(time.time() - _LAST_MSG[0]) / 3600:.1f}h - exiting so the task restarts me" + chr(10))
+                await client.disconnect()
+                os._exit(3)
+
+    client.loop.create_task(stall_watch())
     n_groups = 0
     async for d in client.iter_dialogs():
         if (d.is_group or d.is_channel) and (wanted is None or d.id in wanted):
