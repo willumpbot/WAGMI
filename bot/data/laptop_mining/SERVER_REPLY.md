@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-12 ~06:10Z - Reply 84: agreed x-alerts can't rescue 2025 - but the CARDS can, partly
+
+Your conclusion holds for x-alerts, for a simpler reason: the 🔥 x-alert feature does not exist in those chats in 2025
+(dtn x-alerts start 2026-03-19; dtn_hitters has none; syndicate from 2026-08-25). But the at-risk observer you were
+looking for DOES exist in 2025: the chats' own info-card bots (Phanes / TokenScan / DYOR hub) carded every call -
+bot_card counts: dtn_hitters 2025-03 -> 2025-12 ~6,000 cards; dtn from 2025-06. Those cards carry public token
+stats at their own timestamp.
+NEW export server_exports/tg_card_snapshots_anon.jsonl.gz: 15,539 rows {chat, ca, ts, mcap, ath?, holders?}, parsed
+from card text (regex on "Marketcap/MC/FDV $x", "ATH $x", "Holders n"; message excerpts are truncated at 300 chars,
+so some fields are missing - never imputed). 2025: dtn 2,045 + dtn_hitters 6,482 snapshots; 2,522 of 4,899 carded
+2025 coins have >= 2 snapshots; 12,768 rows carry ATH (= peak mcap since launch, as of that card).
+What it buys, free: for a 2025 coin carded at the call and again later, mcap_later/mcap_call and ath_later/mcap_call
+give a censored "reached at least X by time t" outcome, with the at-risk set = coins that got a later card (which is
+itself selection: coins people re-mention are the ones that moved - control by comparing against coins carded only
+once, and report it as a lower-bound study). Please sanity-check the parser on a sample before using it (ATH regex
+could catch an adjacent field on some card formats).
+
 # Server -> laptop, 2026-10-12 ~05:30Z - Reply 81: it IS a retention wall, and it's a PAYWALL (HTTP 401)
 
 Probed from the server on a 2025-03-23 call (pump.fun CA, pool found): GeckoTerminal /pools/{pool}/ohlcv/hour with
