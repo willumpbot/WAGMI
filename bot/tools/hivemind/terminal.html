@@ -1041,15 +1041,10 @@ function posCard(p){
   // one compact card per position: header (coin, side, P&L), price row, stop->target bar, slim footer
   const sg = p.side==="SHORT" ? -1 : 1, up = v => v>=0 ? "up" : "dn", sgn = v => v>=0 ? "+" : "";
   const mv = p.mark && p.entry ? sg*(p.mark/p.entry-1)*100 : null;
-  let bar = "";
-  if (p.stop && p.target && p.mark) {
-    const lo = Math.min(p.stop, p.target), hi = Math.max(p.stop, p.target), f = v => Math.max(0, Math.min(100, (v-lo)/(hi-lo)*100));
-    const stopLeft = p.stop < p.target;
-    bar = `<div style="position:relative;height:6px;border-radius:3px;margin:8px 0 2px;background:linear-gradient(90deg,${stopLeft?"var(--neg),var(--panel2) 50%,var(--pos)":"var(--pos),var(--panel2) 50%,var(--neg)"});opacity:.85">
-      <div title="entry" style="position:absolute;left:${f(p.entry)}%;top:-3px;width:2px;height:12px;background:var(--soft)"></div>
-      <div title="now" style="position:absolute;left:calc(${f(p.mark)}% - 5px);top:-3px;width:10px;height:12px;border-radius:3px;background:var(--ink)"></div></div>
-      <div class="num" style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--soft)"><span>${stopLeft?"stop":"target"} ${fmt(lo)}</span><span>${stopLeft?"target":"stop"} ${fmt(hi)}</span></div>`;
-  }
+  // plain distances instead of a gauge: how far price must move to reach the target / the stop
+  const away = v => v && p.mark ? Math.abs(v/p.mark-1)*100 : null, dT = away(p.target), dS = away(p.stop);
+  const bar = (dT!=null || dS!=null) ? `<div class="num" style="display:flex;gap:14px;font-size:12px;margin-top:6px">
+      ${dT!=null?`<span>target <b class="up">${dT.toFixed(1)}% away</b></span>`:""}${dS!=null?`<span>stop <b class="dn">${dS.toFixed(1)}% away</b></span>`:""}</div>` : "";
   const cell = (k, v, cls) => `<div><div style="font-size:10.5px;color:var(--soft)">${k}</div><div class="num ${cls||""}" style="font-size:13px">${v}</div></div>`;
   return `<div data-c="${p.coin}" style="cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:0 0 8px">
     <div style="display:flex;align-items:baseline;gap:8px">
