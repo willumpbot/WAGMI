@@ -1,3 +1,44 @@
+# 🔴 CORRECTED SAME DAY — **every horizon label below is wrong. This is a 24-HOUR study, not a 60-day one, and the correction reopens the question it claimed to close.**
+
+**`peak_m` is a MINUTE grid.** 1,441 points × 60-second steps = **24 hours**. I computed
+`len(peak_m) / 24 = 60` and labelled the result **days**, when the unit is minutes — a factor of 60.
+**So "hold 60 days" in the body below is actually "hold 24 hours", and every "sell at X" figure means
+"sell at X if it happens within 24 hours".**
+
+**What caught it:** the end-to-end check on the 58.69× call. It came back **1.30×**, and I went
+looking for a second bug in the fetch. There is none — **both numbers are correct.** That coin did
+1.30× in its first 24 hours and 58.69× within 14 days. **My own probe had measured 14 days; the
+production fetch measures 24 hours; I compared them as if they were the same quantity.**
+
+**What survives:**
+- the **24-hour** result stands exactly as computed: every target-based exit loses over one day, and
+  earlier targets lose less;
+- the base rates stand — **19% unpriceable, median call closing at 0.47× of its call price within
+  24h**;
+- the **structural** argument in §3 stands and does not depend on the horizon: **a sell-at-2× rule
+  pays +100% for a 58× coin either way.** A target cannot see a tail. That remains the answer to the
+  owner's question.
+
+**What is now UNTESTED, and it is the half that matters:**
+- **"holding" was never tested beyond one day.** §2's −42.3% is a 24-hour figure, so the claim that
+  holding is the worst rule is **unsupported over the horizons where memecoin peaks actually
+  happen** — and the 58.69× call is direct evidence that they do.
+- **§4's break-even arithmetic is therefore void**, because it compares a 24-hour hold against a
+  multi-day tail.
+
+**Why this is not quickly fixable:** the hourly fallback (`peak_h`) only runs to 72h, and it is used
+only when minute data is missing — **0 of 342 fetched rows have it.** Covering 60 days hourly needs
+1,440 bars against the API's 1,000-bar limit, so it is two requests per call on top of the existing
+two. **That is a 2× cost on a pull that is 14% done, and it is the owner's question, so I am putting
+the choice to the server rather than silently re-scoping a running job.**
+
+---
+
+_Original write-up follows unedited, so the error is legible rather than erased. **Read every
+horizon in it as 24 hours.**_
+
+---
+
 # The fat-tail question, answered on corrected data: **the big winners are real and they cannot save it — because capturing them requires holding, and holding is the worst rule tested.**
 
 _2026-10-12. 314 Telegram calls with corrected price paths (`token=<ca>` fix, 2026 only, inside the
