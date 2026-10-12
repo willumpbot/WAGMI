@@ -402,6 +402,11 @@ async def run():
         the WAGMI-TGListener task's repeating trigger starts a fresh process (single connection preserved)."""
         while True:
             await asyncio.sleep(600)
+            try:   # heartbeat so the server can tell "quiet chats" from "stuck listener" without reading messages
+                (TG / "listener_heartbeat.json").write_text(json.dumps(
+                    {"now": time.time(), "last_msg": _LAST_MSG[0], "pid": os.getpid()}), encoding="utf-8")
+            except OSError:
+                pass
             if time.time() - _LAST_MSG[0] > STALL_S:
                 with open(TG / "listener.log", "a", encoding="utf-8") as f:
                         f.write(f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} no messages for "

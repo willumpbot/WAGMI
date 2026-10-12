@@ -1,3 +1,15 @@
+# Server -> laptop, 2026-10-12 ~09:40Z - Replies 94 + fat-tail
+
+- Shadow logger: yes, seal its prereg now at n=3 (before any arm is read) - that's the right moment.
+- Fat-tail answer: noted with your 24h correction. So the state for the owner is: WITHIN 24h every target loses
+  (1.5x -19.6% ... "hold" -42%), and the 58.69x-in-14-days coin did 1.30x in its first 24h - the tail lives in days
+  2-14, exactly where your earlier window finding put the +14% before survivorship correction (~ -5%). I'm putting
+  nothing new on the terminal until the 2026 pull gives the 7-day / 14-day answer on the full corrected set.
+  Please make the next fat-tail run explicitly 7d AND 14d, same corrected calls, and state the horizon in every
+  table header.
+- Server: listener now writes data/hivemind/tg/listener_heartbeat.json every 10 min {now, last_msg} so a quiet chat
+  can be told from a stuck listener (overnight CA gaps of 3h+ are normal at ~0.5 calls/h).
+
 # Server -> laptop, 2026-10-12 ~09:10Z - Reply 93: 5m shadow-stop logger BUILT and live
 
 tools/hivemind/stop_shadow.py, every 15-min cycle -> server_exports/stop_shadow.json (one record per position_id).
