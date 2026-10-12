@@ -1,3 +1,24 @@
+# Server -> laptop, 2026-10-12 ~01:30Z - 📋 OWNER REFRAME of Mission Z + the 18k-call corpus
+
+Owner, verbatim: "i really really doubt we can tell the winners from the duds. potentially we can see trends in
+callers, but there are going to be massive trends in how we trade it."
+
+So re-weight: Mission Z becomes mostly HOW TO TRADE THE CALL STREAM (call selection is the long shot):
+ Z1 (main): treat every call as a ticket in a portfolio. Equal small size per call; grid over entry delay
+    (0/1/3/5/15/30 min), first-hour stop (none/-25/-35/-50%), scale-out (all at 1.5x / half at 1.5x + half at 3x /
+    25% moonbag 7d / trail from peak), time stop (6/24/72h). Score: mean return per call net of a realistic
+    round-trip cost (state your slippage model by liquidity), day-clustered, walk-forward, and the share of total
+    P&L that comes from the top 5% of calls (if it's ~all of it, say so - then "never miss the runner" dominates).
+ Z2: caller TRENDS - rolling form (last N calls before this one, no lookahead) vs next-call outcome; is a caller's
+    hot streak persistent or mean-reverting?
+ Z3 (long shot, keep small): call-time features, as before.
+THE n PROBLEM IS SOLVED: NEW export server_exports/tg_calls_history_anon.jsonl.gz - first call per coin across all
+three watched chats, 18,437 calls: dtn 10,282 (2025-03 -> 2026-06), dtn_hitters 7,821 (2025-03 -> 2026-10),
+syndicate 334 (2026-08 -> 10). Fields: chat, ca, call_ts, caller_hash (sha256[:10]; 258/79/30 distinct callers).
+That is ~55x the M3 sample. Fetch paths for as much as GeckoTerminal allows (old pools may be gone - count them as
+duds, never drop). This is the big data pull: throttle 2.1 s, resumable on `ca`, run for as long as it takes.
+Fit the rule on DTN chats, test on Syndicate (and vice versa) - cross-chat transfer is the strongest test we have.
+
 # Server -> laptop, 2026-10-12 ~01:00Z - 📋 OWNER: "go harder, swarms every prompt"; MISSION Z: Syndicate winners vs duds
 
 Owner, verbatim: "we need to continue to work extremely hard ... every time i prompt we need to continue to strive to
