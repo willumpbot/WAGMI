@@ -119,3 +119,70 @@ A result file with, in this order: **size at δ=0 → MDE → week-cluster count
 populations × two arms, each as `level_pct` with its week-clustered CI, and the verdict words
 **"replicates" / "does not replicate" / "unmeasurable" / "TEST BROKEN"**. The equal-weighted week mean
 sits beside any pooled figure. **No number is read before the one above it.**
+
+---
+
+# AMENDMENT 1 — made 2026-10-12 BEFORE any read, with funding at 60/178 files
+
+**Reason: the verdict rule in §4 is defective, and I found it by applying it to the discovery sample
+instead of trusting my description of it.** Two separate corrections, plus two factual fixes.
+
+## A. The verdict rule conflated two different questions
+
+`size_flags.json` records, for `funding_hot`:
+
+| | |
+|---|---|
+| week-mean log effect | **+0.0740** → level **+7.68%** |
+| week clusters | **145** (not the 160 I kept quoting) |
+| matched cells | **2,283** |
+| size at δ=0 | **0.030** ✓ inside [0.02, 0.09] |
+| power | δ=0.05 → **0.62**, δ=0.10 → **0.98** |
+| **mde80** | **0.10 log ≈ +10.5% level** |
+| t | **3.28** |
+
+**So the original effect (+7.68%) sits BELOW its own 80%-power MDE (+10.5%), while still being
+significant at t 3.28.** §4 as written says "if `|level_pct| < MDE`, the verdict is unmeasurable" —
+**which would declare `SIZE_FLAGS` itself unmeasurable.** A rule that rejects the very result it was
+written to re-test is wrong.
+
+**The error is conflating "could we have detected an effect of size X" with "did we detect one."** An
+effect can be real and significant while sitting under the 80%-power point; 80% power is a design
+target, not a detection threshold. Both facts matter and they are now reported separately.
+
+**Replacement verdict matrix — fixed here, before any read:**
+
+| | effect ≥ MDE80 | effect < MDE80 |
+|---|---|---|
+| **CI excludes zero** | **replicates** | **positive but underpowered** |
+| **CI includes zero** | **does not replicate** (we could have seen it and did not) | **unmeasurable** |
+
+**"positive but underpowered" is the honest label for the original finding**, and it is a real outcome
+for the replication too — not a fudge. **"does not replicate" now requires that the design actually
+had the power to see the effect**, which is the only condition under which a null is informative.
+
+## B. MDE was resolved on too coarse a grid
+
+`DELTAS` of {0, 0.03, 0.05, 0.10, 0.20} can only ever return an MDE from that set, which is how a
+true effect of 0.074 gets compared against a reported MDE of 0.10. **MDE is now interpolated linearly
+between the two bracketing grid points at 80% power**, and the grid is finer:
+**{0, 0.02, 0.03, 0.04, 0.05, 0.06, 0.075, 0.10, 0.15, 0.20}**.
+
+**δ=0 remains the placebo and remains able to fail.** The TEST BROKEN rule at [0.02, 0.09] is
+unchanged. Interpolation affects only where the MDE line is drawn, never whether the test is valid.
+
+## C. Two factual corrections to my own recorded expectations
+
+1. **§5.1 said "(b) reproduces near +7.4%". Wrong** — +0.0740 is the week-mean **log** coefficient;
+   the level is **+7.68%**. The canary passes if **(b) reproduces near log +0.074 / level +7.7%**.
+   The PC's knowledge registry had this right and I had it wrong.
+2. **The cluster baseline is 145 weeks, not 160.** So the wide panel's ceiling of **199 available
+   weeks is a +37% gain on funding_hot's actual 145**, not the +24% I recorded. **The cell count is
+   the bigger move: 2,283 matched cells, against a wide panel that should yield an order of magnitude
+   more.** The claim still gets made only from the injected-effect table, not from this arithmetic.
+
+## D. What this amendment does NOT change
+
+Populations, arms, the gate at ≥170/173, `START = "2023-01-01"`, the prohibited list, and the report
+order are all untouched. **No held-out data has been read.** The amendment is made because a rule
+failed a sanity check against the discovery sample, which is the only moment such a fix is legitimate.

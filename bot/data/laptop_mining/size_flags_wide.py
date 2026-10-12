@@ -66,8 +66,26 @@ PLACEBO = 200
 MIN_WEEKS = 8                 # matched() requires this many week clusters
 MIN_FUNDING_FILES = 170       # the prereg's gate
 SIZE_OK = (0.02, 0.09)        # delta=0 false-positive rate; outside this => TEST BROKEN
-DELTAS = (0.0, 0.03, 0.05, 0.10, 0.20)
+# AMENDMENT 1(B): finer grid. A grid of {0,.03,.05,.10,.20} can only ever return an MDE from that
+# set, which is how SIZE_FLAGS' true effect of 0.074 ended up compared against a reported MDE of
+# 0.10. MDE is now interpolated between the bracketing points at 80% power.
+DELTAS = (0.0, 0.02, 0.03, 0.04, 0.05, 0.06, 0.075, 0.10, 0.15, 0.20)
 TARGET_POWER = 0.80
+
+
+def mde_interp(power):
+    """Linearly interpolated delta at TARGET_POWER. None if power never reaches it on the grid."""
+    ds = [d for d in DELTAS if d > 0]
+    for i, d in enumerate(ds):
+        if power[d] >= TARGET_POWER:
+            if i == 0:
+                return d
+            lo, hi = ds[i - 1], d
+            plo, phi = power[lo], power[hi]
+            if phi <= plo:
+                return hi
+            return lo + (TARGET_POWER - plo) * (hi - lo) / (phi - plo)
+    return None
 rng = np.random.default_rng(20261012)
 
 # Recovered by mtime, not from notes. See the module docstring.
@@ -325,7 +343,7 @@ def analyse(name, sub, mask):
                 hits += 1
         power[d] = hits / PLACEBO
     size = power[0.0]
-    mde_d = next((d for d in DELTAS[1:] if power[d] >= TARGET_POWER), None)
+    mde_d = mde_interp(power)
     res = {"population": name, "coins": int(sub["sym"].nunique()), "rows": len(sub),
            "size_at_0": round(size, 3), "size_ok": SIZE_OK[0] <= size <= SIZE_OK[1],
            "power": {str(k): round(v, 3) for k, v in power.items()},
@@ -337,14 +355,27 @@ def analyse(name, sub, mask):
            "ci_pct": [round(100 * (math.exp(base[0] - 1.96 * base[1]) - 1), 2),
                       round(100 * (math.exp(base[0] + 1.96 * base[1]) - 1), 2)],
            "flag_fired_pct": round(100 * float(mask.mean()), 2)}
+    # AMENDMENT 1(A): the old rule said "effect below MDE => unmeasurable", which applied to the
+    # discovery sample would have declared SIZE_FLAGS itself unmeasurable (+7.68% against an mde80
+    # of +10.5%, at t 3.28). That conflates "could we have detected an effect of size X" with "did
+    # we detect one". 80% power is a design target, not a detection threshold. Reported separately:
+    eff, se = base[0], base[1]
+    lo, hi = eff - 1.96 * se, eff + 1.96 * se
+    excludes_zero = (lo > 0) or (hi < 0)
+    powered = (mde_d is not None) and (abs(eff) >= mde_d)
+    res["excludes_zero"] = bool(excludes_zero)
+    res["powered"] = bool(powered)
     if not res["size_ok"]:
         res["verdict"] = "TEST BROKEN (size %.3f outside [%.2f, %.2f])" % (size, *SIZE_OK)
-    elif mde_d is None or abs(res["level_pct"]) < (res["mde_pct"] or 1e9):
-        res["verdict"] = "unmeasurable"
-    elif base[0] - 1.96 * base[1] > 0:
-        res["verdict"] = "replicates"
+    elif excludes_zero and eff > 0:
+        res["verdict"] = "replicates" if powered else "positive but underpowered"
+    elif excludes_zero and eff < 0:
+        res["verdict"] = ("contradicts: significant NEGATIVE" if powered
+                          else "negative but underpowered")
+    elif powered:
+        res["verdict"] = "does not replicate"      # we could have seen it and did not
     else:
-        res["verdict"] = "does not replicate"
+        res["verdict"] = "unmeasurable"
     return res
 
 
