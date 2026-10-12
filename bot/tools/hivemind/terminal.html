@@ -1037,38 +1037,49 @@ function tradesTab(){
   $("tr_note").textContent = DATA.journal && DATA.journal.enabled ? "paper + your real Hyperliquid trades" : "all PAPER so far - no real money. Paste your public address (Positions tab) to add real trades";
   $("trades").innerHTML = show.length ? `<table class="pos num"><tr><th>When</th><th>Chosen by</th><th>Trade</th><th>Prices</th><th>Result</th><th>Notes</th></tr>${show.map(r => `<tr${r.live?' style="background:var(--panel2,rgba(127,127,127,.08))"':""}><td class="mut">${d(r.ts)}</td><td>${r.whoTxt}</td><td><b>${r.coin}</b> <span class="${r.side==="SHORT"?"dn":"up"}">${r.side}</span></td><td class="mut">${r.prices}</td><td>${r.res}</td><td class="mut">${r.note}</td></tr>`).join("")}</table><div class="mut" style="font-size:11px;margin-top:6px">Open and waiting trades are on top (shaded). "Me" = plans you saved in the planner; the bot paper-trades them for you and the result shows under Notes. Results in R = multiples of the risk to your stop.</div>` : `<span class="mut">No trades yet.</span>`;
 }
-function renderBotPos(){
-  const rows = SYMS.map(s => [s, botPos(s)]).filter(x => x[1]);
-  $("pos_badge").innerHTML = rows.length ? `<span class="pill nt">${rows.length}</span>` : "";
-  $("botnote").textContent = rows.length ? "updates every 15 min; price is live" : "";
-  $("botpos").innerHTML = rows.length ? rows.map(([s,b]) => `<div style="border-bottom:1px solid var(--line);padding:6px 0;cursor:pointer" data-c="${s}">
-      <div style="font-size:14px"><b>${s}</b> <span class="pill ${b.side==="SHORT"?"dn":"up"}">${b.side} ${b.leverage||""}×</span> <span class="mut">${botState(b.state)}</span>
-        <span style="float:right" class="num ${b.total>=0?"up":"dn"}" title="banked + open">${b.total>=0?"+":""}$${b.total.toFixed(2)} total</span></div>
-      <div class="out num" style="margin-top:4px">
-        <div>Entry → now</div><div>${fmt(b.entry)} → ${fmt(b.now)} <span class="${b.mv>=0?"up":"dn"}">(${pct(b.mv,1)} in its favour)</span></div>
-        <div>Banked so far</div><div class="${(b.realized_pnl||0)>=0?"up":"dn"}">$${(b.realized_pnl||0).toFixed(2)}</div>
-        <div>Still open</div><div>${b.qty} ${s} · <span class="${(b.open||0)>=0?"up":"dn"}">$${(b.open||0).toFixed(2)}</span></div>
-        <div>Stop</div><div>${b.sl?fmt(b.sl):"–"}${b.stopPnl!=null?` <span class="${b.stopPnl>=0?"up":"dn"}">(if hit: ${b.stopPnl>=0?"+":""}$${b.stopPnl.toFixed(2)} on the rest${b.stopPnl>=0?", profit locked":""})</span>`:""}</div>
-        <div>First target</div><div>${b.tp1?fmt(b.tp1):"–"}${["TP1_HIT","TRAILING"].includes(b.state)?' <span class="up">✔ hit</span>':""}</div>
-        <div>Opened</div><div>${new Date(b.open_time).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</div></div>
-      ${b.notes?`<div class="mut" style="font-size:11.5px;margin-top:3px">Why: ${esc(b.notes.replace(/^LLM-FIRST:\s*/,""))}</div>`:""}</div>`).join("")
-    : `<div class="mut" style="font-size:12px">The bot has no open positions.</div>`;
-  // the owner's BTC short, shown as if still open under "Profits only" (his record; simulated, not a real position)
-  const SIMS = ((DATA.tradeHist||{}).sims||[]).filter(m => m.status === "open");
-  if (SIMS.length) {
-    $("pos_badge").innerHTML = `<span class="pill nt">${rows.length + SIMS.length}</span>`;
-    const t = v => new Date(v*1000).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
-    $("botpos").innerHTML = SIMS.map(m => { const sg = m.side==="SHORT" ? -1 : 1, mv = sg*(m.mark/m.entry-1)*100;
-      return `<div style="border-bottom:1px solid var(--line);padding:6px 0;cursor:pointer;background:var(--panel2,rgba(127,127,127,.08))" data-c="${m.coin}">
-      <div style="font-size:14px"><b>${m.coin}</b> <span class="pill ${m.side==="SHORT"?"dn":"up"}">${m.side}</span>
-        <span style="float:right" class="num ${m.total_usd>=0?"up":"dn"}">${m.total_usd>=0?"+":""}$${m.total_usd.toFixed(2)} total (${m.r>=0?"+":""}${m.r.toFixed(2)}R)</span></div>
-      <div class="out num" style="margin-top:4px">
-        <div>Entry → now</div><div>${fmt(m.entry)} → ${fmt(m.mark)} <span class="${mv>=0?"up":"dn"}">(${pct(mv,1)} in its favour)</span></div>
-        <div>Banked so far</div><div class="up">$${m.banked_usd.toFixed(2)}</div>
-        <div>Still open</div><div>${m.open_qty} ${m.coin} · <span class="${m.open_pnl_usd>=0?"up":"dn"}">$${m.open_pnl_usd.toFixed(2)}</span></div>
-        <div>Your stop / target</div><div><span class="dn">${fmt(m.stop)}</span> / <span class="up">${fmt(m.target)}</span></div>
-        <div>Time limit</div><div>${t(m.expires_ts)}</div></div></div>`; }).join("") + (rows.length ? $("botpos").innerHTML : "");
+function posCard(p){
+  // one compact card per position: header (coin, side, P&L), price row, stop->target bar, slim footer
+  const sg = p.side==="SHORT" ? -1 : 1, up = v => v>=0 ? "up" : "dn", sgn = v => v>=0 ? "+" : "";
+  const mv = p.mark && p.entry ? sg*(p.mark/p.entry-1)*100 : null;
+  let bar = "";
+  if (p.stop && p.target && p.mark) {
+    const lo = Math.min(p.stop, p.target), hi = Math.max(p.stop, p.target), f = v => Math.max(0, Math.min(100, (v-lo)/(hi-lo)*100));
+    const stopLeft = p.stop < p.target;
+    bar = `<div style="position:relative;height:6px;border-radius:3px;margin:8px 0 2px;background:linear-gradient(90deg,${stopLeft?"var(--dn),var(--panel2) 50%,var(--up)":"var(--up),var(--panel2) 50%,var(--dn)"});opacity:.85">
+      <div title="entry" style="position:absolute;left:${f(p.entry)}%;top:-3px;width:2px;height:12px;background:var(--soft)"></div>
+      <div title="now" style="position:absolute;left:calc(${f(p.mark)}% - 5px);top:-3px;width:10px;height:12px;border-radius:3px;background:var(--ink)"></div></div>
+      <div class="num" style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--soft)"><span>${stopLeft?"stop":"target"} ${fmt(lo)}</span><span>${stopLeft?"target":"stop"} ${fmt(hi)}</span></div>`;
   }
+  const cell = (k, v, cls) => `<div><div style="font-size:10.5px;color:var(--soft)">${k}</div><div class="num ${cls||""}" style="font-size:13px">${v}</div></div>`;
+  return `<div data-c="${p.coin}" style="cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:0 0 8px">
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <b style="font-size:15px">${p.coin}</b><span class="pill ${p.side==="SHORT"?"dn":"up"}">${p.side}${p.lev?" "+p.lev+"×":""}</span>
+      ${p.tag?`<span class="mut" style="font-size:11px">${p.tag}</span>`:""}
+      <span style="flex:1"></span>
+      <span class="num ${up(p.total)}" style="font-size:16px;font-weight:600">${sgn(p.total)}$${p.total.toFixed(2)}</span>
+      ${p.r!=null?`<span class="num ${up(p.r)}" style="font-size:12px">${sgn(p.r)}${p.r.toFixed(2)}R</span>`:""}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px">
+      ${cell("Entry", fmt(p.entry))}${cell("Now", fmt(p.mark) + (mv!=null?` <span class="${up(mv)}" style="font-size:11px">${sgn(mv)}${mv.toFixed(1)}%</span>`:""))}
+      ${cell("Stop", p.stop?fmt(p.stop):"–", "dn")}${cell("Target", p.target?fmt(p.target):"–", "up")}</div>
+    ${bar}
+    <div class="num" style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--soft);margin-top:5px">
+      ${p.banked?`<span>banked <span class="${up(p.banked)}">${sgn(p.banked)}$${p.banked.toFixed(2)}</span></span>`:""}
+      <span>open ${p.qty} · <span class="${up(p.openPnl||0)}">${sgn(p.openPnl||0)}$${(p.openPnl||0).toFixed(2)}</span></span>
+      ${p.foot?`<span>${p.foot}</span>`:""}</div></div>`;
+}
+function renderBotPos(){
+  const t = v => new Date(v).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const cards = [];
+  for (const m of ((DATA.tradeHist||{}).sims||[]).filter(m => m.status === "open"))
+    cards.push(posCard({coin:m.coin, side:m.side, entry:m.entry, mark:m.mark, stop:m.stop, target:m.target, total:m.total_usd, r:m.r,
+      banked:m.banked_usd, qty:m.open_qty, openPnl:m.open_pnl_usd, foot:`closes ${t(m.expires_ts*1000)}`}));
+  for (const s of SYMS) { const b = botPos(s); if (!b) continue;
+    cards.push(posCard({coin:s, side:b.side, lev:b.leverage, entry:b.entry, mark:b.now, stop:b.sl, target:b.tp2||b.tp1, total:b.total,
+      r: b.sl ? b.total / Math.abs((b.entry-b.sl)*(b.qty_initial||b.qty)) : null, banked:b.realized_pnl||0, qty:b.qty, openPnl:b.open||0,
+      tag: ["TP1_HIT","TRAILING"].includes(b.state) ? "first target hit" : "", foot:`opened ${t(b.open_time)}`})); }
+  $("pos_badge").innerHTML = cards.length ? `<span class="pill nt">${cards.length}</span>` : "";
+  $("botnote").textContent = cards.length ? "live price · refreshes every 15 min" : "";
+  $("botpos").innerHTML = cards.length ? cards.join("") : `<div class="mut" style="font-size:12px">No open positions.</div>`;
   document.querySelectorAll("#botpos [data-c]").forEach(el => el.onclick = () => pick(el.dataset.c));
 }
 function aiPlans(){
