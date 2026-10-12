@@ -111,6 +111,38 @@ def fetch_funding(conn, coin):
     return total
 
 
+FIVE_M_COINS = 60          # widen the 5m cross-section from 6; see MISSION_Y_DATA_INVENTORY §1
+
+
+def fetch_5m(conn, coin):
+    """5m candles. THE ONLY GENUINELY NOW-OR-NEVER PULL ON THIS EXCHANGE.
+
+    Hyperliquid deletes 5m history after ~17 days, so one request per coin per day captures
+    everything that exists and nothing can recover what lapses. The archive has stood at SIX
+    coins, which is why `INTRADAY_DISP.md` had to say "with 6 coins the rank-weighted spread is
+    coarse -- ranks run 0-5". Widening it costs one call per coin per day.
+
+    Mission Y ranked this first of everything not yet collected: cheapest, most urgent, and it
+    widens the one intraday result in this project that is already well powered.
+    """
+    have = newest(conn, "candles_5m", coin)
+    now = int(time.time() * 1000)
+    start = have if have else now - 20 * 86_400_000      # 20d covers the whole ~17d window
+    rows = []
+    try:
+        c = post({"type": "candleSnapshot",
+                  "req": {"coin": coin, "interval": "5m", "startTime": start, "endTime": now}})
+    except RuntimeError:
+        return 0
+    for b in c or []:
+        try:
+            rows.append((coin, int(b["t"]), float(b["o"]), float(b["h"]),
+                         float(b["l"]), float(b["c"]), float(b.get("v", 0))))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return upsert(conn, "candles_5m", ["coin", "t", "o", "h", "l", "c", "v"], rows)
+
+
 def main():
     t0 = time.time()
     init_schema()
@@ -121,17 +153,22 @@ def main():
     try:
         uni = universe()
         log("j5", "%d live perps to keep current" % len(uni))
+        top5m = {c for c, _v in uni[:FIVE_M_COINS]}   # widest cross-section worth the calls
+        n5 = 0
         for coin, vol in uni:
             try:
                 total += fetch_1h(conn, coin)
                 total += fetch_funding(conn, coin)
+                if coin in top5m:
+                    n5 += fetch_5m(conn, coin)
                 done += 1
             except Exception as e:
                 failed.append("%s:%s" % (coin, str(e)[:40]))
             if done and done % 40 == 0:
                 log("j5", "  %d/%d coins, %d rows, %.0fs" % (done, len(uni), total,
                                                              time.time() - t0))
-        note = "%d coins ok, %d failed" % (done, len(failed))
+        note = "%d coins ok, %d failed, %d 5m rows over the top %d" % (
+            done, len(failed), n5, FIVE_M_COINS)
         if failed:
             note += " | " + ", ".join(failed[:6])
         log("j5", note)
