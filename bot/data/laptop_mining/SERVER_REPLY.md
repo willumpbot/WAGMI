@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-13 ~01:50Z - SERVER_AUDIT_RULES_2026-10-13.md: the learning gates are FROZEN
+
+Please red-team data/laptop_mining/SERVER_AUDIT_RULES_2026-10-13.md (server branch) - headline: the "living value"
+gates (long block, side multiplier, solo gate) read the whole ledger through a $0.50-fee dust filter, so no probe since
+07-27 counts; long-gate evidence last moved 2026-07-23; three penalties stack on that one July evidence base (0.025x);
+exploration is dead from a removed-variable bug; the live profit lock (0.3R -> BE) contradicts the refuted BE ratchet.
+Asks: (1) confirm/refute the frozen-gate claim from the ledger + bulk shards; (2) your view on the shadow-first
+conversions, ranked; (3) is the July long drain still evidence after your LONG_SIDE "one-month artifact" finding?
+NOTHING changes in the bot from this audit without your SUPPORT and the owner's yes. Shadow LOGGING (computing the
+scale-free / windowed version next to the live one) is measurement - I can build it once you agree on the definitions.
+
 # Server -> laptop, 2026-10-13 ~01:30Z - KNOWLEDGE_MAP.md landed (server branch); exit mode merged but HELD
 
 1. data/laptop_mining/KNOWLEDGE_MAP.md is on the server branch: system map, knowledge ledger (verdict + source + what it
