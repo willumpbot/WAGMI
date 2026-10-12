@@ -10,15 +10,26 @@ have to re-explain anything. Everything below is current as of commit time.
 | | |
 |---|---|
 | `megacalls_fetch.py` | fetching 2,477 priceable calls, **935 unique done (38%)**, ETA **~16h**. Single process, holds `geckoterminal.lock`. |
+| **`fetch_funding_wide.py`** | **walking hourly funding for the 138 coins that had none, ~53/178 files, ETA ~2h.** Hyperliquid API — **no lock contention with the megacall fetch**, which is GeckoTerminal. |
 | `WAGMI-LaptopCrunch` (hourly task) | 7 jobs, all green on the last cycle |
 | server `stop_shadow.py` | live 5m shadow stops, ~2 entries/day, accruing |
+
+**🟢 THE DEEP UNIVERSE IS 173 PERPS, NOT 17.** Nunu pushed back on my claim that it was capped at 17
+(*"theres probably always another angle"*) and he was right: **17 was a directory listing.** HL caps
+`candleSnapshot` at ~5,000 bars — 208 days at 1h but **~13.7 years at 1d** — and nobody had asked it
+for daily on the other 161 coins. `fetch_1d_wide.py` did: **161 fetched, 0 failed.** `size_flags.py`
+globs `history/*_1d.csv`, so **its universe widened to 173 with no code change.** Funding was the next
+limit and the cause was literally **`TOP_N = 40`** in mission 10's fetcher.
+
+**Three "limits" checked, three were config constants or directory listings. Before calling anything a
+limit, ask the source once.**
 
 **If the fetch dies:** it is resumable — restart with
 `Start-Process cmd '/c "<pythoncore path>" -u megacalls_fetch.py >> megacalls_fetch.log 2>&1'`.
 **Do NOT launch it via a `WindowsApps\python.exe` alias** — that is a stub that spawns the real
 interpreter, and killing the stub kills the worker. I lost a run that way.
 
-## 2. 🔴 Three preregs are SEALED and must NOT be run early
+## 2. 🔴 FIVE preregs are SEALED and must NOT be run early
 
 | prereg | commit | runs when | my recorded expectation |
 |---|---|---|---|
@@ -26,6 +37,32 @@ interpreter, and killing the stub kills the worker. I lost a run that way.
 | `PREREG_RECALL_CROSSCHAT_2026-10-12` | `ca25df56`, n=35 | **n ≥ 250 re-called** (35 now) | UNDERPOWERED or small negative |
 | `PREREG_CALLER_FORM_2026-10-12` | `60e17310` + amendment `636a885a` | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED, small positive |
 | `PREREG_CHAT_QUALITY_2026-10-12` | sealed on design facts only | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED (floor ~15pp vs a 45% base) |
+| **`PREREG_FUNDING_WIDE`** | **`41805c5c`, commit `b1144936`** | **ONCE, at ≥170 of 173 funding files** | **P(clean positive) ≈ 45%**, attenuating to +2–5% |
+
+**`PREREG_FUNDING_WIDE` is the most important one and the best-sealed thing this project has.** It was
+written **while the held-out data was still downloading** (51/178 files), so the sealing is provable
+rather than asserted. **`SIZE_FLAGS` — the only finding that ever survived a red team here — was
+discovered on 17 coins, so the 156 newly available ones are a genuine held-out sample. This project
+has never run a real out-of-sample replication;** every prior "confirmation" was a re-cut of the
+discovery sample, which is how M2 survived six readings.
+
+Four things it fixes **before** any read: **(c) the 156 new coins is the number to act on**, pooled-173
+is **contaminated**, the original 17 is a **pipeline canary not evidence**; `funding_hot`'s top-quintile
+treatment is **redefined by widening** (top 20% of 17 ≠ of 173 — rank arm primary, frozen-threshold
+secondary, disagreement reported as rank-dependence); it is **gated at ≥170/173 because
+`load_funding` returns `{}` for a missing file** and would mark a coin silently and permanently
+unflagged — **a missing source is never a zero**; and **δ=0 size is a placebo that can fail** — outside
+[0.02, 0.09] it reports **TEST BROKEN** with no verdict.
+
+**Power honesty, after I got it wrong once:** the gain is **NOT** the 8.4× coin-days and **NOT** 2× in
+clusters. `START="2023-01-01"` caps weeks at **199 vs SIZE_FLAGS' 160 — only +24%.** The real gain is
+**median coins per date 17 → 119**, which rescues the date×em-quintile cells that `matched()` used to
+discard (at 17 coins a cell held ~3.4, so a top-quintile flag left 0 or 1 flagged). **Power comes from
+within-week precision and will be claimed only from the script's own injected-effect table.**
+
+**📌 Do not extend `START` backwards.** 48 coins carry pre-2023 bars starting on **exactly 2020-08-19
+with exactly 865 rows each** — and **Hyperliquid did not exist in 2020.** That is unexplained backfill
+worth ~123 extra weeks, deliberately left on the table. Reply 115 asks the PC if it knows the origin.
 
 **`stop_shadow` carries AMENDMENT 1** (commit `53dde248`): its GBM control is now a **correction**,
 not a gate — report *measured minus the no-edge median*, computed per position. Measured bias is
