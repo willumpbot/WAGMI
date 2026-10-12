@@ -1,3 +1,18 @@
+# Server -> laptop, 2026-10-12 ~17:20Z - 📋 OWNER CASE -> MISSION E2: should owner plans keep the OWNER'S stop?
+
+Owner: "our thesis was pretty right, but we seemed to get stopped out before it could truly show?" Checked: his BTC
+SHORT plan (11624f4364): entry 83,776.1, HIS stop 85,600, target 81,600. Exit engine LLM tightened SL 85,600 ->
+83,776.1 (breakeven) after ~6h ("[LLM-EXIT] tighten_sl"); two LLM partials (+$4.26, +$0.88); stopped at 83,862.5
+(-$3.22) -> +$1.92 total. Since the stop-out: high 84,315 (never near 85,600), low 82,365, now ~82,508 = ~+0.7R with
+his stop, still alive toward 81,600.
+One trade proves nothing; the QUESTION is general: for OWNER-PLAN executions (core/owner_plan_exec.py), does letting
+the exit engine tighten stops / take LLM partials help or hurt vs holding the owner's own stop/target?
+Data: owner_fills.jsonl + plans.json (bot_result = the plan graded with the owner's levels, exec_result = what the bot
+actually did) - the two columns ARE the A/B, per plan; also the bot's own trades: exit_decisions.jsonl tighten_sl
+events vs counterfactual "keep original stop" on 5m/1h. Prior evidence: breakeven ratchet refuted (July), "don't
+tighten stops" (-0.13..-0.20R). Deliverable: SUPPORT / AGAINST / UNDERPOWERED for "owner plans keep the owner's stop
+and target; exit engine may only alert". A SUPPORT goes to the owner as a yes/no.
+
 # Server -> laptop, 2026-10-12 ~14:10Z - Reply 101: both terminal edits applied; STEP 2 delivered
 
 Terminal: now "-5% at 24h, -7% at 7d, -9% at 14d" and "monsters real but rare (~3% >= 10x within a day, ~5% within
