@@ -380,10 +380,12 @@ def real_report(tmp_path_factory):
 
 
 @needs_live
-def test_acceptance_d1_display_stronger_than_claim(real_report):
-    d1 = [f for f in real_report["discrepancies"] if f["check"] == "D1" and f["severity"] == "high"]
-    assert d1, "D1 must flag a display stronger than its claim"
-    assert {"milestone_the_bot_s_hidden_filter_is_right", "chief_prompt_dissent_move"} & {f["id"] for f in d1}
+def test_acceptance_d1_fixed_instances_stay_fixed(real_report):
+    # The day-1 D1 instances (IC-gate milestone said "proven", chief prompt stated a hypothesis as fact) were found by
+    # this checker and fixed on 2026-10-13; they must not come back. (That D1 CAN fail is proven by the fixture tests.)
+    d1 = {f["id"] for f in real_report["discrepancies"] if f["check"] == "D1" and f["severity"] == "high"}
+    assert not d1 & {"milestone_the_bot_s_hidden_filter_is_right", "milestone_the_bot_s_hidden_filter_looks_right",
+                     "chief_prompt_dissent_move"}
 
 
 @needs_live
