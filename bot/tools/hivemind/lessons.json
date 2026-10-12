@@ -77,6 +77,10 @@
   [
    "Buying every Syndicate/DTN call with a take-profit rule",
    "loses at every horizon even before fees (about -9 to -11% per call whatever the target: 1.5x, 2x or 3x); holding about -45%. The exit rule is not the lever"
+  ],
+  [
+   "Loosening the bot's confidence filter",
+   "144k skipped signals: per-signal they looked profitable, but day by day they lost slightly (a few huge days skewed the average). No case for letting more through"
   ]
  ]
 }
