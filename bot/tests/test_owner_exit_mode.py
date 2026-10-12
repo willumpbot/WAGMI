@@ -290,6 +290,18 @@ def test_hold_limits_skip_owner(sandbox, mode):
     assert pos.state != "CLOSED" and pos.sl == 2950.0
 
 
+@pytest.mark.parametrize("mode", ["profits_only", "hands_off"])
+def test_owner_plan_own_max_hold_closes(sandbox, mode):
+    pos = _pos(mode)
+    pos.entry_reasons = dict(pos.entry_reasons or {}, plan_max_hold_h=48)
+    pm = _pm_with(pos)
+    pos.open_time = datetime.now(timezone.utc) - timedelta(hours=10)
+    assert pm.check_hold_limits("ETH", 3020.0, 48, "tighten_sl") is None and pos.sl == 2950.0
+    pos.open_time = datetime.now(timezone.utc) - timedelta(hours=49)
+    ev = pm.check_hold_limits("ETH", 3020.0, 48, "tighten_sl")
+    assert ev is not None and ev.action == "OWNER_PLAN_MAX_HOLD"
+
+
 def test_hold_limits_still_close_bot_and_bot_manages(sandbox):
     for p in (_pos(owner=False), _pos("bot_manages")):
         p.open_time = datetime.now(timezone.utc) - timedelta(hours=200)

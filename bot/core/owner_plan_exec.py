@@ -478,7 +478,7 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
             entry_reasons={"owner_plan_id": pl.get("id"), "owner_trade": True, "llm_action": "owner",
                            "primary_driver": OWNER_STRATEGY, "regime": regime, "setup": pl.get("setup"),
                            "plan_entry": pl.get("entry"), "plan_stop": stop, "plan_target": target,
-                           "exit_mode": exit_mode},
+                           "exit_mode": exit_mode, "plan_max_hold_h": pl.get("max_hold_h")},
             trade_profile=prof,
             notes=f"THESIS: owner plan {side} {coin} tgt {target:g} inval {stop:g} | setup=owner_plan",
             setup_type=OWNER_STRATEGY,

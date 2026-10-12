@@ -2594,6 +2594,19 @@ class PositionManager:
         # OWNER_PLAN_EXEC: profits_only/hands_off owner positions are never time-closed or
         # stop-tightened by the bot's hold limits — only the owner's stop/target end them.
         if _owner_exit_locked(pos):
+            # ...except the owner's OWN time limit: a plan carries max_hold_h (default 48h in plans.py); past it,
+            # close at market like a plan that timed out. Without this, an owner position could stay open forever.
+            try:
+                _mh = float(((getattr(pos, "entry_reasons", None) or {}).get("plan_max_hold_h")) or 0)
+            except (TypeError, ValueError):
+                _mh = 0.0
+            if _mh > 0:
+                _now = getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
+                _age = ((_now - pos.open_time).total_seconds() if isinstance(pos.open_time, datetime)
+                        else _now.timestamp() - pos.open_time) / 3600
+                if _age >= _mh:
+                    logger.info(f"[HOLD_LIMIT] {symbol} owner plan reached its own max hold {_mh:.0f}h - closing")
+                    return self.force_close(symbol, price, reason="OWNER_PLAN_MAX_HOLD")
             return None
 
         # Use profile-specific hold limit (always apply, use min of config and profile)
