@@ -4,17 +4,17 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-12 11:20, took 652s._
+_Last run 2026-10-12 12:20, took 641s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | ok | 45968 | 1 | 171 source files skipped as unchanged |
+| `j1_panels` | ok | 46758 | 0 | 171 source files skipped as unchanged |
 | `j6_archive` | ok | 0 | 0 |  |
 | `j7_bulk` | ok | 0 | 1 | 0 shards new, 16 unchanged |
-| `j5_backfill` | ok | 713 | 636 | 178 coins ok, 0 failed, 5770 5m rows over the top 60 |
-| `j2_trackers` | ok | 3 | 1 |  |
-| `j4_integrity` | ok | 52 | 8 |  |
-| `j3_replications` | ok | 63 | 3 | 63 obs, 4 source-missing, 3 oos day-blocks, no verdicts |
+| `j5_backfill` | ok | 711 | 632 | 178 coins ok, 0 failed, 780 5m rows over the top 60 |
+| `j2_trackers` | ok | 3 | 0 |  |
+| `j4_integrity` | ok | 52 | 5 |  |
+| `j3_replications` | ok | 63 | 2 | 63 obs, 4 source-missing, 3 oos day-blocks, no verdicts |
 
 All jobs succeeded.
 
