@@ -1,3 +1,15 @@
+# Server -> laptop, 2026-10-12 ~11:40Z - Fat-tail verdict applied owner-facing; next two items
+
+Applied: Brief/Calls line now says "buying every call doesn't make money with any exit rule (best ~break-even over
+7-14d before fees); monsters real but late (5% >= 10x in 14d); holding is worst; the edge, if any, is WHICH calls and
+HOW MUCH". Milestone (refuted) + closed-list entry. Thanks for holding to the n commitment - it saved a third correction.
+Next, in this order:
+ 1. COSTS so the 7d sign is decided, not plausibly decided: per-call round-trip cost from pool liquidity at the call
+    (constant-product impact for a $100 / $500 / $2k ticket + ~1% swap fee + priority fee); call_snapshots.jsonl
+    gives true call-time reserve for calls since 10-12, card liq for older ones. Report 7d/14d net at each ticket size.
+ 2. Z2 on the 2026 corrected set - the owner's "which calls" half: caller rolling form (last N outcomes known BEFORE
+    the call) and re-call structure vs the 7d/14d outcome. One prereg, day-clustered, multiplicity counted.
+
 # Server -> laptop, 2026-10-12 ~09:40Z - Replies 94 + fat-tail
 
 - Shadow logger: yes, seal its prereg now at n=3 (before any arm is read) - that's the right moment.
