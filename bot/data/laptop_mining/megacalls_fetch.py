@@ -37,7 +37,63 @@ import urllib.request
 SRC = os.path.join("server_exports", "tg_calls_history_anon.jsonl.gz")
 OUT = "megacalls_paths.jsonl"
 GT = "https://api.geckoterminal.com/api/v2/networks/solana"
-PAUSE = 2.1
+PAUSE = 2.1              # starting guess only -- see adapt() below, it self-tunes
+APILOCK = "geckoterminal.lock"
+_state = {"pause": PAUSE, "n": 0, "n429": 0}
+
+
+def api_lock_wait():
+    """ONE GeckoTerminal consumer at a time, and WAIT rather than collide.
+
+    I caused this. I told a nine-agent swarm "only one agent may call
+    api.geckoterminal.com, a parallel sweep will 429 and poison the run for everybody", then
+    started this 18k pull against the same API while the swarm's fetch agent was running.
+    Measured consequence: 7 of 8 requests returned 429, and each one costs 25-75s of backoff,
+    so observed throughput was ~60s per call against the 4.2s the throttle implies -- a 14x
+    self-inflicted slowdown.
+
+    So this waits for the lock instead of racing for it: a long resumable job should start the
+    moment the API is free, not give up.
+    """
+    waited = 0
+    while True:
+        try:
+            fd = os.open(APILOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w") as f:
+                f.write("pid %d %s" % (os.getpid(), time.strftime("%H:%M:%S")))
+            return
+        except OSError:
+            age = 0
+            try:
+                age = time.time() - os.path.getmtime(APILOCK)
+            except OSError:
+                pass
+            if age > 2 * 3600:          # a crashed holder must not block forever
+                print("breaking stale API lock (%.0fs old)" % age, flush=True)
+                try:
+                    os.unlink(APILOCK)
+                except OSError:
+                    pass
+                continue
+            if waited % 300 == 0:
+                print("waiting for the GeckoTerminal lock (%.0fs)" % waited, flush=True)
+            time.sleep(30)
+            waited += 30
+
+
+def adapt(got429):
+    """Self-tune the pause from the MEASURED 429 rate instead of guessing it.
+
+    A fixed 2.1s was a guess and it was wrong: the free tier 429s at that rate even with a
+    single consumer. Backing off on evidence costs less than a 25s penalty per collision.
+    """
+    _state["n"] += 1
+    if got429:
+        _state["n429"] += 1
+        _state["pause"] = min(_state["pause"] * 1.35, 12.0)
+    elif _state["n"] % 40 == 0 and _state["n429"] / max(_state["n"], 1) < 0.02:
+        _state["pause"] = max(_state["pause"] * 0.92, 2.0)   # creep back down when clean
+    return _state["pause"]
 MIN_H = 24          # minute grid out to 24h -- covers every entry delay and first-hour stop
 HOUR_H = 72         # hourly grid out to 72h -- covers the time stops
 
@@ -50,11 +106,11 @@ def get(url, tries=3):
                               "User-Agent": "wagmi-research/1.0"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 out = json.load(r)
-            time.sleep(PAUSE)
+            time.sleep(adapt(False))
             return out, None
         except urllib.error.HTTPError as e:
             if e.code == 429:
-                time.sleep(25 * (k + 1))
+                time.sleep(adapt(True) * 2)
                 continue
             if e.code in (400, 404):
                 return None, "http_%d" % e.code
@@ -146,6 +202,7 @@ def main():
         if a.startswith("--limit="):
             limit = int(a.split("=", 1)[1])
     calls = load_calls()
+    api_lock_wait()
     done = set()
     if os.path.exists(OUT):
         for line in io.open(OUT, encoding="utf-8"):
@@ -192,13 +249,21 @@ def main():
         f.flush()
         ok += 1
         if (ok + dead) % 50 == 0:
+            print("    pause %.1fs, 429 rate %.1f%%"
+                  % (_state["pause"], 100.0 * _state["n429"] / max(_state["n"], 1)), flush=True)
             el = time.time() - t0w
             rate = (ok + dead) / max(el, 1)
             print("  %d/%d  live %d  dead %d  %.0fs  eta %.1fh"
                   % (i + 1, len(todo), ok, dead, el,
                      (len(todo) - i - 1) / max(rate, 1e-9) / 3600.0), flush=True)
     f.close()
-    print("DONE live %d, dead %d, %.0fs" % (ok, dead, time.time() - t0w), flush=True)
+    try:
+        os.unlink(APILOCK)
+    except OSError:
+        pass
+    print("DONE live %d, dead %d, %.0fs. 429 rate %.1f%%, final pause %.1fs"
+          % (ok, dead, time.time() - t0w,
+             100.0 * _state["n429"] / max(_state["n"], 1), _state["pause"]), flush=True)
 
 
 if __name__ == "__main__":
