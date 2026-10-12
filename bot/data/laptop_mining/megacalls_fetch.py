@@ -18,9 +18,19 @@ TWO RULES THAT COME STRAIGHT FROM M3 GOING WRONG:
   2. RESUME ON `ca`, NEVER ON LIST POSITION. The call list is append-only and grows, so an
      index-keyed resume re-fetches some rows and skips others. (I shipped that bug once already.)
 
-Cost: 2 requests per call (pool lookup, then minute OHLCV covering 24h) at 2.1s = roughly 21 hours
-for the full corpus. Resumable, so it can be stopped and restarted freely, and partial output is
-already usable -- the chats are processed NEWEST FIRST so the most recoverable pools land early.
+COST, measured rather than estimated. The first estimate of "21 hours at 2.1s" was wrong: the free
+tier 429s even at 2.1s with a single consumer, the adaptive throttle settles at its 12s cap with a
+~21% rejection rate still, and EVM tokens cost extra probes. Measured ETA for the full corpus is
+therefore about **7 days**, not one. It is resumable and unattended, so that is acceptable -- but
+it is stated here because an optimistic ETA in a docstring is how a multi-day job gets mistaken
+for an overnight one.
+
+ORDER: stratified round-robin across chats, newest-first within each -- NOT pure newest-first.
+Newest-first was wrong for the question: the headline test is cross-chat transfer (fit on DTN,
+test on Syndicate), DTN runs 2025-03 to 2026-06 and Syndicate 2026-08 to 10, so newest-first
+delivered the whole HOLDOUT before any of the FIT set and the test could not run until the job
+finished. Interleaved, every prefix is balanced (first 300 rows = 100 per chat) and the test is
+runnable on partial output.
 
 caller_hash is carried through UNUSED. Z2 (caller form) is a separate question with its own
 constraint, and nothing here grades a caller.
@@ -126,7 +136,10 @@ GT_BASE = "https://api.geckoterminal.com/api/v2/networks"
 # is the cross-chat holdout. A Solana-only fetcher marks every one of them dead, which is the
 # same silent-exclusion bias that cost a retraction today, in a new place. So an EVM address is
 # probed against the networks it is plausibly on and the answer is recorded on the row.
-EVM_NETWORKS = ("eth", "base", "bsc", "arbitrum", "polygon_pos")
+# Trimmed from 5 to the 3 that actually hit in the first 88 calls (bsc 11, eth 1,
+# base 1; arbitrum and polygon_pos hit zero). Each dropped network saves one request
+# on every EVM token, and 10 tokens had already burned all five probes for nothing.
+EVM_NETWORKS = ("bsc", "eth", "base")
 
 
 def network_for(ca):
@@ -250,9 +263,28 @@ def load_calls():
             if d.get("ca") and d.get("call_ts"):
                 calls.append({"ca": d["ca"], "call_ts": int(d["call_ts"]),
                               "chat": d.get("chat") or "?"})
-    # NEWEST FIRST: recent pools are far likelier to still exist, so partial output is useful
-    calls.sort(key=lambda c: -c["call_ts"])
-    return calls
+    # STRATIFIED INTERLEAVE, not pure newest-first.
+    #
+    # Newest-first was wrong for the question. The headline test is CROSS-CHAT TRANSFER -- fit on
+    # the DTN chats, test on Syndicate -- and DTN runs 2025-03 to 2026-06 while Syndicate is
+    # 2026-08 to 10. So newest-first would have delivered the entire HOLDOUT before any of the
+    # FIT set, and the test would not be runnable until the very end of a multi-day fetch.
+    #
+    # Round-robin across chats, newest-first within each, so every prefix of the output is
+    # balanced across all three and the cross-chat test is runnable on partial data.
+    per = {}
+    for c in calls:
+        per.setdefault(c["chat"], []).append(c)
+    for k in per:
+        per[k].sort(key=lambda c: -c["call_ts"])
+    out, keys = [], sorted(per, key=lambda k: -len(per[k]))
+    i = 0
+    while any(per[k] for k in keys):
+        k = keys[i % len(keys)]
+        if per[k]:
+            out.append(per[k].pop(0))
+        i += 1
+    return out
 
 
 def main():
@@ -274,8 +306,20 @@ def main():
     todo = [c for c in calls if c["ca"] not in done]
     if limit:
         todo = todo[:limit]
-    print("%d calls in corpus, %d already fetched, %d to go (%.1f h at %.1fs x 2 requests)"
-          % (len(calls), len(done), len(todo), len(todo) * PAUSE * 2 / 3600.0, PAUSE), flush=True)
+    # Report the OPTIMISTIC FLOOR and the MEASURED expectation separately. The old line printed
+    # only "21.4 h at 2.1s", which is the floor at the starting pause and nothing like reality:
+    # the throttle settles at 12s with ~21% rejections, so the real figure is ~7 days. Printing
+    # the floor alone is how a week-long job gets read as an overnight one -- the same mistake
+    # the docstring warns about, left in the log by me.
+    floor_h = len(todo) * PAUSE * 2 / 3600.0
+    real_h = len(todo) * 12.0 * 2 * 1.21 / 3600.0
+    print("%d calls in corpus, %d already fetched, %d to go" % (len(calls), len(done), len(todo)),
+          flush=True)
+    print("  optimistic floor %.1f h (at the %.1fs starting pause); MEASURED expectation "
+          "~%.0f h / %.1f days once the throttle settles at its 12s cap with ~21%% rejections"
+          % (floor_h, PAUSE, real_h, real_h / 24.0), flush=True)
+    print("  order is stratified round-robin across chats, so the cross-chat test is runnable "
+          "on partial output rather than only at the end", flush=True)
 
     f = io.open(OUT, "a", encoding="utf-8")
     ok = dead = 0
