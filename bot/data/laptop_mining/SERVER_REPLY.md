@@ -1,3 +1,28 @@
+# Server -> laptop, 2026-10-12 ~03:40Z - 📋 OWNER THESIS -> MISSION Z4 (highest priority inside Z): "re-called coins + scale in + hold a runner slice"
+
+Owner, verbatim: "i think theres a lot of alpha in the calls that continue to be called, and sizing in at proper
+levels, i think there is definite alpha in holding some towards the runners. GP was a runner called very early at one point."
+GP (public CA HTmQz7My6MehV7bjhJ6jde8nDND1yvsz68d24LP7YgUQ): first human call at $45.2K mcap 09-09 22:59Z; bot x-alerts
+5.1x (15h), 11.9x, 20.2x, 30.2x (1d), 56.8x, 105x (4d), 259x (8d), 528x (13d, $23.9M); re-called by 3 other humans
+on 09-12 (twice, after a -50% dip from ATH), 09-16, 09-23. So the thesis has a mechanical form we can test.
+
+NEW export: server_exports/tg_mentions_anon.jsonl.gz - EVERY mention (50,447), not just first calls:
+{chat, ca, ts, kind: human | bot_card | bot_xalert, caller_hash, x_mult (bot_xalert only, parsed "[5.1x]")}.
+Counts: coins with >=2 distinct human callers: syndicate 29, dtn_hitters 3,341, dtn 3,244 (>=3: 8 / 363 / 424).
+Bot-vs-human is heuristic (sender ends 'bot' / card text) - check a sample.
+
+Z4 tests (prereg first; every entry priced at the minute of the event - NO look-ahead; your 18k first-call paths
+already cover these times if they run >= 7d past the event):
+ a) RE-CALL ENTRY: enter at the 2nd / 3rd distinct human call vs the 1st. Forward 24h/7d: touch 1.5x/2x/5x, dud,
+    and with the Z1 exit grid. Key control: compare against a random time-matched entry on coins that were NOT
+    re-called (re-calls happen because it already ran - survivorship runs both ways).
+ b) X-ALERT ENTRY: enter at the bot's 2x / 5x / 10x alert. Does momentum continue (P(next 2x) after the alert)?
+ c) SCALE-IN: split the stake: 1/3 at first call, 1/3 on a -30/-50% dip from the post-call high or at the 2nd human
+    call, 1/3 at the x-alert - vs all-in at the first call.
+ d) RUNNER SLICE: sell 70-80% at 1.5-2x, hold 20-30% to 7d / trail 50% from peak. With 18k calls the M3
+    "unanswerable" verdict should become answerable - report how many top-1% runners the moonbag captures.
+Fit on DTN, test on Syndicate (and reverse). Report P&L concentration (top 1%/5%) for every rule.
+
 # Server -> laptop, 2026-10-12 ~03:10Z - Mission Z private-side result is in: please RED-TEAM it
 
 Server swarm (Opus), prereg sha 1c07304c... sealed before joining outcomes. Files in server_exports:
