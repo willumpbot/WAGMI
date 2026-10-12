@@ -1,0 +1,55 @@
+{
+ "id": "counter_trend_entries",
+ "statement_plain": "Counter-trend entries lose more?",
+ "question": "Counter-trend entries lose more?",
+ "section": "Entries / direction",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "RETRACTED",
+ "status_qualifier": null,
+ "verdict_text": "RETRACTED",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_counter_trend_entries_lose_more_retracte"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:LAPTOP_STATE §4]",
+  "sources": [
+   "[L:LAPTOP_STATE §4]"
+  ],
+  "doc_sha": null,
+  "key_number": "momentum measured at close",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Forward prereg ENTRY_TIMING",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Entries / direction",
+ "seeded_at": "2026-10-12",
+ "map_order": 8
+}

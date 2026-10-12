@@ -1,0 +1,56 @@
+{
+ "id": "higher_conf_floor_helps",
+ "statement_plain": "Higher confidence floor helps?",
+ "question": "Higher confidence floor helps?",
+ "section": "Entries / direction",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": null,
+ "verdict_text": "REFUTED",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "rule:r16_trigger_conf_floor",
+  "display:milestone_confidence_floors_pick_better_trades"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:CONF_FLOOR]",
+  "sources": [
+   "[L:CONF_FLOOR]"
+  ],
+  "doc_sha": null,
+  "key_number": "shuffled confidence did as well; floor inert",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "None",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Entries / direction",
+ "seeded_at": "2026-10-12",
+ "map_order": 4
+}

@@ -1,0 +1,24 @@
+{
+ "id": "r04_probe_valve",
+ "n": 4,
+ "description": "Probe valve - msm 8979-9070 - rate 0.5 (cap), 0.1x - 1",
+ "claim_id": "owner_policy",
+ "unit": "share of blocked entries, size mult",
+ "window": null,
+ "min_n": null,
+ "flags": [
+  "BLOCKED_GO_PROBE",
+  "BLOCKED_GO_PROBE_RATE",
+  "BLOCKED_GO_PROBE_SIZE_MULT"
+ ],
+ "fires_37h": 1,
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #4",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

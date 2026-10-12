@@ -1,0 +1,62 @@
+{
+ "id": "long_side_drain",
+ "statement_plain": "Long-side drain",
+ "question": "Long-side drain",
+ "section": "Entries / direction",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "STALE",
+ "status_qualifier": "historical",
+ "verdict_text": "PROVEN, historical",
+ "wording_tier": "stale",
+ "revalidate": null,
+ "consumers": [
+  "rule:r03_long_block",
+  "rule:r05_side_size_mult",
+  "display:milestone_long_side_losses_were_june_july"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:LONG_SIDE]",
+  "sources": [
+   "[L:LONG_SIDE]"
+  ],
+  "doc_sha": null,
+  "key_number": "June/July only",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": {
+   "start": "2026-06-01",
+   "end": "2026-07-31",
+   "why": "71% of the drain is June; the mechanism was deleted from position_manager.py; the last 15 longs are flat (laptop red-team 5e50f89d, answer 4: exclude Jun/Jul)."
+  },
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "SIDE_LEVEL_EDGE",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Entries / direction",
+ "seeded_at": "2026-10-12",
+ "status_note": "Seeded STALE, not PROVEN: its era window has closed, so it may not bind a live rule (laptop amendment 3: expiry by default, renewal by evidence).",
+ "map_order": 9
+}

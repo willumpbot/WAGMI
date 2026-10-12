@@ -1,0 +1,37 @@
+{
+ "id": "stream_whales",
+ "name": "stream_whales",
+ "kind": "stream",
+ "plain": "Net position of ~60 profitable HL accounts per coin: coins.<SYM> = [net, gross, n_long, n_short].",
+ "stream": {
+  "path": "hivemind/whales_log.jsonl",
+  "archive": "whales",
+  "max_age_days": 2,
+  "map_keys": [
+   "coins"
+  ]
+ },
+ "expected_fields": [
+  "coins.*[0]",
+  "coins.*[1]",
+  "coins.*[2]",
+  "coins.*[3]",
+  "ts"
+ ],
+ "invariants": [
+  {
+   "expr": "all(abs(v[0]) <= v[1] for v in g('coins').values())",
+   "why": "abs(net) <= gross (laptop D11)"
+  },
+  {
+   "expr": "all(v[0] <= 0 for v in g('coins').values() if v[2] == 0)",
+   "why": "no longs -> net not long"
+  },
+  {
+   "expr": "all(v[0] >= 0 for v in g('coins').values() if v[3] == 0)",
+   "why": "no shorts -> net not short"
+  }
+ ],
+ "verified_by": "none",
+ "expected_fields_note": "Baseline = union of fields in the last 20 rows at seed time. D10 flags any field that disappears. The source API's own field set is not captured yet."
+}

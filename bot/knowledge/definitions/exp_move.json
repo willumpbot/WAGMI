@@ -1,0 +1,53 @@
+{
+ "name": "exp_move",
+ "kind": "quantity",
+ "plain": "Expected size of tomorrow's move, in % (absolute, no direction).",
+ "canonical": "volforecast.forecast",
+ "cross_check": {
+  "tolerance_same_function": 0.0,
+  "alarm_rel_diff": 0.1,
+  "sources": [
+   "state.vol.next_day_move_pct",
+   "scan.exp_move",
+   "chief.expected_move_pct"
+  ]
+ },
+ "invariants": [
+  {
+   "expr": "g('x') is None or g('x') >= 0",
+   "why": "a move size is never negative"
+  }
+ ],
+ "id": "exp_move",
+ "implementations": [
+  {
+   "label": "volforecast.forecast",
+   "path": "tools/hivemind/volforecast.py",
+   "function": "forecast",
+   "output": "next_day_move_pct",
+   "note": "HAR + stage-2 error model; production (laptop answer 2). Consumers: scanner.scan_coin, stop_shadow._exp_move, assemble vol.",
+   "impl_hash": "ae0f3f71b5c362ce96a083d751240c9e3aae822ab8d6e419623af757fb04203a",
+   "line": 36
+  },
+  {
+   "label": "risk_voice.risk_read (via assemble.voice_risk)",
+   "path": "data/laptop_mining/risk_voice.py",
+   "function": "risk_read",
+   "output": "expected_move_1d_pct",
+   "note": "Own HAR recompute (no stage-2); surfaced by tools/hivemind/assemble.py voice_risk (~:326).",
+   "impl_hash": "55531d46137b6cddda257559f96b477296c83c7da46632971331dafd1f8785cc",
+   "line": 142
+  },
+  {
+   "label": "chief expected_move_pct",
+   "path": "tools/hivemind/chief.py",
+   "pattern": "ALSO REQUIRED on every coin: \\\"expected_move_pct\\\"",
+   "output": "expected_move_pct",
+   "note": "The Opus chief's own number (an LLM forecast, not code).",
+   "impl_hash": "67897b1df677583092c77f954cdba08600aac8f8ff03d7b9c22bdbc5805be94a",
+   "line": 57
+  }
+ ],
+ "tested_impl_hash": null,
+ "verified_by": "none"
+}

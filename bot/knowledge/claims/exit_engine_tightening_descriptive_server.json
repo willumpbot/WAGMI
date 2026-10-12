@@ -1,0 +1,53 @@
+{
+ "id": "exit_engine_tightening_descriptive_server",
+ "statement_plain": "Exit-engine tightening, descriptive (server)",
+ "question": "Exit-engine tightening, descriptive (server)",
+ "section": "Exits / stops",
+ "kind": "exit",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "HYPOTHESIS",
+ "status_qualifier": "unmapped verdict: 76% to < 0.5x exp_move; 6/66 cost cases, 5 in < 0.5 bucket",
+ "verdict_text": "76% to < 0.5x exp_move; 6/66 cost cases, 5 in < 0.5 bucket",
+ "wording_tier": "hypothesis",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": true,
+ "evidence": {
+  "source": "[S:SERVER_REPLY 23:10Z]",
+  "sources": [
+   "[S:SERVER_REPLY 23:10Z]"
+  ],
+  "doc_sha": null,
+  "key_number": null,
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Owner chose \"Profits only\"",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Exits / stops",
+ "seeded_at": "2026-10-12",
+ "map_order": 22
+}

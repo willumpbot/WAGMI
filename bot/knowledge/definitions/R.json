@@ -1,0 +1,34 @@
+{
+ "name": "R",
+ "kind": "quantity",
+ "plain": "Whole-trade R multiple: net pnl / (|entry - initial stop| x original qty x pnl leverage).",
+ "canonical": "feedback.trade_ledger.compute_realized_rr",
+ "invariants": [
+  {
+   "expr": "g('realized_rr') is None or abs(g('realized_rr')) < 50",
+   "why": "|R| beyond 50 means a broken denominator (the old leverage double-count)"
+  }
+ ],
+ "notes": "Laptop answer 3: R is NOT scale-free when the treatment touches the stop; gates use bps of notional.",
+ "id": "R",
+ "implementations": [
+  {
+   "label": "feedback.trade_ledger.compute_realized_rr",
+   "path": "feedback/trade_ledger.py",
+   "function": "compute_realized_rr",
+   "impl_hash": "d7f10520cf1e5aa9166c6cbbf71dfaa3e479b6eeab0498239316aa44441784d0",
+   "line": 125
+  },
+  {
+   "label": "feedback.trade_ledger.rr_pnl_leverage",
+   "path": "feedback/trade_ledger.py",
+   "function": "rr_pnl_leverage",
+   "role": "helper",
+   "note": "Must mirror PositionManager._pnl_lev (PNL_LEVERAGE_FIX).",
+   "impl_hash": "19863e1420c4a4f87538abbdb3b6f2586fe26d5ba32bfe15de84ac26771e7a20",
+   "line": 107
+  }
+ ],
+ "tested_impl_hash": null,
+ "verified_by": "none"
+}

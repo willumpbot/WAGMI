@@ -1,0 +1,55 @@
+{
+ "id": "vol_expanding_size",
+ "statement_plain": "vol_expanding",
+ "question": "vol_expanding",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": "maybe opposite",
+ "verdict_text": "REFUTED / maybe opposite",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:scanner_flag_vol_expanding"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:crunch/REPLICATIONS]",
+  "sources": [
+   "[L:crunch/REPLICATIONS]"
+  ],
+  "doc_sha": null,
+  "key_number": "OOS day diffs −10.5, −1.8, −1.0%",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Tooltip reworded",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
+ "seeded_at": "2026-10-12",
+ "map_order": 35
+}

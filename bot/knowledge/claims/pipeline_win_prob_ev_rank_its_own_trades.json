@@ -1,0 +1,53 @@
+{
+ "id": "pipeline_win_prob_ev_rank_its_own_trades",
+ "statement_plain": "Pipeline win_prob / EV rank its own trades?",
+ "question": "Pipeline win_prob / EV rank its own trades?",
+ "section": "Entries / direction",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": null,
+ "verdict_text": "REFUTED",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:LLM_PIPELINE]",
+  "sources": [
+   "[L:LLM_PIPELINE]"
+  ],
+  "doc_sha": null,
+  "key_number": "ρ −0.096 / −0.044",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Nothing yet",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Entries / direction",
+ "seeded_at": "2026-10-12",
+ "map_order": 2
+}

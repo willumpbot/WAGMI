@@ -1,0 +1,65 @@
+{
+ "id": "stream_market_depth",
+ "name": "stream_market_depth",
+ "kind": "stream",
+ "plain": "L2 depth / trade flow / OKX futures context, 6 coins.",
+ "stream": {
+  "path": "market_depth_history.jsonl",
+  "archive": "market_depth",
+  "max_age_days": 2,
+  "map_keys": []
+ },
+ "expected_fields": [
+  "futures_ctx.basis_bps",
+  "futures_ctx.funding_rate",
+  "futures_ctx.index_price",
+  "futures_ctx.long_short_account_ratio",
+  "futures_ctx.long_short_account_ratio_ts",
+  "futures_ctx.mark_price",
+  "futures_ctx.source",
+  "futures_ctx.taker_buy_sell_ratio",
+  "l2.ask_depth_0_1pct",
+  "l2.ask_depth_0_5pct",
+  "l2.ask_depth_1pct",
+  "l2.bid_depth_0_1pct",
+  "l2.bid_depth_0_5pct",
+  "l2.bid_depth_1pct",
+  "l2.imbalance_0_1pct",
+  "l2.imbalance_0_5pct",
+  "l2.imbalance_1pct",
+  "l2.mid",
+  "l2.spread",
+  "l2.spread_bps",
+  "symbol",
+  "taker_15m.buy_ratio",
+  "taker_15m.buy_vol_usd",
+  "taker_15m.sell_vol_usd",
+  "taker_15m.src",
+  "taker_15m.window_min",
+  "taker_15m.window_ts_end",
+  "taker_15m.window_ts_start",
+  "trades.buy_ratio",
+  "trades.buy_vol",
+  "trades.largest_trade",
+  "trades.sell_vol",
+  "trades.trade_count",
+  "trades.window",
+  "ts"
+ ],
+ "invariants": [
+  {
+   "expr": "-1 <= g('l2.imbalance_1pct') <= 1",
+   "why": "imbalance is a share difference"
+  },
+  {
+   "expr": "0 <= g('trades.buy_ratio') <= 1",
+   "why": "a ratio of volumes"
+  },
+  {
+   "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
+   "why": "depth bands are cumulative"
+  }
+ ],
+ "verified_by": "none",
+ "expected_fields_note": "Baseline = union of fields in the last 20 rows at seed time. D10 flags any field that disappears. The source API's own field set is not captured yet."
+}

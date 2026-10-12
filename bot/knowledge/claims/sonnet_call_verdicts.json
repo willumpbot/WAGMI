@@ -1,0 +1,53 @@
+{
+ "id": "sonnet_call_verdicts",
+ "statement_plain": "Sonnet call verdicts",
+ "question": "Sonnet call verdicts",
+ "section": "Meme calls (Syndicate / DTN)",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "HYPOTHESIS",
+ "status_qualifier": null,
+ "verdict_text": "OPEN",
+ "wording_tier": "hypothesis",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[mem:session_10-11]",
+  "sources": [
+   "[mem:session_10-11]"
+  ],
+  "doc_sha": null,
+  "key_number": "10 logged",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "v3 calibrated",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Meme calls (Syndicate / DTN)",
+ "seeded_at": "2026-10-12",
+ "map_order": 51
+}

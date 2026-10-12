@@ -1,0 +1,39 @@
+{
+ "id": "r07_risk_cap_0_5pct",
+ "n": 7,
+ "description": "fix or remove exploration. Circuit breakers / daily loss limits untouched.",
+ "claim_id": "owner_policy",
+ "unit": "fraction of equity at risk",
+ "window": null,
+ "min_n": null,
+ "flags": [
+  "MAX_RISK_PCT_CEILING",
+  "SIZING_CONSTRAINT_UNITS_FIX"
+ ],
+ "fires_37h": 193,
+ "enforcement_check": {
+  "prompt_markers": [
+   {
+    "path": "llm/agents/prompts.py",
+    "pattern": "sizing_constraint\\.max_risk_pct"
+   }
+  ],
+  "code_paths": [
+   "llm/agents/coordinator.py",
+   "core",
+   "execution",
+   "multi_strategy_main.py"
+  ],
+  "clamp_pattern": "(?<![\\w.])(risk_pct|risk_frac)\\b[^\\n]*(sizing_constraint|MAX_RISK_PCT_CEILING|_ceiling_cap|_max_risk_pct)|(sizing_constraint|MAX_RISK_PCT_CEILING|_ceiling_cap|_max_risk_pct)[^\\n]*(?<![\\w.])(risk_pct|risk_frac)\\b",
+  "why": "The ceiling is computed into risk_data['sizing_constraint'] for the Risk Agent's prompt; a code enforcement would clamp the agent's returned risk_pct against it."
+ },
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #7",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

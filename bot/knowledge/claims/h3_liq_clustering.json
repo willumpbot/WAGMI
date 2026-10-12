@@ -1,0 +1,55 @@
+{
+ "id": "h3_liq_clustering",
+ "statement_plain": "Liquidation clustering (H3)",
+ "question": "Liquidation clustering (H3)",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "PROVEN",
+ "status_qualifier": "narrow",
+ "verdict_text": "PROVEN, narrow",
+ "wording_tier": "proven",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_liquidation_clustering_is_real_btc_sol"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[mem:h3_verified]",
+  "sources": [
+   "[mem:h3_verified]"
+  ],
+  "doc_sha": null,
+  "key_number": "BTC/SOL/FARTCOIN ~¼ of headline",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Context",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
+ "seeded_at": "2026-10-12",
+ "map_order": 37
+}

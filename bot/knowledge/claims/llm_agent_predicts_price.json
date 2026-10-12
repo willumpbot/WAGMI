@@ -1,0 +1,55 @@
+{
+ "id": "llm_agent_predicts_price",
+ "statement_plain": "Any LLM agent predicts price?",
+ "question": "Any LLM agent predicts price?",
+ "section": "Entries / direction",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": null,
+ "verdict_text": "REFUTED",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_no_ai_agent_predicts_price"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[mem:mining_findings_10-07]",
+  "sources": [
+   "[mem:mining_findings_10-07]"
+  ],
+  "doc_sha": null,
+  "key_number": "skip-all beat every agent, 8,340 rounds",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Value moved to vetoes/exits",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Entries / direction",
+ "seeded_at": "2026-10-12",
+ "map_order": 0
+}

@@ -1,0 +1,50 @@
+{
+ "id": "stream_depth_all",
+ "name": "stream_depth_all",
+ "kind": "stream",
+ "plain": "L2 bands for all ~178 perps every 15 min.",
+ "stream": {
+  "path": "hivemind/depth_all.jsonl",
+  "archive": "depth_all",
+  "max_age_days": 2,
+  "map_keys": []
+ },
+ "expected_fields": [
+  "ask_usd_0.1",
+  "ask_usd_0.5",
+  "ask_usd_1.0",
+  "band_src_0.1",
+  "band_src_0.5",
+  "band_src_1.0",
+  "bid_usd_0.1",
+  "bid_usd_0.5",
+  "bid_usd_1.0",
+  "coin",
+  "imb_0.1",
+  "imb_0.5",
+  "imb_1.0",
+  "mid",
+  "reach_ask_pct",
+  "reach_bid_pct",
+  "spread_bps",
+  "ts",
+  "wide_reach_ask_pct",
+  "wide_reach_bid_pct"
+ ],
+ "invariants": [
+  {
+   "expr": "-1 <= g('imb_0.5') <= 1",
+   "why": "imbalance is a share difference"
+  },
+  {
+   "expr": "g('spread_bps') >= 0",
+   "why": "spread"
+  },
+  {
+   "expr": "g('bid_usd_0.5') >= 0 and g('ask_usd_0.5') >= 0",
+   "why": "depth is non-negative"
+  }
+ ],
+ "verified_by": "none",
+ "expected_fields_note": "Baseline = union of fields in the last 20 rows at seed time. D10 flags any field that disappears. The source API's own field set is not captured yet."
+}

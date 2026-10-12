@@ -1,0 +1,35 @@
+{
+ "name": "funding_hot",
+ "kind": "flag",
+ "plain": "Coin's funding is strictly above the interpolated 80th percentile of the scanned coins' funding.",
+ "canonical": "scanner.run funding_hot block",
+ "tested_impl_hash": null,
+ "invariants": [
+  {
+   "expr": "g('share_flagged') <= 0.25",
+   "why": "top quintile: ~20% of scanned coins at most"
+  }
+ ],
+ "id": "funding_hot",
+ "implementations": [
+  {
+   "label": "scanner.run funding_hot block",
+   "path": "tools/hivemind/scanner.py",
+   "start": "fs = sorted\\(r\\[\\\"funding_h\\\"\\]",
+   "end": "r\\[\\\"flags\\\"\\]\\.append\\(\\\"funding_hot\\\"\\)",
+   "note": "Strictly ABOVE the cut (HL default-funding ties; '>=' flagged ~85% of coins). Tested by laptop SIZE_FLAGS / FUNDING_STOP_AUDIT with exactly this definition (definition-sensitive).",
+   "impl_hash": "362e00483c8e501da8e038c1fa4ca3c746cef737e06ba505e93cb354d3a798d8",
+   "line": 169
+  },
+  {
+   "label": "scanner.FLAGS text",
+   "path": "tools/hivemind/scanner.py",
+   "start": "\\\"funding_hot\\\": \\(\\\"Longs paying a lot\\\"",
+   "end": "Size down a little",
+   "role": "display",
+   "impl_hash": "3ad4d372b1fd01751da0b15a7fc21ffb0cee8e745eed9516669524f2fa70fbde",
+   "line": 37
+  }
+ ],
+ "verified_by": "none"
+}

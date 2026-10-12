@@ -1,0 +1,20 @@
+{
+ "id": "r14_time_stop_handoff",
+ "n": 14,
+ "description": "Time stop hands to exit agent; real close only at 1.5x max hold - position_manager.py:1250-1324",
+ "claim_id": null,
+ "unit": "x max hold",
+ "window": null,
+ "min_n": null,
+ "flags": [],
+ "fires_37h": null,
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #14",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

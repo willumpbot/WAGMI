@@ -1,0 +1,53 @@
+{
+ "id": "safe_leverage_p99",
+ "statement_plain": "Safe leverage p99",
+ "question": "Safe leverage p99",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "SUPPORTED",
+ "status_qualifier": null,
+ "verdict_text": "FIXED",
+ "wording_tier": "supported",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:M9_AUDIT]",
+  "sources": [
+   "[L:M9_AUDIT]"
+  ],
+  "doc_sha": null,
+  "key_number": "sample max at n=68",
+  "n": 68,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "÷1.15 / p95",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
+ "seeded_at": "2026-10-12",
+ "map_order": 36
+}

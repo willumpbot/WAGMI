@@ -1,0 +1,56 @@
+{
+ "id": "meme_buy_every_call",
+ "statement_plain": "Buy every call, any target",
+ "question": "Buy every call, any target",
+ "section": "Meme calls (Syndicate / DTN)",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": null,
+ "verdict_text": "REFUTED",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_buying_every_meme_call_any_exit_rule",
+  "display:milestone_following_every_syndicate_call_loses"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:LAPTOP_STATE §3]",
+  "sources": [
+   "[L:LAPTOP_STATE §3]"
+  ],
+  "doc_sha": null,
+  "key_number": "−9.8 to −10.8%/call at 24h/7d/14d; hold −45%",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Calls line",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Meme calls (Syndicate / DTN)",
+ "seeded_at": "2026-10-12",
+ "map_order": 45
+}

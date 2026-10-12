@@ -1,0 +1,56 @@
+{
+ "id": "trailing_exit",
+ "statement_plain": "Trailing exit",
+ "question": "Trailing exit",
+ "section": "Exits / stops",
+ "kind": "exit",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": "x5",
+ "verdict_text": "REFUTED x5",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_trailing_exit_beats_a_fixed_target"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:TRAILING_EXIT]",
+  "sources": [
+   "[L:TRAILING_EXIT]",
+   "[L:MISSION_XZ]"
+  ],
+  "doc_sha": null,
+  "key_number": "−0.02 to −0.04R",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "None",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Exits / stops",
+ "seeded_at": "2026-10-12",
+ "map_order": 23
+}

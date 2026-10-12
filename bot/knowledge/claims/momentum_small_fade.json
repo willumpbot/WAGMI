@@ -1,0 +1,59 @@
+{
+ "id": "momentum_small_fade",
+ "statement_plain": "momentum_small",
+ "question": "momentum_small",
+ "section": "Scanner flags",
+ "kind": "direction",
+ "quantity": "smallcap_breakout",
+ "metric": "excess_return_vs_nonbreakout_smallcap_peers",
+ "horizon": "72h",
+ "status": "PREREG_SEALED",
+ "status_qualifier": null,
+ "verdict_text": "Strong in-sample REVERSAL (−14.85%/72h vs peers at ≥8% above 20d high, z −6.1); forward prereg sealed; ⚠ live flag population differs from tested",
+ "wording_tier": "sealed",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_don_t_chase_small_cap_breakouts_in_histo",
+  "display:scanner_flag_momentum_small",
+  "grader:scan_grader_momentum_small"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": true,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:SMALLCAP_CORRECTION]",
+  "sources": [
+   "[L:SMALLCAP_CORRECTION]"
+  ],
+  "doc_sha": null,
+  "key_number": null,
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": [],
+  "prereg_doc": "origin/laptop-mining-2026-10:bot/data/laptop_mining/PREREG_SMALLCAP_FADE_2026-10-11.md",
+  "read_not_before": "150 events across >=30 days"
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": null,
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Scanner flags",
+ "seeded_at": "2026-10-12",
+ "map_order": 43
+}

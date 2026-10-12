@@ -1,0 +1,55 @@
+{
+ "id": "exit_agent_is_the_leak",
+ "statement_plain": "\"Exit agent is the leak\"",
+ "question": "\"Exit agent is the leak\"",
+ "section": "Exits / stops",
+ "kind": "exit",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": null,
+ "verdict_text": "REFUTED",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_exit_agent_is_the_leak"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:EXIT_AGENT_REPLAY]",
+  "sources": [
+   "[L:EXIT_AGENT_REPLAY]"
+  ],
+  "doc_sha": null,
+  "key_number": "its closes +0.037R",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "None",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Exits / stops",
+ "seeded_at": "2026-10-12",
+ "map_order": 24
+}

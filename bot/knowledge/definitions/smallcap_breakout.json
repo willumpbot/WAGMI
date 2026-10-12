@@ -1,0 +1,37 @@
+{
+ "name": "smallcap_breakout",
+ "kind": "flag",
+ "plain": "A small cap trading above its 20-day high.",
+ "canonical": "laptop prereg (PREREG_SMALLCAP_FADE)",
+ "id": "smallcap_breakout",
+ "implementations": [
+  {
+   "label": "scanner momentum_small flag",
+   "path": "tools/hivemind/scanner.py",
+   "start": "big15 = \\{r\\[\\\"coin\\\"\\]",
+   "end": "r\\[\\\"flags\\\"\\]\\.append\\(\\\"momentum_small\\\"\\)",
+   "note": "Ranks 16-60 of the top-60 by 24h volume, px > hi20 AND (vol_ratio > 2 OR up-day > 1.5x exp_move).",
+   "impl_hash": "11d5a22d587929ad84d0f06b6990bb572da53f437dace1211957a8d3932e7590",
+   "line": 181
+  },
+  {
+   "label": "terminal.html planner warning",
+   "path": "tools/hivemind/terminal.html",
+   "pattern": "side===\\\"LONG\\\" && \\(sr\\.vol_rank\\|\\|0\\) > 15 && sr\\.hi20 && sr\\.px > sr\\.hi20",
+   "note": "vol_rank > 15 and px > hi20 only (no volume/up-day condition), LONG side.",
+   "impl_hash": "111c2239cbc25246b59ea67218c341258bc0460f2b5d86851b816b8523e7efd4",
+   "line": 583
+  },
+  {
+   "label": "laptop prereg (PREREG_SMALLCAP_FADE)",
+   "doc": "origin/laptop-mining-2026-10:bot/data/laptop_mining/PREREG_SMALLCAP_FADE_2026-10-11.md",
+   "doc_commit": "7f98169e0806223ebc80a2b4a902ac8fb317b2f8",
+   "text": "Universe: HL perps outside the top 15 by trailing 20-day dollar volume at that hour (prior bars only), >=25 eligible coins. Signal: close / max(close over the prior 480h) - 1 >= 0.04, strictly above. Benchmark: same-hour eligible coins NOT above their 20-day high.",
+   "note": "Outside top 15 by TRAILING 20d $ volume; >= 4% above the prior 480h max close.",
+   "impl_hash": "af42d2e18c676c6096433286e59c512f1c11c2669aaab17f70ef39d7d135ff15"
+  }
+ ],
+ "tested_impl_hash": null,
+ "invariants": [],
+ "verified_by": "none"
+}

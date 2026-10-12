@@ -1,0 +1,53 @@
+{
+ "id": "widen_bot_stop",
+ "statement_plain": "Widen the bot's stop (real trades)",
+ "question": "Widen the bot's stop (real trades)",
+ "section": "Exits / stops",
+ "kind": "exit",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "UNDERPOWERED",
+ "status_qualifier": null,
+ "verdict_text": "UNDERPOWERED",
+ "wording_tier": "unknown",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:X2_STOPWIDTH]",
+  "sources": [
+   "[L:X2_STOPWIDTH]"
+  ],
+  "doc_sha": null,
+  "key_number": "+0.19R vs MDE 0.81R",
+  "n": null,
+  "clustering_unit": null,
+  "mde": 0.81,
+  "effect": 0.19,
+  "effect_unit": "R",
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "ADAPTIVE_STOPS OFF",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Exits / stops",
+ "seeded_at": "2026-10-12",
+ "map_order": 20
+}

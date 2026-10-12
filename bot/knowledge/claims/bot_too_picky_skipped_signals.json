@@ -1,0 +1,53 @@
+{
+ "id": "bot_too_picky_skipped_signals",
+ "statement_plain": "Bot too picky (skipped signals)?",
+ "question": "Bot too picky (skipped signals)?",
+ "section": "Entries / direction",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "UNDERPOWERED",
+ "status_qualifier": "negative",
+ "verdict_text": "UNDERPOWERED / negative",
+ "wording_tier": "unknown",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:SKIPGATE]",
+  "sources": [
+   "[L:SKIPGATE]"
+  ],
+  "doc_sha": null,
+  "key_number": "pooled +21 bps, day-weighted −18 bps",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Keep gates",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Entries / direction",
+ "seeded_at": "2026-10-12",
+ "map_order": 5
+}

@@ -1,0 +1,55 @@
+{
+ "id": "meme_moonbag",
+ "statement_plain": "Moonbag vs sell-all",
+ "question": "Moonbag vs sell-all",
+ "section": "Meme calls (Syndicate / DTN)",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "UNDERPOWERED",
+ "status_qualifier": null,
+ "verdict_text": "UNDERPOWERED",
+ "wording_tier": "unknown",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_syndicate_moonbags_can_t_tell_yet"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:SYNDICATE_MOONBAG]",
+  "sources": [
+   "[L:SYNDICATE_MOONBAG]"
+  ],
+  "doc_sha": null,
+  "key_number": "20 missing calls flip sign",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Re-check at ~3x calls",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Meme calls (Syndicate / DTN)",
+ "seeded_at": "2026-10-12",
+ "map_order": 48
+}

@@ -1,0 +1,55 @@
+{
+ "id": "two_x_stop_recipe",
+ "statement_plain": "2x stop / 0.5R / 48h",
+ "question": "2x stop / 0.5R / 48h",
+ "section": "Exits / stops",
+ "kind": "exit",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": null,
+ "verdict_text": "REFUTED",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_2x_stop_0_5r_target_48h_recipe"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:GEOMETRY_V3]",
+  "sources": [
+   "[L:GEOMETRY_V3]"
+  ],
+  "doc_sha": null,
+  "key_number": "GBM reproduces 95%",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Withdrawn",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Exits / stops",
+ "seeded_at": "2026-10-12",
+ "map_order": 19
+}

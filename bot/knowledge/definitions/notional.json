@@ -1,0 +1,36 @@
+{
+ "name": "notional",
+ "kind": "quantity",
+ "plain": "Position size in USD.",
+ "canonical": null,
+ "id": "notional",
+ "implementations": [
+  {
+   "label": "PositionManager.get_total_open_notional",
+   "path": "execution/position_manager.py",
+   "function": "PositionManager.get_total_open_notional",
+   "note": "qty * entry * leverage",
+   "impl_hash": "bb7ff756c4dc5f9c4a6a8936627283793e96edffa8d524f2f462ae0e3a842978",
+   "line": 2685
+  },
+  {
+   "label": "LLM-first notional cap",
+   "path": "multi_strategy_main.py",
+   "pattern": "_notional = qty \\* raw_signal\\.entry \\* leverage",
+   "note": "qty * entry * leverage",
+   "impl_hash": "d2b94e2aa24ea1961b9d78d2ba015e5f98dbb217ad0ce75ac588c3d224d246c1",
+   "line": 9099
+  },
+  {
+   "label": "coordinator sizing (base exposure)",
+   "path": "llm/agents/coordinator.py",
+   "pattern": "_remaining_pct = max\\(0\\.0, 500\\.0 - _exposure_pct\\)",
+   "note": "Coordinator sizes qty as FULL base exposure ('do NOT multiply by leverage'), so qty*entry is already the notional; the caps above multiply by leverage again (audit rule 9 unit mismatch).",
+   "impl_hash": "1659fc191296911782c9b5e8dc1103c376fa84c1f119271a5a575f756d19462e",
+   "line": 4327
+  }
+ ],
+ "tested_impl_hash": null,
+ "invariants": [],
+ "verified_by": "none"
+}

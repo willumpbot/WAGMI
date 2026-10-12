@@ -1,0 +1,250 @@
+{
+ "threads": [
+  {
+   "id": "chief_re_test_brier",
+   "thread": "Chief re-test (Brier)",
+   "reads_out": "2026-10-16",
+   "now": "Brier 0.2508 > base-rate 0.1956",
+   "source": "[L:CHIEF_GRADEABLE]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "2026-10-16",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "caller_form_chat_quality",
+   "thread": "CALLER_FORM + CHAT_QUALITY",
+   "reads_out": "once, at fetch completion or 2026-10-20",
+   "now": "fetch 38%",
+   "source": "[L:LAPTOP_STATE]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "once, at fetch completion or 2026-10-20",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "recall_crosschat",
+   "thread": "RECALL_CROSSCHAT",
+   "reads_out": "n ≥ 250",
+   "now": "35",
+   "source": "same",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "n ≥ 250",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "stop_shadow_gbm_amendment",
+   "thread": "STOP_SHADOW (GBM amendment)",
+   "reads_out": "n=150 or 2027-04-12",
+   "now": "~2 entries/day",
+   "source": "same",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "n=150 or 2027-04-12",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "prereg_oi",
+   "thread": "PREREG_OI",
+   "reads_out": "interim n_days ≥ 106 (~2027-01-24 ⚠ REGISTER says ~2027-03); full ~2027-05-11",
+   "now": "1 day",
+   "source": "[L:crunch/TRACKERS]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "interim n_days ≥ 106 (~2027-01-24 ⚠ REGISTER says ~2027-03); full ~2027-05-11",
+   "disagreements": [
+    {
+     "field": "reads_out_date",
+     "a": {
+      "source": "[L:crunch/TRACKERS]",
+      "value": "~2027-01-24"
+     },
+     "b": {
+      "source": "REGISTER",
+      "value": "~2027-03"
+     }
+    }
+   ],
+   "needs_source": true,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "prereg_ideas",
+   "thread": "PREREG_IDEAS",
+   "reads_out": "interim n=87; full n=196",
+   "now": "4 ⚠ server stats say 1",
+   "source": "[L:TRACKERS]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "interim n=87; full n=196",
+   "disagreements": [
+    {
+     "field": "n",
+     "a": {
+      "source": "[L:TRACKERS]",
+      "value": 4
+     },
+     "b": {
+      "source": "server stats",
+      "value": 1
+     }
+    }
+   ],
+   "needs_source": true,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "prereg_adopt",
+   "thread": "PREREG_ADOPT",
+   "reads_out": "both arms ≥ 44",
+   "now": "adopt=1",
+   "source": "same",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "both arms ≥ 44",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "prereg_entry_timing",
+   "thread": "PREREG_ENTRY_TIMING",
+   "reads_out": "60 counter-trend trades",
+   "now": "counting",
+   "source": "[L:PREREG_ENTRY_TIMING]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "60 counter-trend trades",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "prereg_smallcap_fade",
+   "thread": "PREREG_SMALLCAP_FADE",
+   "reads_out": "150 events / ≥30 days",
+   "now": "counting",
+   "source": "[L:PREREG_SMALLCAP_FADE]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "150 events / ≥30 days",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "j3_replications",
+   "thread": "j3 replications",
+   "reads_out": "not before 2026-12-10",
+   "now": "3 OOS day-blocks",
+   "source": "[L:REPLICATIONS]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "not before 2026-12-10",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "mission_a_wider_stops_real_exits",
+   "thread": "Mission A (wider stops, real exits)",
+   "reads_out": "~30 rows with stop_initial (~60 days)",
+   "now": "1",
+   "source": "[L:REGISTER §3]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "~30 rows with stop_initial (~60 days)",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "tp1_question_8_5_reach_it",
+   "thread": "TP1 question (8.5% reach it)",
+   "reads_out": "~50 logged closes (~100 days)",
+   "now": "—",
+   "source": "same",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "~50 logged closes (~100 days)",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "expmove_grade",
+   "thread": "expmove_grade",
+   "reads_out": "~16 day-clusters",
+   "now": "1",
+   "source": "[live:expmove_grades]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "~16 day-clusters",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "owner_plan_profits_only",
+   "thread": "Owner-plan \"Profits only\"",
+   "reads_out": "laptop red-team → remove FORCE line in .env",
+   "now": "code merged 10-13",
+   "source": "[S:SERVER_REPLY]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "laptop red-team → remove FORCE line in .env",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "oi_premium_as_size_predictor",
+   "thread": "OI/premium as size predictor",
+   "reads_out": "laptop prereg",
+   "now": "proposed",
+   "source": "[L:LAPTOP_REPLY_106]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "laptop prereg",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "owner_hl_address_journal",
+   "thread": "Owner HL address → journal",
+   "reads_out": "owner pastes it",
+   "now": "disabled",
+   "source": "[live:journal.json]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "owner pastes it",
+   "disagreements": [],
+   "needs_source": false,
+   "seeded_at": "2026-10-12"
+  },
+  {
+   "id": "decision_cards",
+   "thread": "Decision cards",
+   "reads_out": "⚠ credit-saver card stale (already ON in .env); ⚠ geometry_shadow \"confirmed live\" has no GBM control",
+   "now": null,
+   "source": "[live:decisions.json]",
+   "next_action": null,
+   "owner": null,
+   "unblock_condition": "⚠ credit-saver card stale (already ON in .env); ⚠ geometry_shadow \"confirmed live\" has no GBM control",
+   "disagreements": [],
+   "needs_source": true,
+   "seeded_at": "2026-10-12"
+  }
+ ],
+ "seeded_from": "KNOWLEDGE_MAP.md section 4"
+}

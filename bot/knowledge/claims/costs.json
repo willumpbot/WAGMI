@@ -1,0 +1,53 @@
+{
+ "id": "costs",
+ "statement_plain": "Costs",
+ "question": "Costs",
+ "section": "Meme calls (Syndicate / DTN)",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "PROVEN",
+ "status_qualifier": "prohibitive",
+ "verdict_text": "PROVEN prohibitive",
+ "wording_tier": "proven",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:LAPTOP_STATE §3]",
+  "sources": [
+   "[L:LAPTOP_STATE §3]"
+  ],
+  "doc_sha": null,
+  "key_number": "~4% at $100 up to 78% at $2k RT",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Terminal",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Meme calls (Syndicate / DTN)",
+ "seeded_at": "2026-10-12",
+ "map_order": 46
+}

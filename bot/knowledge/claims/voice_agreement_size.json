@@ -1,0 +1,54 @@
+{
+ "id": "voice_agreement_size",
+ "statement_plain": "When many voices dissent, the next day's move is bigger (~5% vs ~3%).",
+ "question": "Voice disagreement -> bigger moves (size gauge)?",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "HYPOTHESIS",
+ "status_qualifier": null,
+ "verdict_text": "OPEN - 'its link to bigger moves is small and unproven' (terminal tooltip); no laptop test row",
+ "wording_tier": "hypothesis",
+ "revalidate": null,
+ "consumers": [
+  "display:chief_prompt_dissent_move"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[S:terminal.html consensus tooltip]",
+  "sources": [
+   "[S:terminal.html consensus tooltip]"
+  ],
+  "doc_sha": null,
+  "key_number": "~5% vs ~3% (chief prompt, unsourced)",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Chief prompt states it as fact",
+ "verified_by": "none",
+ "seeded_from": "brief section 2 (day-1 D1 instance: chief prompt)",
+ "seeded_at": "2026-10-12"
+}

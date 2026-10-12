@@ -1,0 +1,37 @@
+{
+ "id": "r03_long_block",
+ "n": 3,
+ "description": "Long block outside trending_bull - entry_selectivity.py:364-396,535-545 - LONG_REGIME_VETO, UPTREND_REGIMES - n=22 June; LONG_SIDE says one-month artifact - 1",
+ "claim_id": "long_side_drain",
+ "unit": "win-rate vs breakeven ($ payoff)",
+ "window": "whole ledger (LIVE_EDGE_WINDOW_DAYS=0)",
+ "min_n": 13,
+ "flags": [
+  "LONG_REGIME_VETO",
+  "UPTREND_REGIMES"
+ ],
+ "fires_37h": 1,
+ "evidence_source": {
+  "kind": "ledger",
+  "file": "trade_ledger.csv",
+  "side": "LONG",
+  "fee_floor": 0.5,
+  "fee_floor_env": "LEARNING_INPUT_FLOOR"
+ },
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #3",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": {
+  "evidence_through": "2026-07-23",
+  "newest_row": "2026-10-12",
+  "n_rows": 119,
+  "n_ignored_newer": 19,
+  "ignored_net_usd": -7.1,
+  "fee_floor_on": true
+ }
+}

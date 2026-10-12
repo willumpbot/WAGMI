@@ -1,0 +1,20 @@
+{
+ "id": "r09_post_ai_caps",
+ "n": 9,
+ "description": "Post-AI caps (notional 15x, portfolio 7x, OpsGuard 500%, min $11.50) - msm 9081-9124 - leverage-unit mismatch",
+ "claim_id": "owner_policy",
+ "unit": "multiples of equity (leverage-unit mismatch)",
+ "window": null,
+ "min_n": null,
+ "flags": [],
+ "fires_37h": null,
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #9",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

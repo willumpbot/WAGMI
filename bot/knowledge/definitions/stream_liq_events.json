@@ -1,0 +1,38 @@
+{
+ "id": "stream_liq_events",
+ "name": "stream_liq_events",
+ "kind": "stream",
+ "plain": "Bybit liquidation events (H3's substrate).",
+ "stream": {
+  "path": "copilot/liquidations/liq_events.jsonl",
+  "archive": "liq_events",
+  "max_age_days": 2,
+  "map_keys": []
+ },
+ "expected_fields": [
+  "notional_usd",
+  "price",
+  "qty_base",
+  "side",
+  "source_raw.S",
+  "source_raw.T",
+  "source_raw.p",
+  "source_raw.s",
+  "source_raw.v",
+  "symbol",
+  "ts_utc",
+  "venue"
+ ],
+ "invariants": [
+  {
+   "expr": "abs(g('notional_usd') - g('price') * g('qty_base')) <= 0.01 * g('notional_usd') + 0.01",
+   "why": "notional = price x qty"
+  },
+  {
+   "expr": "g('side') in ('long', 'short')",
+   "why": "side label"
+  }
+ ],
+ "verified_by": "none",
+ "expected_fields_note": "Baseline = union of fields in the last 20 rows at seed time. D10 flags any field that disappears. The source API's own field set is not captured yet."
+}

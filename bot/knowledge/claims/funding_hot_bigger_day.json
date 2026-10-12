@@ -1,0 +1,58 @@
+{
+ "id": "funding_hot_bigger_day",
+ "statement_plain": "funding_hot → bigger day",
+ "question": "funding_hot → bigger day",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": "funding_hot",
+ "metric": "abs_move_over_exp_move",
+ "horizon": "1d",
+ "status": "PROVEN",
+ "status_qualifier": null,
+ "verdict_text": "PROVEN",
+ "wording_tier": "proven",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_crowded_longs_bigger_days_survived_red_t",
+  "grader:scan_grader_funding_hot_day"
+ ],
+ "live_bot_terms": [
+  "funding_hot"
+ ],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:SIZE_FLAGS]",
+  "sources": [
+   "[L:SIZE_FLAGS]"
+  ],
+  "doc_sha": null,
+  "key_number": "+7.7%, t 3.28",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Scanner/planner warning",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
+ "seeded_at": "2026-10-12",
+ "map_order": 30
+}

@@ -1,0 +1,20 @@
+{
+ "id": "r16_trigger_conf_floor",
+ "n": 16,
+ "description": "Trigger-path living conf floor (P90 ~0.38) - llm/risk_gating.py:86-160 - 52 rejections, likely no effect in LLM-first",
+ "claim_id": "higher_conf_floor_helps",
+ "unit": "confidence (P90 ~0.38)",
+ "window": null,
+ "min_n": null,
+ "flags": [],
+ "fires_37h": 52,
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #16",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

@@ -1,0 +1,359 @@
+{
+ "displays": [
+  {
+   "id": "milestone_liquidation_clustering_is_real_btc_sol",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Liquidation clustering is real (BTC/SOL)"
+   },
+   "claim_id": "h3_liq_clustering",
+   "polarity": "claim"
+  },
+  {
+   "id": "milestone_no_ai_agent_predicts_price",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "No AI agent predicts price"
+   },
+   "claim_id": "llm_agent_predicts_price",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_move_size_is_forecastable",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Move SIZE is forecastable"
+   },
+   "claim_id": "har_move_forecastable",
+   "polarity": "claim"
+  },
+  {
+   "id": "milestone_the_bot_s_hidden_filter_is_right",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "The bot's hidden filter is right"
+   },
+   "claim_id": "ic_gate_keep",
+   "polarity": "claim"
+  },
+  {
+   "id": "milestone_crowded_longs_bigger_days_survived_red_t",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Crowded longs = bigger days (survived red team)"
+   },
+   "claim_id": "funding_hot_bigger_day",
+   "polarity": "claim"
+  },
+  {
+   "id": "milestone_crowded_longs_stops_hit_a_bit_more_often",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Crowded longs: stops hit a bit more often"
+   },
+   "claim_id": "funding_hot_stop_hits",
+   "polarity": "claim"
+  },
+  {
+   "id": "milestone_tailwind_gate",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Tailwind gate"
+   },
+   "claim_id": "tailwind_gate",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_2x_stop_0_5r_target_48h_recipe",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "2x stop / 0.5R target / 48h recipe"
+   },
+   "claim_id": "two_x_stop_recipe",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_50_day_pullback_as_a_trade",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "50-day pullback as a trade"
+   },
+   "claim_id": "ma50_pullback_trade",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_liquidation_clusters_as_magnets",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Liquidation clusters as magnets"
+   },
+   "claim_id": "liq_clusters_magnets",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_trailing_exit_beats_a_fixed_target",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Trailing exit beats a fixed target"
+   },
+   "claim_id": "trailing_exit",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_exit_agent_is_the_leak",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "'Exit agent is the leak'"
+   },
+   "claim_id": "exit_agent_is_the_leak",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_confidence_floors_pick_better_trades",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Confidence floors pick better trades"
+   },
+   "claim_id": "higher_conf_floor_helps",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_counter_trend_entries_lose_more_retracte",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Counter-trend entries lose more (RETRACTED)"
+   },
+   "claim_id": "counter_trend_entries",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_picking_syndicate_winners_at_call_time",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Picking Syndicate winners at call time"
+   },
+   "claim_id": "meme_pick_winners",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_buying_every_meme_call_any_exit_rule",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Buying every meme call, any exit rule"
+   },
+   "claim_id": "meme_buy_every_call",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_following_every_syndicate_call_loses",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Following every Syndicate call loses"
+   },
+   "claim_id": "meme_buy_every_call",
+   "polarity": "negation"
+  },
+  {
+   "id": "milestone_don_t_chase_small_cap_breakouts_in_histo",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Don't chase small-cap breakouts (in history; forward test running)"
+   },
+   "claim_id": "momentum_small_fade",
+   "polarity": "claim"
+  },
+  {
+   "id": "milestone_some_syndicate_callers_stand_out_at_1_5x",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Some Syndicate callers stand out at 1.5x"
+   },
+   "claim_id": "meme_star_callers",
+   "polarity": "claim"
+  },
+  {
+   "id": "milestone_syndicate_moonbags_can_t_tell_yet",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Syndicate moonbags: can't tell yet"
+   },
+   "claim_id": "meme_moonbag",
+   "polarity": "claim"
+  },
+  {
+   "id": "milestone_long_side_losses_were_june_july",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Long-side losses were June-July"
+   },
+   "claim_id": "long_side_drain",
+   "polarity": "claim",
+   "asserted_tier": "stale"
+  },
+  {
+   "id": "scanner_flag_funding_hot",
+   "surface": "tools/hivemind/scanner.py:FLAGS",
+   "locator": {
+    "flag": "funding_hot"
+   },
+   "claim_id": "funding_hot_stop_hits",
+   "polarity": "claim"
+  },
+  {
+   "id": "scanner_flag_vol_expanding",
+   "surface": "tools/hivemind/scanner.py:FLAGS",
+   "locator": {
+    "flag": "vol_expanding"
+   },
+   "claim_id": "vol_expanding_size",
+   "polarity": "claim"
+  },
+  {
+   "id": "scanner_flag_volume_surge",
+   "surface": "tools/hivemind/scanner.py:FLAGS",
+   "locator": {
+    "flag": "volume_surge"
+   },
+   "claim_id": "volume_surge_size",
+   "polarity": "claim"
+  },
+  {
+   "id": "scanner_flag_ma50_pullback",
+   "surface": "tools/hivemind/scanner.py:FLAGS",
+   "locator": {
+    "flag": "ma50_pullback"
+   },
+   "claim_id": "scanflag_ma50_pullback",
+   "polarity": "claim"
+  },
+  {
+   "id": "scanner_flag_momentum_small",
+   "surface": "tools/hivemind/scanner.py:FLAGS",
+   "locator": {
+    "flag": "momentum_small"
+   },
+   "claim_id": "momentum_small_fade",
+   "polarity": "claim"
+  },
+  {
+   "id": "scanner_flag_on_20d_low",
+   "surface": "tools/hivemind/scanner.py:FLAGS",
+   "locator": {
+    "flag": "on_20d_low"
+   },
+   "claim_id": "on_20d_low",
+   "polarity": "claim"
+  },
+  {
+   "id": "scanner_flag_squeeze",
+   "surface": "tools/hivemind/scanner.py:FLAGS",
+   "locator": {
+    "flag": "squeeze"
+   },
+   "claim_id": "squeeze",
+   "polarity": "claim"
+  }
+ ],
+ "prompts": [
+  {
+   "id": "chief_prompt_dissent_move",
+   "surface": "tools/hivemind/chief.py",
+   "pattern": "~5% vs ~3% when many dissent",
+   "claim_id": "voice_agreement_size",
+   "polarity": "claim",
+   "asserted_tier": "proven",
+   "why": "Stated to the chief as a fact, with no qualifier."
+  }
+ ],
+ "graders": [
+  {
+   "id": "scan_grader_funding_hot_day",
+   "grader": "tools/hivemind/scan_grader.py",
+   "flag": "funding_hot",
+   "claim_id": "funding_hot_bigger_day"
+  },
+  {
+   "id": "scan_grader_funding_hot_stop",
+   "grader": "tools/hivemind/scan_grader.py",
+   "flag": "funding_hot",
+   "claim_id": "funding_hot_stop_hits"
+  },
+  {
+   "id": "scan_grader_momentum_small",
+   "grader": "tools/hivemind/scan_grader.py",
+   "flag": "momentum_small",
+   "claim_id": "momentum_small_fade"
+  }
+ ],
+ "rules": [
+  {
+   "rule_id": "r01_ic_mute",
+   "claim_id": "ic_gate_keep"
+  },
+  {
+   "rule_id": "r02_solo_gate",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r03_long_block",
+   "claim_id": "long_side_drain"
+  },
+  {
+   "rule_id": "r04_probe_valve",
+   "claim_id": "owner_policy"
+  },
+  {
+   "rule_id": "r05_side_size_mult",
+   "claim_id": "long_side_drain"
+  },
+  {
+   "rule_id": "r06_dust_filter",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r07_risk_cap_0_5pct",
+   "claim_id": "owner_policy"
+  },
+  {
+   "rule_id": "r08_fallback_risk",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r09_post_ai_caps",
+   "claim_id": "owner_policy"
+  },
+  {
+   "rule_id": "r10_profit_lock",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r11_sl_fill_slip",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r12_exit_keyword_thresholds",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r13_min_exit_hold_2h",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r14_time_stop_handoff",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r15_regime_stickiness",
+   "claim_id": null
+  },
+  {
+   "rule_id": "r16_trigger_conf_floor",
+   "claim_id": "higher_conf_floor_helps"
+  },
+  {
+   "rule_id": "r17_daily_loss_limit",
+   "claim_id": "owner_policy"
+  }
+ ],
+ "note": "Generated by seed_from_map.py; edit here once seeded. Every surface string should carry a claim_id (D1 strict mode, phase 3)."
+}

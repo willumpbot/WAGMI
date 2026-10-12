@@ -1,0 +1,55 @@
+{
+ "id": "meme_star_callers",
+ "statement_plain": "Star callers (DUBI 17/18 @1.5x)",
+ "question": "Star callers (DUBI 17/18 @1.5x)",
+ "section": "Meme calls (Syndicate / DTN)",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "HYPOTHESIS",
+ "status_qualifier": null,
+ "verdict_text": "OPEN",
+ "wording_tier": "hypothesis",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_some_syndicate_callers_stand_out_at_1_5x"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[live:milestones]",
+  "sources": [
+   "[live:milestones]"
+  ],
+  "doc_sha": null,
+  "key_number": "thin after multiplicity",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "★ on cards",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Meme calls (Syndicate / DTN)",
+ "seeded_at": "2026-10-12",
+ "map_order": 50
+}

@@ -1,0 +1,61 @@
+{
+ "id": "har_move_forecastable",
+ "statement_plain": "Move size forecastable (HAR)?",
+ "question": "Move size forecastable (HAR)?",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": "exp_move",
+ "metric": "abs_move_corr_vs_naive",
+ "horizon": "1d",
+ "status": "PROVEN",
+ "status_qualifier": "historical",
+ "verdict_text": "PROVEN (historical)",
+ "wording_tier": "proven",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_move_size_is_forecastable"
+ ],
+ "live_bot_terms": [
+  "volforecast",
+  "next_day_move_pct",
+  "_adaptive_stop"
+ ],
+ "live_bot_flags": [
+  "ADAPTIVE_STOPS"
+ ],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:VOLATILITY_V2]",
+  "sources": [
+   "[L:VOLATILITY_V2]"
+  ],
+  "doc_sha": null,
+  "key_number": "22/22 walk-forward",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "exp_move everywhere",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
+ "seeded_at": "2026-10-12",
+ "map_order": 29
+}

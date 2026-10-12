@@ -1,0 +1,53 @@
+{
+ "id": "16_cell_exit_grid_mission_x",
+ "statement_plain": "16-cell exit grid (Mission X)",
+ "question": "16-cell exit grid (Mission X)",
+ "section": "Exits / stops",
+ "kind": "exit",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "UNDERPOWERED",
+ "status_qualifier": null,
+ "verdict_text": "UNDERPOWERED",
+ "wording_tier": "unknown",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:MISSION_XZ_SYNTHESIS]",
+  "sources": [
+   "[L:MISSION_XZ_SYNTHESIS]"
+  ],
+  "doc_sha": null,
+  "key_number": "0/16 positive; MDE 218–272 bps",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "stop_initial logging",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Exits / stops",
+ "seeded_at": "2026-10-12",
+ "map_order": 27
+}

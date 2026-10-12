@@ -1,0 +1,20 @@
+{
+ "id": "r01_ic_mute",
+ "n": 1,
+ "description": "IC mute - feedback/ic_tracker.py:36-39,167-195; drop strategies/ensemble.py:2481 - last-30 IC < 0 => weight 0 - KEEP verdict 10-09 (-0.52%), confidence_scorer untestable - 765 drops",
+ "claim_id": "ic_gate_keep",
+ "unit": "IC (signal vs forward return)",
+ "window": "last 30 signals per strategy",
+ "min_n": 30,
+ "flags": [],
+ "fires_37h": 765,
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #1",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

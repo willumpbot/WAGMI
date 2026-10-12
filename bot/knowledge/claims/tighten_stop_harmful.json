@@ -1,0 +1,53 @@
+{
+ "id": "tighten_stop_harmful",
+ "statement_plain": "Tighten the stop?",
+ "question": "Tighten the stop?",
+ "section": "Exits / stops",
+ "kind": "exit",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "PROVEN",
+ "status_qualifier": "harmful",
+ "verdict_text": "PROVEN harmful",
+ "wording_tier": "proven",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:GEOMETRY_V3]",
+  "sources": [
+   "[L:GEOMETRY_V3]"
+  ],
+  "doc_sha": null,
+  "key_number": "−0.13 to −0.20R at ½x",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Planner never tightens",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Exits / stops",
+ "seeded_at": "2026-10-12",
+ "map_order": 18
+}

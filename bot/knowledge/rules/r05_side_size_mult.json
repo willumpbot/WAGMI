@@ -1,0 +1,37 @@
+{
+ "id": "r05_side_size_mult",
+ "n": 5,
+ "description": "Side size mult - feedback/live_edge.py:179-183 - 1+avg$/20 clipped 0.25-1.5 - same July data - 1",
+ "claim_id": "long_side_drain",
+ "unit": "dollars (1 + avg$/20, clip 0.25-1.5)",
+ "window": "whole ledger (LIVE_EDGE_WINDOW_DAYS=0)",
+ "min_n": 13,
+ "flags": [
+  "SIDE_LEVEL_EDGE",
+  "DATA_DRIVEN_SIDE_MULT"
+ ],
+ "fires_37h": 1,
+ "evidence_source": {
+  "kind": "ledger",
+  "file": "trade_ledger.csv",
+  "side": null,
+  "fee_floor": 0.5,
+  "fee_floor_env": "LEARNING_INPUT_FLOOR"
+ },
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #5",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": {
+  "evidence_through": "2026-10-09",
+  "newest_row": "2026-10-12",
+  "n_rows": 295,
+  "n_ignored_newer": 3,
+  "ignored_net_usd": -6.8,
+  "fee_floor_on": true
+ }
+}

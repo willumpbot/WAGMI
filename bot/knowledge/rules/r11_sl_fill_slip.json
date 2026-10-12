@@ -1,0 +1,21 @@
+{
+ "id": "r11_sl_fill_slip",
+ "n": 11,
+ "description": "SL fill slip up to 50 bps - position_manager.py:465-468",
+ "claim_id": null,
+ "unit": "bps",
+ "window": null,
+ "min_n": null,
+ "flags": [],
+ "fires_37h": null,
+ "exempt_reason": "paper fill model (simulation assumption, not a market belief)",
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #11",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

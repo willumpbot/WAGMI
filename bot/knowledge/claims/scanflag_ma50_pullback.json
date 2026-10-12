@@ -1,0 +1,56 @@
+{
+ "id": "scanflag_ma50_pullback",
+ "statement_plain": "ma50_pullback",
+ "question": "ma50_pullback",
+ "section": "Scanner flags",
+ "kind": "direction",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": "forward n=43, MDE 0.92%",
+ "verdict_text": "Null as a trade; forward n=43, MDE 0.92%",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:scanner_flag_ma50_pullback"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:LEVELS]",
+  "sources": [
+   "[L:LEVELS]",
+   "[live:scan_grades]"
+  ],
+  "doc_sha": null,
+  "key_number": null,
+  "n": 43,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": null,
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Scanner flags",
+ "seeded_at": "2026-10-12",
+ "map_order": 40
+}

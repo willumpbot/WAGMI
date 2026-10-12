@@ -1,0 +1,55 @@
+{
+ "id": "on_20d_low",
+ "statement_plain": "on_20d_low",
+ "question": "on_20d_low",
+ "section": "Scanner flags",
+ "kind": "magnitude",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "HYPOTHESIS",
+ "status_qualifier": "forward MDE 6.9%",
+ "verdict_text": "UNTESTED; forward MDE 6.9%",
+ "wording_tier": "hypothesis",
+ "revalidate": null,
+ "consumers": [
+  "display:scanner_flag_on_20d_low"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[S:SERVER_AUDIT_CLAIMS]",
+  "sources": [
+   "[S:SERVER_AUDIT_CLAIMS]"
+  ],
+  "doc_sha": null,
+  "key_number": null,
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": null,
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Scanner flags",
+ "seeded_at": "2026-10-12",
+ "map_order": 41
+}

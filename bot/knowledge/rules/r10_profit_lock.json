@@ -1,0 +1,24 @@
+{
+ "id": "r10_profit_lock",
+ "n": 10,
+ "description": "Profit lock 0.3R -> BE+fees+0.1%, 0.6R -> +0.3R - position_manager.py:1091-1124,1203-1219 - 07-02 in-sample n=90; conflicts with refuted BE ratchet + GEOMETRY_V3; with 50 bps fill slip a \"BE\" lock books a loss (NEAR +0.35R -> -0.2R)",
+ "claim_id": null,
+ "unit": "R",
+ "window": "2026-07-02 in-sample n=90",
+ "min_n": null,
+ "flags": [],
+ "fires_37h": null,
+ "conflicts_with": [
+  "breakeven_ratchet",
+  "tighten_stop_harmful"
+ ],
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #10",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

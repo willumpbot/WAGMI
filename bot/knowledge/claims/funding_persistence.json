@@ -1,0 +1,53 @@
+{
+ "id": "funding_persistence",
+ "statement_plain": "Funding persistence",
+ "question": "Funding persistence",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "PROVEN",
+ "status_qualifier": null,
+ "verdict_text": "PROVEN",
+ "wording_tier": "proven",
+ "revalidate": null,
+ "consumers": [],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:M10_AUDIT]",
+  "sources": [
+   "[L:M10_AUDIT]"
+  ],
+  "doc_sha": null,
+  "key_number": "99.3% top quintile",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Context",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
+ "seeded_at": "2026-10-12",
+ "map_order": 33
+}

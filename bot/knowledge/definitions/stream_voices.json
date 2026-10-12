@@ -1,0 +1,28 @@
+{
+ "id": "stream_voices",
+ "name": "stream_voices",
+ "kind": "stream",
+ "plain": "Every voice reading per coin, 15 min.",
+ "stream": {
+  "path": "hivemind/voice_log.jsonl",
+  "archive": "voices",
+  "max_age_days": 2,
+  "map_keys": []
+ },
+ "expected_fields": [
+  "px",
+  "r",
+  "sym",
+  "trust",
+  "ts",
+  "voice"
+ ],
+ "invariants": [
+  {
+   "expr": "g('r') in (-1, 0, 1)",
+   "why": "a voice reads -1/0/+1"
+  }
+ ],
+ "verified_by": "none",
+ "expected_fields_note": "Baseline = union of fields in the last 20 rows at seed time. D10 flags any field that disappears. The source API's own field set is not captured yet."
+}

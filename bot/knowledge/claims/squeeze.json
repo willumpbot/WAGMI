@@ -1,0 +1,56 @@
+{
+ "id": "squeeze",
+ "statement_plain": "squeeze",
+ "question": "squeeze",
+ "section": "Scanner flags",
+ "kind": "magnitude",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "HYPOTHESIS",
+ "status_qualifier": "unmapped verdict: Measures stretch, not agreement; never fired in 3 OOS days",
+ "verdict_text": "Measures stretch, not agreement; never fired in 3 OOS days",
+ "wording_tier": "hypothesis",
+ "revalidate": null,
+ "consumers": [
+  "display:scanner_flag_squeeze"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": true,
+ "evidence": {
+  "source": "[L:SQUEEZE_V2]",
+  "sources": [
+   "[L:SQUEEZE_V2]",
+   "[L:REPLICATIONS]"
+  ],
+  "doc_sha": null,
+  "key_number": null,
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": null,
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Scanner flags",
+ "seeded_at": "2026-10-12",
+ "map_order": 42
+}

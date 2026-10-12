@@ -1,0 +1,56 @@
+{
+ "id": "ic_gate_keep",
+ "statement_plain": "Keep the IC gate?",
+ "question": "Keep the IC gate?",
+ "section": "Entries / direction",
+ "kind": "process",
+ "quantity": null,
+ "metric": "signed_return_of_dropped_signals",
+ "horizon": null,
+ "status": "SUPPORTED",
+ "status_qualifier": null,
+ "verdict_text": "KEEP",
+ "wording_tier": "supported",
+ "revalidate": null,
+ "consumers": [
+  "rule:r01_ic_mute",
+  "display:milestone_the_bot_s_hidden_filter_is_right"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[live:decisions.json]",
+  "sources": [
+   "[live:decisions.json]"
+  ],
+  "doc_sha": null,
+  "key_number": "dropped signals −0.20% each (530)",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Stays",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Entries / direction",
+ "seeded_at": "2026-10-12",
+ "map_order": 6
+}

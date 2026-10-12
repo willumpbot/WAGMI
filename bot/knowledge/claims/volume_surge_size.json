@@ -1,0 +1,55 @@
+{
+ "id": "volume_surge_size",
+ "statement_plain": "volume_surge as size signal",
+ "question": "volume_surge as size signal",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": null,
+ "metric": null,
+ "horizon": null,
+ "status": "REFUTED",
+ "status_qualifier": null,
+ "verdict_text": "REFUTED",
+ "wording_tier": "refuted",
+ "revalidate": null,
+ "consumers": [
+  "display:scanner_flag_volume_surge"
+ ],
+ "live_bot_terms": [],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": true,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:SIZE_FLAGS]",
+  "sources": [
+   "[L:SIZE_FLAGS]"
+  ],
+  "doc_sha": null,
+  "key_number": "p 0.0265 vs 0.025",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Pulled from Scanner-now; ⚠ check other displays",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
+ "seeded_at": "2026-10-12",
+ "map_order": 34
+}

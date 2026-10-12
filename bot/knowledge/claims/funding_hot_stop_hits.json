@@ -1,0 +1,59 @@
+{
+ "id": "funding_hot_stop_hits",
+ "statement_plain": "funding_hot → more stop hits",
+ "question": "funding_hot → more stop hits",
+ "section": "Sizing / volatility",
+ "kind": "magnitude",
+ "quantity": "funding_hot",
+ "metric": "stop_hit_rate",
+ "horizon": "1d",
+ "status": "PROVEN",
+ "status_qualifier": "definition-sensitive",
+ "verdict_text": "PROVEN, definition-sensitive",
+ "wording_tier": "proven",
+ "revalidate": null,
+ "consumers": [
+  "display:milestone_crowded_longs_stops_hit_a_bit_more_often",
+  "display:scanner_flag_funding_hot",
+  "grader:scan_grader_funding_hot_stop"
+ ],
+ "live_bot_terms": [
+  "funding_hot"
+ ],
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": "[L:FUNDING_STOP_AUDIT]",
+  "sources": [
+   "[L:FUNDING_STOP_AUDIT]"
+  ],
+  "doc_sha": null,
+  "key_number": "+2.68 pp, t 3.04",
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "idea_source": null,
+ "changed": "Planner warning; NOT in bot sizing",
+ "verified_by": "none",
+ "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
+ "seeded_at": "2026-10-12",
+ "map_order": 31
+}

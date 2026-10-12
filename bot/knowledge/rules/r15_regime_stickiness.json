@@ -1,0 +1,20 @@
+{
+ "id": "r15_regime_stickiness",
+ "n": 15,
+ "description": "Regime stickiness >60% - strategies/regime_detector.py:26 - ~590 (367 held high_volatility vs trend)",
+ "claim_id": null,
+ "unit": "share (>60%)",
+ "window": null,
+ "min_n": null,
+ "flags": [],
+ "fires_37h": 590,
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #15",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}

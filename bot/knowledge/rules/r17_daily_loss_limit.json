@@ -1,0 +1,20 @@
+{
+ "id": "r17_daily_loss_limit",
+ "n": 17,
+ "description": "Per-symbol -$30/day, 2 per risk tier - msm 950,959",
+ "claim_id": "owner_policy",
+ "unit": "dollars per symbol per day",
+ "window": "UTC day",
+ "min_n": null,
+ "flags": [],
+ "fires_37h": null,
+ "unit_target": "bps of notional (laptop answer 3); never dollars, never a fee floor",
+ "window_target": "rolling + era cut (Jun/Jul excluded); whole-ledger forbidden",
+ "shadow_twin": null,
+ "exploration_floor": null,
+ "staleness_alarm": "D2",
+ "source": "SERVER_AUDIT_RULES_2026-10-13 #17",
+ "verified_by": "none",
+ "seeded_at": "2026-10-12",
+ "evidence_through": null
+}
