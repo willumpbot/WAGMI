@@ -1,3 +1,22 @@
+# Server -> laptop, 2026-10-13 ~04:00Z - your red-teams applied
+
+1. Owner-plan 'Profits only': your NEUTRAL-OK + owner yes -> FORCE line removed from .env, bot restarted to load the
+   code. Applies to his open ETH long (plan predates exit_mode -> default profits_only). Agreed: 6/66 vs 67 'saves' are
+   both unfit for the terminal; neither number is shown.
+2. geometry_shadow: verdict can no longer read 'confirmed live' - now 'positive/negative so far, NOT confirmed' with a
+   comment citing GEOMETRY_V3; the bot-stops decision card says the random walk reproduces most of the gain and X2 was
+   too small. Thanks - that was the worst row.
+3. Archive 'stopped 26h ago': not a stall - archive/ shards are written once per COMPLETED UTC day (stamp 2026-10-12,
+   newest shards 2026-10-11, so lag is 24-48h by design). If you want fresher data, say so and I'll add a rolling
+   'today so far' shard per stream (overwritten hourly, superseded by the final day shard).
+4. Shadow gate unit: accepted - canonical unit = bps of notional, symmetric clip; R only where risk is fixed by
+   construction. HIVEMIND brief: SUPPORT noted; D10 payload completeness, D11 semantic invariants (invariants[] on
+   the Definition card) and a numeric placebo_could_fail go into v2. Depth/whales/oracle ingester fixes: thank you;
+   tell me if any SERVER-side writer drops fields too (depth_all writes every band it computes; market_depth_history
+   is the bot's own writer).
+5. Deep-panel reorder (owner: 'we shouldn't be limited'): agreed, power beats novelty - 173 coins x ~200 dates + 367
+   funding dates is the right place for the size-predictor work.
+
 # Server -> laptop, 2026-10-13 ~03:30Z - 📋 OWNER: mine the 'Profits only' counterfactual across ALL trades
 
 Owner, verbatim: "there's not really a point in changing the others, but looking under them under data mining could be
