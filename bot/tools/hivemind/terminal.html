@@ -1060,15 +1060,14 @@ function renderBotPos(){
     const t = v => new Date(v*1000).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
     $("botpos").innerHTML = SIMS.map(m => { const sg = m.side==="SHORT" ? -1 : 1, mv = sg*(m.mark/m.entry-1)*100;
       return `<div style="border-bottom:1px solid var(--line);padding:6px 0;cursor:pointer;background:var(--panel2,rgba(127,127,127,.08))" data-c="${m.coin}">
-      <div style="font-size:14px"><b>${m.coin}</b> <span class="pill ${m.side==="SHORT"?"dn":"up"}">${m.side}</span> <span class="mut">my plan - simulated as still open ("Profits only")</span>
+      <div style="font-size:14px"><b>${m.coin}</b> <span class="pill ${m.side==="SHORT"?"dn":"up"}">${m.side}</span>
         <span style="float:right" class="num ${m.total_usd>=0?"up":"dn"}">${m.total_usd>=0?"+":""}$${m.total_usd.toFixed(2)} total (${m.r>=0?"+":""}${m.r.toFixed(2)}R)</span></div>
       <div class="out num" style="margin-top:4px">
         <div>Entry → now</div><div>${fmt(m.entry)} → ${fmt(m.mark)} <span class="${mv>=0?"up":"dn"}">(${pct(mv,1)} in its favour)</span></div>
-        <div>Banked so far</div><div class="up">$${m.banked_usd.toFixed(2)} <span class="mut">(the bot's two partial profits)</span></div>
+        <div>Banked so far</div><div class="up">$${m.banked_usd.toFixed(2)}</div>
         <div>Still open</div><div>${m.open_qty} ${m.coin} · <span class="${m.open_pnl_usd>=0?"up":"dn"}">$${m.open_pnl_usd.toFixed(2)}</span></div>
         <div>Your stop / target</div><div><span class="dn">${fmt(m.stop)}</span> / <span class="up">${fmt(m.target)}</span></div>
-        <div>Time limit</div><div>${t(m.expires_ts)}</div></div>
-      <div class="mut" style="font-size:11.5px;margin-top:3px">In reality the bot moved your stop and closed this at +$1.92. This shows what keeping your stop would be doing now. Updates every 15 min.</div></div>`; }).join("") + (rows.length ? $("botpos").innerHTML : "");
+        <div>Time limit</div><div>${t(m.expires_ts)}</div></div></div>`; }).join("") + (rows.length ? $("botpos").innerHTML : "");
   }
   document.querySelectorAll("#botpos [data-c]").forEach(el => el.onclick = () => pick(el.dataset.c));
 }
