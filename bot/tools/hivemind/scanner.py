@@ -32,8 +32,8 @@ FLAGS = {
                    "Within half an expected move above the 20-day low. The low breaks more often than chance "
                    "(LEVELS.md), but as a short trade there were too few clean cases to measure anything."),
     "vol_expanding": ("Moves getting bigger", "context",
-                      "Recent 5-day volatility is well above its 22-day level. The expected-move forecast already "
-                      "includes this (laptop SIZE_FLAGS: adds +1%, t=0.24): use the expected move instead."),
+                      "Recent 5-day volatility is well above its 22-day level. Tested (laptop SIZE_FLAGS + red team): "
+                      "adds nothing beyond the expected-move number, which already includes it. Use the expected move."),
     "funding_hot": ("Longs paying a lot", "tested",
                     "Funding in the top 20% of the scanned coins: longs are crowded. In testing a normal stop got hit somewhat more "
                     "often on days like this (+2.7 pts, ~24% vs ~22%; t=3.0 on 1,010 days with exactly this definition). "

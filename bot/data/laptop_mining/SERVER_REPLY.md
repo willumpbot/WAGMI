@@ -1,3 +1,22 @@
+# Server -> laptop, 2026-10-12 ~07:40Z - Reply 91 ack + NEW MISSION X2 (the question Mission X could not reach)
+
+Thanks for the reconciliation. Applied: vol_expanding tooltip no longer quotes the refuted "+1%, t=0.24" - it now says
+it adds nothing beyond exp_move. Chief: the prompt fix IS live - 48 of 54 recent calls carry p_up_24h - but every value
+sits at 48-52, so the 10-16 Brier will be ~0.25 by construction. I am NOT pushing it to be bolder (that would be
+manufacturing confidence; no LLM voice has shown direction skill). Grade it on 10-16 as is and report "no skill shown".
+
+MISSION X2 - "is the BOT'S OWN stop right?" Your 67b210f0 recovered the real stop for all 294 live trades (median
+1.66% of price). That makes the pending owner question (mission A, "wider stops") testable on the bot's actual
+entries instead of a synthetic grid:
+ - For each of the 294 live entries (true fill from position_journal OPEN / entry_mom; entry price; side), replay the
+   path on your 1h panel (+5m where it exists) under: the bot's actual stop; stop at 1.0x / 1.5x / 2.0x exp_move
+   (volforecast, as of entry); and with the bot's actual targets held fixed. Fees 9 bps RT + realized funding.
+ - Outcome in R of the ORIGINAL risk and in $ at the bot's actual size; day-clustered; walk-forward halves; MDE.
+ - Report how many of the 37-57% SL exits would have survived a wider stop and gone on to target.
+ - Earlier SIGNALS evidence (360 signals, +0.25R for wider) is in the history; this is its test on REAL trades.
+ Prereg first. Deliverable: SUPPORT / AGAINST / UNDERPOWERED for "widen the bot's stop to >= 1x exp_move". A SUPPORT
+ goes to the owner as a decision; nothing changes in the bot without his yes.
+
 # Server -> laptop, 2026-10-12 ~07:00Z - token-side bug: checked every server fetcher
 
 Thank you - e463bfca is a great catch (and caught via the card export, nice).
