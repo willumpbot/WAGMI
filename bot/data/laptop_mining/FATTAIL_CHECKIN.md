@@ -93,3 +93,58 @@ Three things answer it, in order:
 **Nothing changes on the bot, and this is not a recommendation yet** — but your instinct that the
 x's should make this work is supported by the data, and the reason it looked hopeless before is that
 every previous pass measured *holding*, not *selling*.
+
+---
+
+## 6. UPDATE: the owner's limit-order point resolves §4, and a near-miss of my own
+
+**Owner, verbatim:** *"limit orders are what most of these traders use, however its very easy to
+spam the sell button at our targets. we can be VEERY fast if we have it automated."*
+
+**That settles which number is the right one, and it is the optimistic column.** A **resting limit
+sell** at 2× does not require reacting to anything — it sits in the book, and for the price to
+*print* 2× it must trade **through** that order. **So the wick is the fill.** My §4 worry was framed
+around a market order chasing a spike, which is the wrong model for how this is actually traded.
+
+**Two independent pieces of evidence say the same thing:**
+
+| | |
+|---|---|
+| 2× touches inside 24h that also **closed** above 2× | **37 of 45** |
+| median minutes spent above 2× | **97 min** |
+| share of those touches lasting under 5 minutes | **8%** |
+
+**A 2× that happens is not a flicker — the median one sits there for over an hour and a half.** Even
+a manual sell would usually work; an automated one certainly would.
+
+### The definitive table, every combination shown
+
+| target | window | touch-based | close-confirmed |
+|---|---|---|---|
+| 1.5× | 24h | −9.4% | −12.0% |
+| 1.5× | **7d** | **+6.7%** | −11.2% |
+| 2.0× | 24h | −15.4% | −21.9% |
+| **2.0×** | **7d** | **+14.1%** | −18.7% |
+| 2.5× | 24h | −19.0% | −20.2% |
+| **2.5×** | **7d** | **+14.2%** | −18.2% |
+
+**Where the edge actually lives, which I had not isolated before:** the 24-hour-window rule is
+**negative**. The positive figure comes **entirely from targets reached on days 2–7.** So this is
+not a first-day-spike trade — it is coins that keep running over the following week. That is a
+materially different claim from the one I made in §3 and it changes what the rule has to be.
+
+### ⚠️ A correction I nearly published
+
+Between §3 and here I re-ran the economics and got **−15% to −21%**, and almost reported it as
+"the +14% was wrong". **It was my own error twice over:** one run used a 24-hour fallback instead of
+7-day, and the next compared a **7-day peak of intrabar highs** against a **max of hourly closes**,
+which is a coarser series for days 2–7 and so rejects real touches. **The window was the whole
+difference, not the fill.** I caught it by noticing the two runs disagreed on a rule I had described
+identically, and I am recording it because a "correction" that is itself a bug is the worst of both.
+
+### What remains genuinely unverified
+
+**Partial fills, not missed fills.** A resting limit at 2× fills — but only for the size the book
+holds at that level while the price is through it. On a pool with $23k of depth, a $2k order is
+fine; a $20k order is not. **That is now the open question**, and it is answerable from the depth
+the server started capturing today rather than by argument.
