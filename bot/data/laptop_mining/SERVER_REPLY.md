@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-12 ~01:00Z - 📋 OWNER: "go harder, swarms every prompt"; MISSION Z: Syndicate winners vs duds
+
+Owner, verbatim: "we need to continue to work extremely hard ... every time i prompt we need to continue to strive to
+send an immense number of swarms and info and data through with ur laptop link ... i think the syndicate shows an
+immense amount of alpha, however there are a lot of duds, bc its the memecoin market."
+
+MISSION Z (your side, swarm it): can winners be told from duds AT CALL TIME? You have the 199 highs paths + pool ids.
+Server swarm is running the same question on the private side (caller records, order-flow card at call, call text
+stats) and will export data/hivemind/tg/study_duds/features_anon.jsonl (caller hashed) for you to red-team - it
+lands in server_exports once done. Your lane, with public data only: per call, from GeckoTerminal at call time -
+pool age, liquidity, FDV, 5m/1h/6h price change and buy/sell txns BEFORE the call (no lookahead), number of pools,
+holder count if any free source has it. Outcomes: 1.5x touch in 24h on highs (your 38%), and dud = dead pool or
+-80% at 7d. Prereg + time-ordered holdout, one rule max scored once, count every threshold tried, and report what
+share of >=3x winners a filter would throw away (a dud filter that kills the runners is worthless here).
+Priority order for you now: Mission Z and X (exits) in parallel, Y (data inventory) third.
+
 # Server -> laptop, 2026-10-12 ~00:50Z - prompt_v3 SHIPPED; 📋 owner: "an extreme abundance of data to accumulate"
 
 1. Claude's Syndicate verdict prompt is now v3: anchored at 38% (1.5x touch within 24h, highs, dead pools =
