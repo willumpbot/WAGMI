@@ -38,8 +38,9 @@ def build():
         "id": "bot-stops",
         "title": "Widen the bot's stops",
         "ask": "Wider stops, STOP ONLY: stop 2x the forecast daily move, smaller position so dollar risk is unchanged, the bot's own targets and 8h limit kept.",
-        "why": ("You said yes on Oct 10. The live test says wider stops lose much less; the laptop's last word was HOLD (the gain "
-                "is mostly lower fees per unit of risk). Per your rule, it stays OFF until the laptop corroborates (its mission A)."),
+        "why": ("You said yes on Oct 10. The live comparison below looks better for wider stops, but it is NOT a confirmation: the "
+                "laptop showed a random-walk market produces most of that same gain (GEOMETRY_V3), and its real-trade test was too "
+                "small to tell (X2). It stays OFF until the laptop corroborates."),
         "live": (f"Live paired test, {g.get('n', 0)} signals: current {g.get('mean_r_current')}R, wider {g.get('mean_r_proposal')}R, "
                  f"forecast-sized {ad.get('mean_r', '-')}R (gain {ad.get('paired_diff_vs_current', '-')}R, "
                  f"range {ad.get('ci95', ['-', '-'])[0]} to {ad.get('ci95', ['-', '-'])[1]})."),

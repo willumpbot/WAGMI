@@ -192,8 +192,10 @@ def scorecard():
                                "ci95": [round(b2[25], 3), round(b2[974], 3)],
                                "laptop_test": "+0.093R vs bot -0.431R (ADAPTIVE_STOPS.md)"}
         lo, hi = out["ci95"]
-        out["verdict"] = ("collecting" if len(rows) < 30 else "confirmed live" if lo > 0 else
-                          "contradicted live" if hi < 0 else "inconclusive so far")
+        out["verdict"] = ("collecting" if len(rows) < 30 else "positive so far, NOT confirmed" if lo > 0 else
+                          "negative so far, NOT confirmed" if hi < 0 else "inconclusive so far")
+        # Never "confirmed": stop-width comparisons in R are geometry-biased (GEOMETRY_V3 withdrew this surface: a
+        # driftless random walk reproduces ~95% of it). Only a laptop verdict with a no-edge control can confirm.
     else:
         out["verdict"] = "collecting"
     OUT.write_text(json.dumps(out, indent=1), encoding="utf-8")
