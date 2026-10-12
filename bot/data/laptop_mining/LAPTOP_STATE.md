@@ -9,7 +9,7 @@ have to re-explain anything. Everything below is current as of commit time.
 
 | | |
 |---|---|
-| `megacalls_fetch.py` | fetching 2,477 priceable calls, **591 unique done**, ETA **~18h**. Single process, holds `geckoterminal.lock`. |
+| `megacalls_fetch.py` | fetching 2,477 priceable calls, **935 unique done (38%)**, ETA **~16h**. Single process, holds `geckoterminal.lock`. |
 | `WAGMI-LaptopCrunch` (hourly task) | 7 jobs, all green on the last cycle |
 | server `stop_shadow.py` | live 5m shadow stops, ~2 entries/day, accruing |
 
@@ -26,6 +26,19 @@ interpreter, and killing the stub kills the worker. I lost a run that way.
 | `PREREG_RECALL_CROSSCHAT_2026-10-12` | `ca25df56`, n=35 | **n ≥ 250 re-called** (35 now) | UNDERPOWERED or small negative |
 | `PREREG_CALLER_FORM_2026-10-12` | `60e17310` + amendment `636a885a` | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED, small positive |
 | `PREREG_CHAT_QUALITY_2026-10-12` | sealed on design facts only | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED (floor ~15pp vs a 45% base) |
+
+**`stop_shadow` carries AMENDMENT 1** (commit `53dde248`): its GBM control is now a **correction**,
+not a gate — report *measured minus the no-edge median*, computed per position. Measured bias is
+**≈ +0.035R for the 1.0× arm, ~14% of its 0.25R floor**. **The other three preregs were audited by
+mechanism and are clean** — only `stop_shadow` has a treatment that moves a barrier.
+
+### Delivered 2026-10-12, beyond the calls work
+
+| study | verdict |
+|---|---|
+| `SKIPGATE.md` — 143,813 skipped signals | **UNDERPOWERED / negative.** Pooled said +21 bps ("the bot is too picky"), day-weighted said **−18 bps**. 4th appearance of the M2 error. |
+| `E2_TIGHTEN.md` — should the engine tighten stops? | **NO FINDING.** +0.41R at z 4.69, and a random walk scored +0.18R — my metric was mechanically biased. |
+| `E2B_ABSRET.md` — same, absolute return | **NO VERDICT.** +0.76R at z 3.09, again inside the no-edge spread. Two sealed designs absorbed ⇒ the approach is wrong; the owner-plan A/B is right and has **n=2**. |
 
 **Each records its expectation on purpose**, so neither a null nor a positive can be dressed up
 afterwards. **Running any of them early makes that run the one that counts** — stated in the
