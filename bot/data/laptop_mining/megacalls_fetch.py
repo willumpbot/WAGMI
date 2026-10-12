@@ -120,13 +120,69 @@ def get(url, tries=3):
     return None, "unreachable"
 
 
-def best_pool(ca):
-    d, err = get("%s/tokens/%s/pools" % (GT, ca))
+GT_BASE = "https://api.geckoterminal.com/api/v2/networks"
+
+# 2.8% of the corpus is EVM (0x, 42 chars) -- but 32% of the SYNDICATE subset is, and Syndicate
+# is the cross-chat holdout. A Solana-only fetcher marks every one of them dead, which is the
+# same silent-exclusion bias that cost a retraction today, in a new place. So an EVM address is
+# probed against the networks it is plausibly on and the answer is recorded on the row.
+EVM_NETWORKS = ("eth", "base", "bsc", "arbitrum", "polygon_pos")
+
+
+def network_for(ca):
+    """Which GeckoTerminal network holds this token? Solana by address shape, else probe."""
+    s = str(ca)
+    if not (s.startswith("0x") and len(s) == 42):
+        return "solana", None
+    for net in EVM_NETWORKS:
+        d, _err = get("%s/%s/tokens/%s/pools" % (GT_BASE, net, ca))
+        if d and (d.get("data") or []):
+            return net, None
+    return None, "evm_no_network"
+
+
+def created_ts(a):
+    """`pool_created_at` is ISO8601 with a Z suffix."""
+    v = a.get("pool_created_at")
+    if not v:
+        return None
+    try:
+        import datetime
+        return datetime.datetime.fromisoformat(str(v).replace("Z", "+00:00")).timestamp()
+    except (ValueError, TypeError):
+        return None
+
+
+def best_pool(ca, call_ts, net="solana"):
+    """The deepest pool THAT EXISTED AT THE CALL -- not the deepest pool today.
+
+    THIS IS THE FIX FOR THE ERROR THAT CAUSED TODAY'S RETRACTION. The old rule took the deepest
+    pool by reserve *today*, which is survivorship-biased twice: a pool that exists today exists
+    BECAUSE it survived, and the rule could pick a pool CREATED AFTER THE CALL. For pump.fun
+    tokens that migrate it selects the post-migration successor, so the bonding curve that
+    actually ran and died is never read. Measured consequence: my take-profit figure came out
+    +14%/call against the server's -33%, and the gap was mine.
+
+    One token in this corpus has 13 pools created across nine days, so this is not a corner case.
+
+    KNOWN GAP, stated rather than hidden: the server also MERGES a pump bonding curve with the
+    pool it migrated into (their `pool_rule` = "pump->migrated", 38 of their calls). This does
+    not. It reads only the pre-existing pool, so a migrated token's path is TRUNCATED at
+    migration -- which is conservative: it misses post-migration upside rather than inventing it.
+    """
+    d, err = get("%s/%s/tokens/%s/pools" % (GT_BASE, net, ca))
     if not d or not isinstance(d, dict):
         return None, err or "no_pool_response"
-    best, bestliq = None, -1.0
-    for p in (d.get("data") or []):
+    pools = d.get("data") or []
+    if not pools:
+        return None, "no_pools_listed"
+    best, bestliq, n_after = None, -1.0, 0
+    for p in pools:
         a = p.get("attributes") or {}
+        c = created_ts(a)
+        if c is not None and c > call_ts:
+            n_after += 1
+            continue                   # created AFTER the call: could not have been traded then
         try:
             liq = float(a.get("reserve_in_usd") or 0)
         except (TypeError, ValueError):
@@ -134,11 +190,14 @@ def best_pool(ca):
         pid = (p.get("id") or "").split("_", 1)[-1]
         if pid and liq > bestliq:
             best, bestliq = pid, liq
-    return (best, None) if best else (None, "no_pools_listed")
+    if best:
+        return best, None
+    return None, ("all_%d_pools_created_after_call" % n_after) if n_after else "no_pools_listed"
 
 
-def ohlc(pool, res, before):
-    d, err = get("%s/pools/%s/ohlcv/%s?limit=1000&before_timestamp=%d" % (GT, pool, res, before))
+def ohlc(pool, res, before, net="solana"):
+    d, err = get("%s/%s/pools/%s/ohlcv/%s?limit=1000&before_timestamp=%d"
+                 % (GT_BASE, net, pool, res, before))
     if not d or not isinstance(d, dict):
         return [], err or "no_ohlcv"
     lst = ((d.get("data") or {}).get("attributes") or {}).get("ohlcv_list") or []
@@ -222,30 +281,39 @@ def main():
     ok = dead = 0
     t0w = time.time()
     for i, c in enumerate(todo):
-        pool, err = best_pool(c["ca"])
+        net, neterr = network_for(c["ca"])
+        if not net:
+            dead += 1
+            f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
+                                "dead": neterr}) + "\n")
+            f.flush()
+            continue
+        pool, err = best_pool(c["ca"], c["call_ts"], net)
         if not pool:
             dead += 1
             f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
-                                "dead": err}) + "\n")
+                                "net": net, "dead": err}) + "\n")
             f.flush()
             continue
         t0 = c["call_ts"]
-        mins, _e1 = ohlc(pool, "minute", t0 + MIN_H * 3600 + 60)
+        mins, _e1 = ohlc(pool, "minute", t0 + MIN_H * 3600 + 60, net)
         pm, cm = grids(mins, t0, MIN_H * 3600, 60)
         if pm is None:
-            hrs, _e2 = ohlc(pool, "hour", t0 + HOUR_H * 3600 + 3600)
+            hrs, _e2 = ohlc(pool, "hour", t0 + HOUR_H * 3600 + 3600, net)
             ph, ch = grids(hrs, t0, HOUR_H * 3600, 3600)
             if ph is None:
                 dead += 1
                 f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
-                                    "pool": pool, "dead": "no_path"}) + "\n")
+                                    "pool": pool, "net": net, "dead": "no_path"}) + "\n")
                 f.flush()
                 continue
             f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
-                                "pool": pool, "peak_h": ph, "close_h": ch}) + "\n")
+                                "pool": pool, "net": net,
+                                "peak_h": ph, "close_h": ch}) + "\n")
         else:
             f.write(json.dumps({"ca": c["ca"], "chat": c["chat"], "call_ts": c["call_ts"],
-                                "pool": pool, "peak_m": pm, "close_m": cm}) + "\n")
+                                "pool": pool, "net": net,
+                                "peak_m": pm, "close_m": cm}) + "\n")
         f.flush()
         ok += 1
         if (ok + dead) % 50 == 0:
