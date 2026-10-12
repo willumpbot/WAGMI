@@ -1037,44 +1037,33 @@ function tradesTab(){
   $("tr_note").textContent = DATA.journal && DATA.journal.enabled ? "paper + your real Hyperliquid trades" : "all PAPER so far - no real money. Paste your public address (Positions tab) to add real trades";
   $("trades").innerHTML = show.length ? `<table class="pos num"><tr><th>When</th><th>Chosen by</th><th>Trade</th><th>Prices</th><th>Result</th><th>Notes</th></tr>${show.map(r => `<tr${r.live?' style="background:var(--panel2,rgba(127,127,127,.08))"':""}><td class="mut">${d(r.ts)}</td><td>${r.whoTxt}</td><td><b>${r.coin}</b> <span class="${r.side==="SHORT"?"dn":"up"}">${r.side}</span></td><td class="mut">${r.prices}</td><td>${r.res}</td><td class="mut">${r.note}</td></tr>`).join("")}</table><div class="mut" style="font-size:11px;margin-top:6px">Open and waiting trades are on top (shaded). "Me" = plans you saved in the planner; the bot paper-trades them for you and the result shows under Notes. Results in R = multiples of the risk to your stop.</div>` : `<span class="mut">No trades yet.</span>`;
 }
-function posCard(p){
-  // one compact card per position: header (coin, side, P&L), price row, stop->target bar, slim footer
-  const sg = p.side==="SHORT" ? -1 : 1, up = v => v>=0 ? "up" : "dn", sgn = v => v>=0 ? "+" : "";
-  const mv = p.mark && p.entry ? sg*(p.mark/p.entry-1)*100 : null;
-  // plain distances instead of a gauge: how far price must move to reach the target / the stop
-  const away = v => v && p.mark ? Math.abs(v/p.mark-1)*100 : null, dT = away(p.target), dS = away(p.stop);
-  const bar = (dT!=null || dS!=null) ? `<div class="num" style="display:flex;gap:14px;font-size:12px;margin-top:6px">
-      ${dT!=null?`<span>target <b class="up">${dT.toFixed(1)}% away</b></span>`:""}${dS!=null?`<span>stop <b class="dn">${dS.toFixed(1)}% away</b></span>`:""}</div>` : "";
-  const cell = (k, v, cls) => `<div><div style="font-size:10.5px;color:var(--soft)">${k}</div><div class="num ${cls||""}" style="font-size:13px">${v}</div></div>`;
-  return `<div data-c="${p.coin}" style="cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:0 0 8px">
-    <div style="display:flex;align-items:baseline;gap:8px">
-      <b style="font-size:15px">${p.coin}</b><span class="pill ${p.side==="SHORT"?"dn":"up"}">${p.side}${p.lev?" "+p.lev+"×":""}</span>
-      ${p.tag?`<span class="mut" style="font-size:11px">${p.tag}</span>`:""}
-      <span style="flex:1"></span>
-      <span class="num ${up(p.total)}" style="font-size:16px;font-weight:600">${sgn(p.total)}$${p.total.toFixed(2)}</span>
-      ${p.r!=null?`<span class="num ${up(p.r)}" style="font-size:12px">${sgn(p.r)}${p.r.toFixed(2)}R</span>`:""}</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px">
-      ${cell("Entry", fmt(p.entry))}${cell("Now", fmt(p.mark) + (mv!=null?` <span class="${up(mv)}" style="font-size:11px">${sgn(mv)}${mv.toFixed(1)}%</span>`:""))}
-      ${cell("Stop", p.stop?fmt(p.stop):"–", "dn")}${cell("Target", p.target?fmt(p.target):"–", "up")}</div>
-    ${bar}
-    <div class="num" style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--soft);margin-top:5px">
-      ${p.banked?`<span>banked <span class="${up(p.banked)}">${sgn(p.banked)}$${p.banked.toFixed(2)}</span></span>`:""}
-      <span>open ${p.qty} · <span class="${up(p.openPnl||0)}">${sgn(p.openPnl||0)}$${(p.openPnl||0).toFixed(2)}</span></span>
-      ${p.foot?`<span>${p.foot}</span>`:""}</div></div>`;
+function posRow(p){
+  // Hyperliquid-style positions row: Coin (leverage badge, side colour) | Size | Position Value | Entry | Mark |
+  // PNL (ROE %) | TP/SL | Note. ROE = PnL / margin, margin = entry x size / leverage (same as HL's returnOnEquity).
+  const sg = p.side==="SHORT" ? -1 : 1, col = sg>0 ? "var(--pos)" : "var(--neg)", up = v => v>=0 ? "up" : "dn", sgn = v => v>=0 ? "+" : "";
+  const lev = p.lev || 1, margin = p.entry * p.qty / lev, roe = margin ? p.total / margin * 100 : null;
+  return `<tr data-c="${p.coin}" style="cursor:pointer">
+    <td style="text-align:left;border-left:3px solid ${col};padding-left:8px"><b style="color:${col}">${p.coin}</b> <span class="pill" style="font-size:10.5px;border-color:${col};color:${col}">${lev}x</span></td>
+    <td><span style="color:${col}">${sg<0?"-":""}${p.qty}</span> ${p.coin}</td>
+    <td>$${(p.qty*p.mark).toLocaleString(undefined,{maximumFractionDigits:2})}</td>
+    <td>${fmt(p.entry)}</td><td>${fmt(p.mark)}</td>
+    <td class="${up(p.total)}"><b>${sgn(p.total)}$${Math.abs(p.total).toFixed(2)}</b>${roe!=null?` <span style="font-size:11px">(${sgn(roe)}${roe.toFixed(1)}%)</span>`:""}</td>
+    <td><span class="up">${p.target?fmt(p.target):"--"}</span> / <span class="dn">${p.stop?fmt(p.stop):"--"}</span></td>
+    <td class="mut" style="font-size:11px">${p.note||""}</td></tr>`;
 }
 function renderBotPos(){
   const t = v => new Date(v).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
-  const cards = [];
+  const rows = [];
   for (const m of ((DATA.tradeHist||{}).sims||[]).filter(m => m.status === "open"))
-    cards.push(posCard({coin:m.coin, side:m.side, entry:m.entry, mark:m.mark, stop:m.stop, target:m.target, total:m.total_usd, r:m.r,
-      banked:m.banked_usd, qty:m.open_qty, openPnl:m.open_pnl_usd, foot:`closes ${t(m.expires_ts*1000)}`}));
+    rows.push(posRow({coin:m.coin, side:m.side, lev:m.lev||1, qty:m.open_qty, entry:m.entry, mark:m.mark, stop:m.stop, target:m.target,
+      total:m.total_usd, note:`banked $${m.banked_usd.toFixed(2)} · closes ${t(m.expires_ts*1000)}`}));
   for (const s of SYMS) { const b = botPos(s); if (!b) continue;
-    cards.push(posCard({coin:s, side:b.side, lev:b.leverage, entry:b.entry, mark:b.now, stop:b.sl, target:b.tp2||b.tp1, total:b.total,
-      r: b.sl ? b.total / Math.abs((b.entry-b.sl)*(b.qty_initial||b.qty)) : null, banked:b.realized_pnl||0, qty:b.qty, openPnl:b.open||0,
-      tag: ["TP1_HIT","TRAILING"].includes(b.state) ? "first target hit" : "", foot:`opened ${t(b.open_time)}`})); }
-  $("pos_badge").innerHTML = cards.length ? `<span class="pill nt">${cards.length}</span>` : "";
-  $("botnote").textContent = cards.length ? "live price · refreshes every 15 min" : "";
-  $("botpos").innerHTML = cards.length ? cards.join("") : `<div class="mut" style="font-size:12px">No open positions.</div>`;
+    rows.push(posRow({coin:s, side:b.side, lev:b.leverage, qty:b.qty, entry:b.entry, mark:b.now, stop:b.sl, target:b.tp2||b.tp1, total:b.total,
+      note:(b.realized_pnl?`banked $${(+b.realized_pnl).toFixed(2)} · `:"") + `opened ${t(b.open_time)}`})); }
+  $("pos_badge").innerHTML = rows.length ? `<span class="pill nt">${rows.length}</span>` : "";
+  $("botnote").textContent = rows.length ? "live price · refreshes every 15 min" : "";
+  $("botpos").innerHTML = rows.length ? `<table class="pos num"><tr><th style="text-align:left">Coin</th><th>Size</th><th>Position Value</th><th>Entry Price</th><th>Mark Price</th><th>PNL (ROE %)</th><th>TP / SL</th><th></th></tr>${rows.join("")}</table>`
+    : `<div class="mut" style="font-size:12px">No open positions.</div>`;
   document.querySelectorAll("#botpos [data-c]").forEach(el => el.onclick = () => pick(el.dataset.c));
 }
 function aiPlans(){

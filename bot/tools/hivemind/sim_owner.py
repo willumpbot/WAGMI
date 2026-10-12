@@ -74,7 +74,7 @@ def simulate(plan_id, plan):
         mark, rest = exit_px, sg * (exit_px - entry) * qty
     total = pnl + rest
     risk = abs(entry - stop) * q0
-    return {"mode": "profits_only", "status": status, "entry": entry, "stop": stop, "target": target,
+    return {"mode": "profits_only", "status": status, "lev": float(plan.get("leverage") or 1), "entry": entry, "stop": stop, "target": target,
             "partials": out_legs, "banked_usd": round(pnl, 2), "open_qty": round(qty, 6), "mark": mark,
             "open_pnl_usd": round(rest, 2), "total_usd": round(total, 2),
             "r": round(total / risk, 3) if risk else None, "exit_ts": exit_ts, "expires_ts": t_end, "as_of": now}
