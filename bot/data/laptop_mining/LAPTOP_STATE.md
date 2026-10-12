@@ -9,7 +9,7 @@ have to re-explain anything. Everything below is current as of commit time.
 
 | | |
 |---|---|
-| `megacalls_fetch.py` | fetching 2,477 priceable calls, **526 unique done**, ETA **~19h**. Single process, holds `geckoterminal.lock`. |
+| `megacalls_fetch.py` | fetching 2,477 priceable calls, **540 unique done**, ETA **~19h**. Single process, holds `geckoterminal.lock`. |
 | `WAGMI-LaptopCrunch` (hourly task) | 7 jobs, all green on the last cycle |
 | server `stop_shadow.py` | live 5m shadow stops, ~2 entries/day, accruing |
 
@@ -36,15 +36,17 @@ documents themselves.
 
 | horizon | best rule | eq-weighted | CI95 | |
 |---|---|---|---|---|
-| 24h | 3.0× | −9.4% | [−21.4%, +3.3%] | spans zero |
-| **7d** | 1.5× | **−9.6%** | **[−16.7%, −2.7%]** | **excludes zero** |
-| **14d** | 1.5× | **−10.6%** | **[−18.0%, −3.5%]** | **excludes zero** |
+| **24h** | 1.5× | **−9.8%** | **[−16.0%, −3.8%]** | **excludes zero** |
+| **7d** | 1.5× | **−9.8%** | **[−16.9%, −3.0%]** | **excludes zero** |
+| **14d** | 1.5× | **−10.8%** | **[−18.1%, −3.7%]** | **excludes zero** |
 | hold | — | **−45%** | — | |
 
-_Updated at n=402 complete / 83 call-days, death rate 22.4%. Two of three horizons now exclude
-zero where only 14d did at n=261, and **the exit rule has stopped mattering** — 1.5×, 2× and 3× all
-land between −8% and −10%. That is a cleaner statement than any single rule: the problem is not the
-target, it is the assets._
+_n=413 complete / 83 call-days, death rate 22.4%. **All three horizons now exclude zero**, the same
+rule (1.5×) wins at all three, and the magnitude is flat at −9 to −11%. Top-1 share **0%** and
+dropping the single best call moves nothing, so none of it rests on an outlier._
+
+**The strongest form of the finding: the exit rule is not the lever.** 1.5×, 2× and 3× give the same
+answer at every horizon. Whatever is wrong is in the asset selection, not the exit.
 
 **Costs close it:** on a typical **$5,100** pool, round-trip slippage is **~4% at $100**, ~10% at
 $250, ~20% at $500, **~78% at $2,000**. Even the smallest sensible order costs about what the best
