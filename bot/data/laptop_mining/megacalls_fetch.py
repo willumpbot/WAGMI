@@ -427,17 +427,27 @@ def main():
             limit = int(a.split("=", 1)[1])
     calls = load_calls()
     api_lock_wait()
+    # DEDUPE BY CA FIRST, LAST WINS. Scanning rows instead of calls re-queued every already-
+    # upgraded call on every restart: a CA whose OLD row is minute-only matched the needs_hourly
+    # condition even when a NEWER complete row existed two lines later. Measured cost of that:
+    # 887 rows for 384 unique calls, 217 of them fetched three times, and the fetch stuck at 384
+    # unique for hours while it re-upgraded the same ~348 calls instead of advancing toward 2,479.
+    #
+    # This is the SAME row-versus-call confusion that understated the death rate in fattail2, in a
+    # different file. I found it here only because I went looking after fixing it there.
     done, needs_hourly, carry = set(), set(), {}
+    latest = {}
     if os.path.exists(OUT):
         for line in io.open(OUT, encoding="utf-8"):
             try:
                 d = json.loads(line)
             except Exception:
                 continue
-            if not d.get("ca"):
-                continue
+            if d.get("ca"):
+                latest[d["ca"]] = d
+        for d in latest.values():
             done.add(d["ca"])
-            # A row fetched before the horizon fix has a 24h minute grid and no hourly one. Its
+            # A call fetched before the horizon fix has a 24h minute grid and no hourly one. Its
             # minute data is still correct, so re-requesting it would be waste -- fetch ONLY the
             # hourly grid for those and let the merge keep both.
             if d.get("peak_m") and not d.get("peak_h"):
