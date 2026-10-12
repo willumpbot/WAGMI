@@ -1045,7 +1045,7 @@ function posCard(p){
   if (p.stop && p.target && p.mark) {
     const lo = Math.min(p.stop, p.target), hi = Math.max(p.stop, p.target), f = v => Math.max(0, Math.min(100, (v-lo)/(hi-lo)*100));
     const stopLeft = p.stop < p.target;
-    bar = `<div style="position:relative;height:6px;border-radius:3px;margin:8px 0 2px;background:linear-gradient(90deg,${stopLeft?"var(--dn),var(--panel2) 50%,var(--up)":"var(--up),var(--panel2) 50%,var(--dn)"});opacity:.85">
+    bar = `<div style="position:relative;height:6px;border-radius:3px;margin:8px 0 2px;background:linear-gradient(90deg,${stopLeft?"var(--neg),var(--panel2) 50%,var(--pos)":"var(--pos),var(--panel2) 50%,var(--neg)"});opacity:.85">
       <div title="entry" style="position:absolute;left:${f(p.entry)}%;top:-3px;width:2px;height:12px;background:var(--soft)"></div>
       <div title="now" style="position:absolute;left:calc(${f(p.mark)}% - 5px);top:-3px;width:10px;height:12px;border-radius:3px;background:var(--ink)"></div></div>
       <div class="num" style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--soft)"><span>${stopLeft?"stop":"target"} ${fmt(lo)}</span><span>${stopLeft?"target":"stop"} ${fmt(hi)}</span></div>`;
