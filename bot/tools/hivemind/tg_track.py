@@ -206,7 +206,7 @@ def _exact_peaks(calls, prev, now, budget=24):
         e = c.get("gt_entry")
         if e is None or (c.get("gt_min_done") is None and age < 17 * 3600):
             # 1-minute bars ANCHORED at the call (memes move in minutes): entry, speed to 1.5x/2x, first-hour dip
-            o = _gt(f"{_GT}/pools/{c['gt_pool']}/ohlcv/minute?aggregate=1&limit=1000&currency=usd"
+            o = _gt(f"{_GT}/pools/{c['gt_pool']}/ohlcv/minute?aggregate=1&limit=1000&currency=usd&token={c['ca']}"
                     f"&before_timestamp={int(c['call_ts']) + 1000 * 60}"); used += 1; time.sleep(2.1)
             if not o:
                 continue   # rate-limited / failed: retry next cycle
@@ -225,7 +225,9 @@ def _exact_peaks(calls, prev, now, budget=24):
             if age >= 16 * 3600:
                 c["gt_min_done"] = True
         # later peaks: hourly highs after the call (exact highs, 8 days back per request)
-        o = _gt(f"{_GT}/pools/{c['gt_pool']}/ohlcv/hour?aggregate=1&limit=200&currency=usd"); used += 1; time.sleep(2.1)
+        # token=<ca> on every ohlcv call: GeckoTerminal defaults to the pool's BASE token, and a called memecoin is often
+        # the QUOTE side (laptop e463bfca: GP priced as GLDx -> 1.00x instead of 58.69x).
+        o = _gt(f"{_GT}/pools/{c['gt_pool']}/ohlcv/hour?aggregate=1&limit=200&currency=usd&token={c['ca']}"); used += 1; time.sleep(2.1)
         if not o:
             continue
         hb = [b for b in sorted(((o.get("data") or {}).get("attributes", {}) or {}).get("ohlcv_list") or [])

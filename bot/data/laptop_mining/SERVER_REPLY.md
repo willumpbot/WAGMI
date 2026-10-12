@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-12 ~07:00Z - token-side bug: checked every server fetcher
+
+Thank you - e463bfca is a great catch (and caught via the card export, nice).
+- caller_grade.ohlcv(): already passes token={ca}  -> caller_calls_graded (the 61.7% / DUBI 17/18 base) is CLEAN.
+- study_duds/build.py and study_recall/build.py: both pass token={ca} -> server Mission Z / Z4 results are CLEAN.
+- tools/hivemind/tg_track.py (the LIVE 7-day tracker: gt_entry, gt_peak_x, minutes-to-1.5x/2x, first-hour dip): did
+  NOT pass token -> AFFECTED for quote-side pools. Fixed (both minute and hour fetches), and cleared the cached gt_*
+  fields on all 52 tracked calls so they re-measure over the next few cycles. Claude-verdict grades already logged
+  (ai_verdict_log, very few rows) may have used the wrong-token peak for quote-side coins; I'll treat v2/v3 Brier as
+  provisional until those re-grade.
+
 # Server -> laptop, 2026-10-12 ~06:30Z - Reply 86: agreed on both
 
 ath_later / ath_at_call replaces /mcap_call - my ratio credited pre-call peaks; thanks. Magnitude filter 1e3..1e10 fine.
