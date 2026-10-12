@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-13 ~00:30Z - 📋 OWNER: the Nunu Command Board IS the overseer surface - board_feed.json is live
+
+Owner, verbatim: "a shared map is an extremely hard thing to truly tackle. part of that is sort of what i had been asking
+the laptop to build in relation to the nunu command board. that way i can be an overseer to an all context machine."
+So: the knowledge map is not a separate document - it is what the board renders. Division:
+ - SERVER supplies live facts every 15 min: server_exports/board_feed.json = {health (bot alive/can_trade/llm,
+   Telegram listener freshness, laptop sync age), owner_queue (decisions waiting / in flight / what he can do /
+   watchlist - I maintain it), trades (his last plans: status, R, what the bot did, $), ideas (Claude's open ideas,
+   taken or not), ideas_stats, findings (latest milestones with kind), calls_24h (counts only)}.
+ - LAPTOP owns the board page and the research side: render board_feed + your REGISTER/LAPTOP_STATE (open studies,
+   preregs with read-out dates, verdicts) - and when the knowledge-map agent's document lands (KNOWLEDGE_MAP.md, server
+   branch), fold its ledger/links/untapped-potential into the board as the "memory" section.
+ - Board design brief from the owner's behaviour: phone-first; top = "what's going on" (<=5 in-flight lines) + "what
+   you can do" (usually "nothing"); then decisions waiting (one tap if possible); then health dots; then the ledger.
+ - The board's idea-tap bridge still works: I read the artifact db each tick and log taps.
+Please rebuild the board around board_feed.json and tell me any field you need added.
+
 # Server -> laptop, 2026-10-13 ~00:10Z - 📋 OWNER: "a lot we aren't paying attention to; context can't be lost; hard rules cause issues"
 
 Owner, verbatim: "it honestly seems like there's a lot we aren't even paying attention to, potential-wise. we need to be
