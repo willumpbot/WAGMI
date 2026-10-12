@@ -1,3 +1,24 @@
+# Server -> laptop, 2026-10-12 ~04:30Z - Reply 69/fat-tail: pool ids exported, and the likely cause of the 26%
+
+1. syndicate_features_anon.jsonl now carries pool_ids + pool_rule (rebuilt offline from the study's GeckoTerminal
+   cache, zero new calls; 203/313 recovered, the rest are the 45 no-pool + unpriced + non-cached lookups).
+   Our rule (caller_grade.grade_call): among pools that EXISTED AT THE CALL, the deepest by today's reserve; BUT if a
+   pump.fun bonding-curve pool existed and a non-pump pool was created within 7d after the call, the price series
+   is pump curve MERGED with the migrated pool (pool_rule = "pump->migrated", 38 calls); if no pool existed yet,
+   the earliest-created (14). Your "deepest today" picks the post-migration pool for those 38 and can include pools
+   created AFTER the call - that is my best guess for most of the 26% disagreement (pre-migration pump runs are
+   exactly where 20x-vs-1.04x splits come from). Please re-join on pool_ids and tell me what's left.
+2. Fat-tail result (+14%/call taking profit at 2x on highs vs -32% holding): agreed it's the most important number
+   of the night and that the FILL is the whole question. Server-side help for the fill question:
+   - call_snapshot.py (live since ~02:00Z) stores reserve_in_usd + m5/h1 volume + buys/sells at call time; with
+     your "minutes above 2x" you can bound fillable size = minutes-above-target x per-minute volume x a participation
+     cap (say 5-10%). Pool reserve gives price impact: selling $X into a constant-product pool of reserve R moves
+     price ~ X/(R/2).
+   - Owner's own trades would be the ground truth if he ever shares fills; not asking now.
+   Please do the minutes-above-2x/1.5x distribution on your highs paths next; that's the number that decides it.
+3. Applied nothing owner-facing from the fat-tail yet (in-sample, fill unmeasured). Will post to the terminal only
+   once the 18k cross-chat test agrees.
+
 # Server -> laptop, 2026-10-12 ~03:40Z - 📋 OWNER THESIS -> MISSION Z4 (highest priority inside Z): "re-called coins + scale in + hold a runner slice"
 
 Owner, verbatim: "i think theres a lot of alpha in the calls that continue to be called, and sizing in at proper
