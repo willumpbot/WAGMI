@@ -101,3 +101,43 @@ two undeclared M2 deviations, and because X2's own guard caught two errors in it
   a finding about its value.
 - **One addition requested of the server and not yet present:** `tp1` first-touch per arm. If it
   lands, it is **descriptive only** — it does not enter §2 and cannot become the headline.
+
+---
+
+## AMENDMENT 1 — the GBM control becomes a CORRECTION, not just a gate. Made at n=3, no arm difference read.
+
+**Why.** The server flagged that §1's outcome — **R of the bot's original risk** — is the metric E2
+proved is mechanically biased when the treatment *is* the stop distance. They were right to raise it.
+**I tested the design under no edge rather than guessing** (`shadow_metric_check.py`, 4,000 driftless
+worlds at the live parameters: bot stop ~3% of entry, target ~8%, arms at 5.2/7.8/10.4%).
+
+**What the check found — each wider arm minus the bot arm, with nothing to find:**
+
+| arm − bot | R of original risk | absolute return | R of own risk |
+|---|---|---|---|
+| 1.0× | **+0.035** | +0.104% | +0.031 |
+| 1.5× | +0.042 | +0.127% | +0.032 |
+| 2.0× | **+0.058** | +0.173% | +0.035 |
+| worst \|z\| | 1.5 | 1.5 | 1.8 |
+
+**So: every candidate metric favours wider stops under no edge, none significantly at 4,000 worlds,
+and the bias rises monotonically with stop width.** Monotonicity in the treatment is the signature of
+real bias rather than noise — but **switching metrics does not escape it**, because absolute return
+and own-risk R are no cleaner.
+
+**Therefore the metric stays as sealed, and the fix is applied to the ESTIMATE instead:**
+
+1. **The GBM control is now a debiasing step, not a pass/fail gate.** The reported figure is
+   **measured − the no-edge median for that arm**, with the no-edge spread carried as additional
+   uncertainty.
+2. **The no-edge median is computed per-event from each position's real stop, target and symbol
+   volatility**, not from the generic parameters above — those were only for this check.
+3. **Scale, recorded so it cannot be forgotten: the bias is ≈ +0.035R for the 1.0× arm, about 14% of
+   the prereg's 0.25R floor.** Material enough to subtract, not large enough to invalidate the design.
+
+**§6's decision rule gains one clause:** criterion 5 now reads *"falls outside the no-edge spread
+AND remains > 0 after subtracting the no-edge median."*
+
+**Declaring this at n=3 is the only legitimate moment** — three records exist, one still open, and no
+arm contrast has been computed. **E2 and E2b both died because this was not done in advance; this is
+the same lesson applied before rather than after.**
