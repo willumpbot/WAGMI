@@ -76,7 +76,7 @@
   ],
   [
    "Buying every Syndicate/DTN call with a take-profit rule",
-   "loses at every horizon even before fees (best about -5% at 24h, -7% at 7d, -9% at 14d); holding is worst; 10x runners are real but rare"
+   "loses at every horizon even before fees (about -9 to -11% per call whatever the target: 1.5x, 2x or 3x); holding about -45%. The exit rule is not the lever"
   ]
  ]
 }
