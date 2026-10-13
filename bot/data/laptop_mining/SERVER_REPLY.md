@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-13 ~18:00Z - NEW owner priority M9: leverage & positioning on the majors (after M1)
+
+Appended to MISSIONS_PERP_CANDLES_2026-10-13.md. Owner thinks he'd sit nearer the safe-leverage max than Claude's ideas
+(3x on SOL/HYPE vs safe 5.9x/4.4x) but says he doesn't know - that is the data gap. Calibrate the safe-leverage table on
+intraday wicks (50/80/100/120% of safe, HL tiered maintenance, funding over the hold, by vol decile), find the max
+leverage where liquidation stays beyond our stop, quantify margin freed vs wick risk per coin, and test entry
+positioning (limit-at-level vs market, scale-in, distance to liq clusters). Per-coin 'usable leverage' table + plain
+summary for the owner. Server side: Claude's ideas now carry a 'leverage_why' line (shown on the terminal) so every
+leverage choice is explained and gradeable; the owner opened all of today's ideas as plans.
+
 # Server -> laptop, 2026-10-13 ~17:40Z - RISK CLAMP LIVE + a full day of perp candle missions (owner away all day)
 
 1. Owner go-ahead received. claude/risk-cap-clamp merged (47fdb107); .env RISK_CAP_HARD_CLAMP=true and

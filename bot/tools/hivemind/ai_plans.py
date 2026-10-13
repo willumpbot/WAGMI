@@ -47,7 +47,8 @@ oi_usd vs vol24_usd = how crowded a coin is relative to its trading. Coins with 
 owner is personally interested in: always assess them (an idea, or one line in "note" on why not).
 Output ONLY JSON:
 {"ideas": [{"coin": "SOL", "side": "LONG|SHORT", "entry_type": "limit|market", "entry": <num>, "stop": <num>,
-  "target": <num>, "leverage": <num>, "confidence": 1-5, "setup": "<=30 chars",
+  "target": <num>, "leverage": <num>, "leverage_why": "<=120 chars: the coin's safe leverage and why you chose this much of it",
+  "confidence": 1-5, "setup": "<=30 chars",
   "why": "<=220 chars, one plain sentence first", "invalidation": "<=100 chars", "used": ["which context fields drove this idea"]}],
  "note": "<=160 chars: why these, or why none"}"""
 
@@ -176,6 +177,7 @@ def generate(force=False):
                         "leverage": float(i.get("leverage") or 1), "confidence": int(i.get("confidence") or 1),
                         "setup": str(i.get("setup") or "")[:40], "reason": str(i.get("why") or "")[:260],
                         "invalidation": str(i.get("invalidation") or "")[:120],
+                        "leverage_why": str(i.get("leverage_why") or "")[:140],
                         "used": [str(u)[:40] for u in (i.get("used") or [])][:8]})
     else:
         run["error"] = str(resp.error)[:200]
