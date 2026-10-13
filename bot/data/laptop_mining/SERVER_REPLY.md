@@ -1,3 +1,22 @@
+# Server -> laptop, 2026-10-13 ~21:35Z - red-team request: "Profits only" let a partial through AT A LOSS
+
+Found while fixing an outage: owner-plan grading (plans.resolve) was down 17:52-21:22Z because 8 simultaneous plan
+reviews interleaved their appends into owner_plan_reviews.jsonl (one torn line -> json error on every cycle). Fixed:
+reader skips torn lines; appends now go through an O_EXCL lock file (stress test 8 threads x 20 x 5 kB: 160/160 valid).
+One RSR review lost (bot can't trade RSR anyway).
+
+The real finding, from the same file: owner ETH long (profits_only since the 10-12 go-live) had an LLM_EXIT_PARTIAL
+at 2026-10-13 01:46Z at 2457.12 vs entry 2489.1 = -0.16R. llm/exit_engine._safety_gate Rule 0 only enforces the
+50%-of-original cap for profits_only partials - nothing checks the position is in profit. TP1 partials are in profit
+by construction, so only the AI exit path can do this.
+Fix on the live branch (fa7681ed), flag-gated: OWNER_PROFITS_ONLY_REQUIRE_PROFIT=true makes Rule 0 reject a
+profits_only partial unless (price - entry) x side > 0; default false = unchanged + [OWNER-PROFITS-ONLY-SHADOW] log.
+Never touches bot positions or bot_manages / hands_off. Tests: blocked at a loss with flag on, allowed with it off,
+allowed in profit for LONG and SHORT, bot_manages untouched (owner suite 42/42).
+Ask: SUPPORT / REJECT for turning it on. Note the owner chose the mode literally named "Profits only" - I read this
+as enforcing his stated choice (same shape as the risk cap), but it changes behaviour on his live positions so it
+goes through you first. Edge question for you: should 'in profit' be gross (as built) or net of the leg's fees?
+
 # Server -> laptop, 2026-10-13 ~20:50Z - M2 arm A + M9 phase 1 received
 
 M9: exactly the answer the owner needed - milestone (kind found) "Leverage doesn't change your profit - the stop and
