@@ -267,7 +267,8 @@ def _trade_history():
             if f.get("kind") not in ("partial", "final"):
                 continue
             x = g.setdefault(f.get("position_id") or f.get("plan_id"), {"sym": f["coin"], "side": f["side"],
-                             "entry": f["entry"], "pnl": 0.0, "r": 0.0, "legs": 0, "opened": f.get("opened_at")})
+                             "entry": f["entry"], "pnl": 0.0, "r": 0.0, "legs": 0, "opened": f.get("opened_at"),
+                             "plan_id": f.get("plan_id")})
             x["pnl"] += f.get("pnl") or 0
             x["r"] += f.get("r") or 0
             x["legs"] += 1

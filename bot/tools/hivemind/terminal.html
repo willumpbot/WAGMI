@@ -907,6 +907,7 @@ function renderPlans(){
     const v = r.review, cl = v.verdict==="take"?"up":v.verdict==="skip"?"dn":"warn";
     return `<span class="pill ${v.verdict==="take"?"up":v.verdict==="skip"?"dn":"nt"}" title="${esc(v.summary)}">bot: ${v.verdict}</span>`; };
   const EX = q => { const x = q.exec_result; if (!x || !x.status) return "";
+    const SM = SIMDONE(q.id); if (SM) return `<br><b style="color:var(--ink)">Result:</b> ${SIMWHY(SM)} · <span class="${SM.r>=0?"up":"dn"}">${SM.r>=0?"+":""}${(+SM.r).toFixed(2)}R</span> ($${(+SM.total_usd).toFixed(2)})`;
     const w = {queued:"waiting for entry", filled:"opened", open:"managing it now", closed:"closed it", blocked:"couldn't take it", rejected:"couldn't take it", stale:"too late to open", expired:"entry never reached", cancelled:"cancelled"}[x.status] || x.status;
     return `<br><b style="color:var(--ink)">Bot paper-trading your plan:</b> ${w}${x.r!=null?` · <span class="${x.r>=0?"up":"dn"}">${x.r>=0?"+":""}${(+x.r).toFixed(2)}R</span>`:""}${x.pnl_usd!=null?` ($${(+x.pnl_usd).toFixed(2)})`:""}${x.reason&&["blocked","rejected","stale"].includes(x.status)?` <span class="mut">(${esc(x.reason)})</span>`:""}`; };
   const RVfull = q => { const r = q.review; const v0 = (r && r.review) || null; if (!v0) return q.exec_result ? `<tr><td colspan="7" style="text-align:left;font-family:Segoe UI,sans-serif;font-size:11.5px;padding:2px 4px 8px;color:var(--soft);white-space:normal">${EX(q).slice(4)}</td></tr>` : ""; const v = v0, br = q.bot_result || {};
@@ -990,13 +991,17 @@ function botPos(s){
 }
 function tradeHist(){
   const T = DATA.tradeHist || {}, d = t => new Date(t*1000).toISOString().slice(5,16).replace("T"," ");
-  const P = (T.plans||[]).slice().reverse(), B = (T.bot||[]).slice().reverse().slice(0,25);
+  const P = (T.plans||[]).map(x => { const SM = SIMDONE(x.plan_id); return SM ? {...x, pnl:SM.total_usd, r:SM.r, exit:SM.mark,
+    ts:SM.exit_ts||x.ts, legs:(SM.partials||[]).length+1, reason:SIMWHY(SM)} : x; }).slice().reverse(), B = (T.bot||[]).slice().reverse().slice(0,25);
   const why = r => ({SL:"stop hit",TP1:"first target",TP2:"second target",LLM_EXIT_HIGH:"bot closed early",LLM_EXIT_PARTIAL:"bot took part off"}[r] || (r||"").toLowerCase().replace(/_/g," "));
   let h = "";
   if (P.length) h += `<div class="mut" style="font-size:11px;margin:2px 0">Your plans the bot ran (kept out of the bot's own record)</div><table class="pos num"><tr><th>Closed</th><th>Coin</th><th>Entry</th><th>Last exit</th><th>Result</th><th>How it ended</th></tr>${P.map(x=>`<tr><td class="mut">${d(x.ts)}</td><td><b>${x.sym}</b> <span class="${x.side==="SHORT"?"dn":"up"}">${x.side}</span></td><td>${fmt(x.entry)}</td><td>${fmt(x.exit)}</td><td class="${x.pnl>=0?"up":"dn"}">${x.pnl>=0?"+":""}$${x.pnl.toFixed(2)} (${x.r>=0?"+":""}${x.r.toFixed(2)}R)</td><td class="mut">${x.legs>1?(x.legs-1)+" partial take-profit"+(x.legs>2?"s":"")+", then ":""}${why(x.reason)}</td></tr>`).join("")}</table>`;
   h += `<div class="mut" style="font-size:11px;margin:8px 0 2px">The bot's own trades</div>` + (B.length ? `<table class="pos num"><tr><th>Closed</th><th>Coin</th><th>Entry</th><th>Exit</th><th>Net</th><th>How it ended</th></tr>${B.map(x=>`<tr><td class="mut">${d(x.ts)}</td><td><b>${x.sym}</b> <span class="${x.side==="SHORT"?"dn":"up"}">${x.side}</span></td><td>${fmt(x.entry)}</td><td>${fmt(x.exit)}</td><td class="${x.pnl>=0?"up":"dn"}">${x.pnl>=0?"+":""}$${x.pnl.toFixed(2)}</td><td class="mut">${why(x.reason)}</td></tr>`).join("")}</table>` : `<span class="mut">none yet</span>`);
   $("tradehist").innerHTML = h;
 }
+// Owner's record for his BTC short (10-13): the Profits-only result, not the bot's early exit.
+const SIMDONE = id => (((DATA.tradeHist||{}).sims)||[]).find(m => m.plan_id === id && m.status !== "open");
+const SIMWHY = m => m.status==="target" ? "hit target" : m.status==="stop" ? "hit stop" : "time limit";
 let TR_F = "all";
 function tradesTab(){
   const d = t => t ? new Date(t*1000).toISOString().slice(5,16).replace("T"," ") : "–";
@@ -1010,13 +1015,15 @@ function tradesTab(){
   for (const p of P) {
     const R = p.result || {}, X = p.exec_result || {};
     const grade = R.status==="open" ? `open, now ${rr(R.live_r)}` : R.status==="won"||R.status==="lost"||R.status==="timed out" ? `${R.status} ${rr(R.r)}` : (R.status||"–");
-    const ran = X.status==="closed" ? `bot ran it: <span class="${cls(X.pnl_usd)}">${usd(X.pnl_usd)}</span> (${rr(X.r)}), ${why(((X.fills||[]).slice(-1)[0]||{}).reason)}` :
+    const SM = SIMDONE(p.id);
+    const ran = SM ? `<span class="${cls(SM.total_usd)}">${usd(SM.total_usd)}</span> (${rr(SM.r)}), ${SIMWHY(SM)}` :
+                X.status==="closed" ? `bot ran it: <span class="${cls(X.pnl_usd)}">${usd(X.pnl_usd)}</span> (${rr(X.r)}), ${why(((X.fills||[]).slice(-1)[0]||{}).reason)}` :
                 X.status ? `bot: ${esc(X.status)}${X.reason?" - "+esc(X.reason):""}` : "";
     rows.push({ts:p.ts, who:"me", whoTxt: p.setup==="ai idea" ? "Me (Claude's idea)" : "Me", coin:p.coin, side:p.side,
       prices:`in ${fmt(p.entry)} · stop ${fmt(p.stop)} · target ${fmt(p.target)}`, res:`<span class="${cls(R.r!=null?R.r:R.live_r)}">${grade}</span>`, note:ran,
       live: ["waiting","open"].includes(R.status)});
   }
-  for (const m of ((DATA.tradeHist||{}).sims||[])) {
+  for (const m of ((DATA.tradeHist||{}).sims||[]).filter(m => m.status === "open")) {
     const st = m.status==="open" ? `still OPEN, now <span class="${cls(m.total_usd)}">${usd(m.total_usd)} (${rr(m.r)})</span>` :
                `${m.status==="target"?"hit your target":m.status==="stop"?"hit your stop":"closed at the time limit"}: <span class="${cls(m.total_usd)}">${usd(m.total_usd)} (${rr(m.r)})</span>`;
     rows.push({ts: Date.now()/1000+1, who:"me", whoTxt:"Me - simulated with 'Profits only'", coin:m.coin, side:m.side,
