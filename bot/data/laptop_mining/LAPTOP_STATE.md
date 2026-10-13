@@ -37,7 +37,38 @@ interpreter, and killing the stub kills the worker. I lost a run that way.
 | `PREREG_RECALL_CROSSCHAT_2026-10-12` | `ca25df56`, n=35 | **n ≥ 250 re-called** (35 now) | UNDERPOWERED or small negative |
 | `PREREG_CALLER_FORM_2026-10-12` | `60e17310` + amendment `636a885a` | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED, small positive |
 | `PREREG_CHAT_QUALITY_2026-10-12` | sealed on design facts only | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED (floor ~15pp vs a 45% base) |
-| **`PREREG_FUNDING_WIDE`** | **`624a9e98` (sealed `41805c5c` + Amendments 1 & 2)** | **ONCE, at ≥170 of 173 funding files** | **P(clean positive) ≈ 45%**, attenuating to +2–5% |
+| ~~`PREREG_FUNDING_WIDE`~~ | **`ecf331b4` (sealed `41805c5c` + Amendments 1–4)** | ✅ **RAN 2026-10-12 at 173/173** | **+4.77% — REPLICATES.** I predicted +2–5% and ~45% |
+
+## 🟢 2a. THE REPLICATION HELD — read `FUNDING_WIDE_RESULT.md`
+
+**`funding_hot` predicts a +4.77% bigger next-day |move| on 156 coins it was never tested on**
+(CI [+2.46, +7.13], MDE 3.66%, **179 week-clusters**, 5,084 matched cells, placebo size 0.018 —
+valid and **conservative**, so significance was won against a stricter-than-nominal bar).
+
+**This is the first genuine out-of-sample replication this project has ever run.** Everything before
+it was a re-cut of the discovery sample.
+
+| check, pre-specified | outcome |
+|---|---|
+| **canary** — ORIG17 unfiltered must reproduce +0.0740 log | ✅ **+0.0740 / +7.68%, exact**, 2,283 cells, 145 weeks, flag 20.8% vs 20.76% |
+| filter-robust? (c) +4.77% vs (c_raw) +5.86% | ✅ same verdict — **not** filter-dependent |
+| rank-dependent? rank +4.77% vs frozen +5.91% | ✅ same verdict — **not** rank-dependent |
+| A2 mechanism: (b) filtered below (b_raw)? | ✅ **+7.30% < +7.68%** |
+
+**Attenuation to 62% of the original (+4.77% vs +7.68%) is exactly what an honest re-test does to a
+finding whose discovery sample also chose the hypothesis.**
+
+**🔴 THE FIRST RUN WAS VOID and its numbers are in the result doc and prereg §C.** It failed its own
+canary (+5.64% vs the required +7.68%). Cause: **`size_flags.py:148` buckets `em` quintiles GLOBALLY
+across the panel; I had bucketed PER DATE.** The prose says "within the same date AND the same em
+quintile" and per-date is a defensible reading — **the code does global, and the code produced +7.7%.**
+**Third time in one session I re-derived a baseline from a write-up instead of reading the
+implementation.** I had seen a (c) estimate of **+3.65%** before the valid run returned +4.77%, so my
+expectations were contaminated even though the data and design were not. **That caveat travels with
+the finding permanently.**
+
+**Use it for sizing and stop width, never direction.** The outcome is unsigned |move|; every signed
+claim this project has made has died.
 
 **TWO AMENDMENTS, both made before any read, both found by testing my own rules instead of trusting
 my description of them:**
