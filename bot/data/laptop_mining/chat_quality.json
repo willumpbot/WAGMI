@@ -1,0 +1,57 @@
+{
+ "prereg": "PREREG_CHAT_QUALITY_2026-10-12",
+ "rows": 2358,
+ "by_chat": {
+  "dtn": 1861,
+  "dtn_hitters": 174,
+  "syndicate": 323
+ },
+ "results": [
+  {
+   "pair": "PRIMARY",
+   "shared_days": 32,
+   "placebo_size": 0.0665,
+   "placebo_ok": true,
+   "mde_pp": 8.0,
+   "n_a": 96,
+   "n_b": 215,
+   "eq_pp": 14.47,
+   "pooled_pp": 8.89,
+   "ci_pp": [
+    -0.74,
+    29.64
+   ],
+   "z": 1.87,
+   "halves_pp": [
+    11.92,
+    17.02
+   ],
+   "ret_eq": 0.014,
+   "ret_z": 0.08,
+   "verdict": "UNDERPOWERED"
+  },
+  {
+   "pair": "SECONDARY (own day count)",
+   "shared_days": 23,
+   "placebo_size": 0.078,
+   "placebo_ok": true,
+   "mde_pp": 10.0,
+   "n_a": 743,
+   "n_b": 41,
+   "eq_pp": 12.65,
+   "pooled_pp": 19.52,
+   "ci_pp": [
+    -5.48,
+    28.88
+   ],
+   "z": 1.45,
+   "halves_pp": [
+    -4.09,
+    28.0
+   ],
+   "ret_eq": 0.391,
+   "ret_z": 1.53,
+   "verdict": "UNDERPOWERED"
+  }
+ ]
+}
