@@ -20,11 +20,11 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 2577,
+  "v": 2600,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 11632,
+  "v": 11705,
   "u": "bytes"
  },
  "archive": {
@@ -56,7 +56,7 @@
   "u": "rows"
  },
  "candles_5m": {
-  "v": 35988,
+  "v": 36072,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -68,7 +68,7 @@
   "u": "rows"
  },
  "chief_scorecard.json": {
-  "v": 665,
+  "v": 666,
   "u": "bytes"
  },
  "conf_floor_decisions.jsonl": {
@@ -92,7 +92,7 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 49484,
+  "v": 50374,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
@@ -132,7 +132,7 @@
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 609,
+  "v": 621,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -140,7 +140,7 @@
   "u": "rows"
  },
  "live_scorecard.json": {
-  "v": 1343,
+  "v": 1344,
   "u": "bytes"
  },
  "llm_exits_resolved.jsonl": {
@@ -168,11 +168,11 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 17012,
+  "v": 17054,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 520,
+  "v": 524,
   "u": "rows"
  },
  "scanner.py": {
@@ -228,7 +228,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 241,
+  "v": 246,
   "u": "rows"
  }
 }
