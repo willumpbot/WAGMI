@@ -1,0 +1,40 @@
+{
+ "prereg": "PREREG_CALLER_FORM 4c9a5f26",
+ "rows_human": 1478,
+ "clusters": 54,
+ "kish_n": 7.51,
+ "call_days": 101,
+ "placebo_size": 0.033,
+ "placebo_ok": true,
+ "mde_pp": 8.0,
+ "pooled_pp": 2.37,
+ "eq_day_pp": 2.72,
+ "eq_caller_pp": -9.09,
+ "caller_ci_pp": [
+  -3.14,
+  11.96
+ ],
+ "caller_z": 0.62,
+ "day_ci_pp": [
+  -2.92,
+  8.04
+ ],
+ "day_z": 0.85,
+ "leave_out": {
+  "1": [
+   7.400379506641364,
+   2.1124424119796124,
+   1054
+  ],
+  "3": [
+   9.05307458498948,
+   1.9125548790998845,
+   654
+  ]
+ },
+ "sign_stable": true,
+ "chat_proxy_pp": 0.74,
+ "bot_rows": 0,
+ "verdict": "UNDERPOWERED",
+ "deviation": "time-reversal placebo NOT run: requires a server-side reversed-form join"
+}
