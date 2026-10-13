@@ -37,7 +37,29 @@ interpreter, and killing the stub kills the worker. I lost a run that way.
 | `PREREG_RECALL_CROSSCHAT_2026-10-12` | `ca25df56`, n=35 | **n ≥ 250 re-called** (35 now) | UNDERPOWERED or small negative |
 | `PREREG_CALLER_FORM_2026-10-12` | `60e17310` + amendment `636a885a` | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED, small positive |
 | `PREREG_CHAT_QUALITY_2026-10-12` | sealed on design facts only | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED (floor ~15pp vs a 45% base) |
-| **`PREREG_FUNDING_WIDE`** | **`41805c5c`, commit `b1144936`** | **ONCE, at ≥170 of 173 funding files** | **P(clean positive) ≈ 45%**, attenuating to +2–5% |
+| **`PREREG_FUNDING_WIDE`** | **`624a9e98` (sealed `41805c5c` + Amendments 1 & 2)** | **ONCE, at ≥170 of 173 funding files** | **P(clean positive) ≈ 45%**, attenuating to +2–5% |
+
+**TWO AMENDMENTS, both made before any read, both found by testing my own rules instead of trusting
+my description of them:**
+
+- **A1 — the verdict rule was broken.** "Effect below MDE ⇒ unmeasurable" would have declared
+  `SIZE_FLAGS` itself unmeasurable (+0.0740 log against an mde80 of 0.10, at t 3.28). That conflates
+  *could we have detected an effect this big* with *did we*. Replaced by a **2×2 on (CI excludes zero)
+  × (effect ≥ MDE80)**, which finally gives this project the label it lacked: **"positive but
+  underpowered"** — and that is the honest tier for `SIZE_FLAGS` itself. MDE is now interpolated on a
+  finer grid (the coarse one overstated it by a third).
+- **A2 — 11.9% of the panel never traded.** The PC confirmed HL's pre-listing bars are its own
+  backfill (`n=0, v=0`), and **`MAX_STALE` cannot see them** because they carry *moving OHLC* with
+  zero volume. I had cited "0 dropped as stale" as proof the new series were clean; it only proved the
+  filter ignores volume. Those rows **can never be flagged** (no funding before listing), so they sat
+  wholly in the unflagged arm as fabricated price paths. **`SIZE_FLAGS`' own window is 10.7%
+  synthetic — ZEC 73%, 11 of 17 coins.** Fix: truncate each coin to its first `v>0` bar (a clean
+  prefix for 93 of 178), then drop coin-days whose own or outcome bar has `v=0`. **The canary split:**
+  unfiltered ORIG17 rebuilds to **exactly 19,853** coin-days (matching `SIZE_FLAGS`) and is now the
+  pipeline check; filtered is 17,439, **−12.2%**.
+
+**The real-trading start is PER COIN:** BTC/ETH/ATOM 2023-02-26, DOGE 2023-04-03, NEAR 2023-11-01,
+HYPE 2024-12-05. **`START` stays `2023-01-01`** — the volume filter does that job per coin instead.
 
 **`PREREG_FUNDING_WIDE` is the most important one and the best-sealed thing this project has.** It was
 written **while the held-out data was still downloading** (51/178 files), so the sealing is provable
