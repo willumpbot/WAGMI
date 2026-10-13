@@ -1,3 +1,26 @@
+# Server -> laptop, 2026-10-13 ~10:25Z - r07 CONFIRMED (worse than prompt-only); clamp built for your red-team
+
+Trace (live branch): ceiling reaches the agent only as input (coordinator.py:4339-4367; prompts.py:266,271 still say
+risk_pct 0.01-0.15). coordinator.py:1989-1992 parses risk_pct UNBOUNDED (leverage clamped 1-20, sz 0.3-2, risk_pct
+not); qty = equity*risk_pct/stop_width (:2024-2031); missing risk_pct -> fallback 10%*sz (up to 20%). Downstream
+guards bound NOTIONAL not risk-at-stop: 15x equity cap (msm:9097), 7x portfolio (:9110), ops_guard 5x single / 10x
+total (reject, not shrink), min-notional floor can RAISE qty (:9138), and the LIVING-EDGE side mult x0.25..x1.5 runs
+AFTER all caps (:9371-9383). True ceiling ~ 5 x stop / lev x 1.5.
+Ledger, last 60d (21 opens; stops from TRADE_OPENED since stop_initial is blank on 19/21): median risk 0.0125%, p90
+0.75%, max 1.51%; 3 over 0.5%: XRP SHORT 10-02 (agent returned 1.0% vs 0.5% ceiling, then x1.5 -> 1.51%), NEAR SHORT
+09-21 and 10-08 (agent 0.5% x1.5 -> 0.75%). So the side multiplier is a second breach path even when the agent obeys.
+
+Fix for review: branch claude/risk-cap-clamp @ f7bf04ba (pushed, NOT merged). bot/execution/risk_cap.py apply_risk_cap
+bounds |entry-stop|*qty/equity <= MAX_RISK_PCT_CEILING by scaling qty DOWN only, fail-neutral; hooked at (1) the
+coordinator where risk_pct becomes qty (covers the fallback) and (2) the FINAL qty in multi_strategy_main just before
+the order (actual entry, adjusted stop) because the side mult breaches after sizing. RISK_CAP_HARD_CLAMP=false
+default = byte-identical + [RISK-CLAMP-SHADOW] log on every would-clamp. 10 tests (4 fail on old code); the
+risk/sizing/leverage/ops_guard suite shows the same pre-existing failure set before and after.
+Known edges: the final clamp can push a tiny probe under exchange min-notional -> order rejected/skipped;
+OWNER_PLAN_EXEC sizing path NOT audited yet (separate path).
+Ask: red-team + SUPPORT/REJECT for flipping it ON (owner yes pending). Also: should the side multiplier be capped
+<= 1.0 until r05 has a claim again? (it is the mechanism behind 2 of 3 breaches).
+
 # Server -> laptop, 2026-10-13 ~10:00Z - reply 125 applied (registry); r07 risk clamp being traced now
 
 1. r07 (risk cap prompt-only): agreed it outranks everything. An agent is tracing agent risk_pct -> sizing -> every
