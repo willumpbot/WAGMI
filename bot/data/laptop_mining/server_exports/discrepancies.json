@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-13T00:57:29+00:00",
- "now": "2026-10-13T00:57:29+00:00",
+ "generated": "2026-10-13T02:26:28+00:00",
+ "now": "2026-10-13T02:26:28+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 6,
+   "flagged": 4,
    "high": 3,
    "not_automated": 0
   },
@@ -30,8 +30,8 @@
    "not_automated": 0
   },
   "D6": {
-   "flagged": 16,
-   "high": 5,
+   "flagged": 15,
+   "high": 4,
    "not_automated": 5
   },
   "D7": {
@@ -58,6 +58,11 @@
    "flagged": 1,
    "high": 1,
    "not_automated": 3
+  },
+  "D12": {
+   "flagged": 0,
+   "high": 0,
+   "not_automated": 4
   }
  },
  "discrepancies": [
@@ -157,35 +162,13 @@
   },
   {
    "check": "D3",
-   "id": "exp_move_HYPE",
+   "id": "exp_move_BTC",
    "severity": "warn",
-   "what": "exp_move for HYPE disagrees by 15% across live outputs",
+   "what": "exp_move for BTC disagrees by 14% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 2.71,
-    "scan.exp_move": 3.11,
-    "chief.expected_move_pct": 2.8
-   }
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_NEAR",
-   "severity": "warn",
-   "what": "exp_move for NEAR disagrees by 13% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 5.3,
-    "scan.exp_move": 5.54,
-    "chief.expected_move_pct": 6.0
-   }
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_XRP",
-   "severity": "warn",
-   "what": "exp_move for XRP disagrees by 12% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 2.69,
-    "scan.exp_move": 2.79,
-    "chief.expected_move_pct": 2.5
+    "state.vol.next_day_move_pct": 2.06,
+    "scan.exp_move": 1.91,
+    "chief.expected_move_pct": 1.8
    }
   },
   {
@@ -211,13 +194,6 @@
    "what": "tools/hivemind/scan_grader.py grades 'momentum_small' on signed_excess_return_vs_universe_median, but claim momentum_small_fade is about excess_return_vs_nonbreakout_smallcap_peers - its forward grade cannot confirm or refute the claim",
    "grader_metric": "signed_excess_return_vs_universe_median",
    "claim_metric": "excess_return_vs_nonbreakout_smallcap_peers"
-  },
-  {
-   "check": "D6",
-   "id": "claim_funding_hot_stop_hits",
-   "severity": "high",
-   "what": "PROVEN claim funding_hot_stop_hits reaches no live bot code (funding_hot not in core, execution, multi_strategy_main.py)",
-   "claim_id": "funding_hot_stop_hits"
   },
   {
    "check": "D6",
@@ -345,7 +321,7 @@
    "check": "D11",
    "id": "stream_market_depth:depth bands are cumulative",
    "severity": "high",
-   "what": "stream stream_market_depth: 2/183 recent rows break 'depth bands are cumulative'",
+   "what": "stream stream_market_depth: 2/189 recent rows break 'depth bands are cumulative'",
    "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
    "example": "{\"ts\": \"2026-10-13T00:07:02Z\", \"symbol\": \"PENGU\", \"l2\": {\"mid\": 0.0075185, \"spread\": 3e-06, \"spread_bps\": 3.9902, \"bid_depth_0_1pct\": 32887168.0, \"ask_depth_0_1pct\": 967015.0, \"imbalance_0_1pct\": 0.9429, \"bid_depth_0_5pct\": 12326145.0, \"ask_depth_0_5pct\": 26166450.0, \"imbalance_0_5pct\": -0.3596, \"bi"
   }
@@ -480,6 +456,26 @@
    "check": "D11",
    "what": "definition invariants on quantities (R, exp_move)",
    "why": "evaluated on streams + scan.json only"
+  },
+  {
+   "check": "D12",
+   "what": "R",
+   "why": "no behaviour fixture on the card yet"
+  },
+  {
+   "check": "D12",
+   "what": "exp_move",
+   "why": "no behaviour fixture on the card yet"
+  },
+  {
+   "check": "D12",
+   "what": "notional",
+   "why": "no behaviour fixture on the card yet"
+  },
+  {
+   "check": "D12",
+   "what": "smallcap_breakout",
+   "why": "no behaviour fixture on the card yet"
   }
  ]
 }
