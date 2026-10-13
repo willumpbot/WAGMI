@@ -1,0 +1,57 @@
+{
+ "section": "Meme calls (Syndicate / DTN)",
+ "kind": "direction",
+ "horizon": "7d",
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "idea_source": null,
+ "live_bot_flags": [],
+ "id": "caller_form_predicts",
+ "statement_plain": "A caller's recent hit rate predicts whether their next call doubles within 7 days",
+ "question": "Do callers on a hot streak keep hitting?",
+ "quantity": "form_hit2x_7d",
+ "metric": "hit2x_7d",
+ "status": "UNDERPOWERED",
+ "wording_tier": "unknown",
+ "status_qualifier": "PREREG_CALLER_FORM (amendments 1-2), run once: 1,478 eligible rows but 54 callers, Kish effective n 7.5. Pooled +2.4 pp, day-equal +2.7 pp, CALLER-equal -9.1 pp; caller-clustered CI [-3.1,+12.0] z 0.62 (governs). Dropping the top caller -> +7.4 pp z 2.11; top 3 -> +9.1 pp. Chat-only placebo clean. Not enough independent callers to tell.",
+ "verdict_text": "UNDERPOWERED (laptop 9d8e6181)",
+ "consumers": [
+  "display:milestone_caller_hot_streaks"
+ ],
+ "live_bot_terms": [],
+ "evidence": {
+  "source": "[L:CALLER_FORM_RESULT]",
+  "sources": [
+   "[L:CALLER_FORM_RESULT]"
+  ],
+  "doc_sha": "9d8e6181",
+  "key_number": "caller-eq -9.1 pp / pooled +2.4 pp, z 0.62",
+  "n": 1478,
+  "clustering_unit": "caller (54; Kish 7.5)",
+  "mde": 8.0,
+  "effect": 2.4,
+  "effect_unit": "pp hit2x_7d",
+  "ci": [
+   -3.1,
+   12.0
+  ],
+  "era_window": "2026-04-25..2026-10-08",
+  "data_through": "2026-10-08",
+  "impl_hash": null,
+  "no_edge_median": 0.033,
+  "no_edge_ci": null,
+  "estimator": "caller-block bootstrap"
+ },
+ "verdict": {
+  "by": "laptop",
+  "at": "2026-10-13",
+  "prereg_sha": "4c9a5f26",
+  "reviewers": []
+ },
+ "amendments": [],
+ "verified_by": "laptop",
+ "changed": "none",
+ "seeded_from": "laptop 9d8e6181",
+ "seeded_at": "2026-10-13"
+}

@@ -252,6 +252,15 @@
    },
    "claim_id": "squeeze",
    "polarity": "claim"
+  },
+  {
+   "id": "milestone_caller_hot_streaks",
+   "surface": "tools/hivemind/milestones.json",
+   "locator": {
+    "title": "Callers on a hot streak: can't tell yet"
+   },
+   "claim_id": "caller_form_predicts",
+   "polarity": "claim"
   }
  ],
  "prompts": [
