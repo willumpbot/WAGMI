@@ -5,11 +5,11 @@ statistic, no p-value and no direction. Each prereg committed to ONE interim loo
 at a stated n; computing the statistic every hour would spend that alpha silently.
 A missing source is reported as SOURCE-MISSING, never as n=0._
 
-_Updated 2026-10-12 20:21. Seal date 2026-10-11 (1 days ago)._
+_Updated 2026-10-12 21:20. Seal date 2026-10-11 (1 days ago)._
 
 | prereg | unlock condition | running n | reached? | remaining |
 |---|---|---|---|---|
-| `OI` | n_days >= 106, interim at alpha=0.005 | **1** (1 day(s) on which a 24h OI change is computable, from 49.6 h of archive over 178 coins. The unit is DAYS, not coin-days: one day is one observation of the clustered quantity the prereg sizes) | not yet | 105 more |
+| `OI` | n_days >= 106, interim at alpha=0.005 | **1** (1 day(s) on which a 24h OI change is computable, from 50.9 h of archive over 178 coins. The unit is DAYS, not coin-days: one day is one observation of the clustered quantity the prereg sizes) | not yet | 105 more |
 | `IDEAS` | n resolved >= 87, interim at alpha=0.005 | **8** (8 of 9 ideas resolved (server stats.n=3 -- disagrees, worth a look)) | not yet | 79 more |
 | `ADOPT` | both arms >= 44, interim at alpha=0.005 | **2** (adopt=2 adjust=0 skip=4 (3 ideas still inside their entry window; 3 decisions EXCLUDED as source_inferred)) | not yet | 42 more |
 

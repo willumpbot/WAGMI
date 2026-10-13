@@ -4,21 +4,21 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-12 20:21, took 671s._
+_Last run 2026-10-12 21:20, took 655s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | ok | 53760 | 1 | 171 source files skipped as unchanged |
-| `j6_archive` | ok | 25442 | 1 |  |
-| `j7_bulk` | ok | 6263 | 7 | 14 shards new, 16 unchanged |
-| `j5_backfill` | ok | 712 | 653 | 178 coins ok, 0 failed, 828 5m rows over the top 60 |
+| `j1_panels` | ok | 36578 | 1 | 172 source files skipped as unchanged |
+| `j6_archive` | ok | 0 | 0 |  |
+| `j7_bulk` | ok | 0 | 2 | 0 shards new, 30 unchanged |
+| `j5_backfill` | ok | 711 | 642 | 178 coins ok, 0 failed, 756 5m rows over the top 60 |
 | `j2_trackers` | ok | 3 | 0 |  |
-| `j4_integrity` | **FAILED** | 54 | 6 | state shrank 2517 rows+bytes (append-only: a row drop is real) |
+| `j4_integrity` | **FAILED** | 54 | 7 | state snapshot UNPARSEABLE |
 | `j3_replications` | ok | 68 | 2 | 68 obs, 4 source-missing, 4 oos day-blocks, no verdicts |
 
 ## 🔴 1 job(s) failed this run
 
-- `j4_integrity`: state shrank 2517 rows+bytes (append-only: a row drop is real)
+- `j4_integrity`: state snapshot UNPARSEABLE
 
 ## What each job does
 
