@@ -111,6 +111,16 @@ class ExitEngine:
                 if decision.exit_action == "partial":
                     if _om == EXIT_HANDS_OFF:
                         return False, "owner plan exit_mode=hands_off: no partials"
+                    # "Profits only" means partials bank PROFIT: a partial while the position is at a loss is a
+                    # loss-cut the owner did not ask for (ETH 10-13 01:46Z: -0.16R partial under profits_only).
+                    # OWNER_PROFITS_ONLY_REQUIRE_PROFIT=true blocks it; off (default) = unchanged + shadow log.
+                    _in_profit = (current_price - position.entry) * (1 if is_long else -1) > 0
+                    if not _in_profit:
+                        if os.getenv("OWNER_PROFITS_ONLY_REQUIRE_PROFIT", "false").strip().lower() in ("1", "true", "yes"):
+                            return False, (f"owner plan exit_mode={_om}: partial only while in profit "
+                                           f"(price {current_price} vs entry {position.entry})")
+                        logger.info(f"[OWNER-PROFITS-ONLY-SHADOW] {decision.symbol} would block a partial at a loss "
+                                    f"(price {current_price} vs entry {position.entry}); flag off, allowed")
                     _allow = owner_partial_allowance(position)
                     _min_q = get_min_qty(position.symbol)
                     if _allow < _min_q or position.qty <= 0:

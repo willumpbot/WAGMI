@@ -396,3 +396,27 @@ def test_plans_create_stores_exit_mode(tmp_path, monkeypatch):
     assert plans.create(dict(base, exit_mode="hands_off"))["exit_mode"] == "hands_off"
     assert plans.create(dict(base, exit_mode="bot_manages"))["exit_mode"] == "bot_manages"
     assert plans.create(dict(base, exit_mode="yolo"))["exit_mode"] == "profits_only"
+
+
+@pytest.mark.parametrize("flag,allowed", [("true", False), ("false", True)])
+def test_profits_only_partial_at_a_loss(sandbox, monkeypatch, flag, allowed):
+    monkeypatch.setenv("OWNER_PROFITS_ONLY_REQUIRE_PROFIT", flag)
+    eng = _engine(sandbox, monkeypatch)
+    res = eng.apply_exit_decision(_partial(0.3), _pos("profits_only"), 2980.0)    # LONG entry 3000 -> at a loss
+    assert res["applied"] is allowed
+    if not allowed:
+        assert "only while in profit" in res["details"]
+
+
+def test_profits_only_partial_in_profit_still_allowed_with_flag(sandbox, monkeypatch):
+    monkeypatch.setenv("OWNER_PROFITS_ONLY_REQUIRE_PROFIT", "true")
+    eng = _engine(sandbox, monkeypatch)
+    assert eng.apply_exit_decision(_partial(0.3), _pos("profits_only"), 3020.0)["applied"]
+    assert eng.apply_exit_decision(_partial(0.3), _pos("profits_only", side="SHORT"), 2980.0)["applied"]
+    assert not eng.apply_exit_decision(_partial(0.3), _pos("profits_only", side="SHORT"), 3020.0)["applied"]
+
+
+def test_require_profit_never_touches_bot_positions(sandbox, monkeypatch):
+    monkeypatch.setenv("OWNER_PROFITS_ONLY_REQUIRE_PROFIT", "true")
+    eng = _engine(sandbox, monkeypatch)
+    assert eng.apply_exit_decision(_partial(0.3), _pos("bot_manages"), 2980.0)["applied"]

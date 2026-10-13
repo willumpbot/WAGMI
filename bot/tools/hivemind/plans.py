@@ -144,9 +144,41 @@ def review(plan):
         row["review"] = rv
     except Exception as e:
         row["error"] = f"{type(e).__name__}: {e}"[:200]
-    with open(REVIEWS, "a", encoding="utf-8") as f:
-        f.write(json.dumps(row) + chr(10))
+    _append_locked(REVIEWS, json.dumps(row) + chr(10))
     return row
+
+
+def _append_locked(path, text, wait_s=30.0):
+    """Append one line under an exclusive lock file. 10-13: eight plans reviewed at once interleaved their appends
+    and tore a line, which stopped every plan from being graded for 4 hours."""
+    import os, time as _t
+    lock = str(path) + ".lock"
+    t0 = _t.time()
+    while True:
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            try:
+                if _t.time() - os.path.getmtime(lock) > 120:   # stale lock from a killed writer
+                    os.remove(lock)
+                    continue
+            except OSError:
+                pass
+            if _t.time() - t0 > wait_s:
+                fd = None
+                break
+            _t.sleep(0.05)
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(text)
+    finally:
+        if fd is not None:
+            os.close(fd)
+            try:
+                os.remove(lock)
+            except OSError:
+                pass
 
 
 def _reviews():
@@ -154,7 +186,10 @@ def _reviews():
     try:
         for l in REVIEWS.read_text(encoding="utf-8").splitlines():
             if l.strip():
-                r = json.loads(l)
+                try:   # one torn line (concurrent appends, 10-13) must never stop every plan from being graded
+                    r = json.loads(l)
+                except ValueError:
+                    continue
                 out[r["id"]] = r
     except OSError:
         pass
