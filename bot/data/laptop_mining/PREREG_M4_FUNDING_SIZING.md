@@ -108,3 +108,88 @@ expectancy.** Fixed now so a marginal expectancy win cannot be used to justify h
 
 **control → MDE → counts → ORIG17 (discovery) → NEW156 (held-out) → drawdown measure → verdict.**
 Equal-weighted beside every pooled figure.
+
+---
+
+# AMENDMENT 1 — 2026-10-13, BEFORE any policy × outcome quantity was computed
+
+**Nothing has been run. This amendment comes from reading the policy algebra while writing the
+engine, not from seeing a result.** Sealed §1–§9 above stand unchanged; this corrects two outcome
+definitions that were artifacts of construction.
+
+## A1(a) 🔴 Both pre-specified outcomes had a construction artifact
+
+Writing `notional = risk ÷ stop` out explicitly kills both of my sealed outcome units:
+
+**1. Expectancy "in bps of notional" makes P2 identical to P0, by definition.**
+P2 changes only `risk`. In bps of notional, `risk` is the denominator — so it cancels, and
+**P2 − P0 ≡ 0 exactly, for every coin, in every sample.** The sealed §4 primary outcome cannot
+measure the size-down policy at all. **An arm that is zero by construction is the same defect as a
+quantity positive by construction** — the research standard's "could this ever have come out
+negative?" applied to an arm that could only ever come out zero.
+
+**2. "Drawdown per unit risk in R" mechanically favours the wider stop.**
+R *is* the stop. P1 widens it, so the same price excursion is a **smaller** number of R — P1's
+drawdown-per-unit-risk is lower for geometric reasons alone, with no improvement in anything.
+**My sealed §6 tie-break — "the better drawdown measure wins" — would therefore have handed the
+decision to P1 automatically.** I wrote a tie-break that could only break one way.
+
+## A1(b) The fix: one policy-independent denominator for both outcomes
+
+**Both outcomes are now measured in % of equity**, which no policy appears in the denominator of:
+
+| | sealed | amended |
+|---|---|---|
+| expectancy | bps of notional | **% of equity per trade**, net of 9 bps round-trip on the notional |
+| drawdown | max adverse excursion in R | **max adverse excursion in % of equity** |
+
+The bps-of-notional figure is still **reported** for P1 and P3 (where it is meaningful, the stop
+having changed) — it is simply no longer the quantity any verdict rests on.
+
+## A1(c) 🔴 What is DETERMINISTIC and must not be presented as a finding
+
+With a common denominator the algebra is explicit, and it changes what this study can claim:
+
+- **P2 = P0 × 0.9322, exactly, on expectancy.** `1.65/1.770 = 0.93220`.
+- **P2 and P0 are byte-identical on drawdown per unit risk**, and their expectancy-to-drawdown
+  **ratio is identical**, because P2 is the same trade scaled.
+- **So `P2 − P0` is arithmetic, not an estimate. No CI, no z, no bootstrap, no verdict.** Reporting a
+  bootstrap CI on a deterministic rescaling would manufacture a statistical result out of
+  multiplication.
+
+**The one genuinely estimated contrast is `P1 − P2`:** both carry the **same notional**
+(0.9322 × baseline) and differ **only** in where the stop sits. That is exactly the mission's
+question — *"widen-the-stop vs size-down"* — and it is well posed. **P3 is P1 scaled by a further
+0.9322 and inherits P1's geometry**, so it adds no independent information either; it is reported
+for completeness.
+
+**Therefore the primary test is P1 − P2, one contrast, and the Bonferroni threshold drops from
+|z| > 2.24 to |z| > 1.96.** Loosening a threshold mid-prereg is exactly the move that should draw
+suspicion, so: it falls out of the arm count shrinking from four policies to **one estimated
+contrast**, and I am writing it down **before** seeing the number rather than after.
+
+## A1(d) Unspecified in the seal, fixed now: the exit the policies act on
+
+Sealed §3 named the stop and the risk and **never named a target or a horizon**, so the engine cannot
+be built without a choice. Fixed before running:
+
+- **target = 3.30 × `em` for every policy** (2× the *baseline* stop), held constant across policies
+  **on purpose**, so a policy moves the stop and nothing else. Scaling the target with K would
+  confound "wider stop" with "further target".
+- **horizon 72 bars (72h)**, matching M1 and M9.
+- **entries restricted to `funding_hot` coin-days**, since every policy is identical off them —
+  this is a power gain, not a filter on the outcome.
+
+## A1(e) Expectations, re-scored against the amended units
+
+Sealed §7.2 said *"if anything shows, I expect P2 to beat P1"*. **That survives and is now sharper:**
+P2 beating P1 means **the wider stop is worse than simply trading smaller at the same notional.**
+Falsifiable, and the mechanism is unchanged — a wider stop holds losing trades longer for the same
+dollar risk, and `funding_hot` days are higher-volatility.
+
+**Sealed §7.1 ("all three UNDERPOWERED") is now partly unfalsifiable and I am withdrawing it for
+P2/P3**: a deterministic quantity cannot be underpowered. It stands for **P1 − P2** alone.
+
+**Re-seal:** `1a00b1cf` (sealed) → amended hash below. No outcome quantity read.
+
+**Amended hash: `7c699867`.**
