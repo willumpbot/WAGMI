@@ -143,3 +143,82 @@ for any reason, that run is the one that counts and the fact is recorded here.**
 **The reliability threshold (§2, `form_n_known_7d ≥ 3`) and everything else stay as sealed.** The
 expected n at completion is roughly 33% of ~2,000 priceable calls with a resolved form, so about
 650 — which may clear the 15-point MDE floor that n=126 almost certainly could not.
+
+---
+
+## AMENDMENT 2 — made 2026-10-13 BEFORE any form × outcome statistic was computed
+
+**Reason: the server flagged caller concentration when shipping step 2, and it invalidates this
+prereg's clustering unit. The flag came before I read anything, and I have computed nothing.**
+
+### A. What the refreshed corpus actually looks like
+
+| | at seal (384 rows) | now (2,442 rows) |
+|---|---|---|
+| eligible at `form_n_known_7d ≥ 3` | 126 | **1,528** |
+| `form_n_prior_calls` median | 22 | **82** |
+| `form_n_prior_calls` p90 | 59 | **388** |
+| **`form_n_prior_calls` max** | **71** | **540** |
+
+**Server's count, which I verified: 126 human callers, the top caller has 541 calls, the top 10 hold
+~1,477 of the 1,528 eligible rows — about 97%.** My own proxy agrees: **46% of eligible rows come
+from callers with >100 prior calls, 16% from >300.**
+
+### B. 🔴 Why this breaks §3 as sealed
+
+§3 clusters on the **call-day** and bootstraps whole call-days. **That does nothing about caller
+concentration, because the same caller recurs across many days.** With ~10 effective callers:
+
+- **the day-block CI is too NARROW**, so **z is inflated** — the test over-rejects;
+- **and the error runs in the dangerous direction.** The funding replication's placebo was
+  conservative, so a positive there was trustworthy. **Here a positive could be manufactured by the
+  clustering choice alone.**
+
+**Worse, the hypothesis itself is caller-level.** "A caller's prior hit rate predicts their next
+call" is a statement about callers. **With one caller supplying 541 calls, a day-clustered positive
+could mean "this one caller is good", which is n=1 for the thing being claimed.**
+
+**At 384 rows this was invisible — max prior calls was 71.** The concentration only became legible at
+the full corpus, which is exactly when the prereg said to run. **So this is a defect discovered at the
+gate, not a preference discovered after a result.**
+
+### C. The amendment
+
+**1. The CALLER becomes the primary clustering unit.** Caller-block bootstrap, 4,000 reps, resampling
+whole callers. **The day-clustered figure is still reported, beside it, as the secondary.**
+
+**2. On disagreement the CALLER-clustered CI governs.** The hypothesis is caller-level and the
+concentration makes day-clustering anti-conservative. **Fixed now, before any number exists.**
+
+**3. Report the effective sample size**, not just 1,528: number of distinct callers, and Kish
+effective n from the call-count distribution. **Any claim quoting 1,528 as the sample is prohibited.**
+
+**4. NEW pre-specified robustness check — leave-the-top-caller-out.** Re-run excluding the single
+largest caller, and separately excluding the top 3. **If the effect does not survive, the finding is
+one caller's track record and must be reported as such.** With 97% of rows in 10 callers this is the
+single most informative check available, and it is specified before any read.
+
+**5. This requires a clustering key, which this machine must not have as an identity.** The server
+offered **an opaque per-run random `caller_cluster` id that cannot be linked across runs.** That is
+accepted: it groups rows without naming anyone, is useless outside the run, and **`caller_hash` is
+still never read here.**
+
+**6. THE TEST DOES NOT RUN UNTIL THAT KEY ARRIVES.** Running now would mean knowingly using a
+clustering unit I have just established is wrong in the anti-conservative direction.
+
+### D. Deferral, recorded so it cannot be misread later
+
+**The sealed trigger — fetch completion — fired on 2026-10-13 ~06:40 and the gate is OPEN.** The run
+is deferred twice now: first because the server's step-2 join had not been rebuilt, now because the
+clustering key does not exist.
+
+**Neither deferral is mine to choose, and in neither case have I seen a form × outcome quantity.**
+**When the key lands it runs ONCE, immediately, and this amendment is part of what runs.** If I ever
+run it before then, that run is the one that counts — the original seal's rule, unchanged.
+
+### E. Expectation, restated under the amendment
+
+**§8 said UNDERPOWERED with a small positive. I now expect that MORE strongly, not less.** 1,528 rows
+looked like power; **~126 callers with 97% of the mass in 10 of them is thin**, and the leave-one-out
+check in C4 is likely to be the result rather than the robustness note. **Writing that down before
+seeing anything.**
