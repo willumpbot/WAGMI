@@ -20,11 +20,11 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 2647,
+  "v": 2672,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 13404,
+  "v": 13405,
   "u": "bytes"
  },
  "archive": {
@@ -52,11 +52,11 @@
   "u": "rows"
  },
  "call_snapshots.jsonl": {
-  "v": 24,
+  "v": 31,
   "u": "rows"
  },
  "candles_5m": {
-  "v": 36234,
+  "v": 36312,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -64,7 +64,7 @@
   "u": "bytes"
  },
  "chief_calls.jsonl": {
-  "v": 188,
+  "v": 194,
   "u": "rows"
  },
  "chief_scorecard.json": {
@@ -76,7 +76,7 @@
   "u": "rows"
  },
  "conf_floor_resolutions.jsonl": {
-  "v": 891,
+  "v": 892,
   "u": "rows"
  },
  "confidence_state.json": {
@@ -92,7 +92,7 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 51976,
+  "v": 52866,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
@@ -116,7 +116,7 @@
   "u": "rows"
  },
  "expmove_log.jsonl": {
-  "v": 190,
+  "v": 191,
   "u": "rows"
  },
  "floor_decisions_log.jsonl.gz": {
@@ -128,11 +128,11 @@
   "u": "rows"
  },
  "geometry_shadow.json": {
-  "v": 645,
+  "v": 647,
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 632,
+  "v": 638,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -152,11 +152,11 @@
   "u": "rows"
  },
  "owner_plans.jsonl": {
-  "v": 7,
+  "v": 15,
   "u": "rows"
  },
  "plans.json": {
-  "v": 12518,
+  "v": 19418,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -168,11 +168,11 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 17517,
+  "v": 17864,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 527,
+  "v": 530,
   "u": "rows"
  },
  "scanner.py": {
@@ -192,7 +192,7 @@
   "u": "bytes"
  },
  "syndicate_calls_anon.jsonl": {
-  "v": 214,
+  "v": 216,
   "u": "rows"
  },
  "syndicate_features_anon.jsonl": {
@@ -228,7 +228,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 255,
+  "v": 260,
   "u": "rows"
  }
 }
