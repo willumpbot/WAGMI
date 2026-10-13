@@ -33,7 +33,7 @@ from typing import Optional, Dict, List, Any
 from execution.position_state import (
     IDLE, OPEN, TP1_HIT, TRAILING, CLOSED, transition,
 )
-from execution.precision import round_price, round_qty
+from execution.precision import round_price, round_qty, get_min_qty
 from execution.trade_profile import TradeProfile, ExitParams, MEDIUM, _BASE_PROFILES
 
 
@@ -89,6 +89,42 @@ def _is_owner(pos) -> bool:
     bot's exit logic but must never feed bot learning/stats/telemetry/cooldowns. Inert for every
     bot-opened position (their strategy is never "owner_plan")."""
     return getattr(pos, "strategy", "") == "owner_plan"
+
+
+def _owner_exit_mode(pos) -> str:
+    """OWNER_PLAN_EXEC exit mode (core.owner_plan_exec.owner_exit_mode). 'bot_manages' for every
+    bot-opened position without importing anything, so bot exits are byte-for-byte unaffected."""
+    if not _is_owner(pos):
+        return "bot_manages"
+    try:
+        from core.owner_plan_exec import owner_exit_mode
+        return owner_exit_mode(pos)
+    except Exception:
+        return "profits_only"  # fail-closed for the owner: never move their stop on an import error
+
+
+def _owner_exit_locked(pos) -> bool:
+    """True for owner positions in profits_only/hands_off: the bot must not move the stop
+    (breakeven ratchet, profit lock, TP1 breakeven, trailing, hold-limit tighten) nor fully close
+    it for any reason other than the owner's stop or target."""
+    return _owner_exit_mode(pos) in ("profits_only", "hands_off")
+
+
+def _owner_partial_allowance(pos) -> float:
+    try:
+        from core.owner_plan_exec import owner_partial_allowance
+        return owner_partial_allowance(pos)
+    except Exception:
+        return 0.0
+
+
+def _owner_block_log(pos, source: str, action: str, reason: str) -> None:
+    """One owner_exit_decisions.jsonl row per (position, source, action) — these paths run every tick."""
+    try:
+        from core.owner_plan_exec import log_owner_exit_block
+        log_owner_exit_block(pos, source, action, reason, once=True)
+    except Exception:
+        pass
 
 
 class _OwnerSkip(Exception):
@@ -1034,6 +1070,10 @@ class PositionManager:
 
         events = []
         is_long = pos.side == "LONG"
+        # OWNER_PLAN_EXEC exit mode: profits_only/hands_off owner positions keep the owner's stop
+        # exactly where it is (no ratchet / profit lock / TP1 breakeven / trailing). Always False
+        # for bot positions.
+        _owner_locked = _owner_exit_locked(pos)
 
         # Track MFE/MAE (max favorable/adverse excursion from entry)
         if current_price > pos.highest_price:
@@ -1051,7 +1091,7 @@ class PositionManager:
         # ONLY tightens the STOP; it never closes the position and never blocks
         # a legitimate LLM exit (the Exit Agent close path is independent and
         # still wins on a loser). Fail-open inside the helper.
-        if pos.state == OPEN:
+        if pos.state == OPEN and not _owner_locked:
             self._apply_breakeven_ratchet(pos, current_price, is_long)
 
         # 0a. PROFIT LOCK: move SL toward breakeven once we're up enough.
@@ -1105,7 +1145,8 @@ class PositionManager:
                 _sl_before_lock = pos.sl
 
                 # Breakeven trigger — fee buffer escapes microstructure noise
-                if unrealized_r >= _be_trigger:
+                # (skipped for owner positions in profits_only/hands_off: their stop never moves)
+                if unrealized_r >= _be_trigger and not _owner_locked:
                     fee_buffer = pos.entry * (self.taker_fee_bps * 2 / 10000.0 + 0.001)
                     be_sl = (pos.entry + fee_buffer) if is_long else (pos.entry - fee_buffer)
                     if is_long and pos.sl < be_sl:
@@ -1199,8 +1240,8 @@ class PositionManager:
                     8
                 )
 
-                # Lock-in trigger (above breakeven)
-                if unrealized_r >= _lock_trigger:
+                # Lock-in trigger (above breakeven) — owner-locked positions skipped as above
+                if unrealized_r >= _lock_trigger and not _owner_locked:
                     if is_long:
                         lock_sl = pos.entry + sl_dist * _lock_frac
                         if pos.sl < lock_sl:
@@ -1241,7 +1282,8 @@ class PositionManager:
         # 0b. Check stop loss — on flash crashes, SL must fire before early exit
         sl_hit = (current_price <= pos.sl) if is_long else (current_price >= pos.sl)
         if sl_hit:
-            action = "TRAILING_STOP" if pos.state == TRAILING else "SL"
+            # (an owner-locked position's stop was never trailed, so it is the owner's SL)
+            action = "TRAILING_STOP" if (pos.state == TRAILING and not _owner_locked) else "SL"
             fill_price = self._sl_fill_price(pos, current_price, is_long)
             event = self._close_position(pos, fill_price, action)
             events.append(event)
@@ -1391,11 +1433,25 @@ class PositionManager:
         if pos.state == OPEN:
             tp1_hit = (current_price >= pos.tp1) if is_long else (current_price <= pos.tp1)
             if tp1_hit:
-                event = self._partial_close_tp1(pos, current_price)
-                events.append(event)
+                # OWNER_PLAN_EXEC: hands_off -> no TP1 partial at all; profits_only -> TP1 partial
+                # only while the 50%-of-original partial cap has room (clipped inside, and the
+                # stop is NOT moved to breakeven). Position stays OPEN otherwise -> owner's
+                # stop/target end it.
+                _tp1_ok = True
+                if _owner_locked:
+                    _allow = _owner_partial_allowance(pos)
+                    if _allow < get_min_qty(pos.symbol) or _allow <= 0:
+                        _tp1_ok = False
+                        _owner_block_log(pos, "tp1_partial", "partial",
+                                         "TP1 partial not allowed (hands_off or 50% partial cap reached)")
+                if _tp1_ok:
+                    event = self._partial_close_tp1(pos, current_price)
+                    if event is not None:
+                        events.append(event)
 
         # 3. Update trailing stop (if in TRAILING state)
-        if pos.state == TRAILING and self.enable_trailing:
+        # (never for owner positions in profits_only/hands_off: the owner's stop stays put)
+        if pos.state == TRAILING and self.enable_trailing and not _owner_locked:
             self._update_trailing_stop(pos, current_price)
 
         # 4. Check TP2 (full close)
@@ -1770,8 +1826,20 @@ class PositionManager:
             logger.debug(f"Live TP1 runner-scaler computation failed, using neutral 1.0: {e}")
             return 1.0
 
-    def _partial_close_tp1(self, pos: Position, price: float) -> TradeEvent:
-        """Close tp1_close_pct at TP1, move SL above breakeven, activate trailing."""
+    def _partial_close_tp1(self, pos: Position, price: float) -> Optional[TradeEvent]:
+        """Close tp1_close_pct at TP1, move SL above breakeven, activate trailing.
+
+        OWNER_PLAN_EXEC profits_only: the leg is clipped to the 50%-of-original partial cap and the
+        stop is NOT moved (state still goes TRAILING, but trailing is skipped for these positions).
+        Returns None (no leg, state unchanged) if an owner-locked leg would round to zero — an
+        owner-locked position is never fully closed here.
+        """
+        _owner_locked = _owner_exit_locked(pos)
+        if _owner_locked:
+            _cap_qty = round_qty(pos.symbol, min(pos.qty * pos.tp1_close_pct, _owner_partial_allowance(pos)))
+            if _cap_qty <= 0 or _cap_qty >= pos.qty or round_qty(pos.symbol, pos.qty - _cap_qty) <= 0:
+                _owner_block_log(pos, "tp1_partial", "partial", "TP1 leg rounds to zero under the 50% cap")
+                return None
         # State: OPEN -> TP1_HIT -> TRAILING
         pos._transition(TP1_HIT, f"TP1 @ {price}")
 
@@ -1805,6 +1873,11 @@ class PositionManager:
                 )
 
         close_qty = round_qty(pos.symbol, pos.qty * dynamic_close_pct)
+        if _owner_locked:
+            # Owner plan leg = the profile's TP1 fraction clipped to the 50%-of-original partial
+            # cap (profits_only); validated above to leave a non-zero remainder, never a full close.
+            close_qty = _cap_qty
+            dynamic_close_pct = close_qty / pos.qty if pos.qty > 0 else 0.0
         # Guard: if close_qty rounds to full qty, keep minimum remainder for trailing
         remaining_after = round_qty(pos.symbol, pos.qty - close_qty)
         if remaining_after <= 0 and pos.qty > close_qty:
@@ -1839,7 +1912,10 @@ class PositionManager:
         # Formula: breakeven = entry - (locked_pnl / (remaining_qty * leverage)) for LONG
         remaining_qty = pos.qty
         fee_buffer = pos.entry * (self.taker_fee_bps * 2 / 10000.0 + 0.001)
-        if remaining_qty > 0 and pos.leverage > 0:
+        if _owner_locked:
+            # OWNER_PLAN_EXEC profits_only: bank the leg, leave the owner's stop where it is.
+            logger.info(f"[{pos.symbol}] owner plan (profits_only): TP1 leg banked, stop kept at {pos.sl}")
+        elif remaining_qty > 0 and pos.leverage > 0:
             # How much room does the locked-in profit give us?
             profit_cushion = pos.realized_pnl / (remaining_qty * self._pnl_lev(pos.leverage))
             if pos.side == "LONG":
@@ -2419,10 +2495,20 @@ class PositionManager:
             return None
         close_qty = qty if (qty is not None and qty > 0) else pos.qty * pct
         close_qty = round_qty(symbol, min(close_qty, pos.qty))
+        if _owner_exit_locked(pos):
+            # OWNER_PLAN_EXEC defence-in-depth (the exit-engine gate is the primary check):
+            # hands_off -> no partials; profits_only -> clip to the 50%-of-original cap.
+            _allow = _owner_partial_allowance(pos)
+            if _allow <= 0:
+                _owner_block_log(pos, "partial_close", "partial", f"{action}: no partial allowance left")
+                return None
+            close_qty = round_qty(symbol, min(close_qty, _allow))
         # A "partial" must never zero the position — keep a minimum remainder
         # (mirrors the _partial_close_tp1 rounding guard).
         remaining_after = round_qty(symbol, pos.qty - close_qty)
         if remaining_after <= 0:
+            if _owner_exit_locked(pos):
+                return None  # owner-locked: never let a "partial" become a full close
             close_qty = round_qty(symbol, pos.qty * 0.90)
         if close_qty <= 0 or close_qty >= pos.qty:
             return None
@@ -2503,6 +2589,24 @@ class PositionManager:
             return None
 
         if pos.open_time is None:
+            return None
+
+        # OWNER_PLAN_EXEC: profits_only/hands_off owner positions are never time-closed or
+        # stop-tightened by the bot's hold limits — only the owner's stop/target end them.
+        if _owner_exit_locked(pos):
+            # ...except the owner's OWN time limit: a plan carries max_hold_h (default 48h in plans.py); past it,
+            # close at market like a plan that timed out. Without this, an owner position could stay open forever.
+            try:
+                _mh = float(((getattr(pos, "entry_reasons", None) or {}).get("plan_max_hold_h")) or 0)
+            except (TypeError, ValueError):
+                _mh = 0.0
+            if _mh > 0:
+                _now = getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
+                _age = ((_now - pos.open_time).total_seconds() if isinstance(pos.open_time, datetime)
+                        else _now.timestamp() - pos.open_time) / 3600
+                if _age >= _mh:
+                    logger.info(f"[HOLD_LIMIT] {symbol} owner plan reached its own max hold {_mh:.0f}h - closing")
+                    return self.force_close(symbol, price, reason="OWNER_PLAN_MAX_HOLD")
             return None
 
         # Use profile-specific hold limit (always apply, use min of config and profile)
