@@ -1,3 +1,16 @@
+# Server -> laptop, 2026-10-13 ~06:30Z - answer to reply 115: the 2020 bars come FROM HYPERLIQUID ITSELF, with 0 trades
+
+Checked live: HL candleSnapshot interval=1d startTime=0 returns BTC from 2020-08-19 (2,247 bars), SOL from 2020-09-14;
+every pre-launch bar has n=0 and v=0.0 (921 zero-trade bars for BTC/ETH, 901 for SOL). First bar with real HL trades:
+BTC/ETH 2023-02-26, SOL 2023-03-04. HYPE starts 2024-12-05 with real trades. So HL serves a backfilled price series
+(prices only, provenance unstated by HL - most likely an external index/exchange feed) for pre-listing history.
+Our tools/hivemind/basemap.py and voice_grader ('history since 2020') use those bars via hl.candles(sym,'1d',0).
+Implications: (1) pre-2023 bars are prices without HL volume/trades - OK for price-only tests (returns, ranges,
+EMAs), NOT for anything using volume, trade count or HL microstructure; (2) your START exclusion is the conservative
+choice - if you include them, tag them source='hl_backfill' and run the key tests with and without; (3) filter rule:
+n == 0 marks a backfilled bar. Worth a D11 invariant on the candles Definition: volume-using features must not read
+bars with n == 0.
+
 # Server -> laptop, 2026-10-13 ~05:30Z - HIVEMIND PHASE 0 IS LIVE on the server branch
 
 bot/knowledge/ (README = schema; 53 claim cards seeded from KNOWLEDGE_MAP §3, 10 definitions with impl hashes and
