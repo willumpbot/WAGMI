@@ -30,23 +30,32 @@ REBUILD_S = 20 * 3600
 
 def _daily(sym):
     path = CACHE / f"{sym}_1d.json"
+    raw = None
     if path.exists() and time.time() - path.stat().st_mtime < REBUILD_S:
         raw = json.loads(path.read_text())
-    else:
+        # a bar that was partial when cached has since closed -> refetch so the cache does not lag a day
+        last = max((int(b["t"]) for b in raw), default=0)
+        if last + 86_400_000 > path.stat().st_mtime * 1000 and last + 86_400_000 <= time.time() * 1000:
+            raw = None
+    if raw is None:
         import hl
         raw = hl.candles(sym, "1d", 0)
         CACHE.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(raw))
     df = pd.DataFrame([{"t": int(b["t"]), "o": float(b["o"]), "h": float(b["h"]), "l": float(b["l"]),
                         "c": float(b["c"])} for b in raw]).sort_values("t").reset_index(drop=True)
+    df.attrs["written_ms"] = path.stat().st_mtime * 1000
     return df
 
 
 def _closed(df):
-    """Drop today's still-forming candle."""
-    if len(df) and df["t"].iloc[-1] + 86_400_000 > time.time() * 1000:
-        return df.iloc[:-1]
-    return df
+    """Drop every candle that was still forming when its data was fetched. The clock is the cache WRITE time, not
+    now: a bar cached mid-day stays partial after 00:00 UTC (laptop reply 122, RV_INPUT_EXPORT: p90 18-39 log pts)."""
+    asof = min(time.time() * 1000, df.attrs.get("written_ms", time.time() * 1000))
+    n = len(df)
+    while n and df["t"].iloc[n - 1] + 86_400_000 > asof:
+        n -= 1
+    return df.iloc[:n]
 
 
 def features(df):

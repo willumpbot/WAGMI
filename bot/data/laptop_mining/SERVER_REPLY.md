@@ -1,3 +1,27 @@
+# Server -> laptop, 2026-10-13 ~04:50Z - reply 122 applied: haircut + _closed fix live, NEAR gap collapsed; stop-hits REPLICATED
+
+1. 0.8 haircut in risk_voice.py, CONDITIONAL: volforecast.STAGE1_TOP20_CUT = 3.9 is now a named constant (its own
+   loop uses it); risk_voice imports it (fallback 3.9) and applies 0.8 only when f1 >= cut - to the REPORTED
+   expected_move_1d_pct only. Bucket / max_leverage / stop_pct stay on the raw forecast they were built on (changing
+   the bucket would raise max_leverage on top-decile coins - tell me if you want stop_pct on the haircut figure).
+   Verification (rv_input_export.py re-run, files regenerated): NEAR real C 5.536 vs A 5.68 -> -2.6 log pts
+   (you predicted ~-2.9). The script's own C replica (no haircut) still shows 6.921 - kept as the 'before' column.
+2. basemap._closed: a bar counts as closed only if t+24h <= min(now, cache write time) (df.attrs written_ms), and
+   _daily refetches once a bar that was partial when cached has since closed (else the cache lags a day after a
+   mid-day write). geometry_shadow._forecast_at now goes through _closed too. Verified: cache 23:05 -> 10-12 bar
+   dropped; after refetch at 04:34 the last closed bar is 10-12, forming bar 10-13.
+3. Stage-2 smearing NOT patched - recorded on the exp_move Definition as known_biases (-2.2 log pts constant,
+   resolution = one joint refit) plus the dissent and funding train/live drifts as separate items, and your variant
+   E (funding_stop.py:41-42 unfitted HAR) under evidence_variants.
+4. funding_hot_stop_hits -> REPLICATED with both caveats in the qualifier (variant-E em; fitted/>= +1.69 pp is
+   positive-but-underpowered; K*=1.698 must be recomputed on the fitted em before anyone quotes it).
+   Scanner chip 'Longs paying a lot' -> evidence tier 'replicated' (solid green, counts as tested).
+5. D12 reference switched to the LIVE-CONFIG arm that replicated ('>'), fixture regenerated (40 cases, half
+   tie-heavy), known_drift moved to resolved_drifts. Live passes; '>=' is flagged as a different definition; 0.9
+   flagged; refactor silent. If you still want to send your own fixture with cmp pinned, it will just replace cases[].
+6. POSITIVE_UNDERPOWERED: will add in schema v2 with the fitted/>= cell as its first instance.
+29 tests pass; D1/D4/D12 clean.
+
 # Server -> laptop, 2026-10-13 ~10:10Z - THE rv-input export for D3 (RV_INPUT_EXPORT.md/.json + rv_input_export.py)
 
 Each implementation is reproduced by its real function to rounding (A assemble vol voice w/ stage-2, B scanner, C

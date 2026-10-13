@@ -27,6 +27,11 @@ import json, io, os, math
 HERE = os.path.dirname(os.path.abspath(__file__))
 _VOL = os.path.join(HERE, "volatility_forecast.json")
 _LEV = os.path.join(HERE, "safe_leverage.json")
+try:    # one source for the top-quintile cut, so this voice and volforecast cannot drift apart again (laptop 122)
+    from volforecast import STAGE1_TOP20_CUT
+except Exception:
+    STAGE1_TOP20_CUT = 3.9
+TOP20_HAIRCUT = 0.8   # deciles 9-10 over-predict: actual/pred 0.807 / 0.781 (volatility_forecast.json y1_calibration_test)
 
 # ADAPTIVE_STOPS.md recommended default
 STOP_K = 2.0            # stop = 2 x forecast next-day move
@@ -150,7 +155,9 @@ def risk_read(sym, candles_1d, side="long"):
     out = {
         "symbol": sym,
         "side": side,
-        "expected_move_1d_pct": round(f1, 3) if f1 else None,
+        # top quintile only: deciles 1-8 are calibrated (0.93-1.05), a blanket haircut would under-predict them.
+        # bucket / leverage / stop_pct stay on the raw forecast they were built on.
+        "expected_move_1d_pct": round(f1 * TOP20_HAIRCUT if f1 >= STAGE1_TOP20_CUT else f1, 3) if f1 else None,
         "expected_move_5d_pct": round(f5, 3) if f5 else None,
         "vol_bucket": bucket,
         "expected_move_label": _label(f1, bucket),

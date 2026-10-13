@@ -441,19 +441,18 @@ def _d12_tree(tmp, scanner_src):
     return _ctx(tmp)
 
 
-def test_d12_sees_the_known_operator_drift(tmp_path):
-    """Laptop 121: the evidence was measured with '>=', the live flag uses '>'. D12 must SEE that (as a known, owned
-    drift -> warn), and a live '>=' must match the tested definition exactly."""
+def test_d12_live_funding_hot_behaves_as_tested(tmp_path):
+    """Reference = the live-config arm that replicated out of sample ('>', laptop cbc9a324). Live must match it exactly,
+    and the study-era '>=' must be SEEN as a different definition (laptop 121: ties at the HL default rate)."""
     src = (BOT / "tools" / "hivemind" / "scanner.py").read_text(encoding="utf-8")
-    f = check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "live", src))[0]
-    assert [x["id"] for x in f] == ["funding_hot"] and f[0]["severity"] == "warn" and "known" in f[0]["what"]
+    assert check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "live", src))[0] == []
     ge = src.replace("return [v > cut for v in values]", "return [v >= cut for v in values]")
-    assert check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "ge", ge))[0] == []
+    assert [x["id"] for x in check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "ge", ge))[0]] == ["funding_hot"]
 
 
 def test_d12_flags_semantic_drift_not_refactors(tmp_path):
     src = (BOT / "tools" / "hivemind" / "scanner.py").read_text(encoding="utf-8")
-    ge = src.replace("return [v > cut for v in values]", "return [v >= cut for v in values]")   # the tested definition
+    ge = src                                                                                   # the tested definition
     drift = ge.replace("pos = 0.8 * (len(fs) - 1)", "pos = 0.9 * (len(fs) - 1)")             # 0.80 -> 0.90
     assert drift != ge
     assert [f["id"] for f in check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "a", drift))[0]] == ["funding_hot"]

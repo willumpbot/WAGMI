@@ -8,6 +8,7 @@ the coin's own 99th-percentile 1-day adverse move over the last year, divided by
 
 Flag evidence levels:
   tested   - backed by an out-of-sample test (LEVELS.md, VOL forecast walk-forward)
+  replicated - held up out of sample once (a fresh set of coins)
   supported - strong in-sample evidence, not yet confirmed out of sample
   context  - useful to know, no tested directional edge
 Writes data/hivemind/scan.json.
@@ -35,10 +36,10 @@ FLAGS = {
     "vol_expanding": ("Moves getting bigger", "context",
                       "Recent 5-day volatility is well above its 22-day level. Tested (laptop SIZE_FLAGS + red team): "
                       "adds nothing beyond the expected-move number, which already includes it. Use the expected move."),
-    "funding_hot": ("Longs paying a lot", "supported",
-                    "Funding in the top 20% of the scanned coins: longs are crowded. So far a normal stop has been hit somewhat more "
-                    "often on days like this (+2.7 pts, ~24% vs ~22%; t=3.0 on 1,010 days with exactly this definition) - "
-                    "strong evidence, not yet confirmed on fresh coins. Size down a little. Not direction."),
+    "funding_hot": ("Longs paying a lot", "replicated",
+                    "Funding in the top 20% of the scanned coins: longs are crowded. A normal stop gets hit more often on days like "
+                    "this (+2.4 pts), and moves run ~5% bigger - both held up on 156 coins the tests never saw. "
+                    "Size down a little. Not direction."),
     "funding_cold": ("Shorts paying", "context", "Negative funding: shorts are paying longs. Context only."),
     "volume_surge": ("Volume surge", "context", "24h volume over 2.5x its 20-day average. Suggestive: next day's move "
                      "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),
@@ -185,7 +186,7 @@ def run():
         if h:
             r["flags"].append("funding_hot")
     for r in rows:
-        r["n_tested"] = sum(FLAGS[k][1] == "tested" for k in r["flags"])
+        r["n_tested"] = sum(FLAGS[k][1] in ("tested", "replicated") for k in r["flags"])
     by_vol = sorted(rows, key=lambda r: -r["vol24_usd"])
     big15 = {r["coin"] for r in by_vol[:15]}
     for r in rows:
@@ -194,7 +195,7 @@ def run():
         if (r["coin"] not in big15 and r["px"] > r["hi20"]
                 and ((r.get("vol_ratio") or 0) > 2.0 or (em and abs(r["chg_24h"]) > 1.5 * em and r["chg_24h"] > 0))):
             r["flags"].append("momentum_small")
-            r["n_tested"] = sum(FLAGS[k][1] == "tested" for k in r["flags"])
+            r["n_tested"] = sum(FLAGS[k][1] in ("tested", "replicated") for k in r["flags"])
     rows.sort(key=lambda r: (-r["n_tested"], -len(r["flags"]), -r["vol24_usd"]))
     out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "n": len(rows), "errors": errors,
            "flags": {k: {"label": v[0], "evidence": v[1], "why": v[2]} for k, v in FLAGS.items()}, "coins": rows}

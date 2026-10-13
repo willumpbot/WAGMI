@@ -20,6 +20,7 @@ def _coef():
 
 
 VOLERR = BOT / "data" / "laptop_mining" / "vol_error.json"
+STAGE1_TOP20_CUT = 3.9   # top-20% boundary of stage-1 y1 predictions (VOLATILITY.md deciles 9-10 over-predict ~20-26%)
 TOP20_CUT = 3.66   # top-20% boundary of stage-2 predictions on the laptop's test set (VOL_ERROR.md deciles 8|9)
 
 
@@ -47,7 +48,7 @@ def forecast(closes, disagree6=None, funding_day_pct=None, btc_rv5=None):
     rv1, rv5, rv22 = abs(rets[-1]), sd(rets[-5:]), sd(rets[-22:])
     c = _coef()
     out = {"rv1": round(rv1, 2), "rv5": round(rv5, 2), "rv22": round(rv22, 2)}
-    for tgt, cut in (("y1", 3.9), ("y5", None)):
+    for tgt, cut in (("y1", STAGE1_TOP20_CUT), ("y5", None)):
         b = c[f"{tgt}_beta"]
         z = b[0] + b[1] * math.log(rv1 + EPS) + b[2] * math.log(rv5 + EPS) + b[3] * math.log(rv22 + EPS)
         pred = math.exp(z) * c[f"{tgt}_smearing"]

@@ -1,54 +1,54 @@
 {
- "generated_utc": "2026-10-13T03:33:37+00:00",
+ "generated_utc": "2026-10-13T04:34:09+00:00",
  "coins": {
   "BTC": {
    "inputs_shared": {
-    "dis6": 1.3333333333333333,
-    "dissent_families": 2,
+    "dis6": 2.6666666666666665,
+    "dissent_families": 4,
     "n_families": 9,
-    "funding_hourly": 5.296e-06,
-    "funding_day_pct": 0.0127104,
-    "btc_rv5_basemap": 1.5697059537200584,
+    "funding_hourly": 1.25e-05,
+    "funding_day_pct": 0.030000000000000002,
+    "btc_rv5_basemap": 1.6188129847497863,
     "btc_rv5_fresh": 1.6188129847497863
    },
    "A_assemble_vol_voice": {
     "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
     "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
-    "cache_written_utc": "2026-10-12 23:05",
+    "cache_written_utc": "2026-10-13 04:34",
     "last_bar_t_utc": "2026-10-12 00:00",
-    "last_bar_complete": false,
-    "last_bar_close_used": 81952.0,
+    "last_bar_complete": true,
+    "last_bar_close_used": 81812.0,
     "last_bar_true_close": 81812.0,
-    "rv1": 2.1223232094017552,
-    "rv5": 1.5697059537200584,
-    "rv22": 1.9073625233785125,
+    "rv1": 2.2895293148132656,
+    "rv5": 1.6188129847497863,
+    "rv22": 1.916772946234937,
     "units": "percent (simple returns x100)",
-    "z": 0.07957091567149926,
+    "z": 0.09268311942269214,
     "stage2": {
      "stage1_smearing_used": 1.7017,
-     "raw1": 1.842638785984849,
+     "raw1": 1.8669589381359126,
      "log_terms": {
       "intercept": -0.36316,
-      "disagree": -0.08529333333333333,
-      "funding": 0.006627710976000001,
-      "btc_rv5": -0.017102193885262854
+      "disagree": -0.17058666666666666,
+      "funding": 0.015643200000000003,
+      "btc_rv5": -0.018270621611297364
      },
-     "adj": 0.6319608605625687,
+     "adj": 0.5848650814918207,
      "stage2_smearing": 1.6959,
-     "pred2_pre_haircut": 1.974834157993941,
+     "pred2_pre_haircut": 1.8517855872659357,
      "top20_haircut_0.8_applied": false,
-     "final": 1.974834157993941
+     "final": 1.8517855872659357
     },
-    "final": 1.974834157993941,
+    "final": 1.8517855872659357,
     "real_function_output": {
-     "rv1": 2.12,
-     "rv5": 1.57,
-     "rv22": 1.91,
+     "rv1": 2.29,
+     "rv5": 1.62,
+     "rv22": 1.92,
      "model": "HAR + stage-2 error model (VOL_ERROR.md)",
-     "next_day_move_pct": 1.97,
-     "next_5d_vol_pct": 2.56
+     "next_day_move_pct": 1.85,
+     "next_5d_vol_pct": 2.59
     },
-    "state_file_value": 1.97,
+    "state_file_value": 1.83,
     "zero_volume_bars_in_last23": 0,
     "zero_volume_bars_in_full_cache": 921
    },
@@ -74,17 +74,17 @@
     "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
     "bar_source": "same basemap df as A (.tail(60))",
     "last_bar_t_utc": "2026-10-12 00:00",
-    "last_bar_complete": false,
-    "rv1": 2.1223232094017552,
-    "rv5": 1.5697059537200584,
-    "rv22": 1.9073625233785125,
+    "last_bar_complete": true,
+    "rv1": 2.2895293148132656,
+    "rv5": 1.6188129847497863,
+    "rv22": 1.916772946234937,
     "units": "percent",
-    "z": 0.07957091567149926,
+    "z": 0.09268311942269214,
     "smearing": 1.7389,
     "stage2": null,
     "haircut": null,
-    "final": 1.8829197772516035,
-    "real_function_output": 1.883,
+    "final": 1.9077715799051174,
+    "real_function_output": 1.908,
     "state_file_stop_long": 3.766
    },
    "D_chief": {
@@ -95,36 +95,36 @@
     "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
    },
    "decomposition": {
-    "A_vs_C_total_logpts": 0.04766077911398958,
+    "A_vs_C_total_logpts": -0.029785492921378238,
     "A_vs_C_parts_logpts": {
      "rv_inputs (zA-zC)": 0.0,
      "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
      "stage2 intercept": -0.36316,
-     "stage2 disagree term": -0.08529333333333333,
-     "stage2 funding term": 0.006627710976000001,
-     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2 disagree term": -0.17058666666666666,
+     "stage2 funding term": 0.015643200000000003,
+     "stage2 btc_rv5 term": -0.018270621611297364,
      "stage2_smearing 1.6959": 0.5282135733672177,
      "top20 haircut x0.8": 0.0
     },
     "C_on_fresh_bars": 1.9077715799051174,
-    "C_bar_source_effect_logpts": 0.013112203751192875,
-    "B_vs_C_total_logpts": 0.013112203751192814,
+    "C_bar_source_effect_logpts": 0.0,
+    "B_vs_C_total_logpts": 0.0,
     "B_vs_C_parts_logpts": {
-     "bar source (zB-zC)": 0.013112203751192875,
+     "bar source (zB-zC)": 0.0,
      "0.8 haircut >=3.9": 0.0
     },
-    "A_on_fresh_bars": 1.998562556122044,
-    "A_bar_source_effect_logpts": 0.011943776025158377
+    "A_on_fresh_bars": 1.8517855872659357,
+    "A_bar_source_effect_logpts": 0.0
    }
   },
   "ETH": {
    "inputs_shared": {
-    "dis6": 2.727272727272727,
+    "dis6": 3.0,
     "dissent_families": 5,
-    "n_families": 11,
-    "funding_hourly": -4.6892e-06,
-    "funding_day_pct": -0.01125408,
-    "btc_rv5_basemap": 1.5697059537200584,
+    "n_families": 10,
+    "funding_hourly": 1.05523e-05,
+    "funding_day_pct": 0.025325520000000004,
+    "btc_rv5_basemap": 1.6188129847497863,
     "btc_rv5_fresh": 1.6188129847497863
    },
    "A_assemble_vol_voice": {
@@ -145,17 +145,17 @@
      "raw1": 2.128962248856409,
      "log_terms": {
       "intercept": -0.36316,
-      "disagree": -0.17446363636363635,
-      "funding": -0.0058683274752,
-      "btc_rv5": -0.017102193885262854
+      "disagree": -0.19191,
+      "funding": 0.013205739148800003,
+      "btc_rv5": -0.018270621611297364
      },
-     "adj": 0.5708697763765711,
+     "adj": 0.5711320229595314,
      "stage2_smearing": 1.6959,
-     "pred2_pre_haircut": 2.0611293681300267,
+     "pred2_pre_haircut": 2.062076211273943,
      "top20_haircut_0.8_applied": false,
-     "final": 2.0611293681300267
+     "final": 2.062076211273943
     },
-    "final": 2.0611293681300267,
+    "final": 2.062076211273943,
     "real_function_output": {
      "rv1": 3.29,
      "rv5": 2.44,
@@ -211,14 +211,14 @@
     "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
    },
    "decomposition": {
-    "A_vs_C_total_logpts": -0.05400556236751374,
+    "A_vs_C_total_logpts": -0.05354628710591181,
     "A_vs_C_parts_logpts": {
      "rv_inputs (zA-zC)": 0.0,
      "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
      "stage2 intercept": -0.36316,
-     "stage2 disagree term": -0.17446363636363635,
-     "stage2 funding term": -0.0058683274752,
-     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2 disagree term": -0.19191,
+     "stage2 funding term": 0.013205739148800003,
+     "stage2 btc_rv5 term": -0.018270621611297364,
      "stage2_smearing 1.6959": 0.5282135733672177,
      "top20 haircut x0.8": 0.0
     },
@@ -229,18 +229,18 @@
      "bar source (zB-zC)": 0.014468817989278987,
      "0.8 haircut >=3.9": 0.0
     },
-    "A_on_fresh_bars": 2.0887263113419716,
-    "A_bar_source_effect_logpts": 0.01330039026324457
+    "A_on_fresh_bars": 2.0921289058546835,
+    "A_bar_source_effect_logpts": 0.014468817989278902
    }
   },
   "SOL": {
    "inputs_shared": {
-    "dis6": 2.4000000000000004,
-    "dissent_families": 4,
-    "n_families": 10,
-    "funding_hourly": 2.242e-06,
-    "funding_day_pct": 0.0053808,
-    "btc_rv5_basemap": 1.5697059537200584,
+    "dis6": 3.0,
+    "dissent_families": 6,
+    "n_families": 12,
+    "funding_hourly": 4.7048e-06,
+    "funding_day_pct": 0.011291520000000001,
+    "btc_rv5_basemap": 1.6188129847497863,
     "btc_rv5_fresh": 1.6188129847497863
    },
    "A_assemble_vol_voice": {
@@ -261,26 +261,26 @@
      "raw1": 2.7374320267384866,
      "log_terms": {
       "intercept": -0.36316,
-      "disagree": -0.15352800000000003,
-      "funding": 0.002805764352,
-      "btc_rv5": -0.017102193885262854
+      "disagree": -0.19191,
+      "funding": 0.005887850188800001,
+      "btc_rv5": -0.018270621611297364
      },
-     "adj": 0.5880258146781934,
+     "adj": 0.5669677974871786,
      "stage2_smearing": 1.6959,
-     "pred2_pre_haircut": 2.7298574951430687,
+     "pred2_pre_haircut": 2.632097525041751,
      "top20_haircut_0.8_applied": false,
-     "final": 2.7298574951430687
+     "final": 2.632097525041751
     },
-    "final": 2.7298574951430687,
+    "final": 2.632097525041751,
     "real_function_output": {
      "rv1": 4.77,
      "rv5": 3.25,
      "rv22": 2.79,
      "model": "HAR + stage-2 error model (VOL_ERROR.md)",
-     "next_day_move_pct": 2.73,
+     "next_day_move_pct": 2.63,
      "next_5d_vol_pct": 3.55
     },
-    "state_file_value": 2.73,
+    "state_file_value": 2.64,
     "zero_volume_bars_in_last23": 0,
     "zero_volume_bars_in_full_cache": 901
    },
@@ -327,14 +327,14 @@
     "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
    },
    "decomposition": {
-    "A_vs_C_total_logpts": -0.02439583417667744,
+    "A_vs_C_total_logpts": -0.060864176065911824,
     "A_vs_C_parts_logpts": {
      "rv_inputs (zA-zC)": 0.0,
      "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
      "stage2 intercept": -0.36316,
-     "stage2 disagree term": -0.15352800000000003,
-     "stage2 funding term": 0.002805764352,
-     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2 disagree term": -0.19191,
+     "stage2 funding term": 0.005887850188800001,
+     "stage2 btc_rv5 term": -0.018270621611297364,
      "stage2_smearing 1.6959": 0.5282135733672177,
      "top20 haircut x0.8": 0.0
     },
@@ -345,58 +345,58 @@
      "bar source (zB-zC)": 0.011406106815032457,
      "0.8 haircut >=3.9": 0.0
     },
-    "A_on_fresh_bars": 2.757948447865874,
-    "A_bar_source_effect_logpts": 0.010237679088997904
+    "A_on_fresh_bars": 2.6622913803803594,
+    "A_bar_source_effect_logpts": 0.011406106815032494
    }
   },
   "HYPE": {
    "inputs_shared": {
-    "dis6": 2.4000000000000004,
+    "dis6": 2.0,
     "dissent_families": 4,
-    "n_families": 10,
+    "n_families": 12,
     "funding_hourly": 1.25e-05,
     "funding_day_pct": 0.030000000000000002,
-    "btc_rv5_basemap": 1.5697059537200584,
+    "btc_rv5_basemap": 1.6188129847497863,
     "btc_rv5_fresh": 1.6188129847497863
    },
    "A_assemble_vol_voice": {
     "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
     "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
-    "cache_written_utc": "2026-10-12 23:06",
+    "cache_written_utc": "2026-10-13 04:34",
     "last_bar_t_utc": "2026-10-12 00:00",
-    "last_bar_complete": false,
-    "last_bar_close_used": 82.169,
+    "last_bar_complete": true,
+    "last_bar_close_used": 80.894,
     "last_bar_true_close": 80.894,
-    "rv1": 5.16919028713877,
-    "rv5": 3.3470329685434357,
-    "rv22": 2.9848191086384817,
+    "rv1": 6.6406610654602405,
+    "rv5": 3.7939788479537317,
+    "rv22": 3.1071237302910033,
     "units": "percent (simple returns x100)",
-    "z": 0.5211255349629047,
+    "z": 0.5819232654876767,
     "stage2": {
      "stage1_smearing_used": 1.7017,
-     "raw1": 2.865529891185039,
+     "raw1": 3.0451526061946117,
      "log_terms": {
       "intercept": -0.36316,
-      "disagree": -0.15352800000000003,
+      "disagree": -0.12794,
       "funding": 0.015643200000000003,
-      "btc_rv5": -0.017102193885262854
+      "btc_rv5": -0.018270621611297364
      },
-     "adj": 0.5956232194939439,
+     "adj": 0.610347127855316,
      "stage2_smearing": 1.6959,
-     "pred2_pre_haircut": 2.8945216547130888,
+     "pred2_pre_haircut": 3.1519999894194237,
      "top20_haircut_0.8_applied": false,
-     "final": 2.8945216547130888
+     "final": 3.1519999894194237
     },
-    "final": 2.8945216547130888,
+    "final": 3.1519999894194237,
     "real_function_output": {
-     "rv1": 5.17,
-     "rv5": 3.35,
-     "rv22": 2.98,
+     "rv1": 6.64,
+     "rv5": 3.79,
+     "rv22": 3.11,
      "model": "HAR + stage-2 error model (VOL_ERROR.md)",
-     "next_day_move_pct": 2.89,
-     "next_5d_vol_pct": 3.69
+     "next_day_move_pct": 3.15,
+     "next_5d_vol_pct": 3.87
     },
-    "state_file_value": 2.89,
+    "state_file_value": 2.97,
     "zero_volume_bars_in_last23": 0,
     "zero_volume_bars_in_full_cache": 0
    },
@@ -422,17 +422,17 @@
     "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
     "bar_source": "same basemap df as A (.tail(60))",
     "last_bar_t_utc": "2026-10-12 00:00",
-    "last_bar_complete": false,
-    "rv1": 5.16919028713877,
-    "rv5": 3.3470329685434357,
-    "rv22": 2.9848191086384817,
+    "last_bar_complete": true,
+    "rv1": 6.6406610654602405,
+    "rv5": 3.7939788479537317,
+    "rv22": 3.1071237302910033,
     "units": "percent",
-    "z": 0.5211255349629047,
+    "z": 0.5819232654876767,
     "smearing": 1.7389,
     "stage2": null,
     "haircut": null,
-    "final": 2.9281717857328933,
-    "real_function_output": 2.928,
+    "final": 3.1117211417475525,
+    "real_function_output": 3.112,
     "state_file_stop_long": 5.856
    },
    "D_chief": {
@@ -443,76 +443,76 @@
     "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
    },
    "decomposition": {
-    "A_vs_C_total_logpts": -0.011558398528677639,
+    "A_vs_C_total_logpts": 0.01286117374528813,
     "A_vs_C_parts_logpts": {
      "rv_inputs (zA-zC)": 0.0,
      "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
      "stage2 intercept": -0.36316,
-     "stage2 disagree term": -0.15352800000000003,
+     "stage2 disagree term": -0.12794,
      "stage2 funding term": 0.015643200000000003,
-     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2 btc_rv5 term": -0.018270621611297364,
      "stage2_smearing 1.6959": 0.5282135733672177,
      "top20 haircut x0.8": 0.0
     },
     "C_on_fresh_bars": 3.1117211417475525,
-    "C_bar_source_effect_logpts": 0.060797730524772,
-    "B_vs_C_total_logpts": 0.06079773052477209,
+    "C_bar_source_effect_logpts": 0.0,
+    "B_vs_C_total_logpts": 0.0,
     "B_vs_C_parts_logpts": {
-     "bar source (zB-zC)": 0.060797730524772,
+     "bar source (zB-zC)": 0.0,
      "0.8 haircut >=3.9": 0.0
     },
-    "A_on_fresh_bars": 3.072369747751467,
-    "A_bar_source_effect_logpts": 0.05962930279873781
+    "A_on_fresh_bars": 3.1519999894194237,
+    "A_bar_source_effect_logpts": 0.0
    }
   },
   "NEAR": {
    "inputs_shared": {
-    "dis6": 2.6666666666666665,
-    "dissent_families": 4,
-    "n_families": 9,
+    "dis6": 1.7999999999999998,
+    "dissent_families": 3,
+    "n_families": 10,
     "funding_hourly": 1.25e-05,
     "funding_day_pct": 0.030000000000000002,
-    "btc_rv5_basemap": 1.5697059537200584,
+    "btc_rv5_basemap": 1.6188129847497863,
     "btc_rv5_fresh": 1.6188129847497863
    },
    "A_assemble_vol_voice": {
     "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
     "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
-    "cache_written_utc": "2026-10-12 23:06",
+    "cache_written_utc": "2026-10-13 04:34",
     "last_bar_t_utc": "2026-10-12 00:00",
-    "last_bar_complete": false,
-    "last_bar_close_used": 5.0768,
+    "last_bar_complete": true,
+    "last_bar_close_used": 5.09,
     "last_bar_true_close": 5.09,
-    "rv1": 13.945249597423503,
-    "rv5": 13.757560364948763,
-    "rv22": 7.9352244472446065,
+    "rv1": 13.72150182218832,
+    "rv5": 13.70201397672068,
+    "rv22": 7.914993030619861,
     "units": "percent (simple returns x100)",
-    "z": 1.3842863415125586,
+    "z": 1.381248915845435,
     "stage2": {
      "stage1_smearing_used": 1.7017,
-     "raw1": 6.7931455259506865,
+     "raw1": 6.772543156292569,
      "log_terms": {
       "intercept": -0.36316,
-      "disagree": -0.17058666666666666,
+      "disagree": -0.11514599999999998,
       "funding": 0.015643200000000003,
-      "btc_rv5": -0.017102193885262854
+      "btc_rv5": -0.018270621611297364
      },
-     "adj": 0.5855488534602965,
+     "adj": 0.6182060754971936,
      "stage2_smearing": 1.6959,
-     "pred2_pre_haircut": 6.745812929832076,
+     "pred2_pre_haircut": 7.100440461802184,
      "top20_haircut_0.8_applied": true,
-     "final": 5.3966503438656614
+     "final": 5.6803523694417475
     },
-    "final": 5.3966503438656614,
+    "final": 5.6803523694417475,
     "real_function_output": {
-     "rv1": 13.95,
-     "rv5": 13.76,
-     "rv22": 7.94,
+     "rv1": 13.72,
+     "rv5": 13.7,
+     "rv22": 7.91,
      "model": "HAR + stage-2 error model (VOL_ERROR.md)",
-     "next_day_move_pct": 5.4,
-     "next_5d_vol_pct": 7.6
+     "next_day_move_pct": 5.68,
+     "next_5d_vol_pct": 7.58
     },
-    "state_file_value": 5.4,
+    "state_file_value": 5.7,
     "zero_volume_bars_in_last23": 0,
     "zero_volume_bars_in_full_cache": 991
    },
@@ -538,17 +538,17 @@
     "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
     "bar_source": "same basemap df as A (.tail(60))",
     "last_bar_t_utc": "2026-10-12 00:00",
-    "last_bar_complete": false,
-    "rv1": 13.945249597423503,
-    "rv5": 13.757560364948763,
-    "rv22": 7.9352244472446065,
+    "last_bar_complete": true,
+    "rv1": 13.72150182218832,
+    "rv5": 13.70201397672068,
+    "rv22": 7.914993030619861,
     "units": "percent",
-    "z": 1.3842863415125586,
+    "z": 1.381248915845435,
     "smearing": 1.7389,
     "stage2": null,
     "haircut": null,
-    "final": 6.94164703242384,
-    "real_function_output": 6.942,
+    "final": 6.920594284819385,
+    "real_function_output": 5.536,
     "state_file_stop_long": 13.883
    },
    "D_chief": {
@@ -559,36 +559,36 @@
     "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
    },
    "decomposition": {
-    "A_vs_C_total_logpts": -0.2517606165095536,
+    "A_vs_C_total_logpts": -0.1974883775689214,
     "A_vs_C_parts_logpts": {
      "rv_inputs (zA-zC)": 0.0,
      "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
      "stage2 intercept": -0.36316,
-     "stage2 disagree term": -0.17058666666666666,
+     "stage2 disagree term": -0.11514599999999998,
      "stage2 funding term": 0.015643200000000003,
-     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2 btc_rv5 term": -0.018270621611297364,
      "stage2_smearing 1.6959": 0.5282135733672177,
      "top20 haircut x0.8": -0.2231435513142097
     },
     "C_on_fresh_bars": 6.920594284819385,
-    "C_bar_source_effect_logpts": -0.0030374256671235056,
-    "B_vs_C_total_logpts": -0.2261809769813331,
+    "C_bar_source_effect_logpts": 0.0,
+    "B_vs_C_total_logpts": -0.2231435513142097,
     "B_vs_C_parts_logpts": {
-     "bar source (zB-zC)": -0.0030374256671235056,
+     "bar source (zB-zC)": 0.0,
      "0.8 haircut >=3.9": -0.2231435513142097
     },
-    "A_on_fresh_bars": 5.374000488079781,
-    "A_bar_source_effect_logpts": -0.004205853393157885
+    "A_on_fresh_bars": 5.6803523694417475,
+    "A_bar_source_effect_logpts": 0.0
    }
   },
   "XRP": {
    "inputs_shared": {
-    "dis6": 2.4000000000000004,
-    "dissent_families": 4,
-    "n_families": 10,
-    "funding_hourly": 1.674e-06,
-    "funding_day_pct": 0.0040176000000000005,
-    "btc_rv5_basemap": 1.5697059537200584,
+    "dis6": 2.727272727272727,
+    "dissent_families": 5,
+    "n_families": 11,
+    "funding_hourly": -4.7863e-06,
+    "funding_day_pct": -0.01148712,
+    "btc_rv5_basemap": 1.6188129847497863,
     "btc_rv5_fresh": 1.6188129847497863
    },
    "A_assemble_vol_voice": {
@@ -609,26 +609,26 @@
      "raw1": 2.7163260394859274,
      "log_terms": {
       "intercept": -0.36316,
-      "disagree": -0.15352800000000003,
-      "funding": 0.002094937344,
-      "btc_rv5": -0.017102193885262854
+      "disagree": -0.17446363636363635,
+      "funding": -0.0059898438528,
+      "btc_rv5": -0.018270621611297364
      },
-     "adj": 0.5876079785699078,
+     "adj": 0.5701338610214719,
      "stage2_smearing": 1.6959,
-     "pred2_pre_haircut": 2.7068850975404035,
+     "pred2_pre_haircut": 2.6263885248089576,
      "top20_haircut_0.8_applied": false,
-     "final": 2.7068850975404035
+     "final": 2.6263885248089576
     },
-    "final": 2.7068850975404035,
+    "final": 2.6263885248089576,
     "real_function_output": {
      "rv1": 4.79,
      "rv5": 2.6,
      "rv22": 3.01,
      "model": "HAR + stage-2 error model (VOL_ERROR.md)",
-     "next_day_move_pct": 2.71,
+     "next_day_move_pct": 2.63,
      "next_5d_vol_pct": 3.52
     },
-    "state_file_value": 2.71,
+    "state_file_value": 2.63,
     "zero_volume_bars_in_last23": 0,
     "zero_volume_bars_in_full_cache": 999
    },
@@ -675,14 +675,14 @@
     "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
    },
    "decomposition": {
-    "A_vs_C_total_logpts": -0.025106661184677418,
+    "A_vs_C_total_logpts": -0.055295506471148094,
     "A_vs_C_parts_logpts": {
      "rv_inputs (zA-zC)": 0.0,
      "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
      "stage2 intercept": -0.36316,
-     "stage2 disagree term": -0.15352800000000003,
-     "stage2 funding term": 0.002094937344,
-     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2 disagree term": -0.17446363636363635,
+     "stage2 funding term": -0.0059898438528,
+     "stage2 btc_rv5 term": -0.018270621611297364,
      "stage2_smearing 1.6959": 0.5282135733672177,
      "top20 haircut x0.8": 0.0
     },
@@ -693,8 +693,8 @@
      "bar source (zB-zC)": 0.004110720460361261,
      "0.8 haircut >=3.9": 0.0
     },
-    "A_on_fresh_bars": 2.7148612742647624,
-    "A_bar_source_effect_logpts": 0.002942292734326856
+    "A_on_fresh_bars": 2.6372070946786397,
+    "A_bar_source_effect_logpts": 0.004110720460361138
    }
   }
  },

@@ -7,11 +7,11 @@
  "quantity": "funding_hot",
  "metric": "stop_hit_rate",
  "horizon": "1d",
- "status": "SUPPORTED",
- "status_qualifier": "strongest in-sample evidence; not yet out of sample",
- "verdict_text": "SUPPORTED (laptop reply 118, 2bc463da): +2.68 pp t 3.04, 17/17 leave-one-out, placebo calibrated; never tested out of sample",
- "wording_tier": "supported",
- "revalidate": "separate prereg on the 156 held-out coins",
+ "status": "REPLICATED",
+ "status_qualifier": "replicated out-of-sample on 156 held-out coins (PREREG_STOPHITS_WIDE 81d016b7): claim config +2.37 pp t 7.1, live config (fitted em, >) +2.40 pp t 6.1. The original evidence used funding_stop.py's own unfitted HAR (variant E), not the bot's em; on the fitted em with >= it is +1.69 pp, positive but underpowered vs its 2.0 pp MDE. The K*=1.698 '2.9% wider stop' number was calibrated on the naive em - recompute before acting on it.",
+ "verdict_text": "REPLICATED (laptop cbc9a324 / reply 122): both primaries replicate, agree to 0.03 pp; K-curve monotone",
+ "wording_tier": "replicated",
+ "revalidate": null,
  "consumers": [
   "display:milestone_crowded_longs_stops_hit_a_bit_more_often",
   "display:scanner_flag_funding_hot",
@@ -30,13 +30,16 @@
    "[L:FUNDING_STOP_AUDIT]"
   ],
   "doc_sha": null,
-  "key_number": "+2.68 pp, t 3.04",
+  "key_number": "+2.40 pp OOS live config (+2.37 claim config)",
   "n": null,
   "clustering_unit": null,
   "mde": 0.01,
-  "effect": null,
-  "effect_unit": null,
-  "ci": null,
+  "effect": 2.4,
+  "effect_unit": "pp stop-hit rate (live config)",
+  "ci": [
+   1.63,
+   3.16
+  ],
   "era_window": null,
   "data_through": null,
   "impl_hash": null,
@@ -54,6 +57,11 @@
    "at": "2026-10-13",
    "by": "laptop 2bc463da",
    "what": "PROVEN -> SUPPORTED: internal robustness only, no out-of-sample test"
+  },
+  {
+   "at": "2026-10-13",
+   "by": "laptop cbc9a324",
+   "what": "SUPPORTED -> REPLICATED; evidence em = unfitted HAR (variant E)"
   }
  ],
  "idea_source": null,

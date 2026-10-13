@@ -118,6 +118,7 @@ def _forecast_at(sym, ts):
     if df is None:
         return None
     day0 = int(ts // 86400) * 86_400_000
+    df = basemap._closed(df)          # bars that were complete when cached (laptop 122)
     closes = df[df["t"] < day0]["c"].tolist()[-40:]
     f = volforecast.forecast(closes)
     return f and f.get("next_day_move_pct")

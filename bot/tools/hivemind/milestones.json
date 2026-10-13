@@ -216,10 +216,10 @@
   "what": "On 176 real trades a higher floor only means fewer trades; shuffled confidence did as well. No change."
  },
  {
-  "date": "2026-10-11",
-  "kind": "open",
-  "title": "Crowded longs: stops hit a bit more often (strong, not yet confirmed on new coins)",
-  "what": "On days when a coin's funding is in the top 20% (strictly above the cut), a normal stop is hit ~2.7 pts more often (t=3.0, 1,010 days). Live flag now matches what was tested. Size down a little."
+  "date": "2026-10-13",
+  "kind": "found",
+  "title": "Crowded longs: stops hit a bit more often (held up on 156 new coins)",
+  "what": "When a coin's funding is in the top 20%, a normal stop gets hit ~2.4 pts more often - re-checked on 156 coins the test never saw, with the exact flag the terminal uses. Size down a little. Not direction."
  },
  {
   "date": "2026-10-11",
