@@ -9384,6 +9384,26 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         except Exception as _edge_e:
             logger.debug(f"[{symbol}] living-edge size mult skipped: {_edge_e}")
 
+        # RISK_CAP_HARD_CLAMP (final qty, real stop): the LIVING-EDGE mult above
+        # (up to 1.5x) and the min-notional floors run AFTER the coordinator's
+        # sizing, so realized risk-at-stop can exceed MAX_RISK_PCT_CEILING even
+        # when the agent obeyed it (NEAR 2026-09-21/10-08: 0.5% -> 0.75%).
+        # Bound |actual_entry - adj_sl| * qty / equity here, scaling DOWN only.
+        # Off (default) = qty unchanged + [RISK-CLAMP-SHADOW] log when it binds.
+        try:
+            from execution.risk_cap import apply_risk_cap as _apply_risk_cap
+            _q_capped = _apply_risk_cap(
+                qty, actual_entry, adj_sl, self.risk_mgr.equity or 0.0,
+                context=f"[{trace_id}][{symbol}] final")
+            if _q_capped < qty:
+                qty = round_qty(symbol, _q_capped)
+                if qty <= 0:
+                    logger.warning(
+                        f"[{trace_id}][{symbol}] LLM-FIRST qty=0 after risk cap")
+                    return
+        except Exception as _rc_e:
+            logger.debug(f"[{symbol}] risk cap skipped: {_rc_e}")
+
         order_result = self.order_executor.open_position(
             symbol=symbol,
             side=_order_side,
