@@ -40,7 +40,7 @@
    "id": "milestone_crowded_longs_bigger_days_survived_red_t",
    "surface": "tools/hivemind/milestones.json",
    "locator": {
-    "title": "Crowded longs = bigger days (supported, not yet proven)"
+    "title": "Crowded longs = bigger days (held up on 156 new coins)"
    },
    "claim_id": "funding_hot_bigger_day",
    "polarity": "claim"

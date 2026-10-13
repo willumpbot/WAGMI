@@ -43,7 +43,7 @@ FILES = {
     "expmove_log.jsonl": BOT / "data" / "hivemind" / "expmove_log.jsonl",   # exp_move vs rv5 per coin-day (laptop reply 54)
     "call_snapshots.jsonl": BOT / "data" / "hivemind" / "tg" / "call_snapshots.jsonl",   # public call-time pool state (no caller/text)
     "stop_shadow.json": BOT / "data" / "hivemind" / "stop_shadow.json",   # live 5m shadow stops per bot entry (X2 follow-up)
-    "board_feed.json": BOT / "data" / "hivemind" / "board_feed.json",   # live facts for the Nunu Command Board
+    # board_feed.json retired 2026-10-13 (owner: hivemind core before any board surface); last copy stays in exports
     "discrepancies.json": BOT / "data" / "knowledge" / "discrepancies.json",   # HIVEMIND D1-D11 findings, hourly
     "entry_mom.jsonl": BOT / "data" / "hivemind" / "entry_mom.jsonl",   # signed_mom_24h per entry (PREREG_ENTRY_TIMING s3)
 }

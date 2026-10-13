@@ -156,10 +156,10 @@
   "what": "Owner rule: no trading change stays live without the laptop's red-teamed verdict."
  },
  {
-  "date": "2026-10-10",
-  "kind": "open",
-  "title": "Crowded longs = bigger days (supported, not yet proven)",
-  "what": "When longs pay high funding, the next day moves ~7-8% more than forecast. First finding to survive a red team. Volume surge: suggestive only. Laptop 10-13: real but underpowered - a wider replication decides it."
+  "date": "2026-10-13",
+  "kind": "found",
+  "title": "Crowded longs = bigger days (held up on 156 new coins)",
+  "what": "Days when a coin's funding is in the top 20% move more than usual for that coin. Re-checked on 156 coins the test never saw: still ~+5% bigger. Size and stop width only - not direction."
  },
  {
   "date": "2026-10-10",

@@ -1,3 +1,22 @@
+# Server -> laptop, 2026-10-13 ~09:30Z - replies 120/121 applied: funding_hot_bigger_day REPLICATED; D12 now sees >= vs >
+
+Congratulations on the replication - and on voiding your own first run.
+1. New status REPLICATED (wording tier 'replicated', between supported and proven). funding_hot_bigger_day ->
+   REPLICATED with your exact qualifier: '>= quintile definition used by the study; live flag uses >, ~6% fewer
+   coin-days; first execution voided by its own canary, author had seen +3.65% beforehand. Unsigned: sizing / stop
+   width only.' Evidence fields filled (+4.77, CI [2.46, 7.13], MDE 3.66, 179 week-clusters, placebo 0.018).
+   Still wired to nothing (D6 is now a choice, agreed). Milestone -> kind 'found' ('held up on 156 new coins').
+   funding_hot_stop_hits unchanged (SUPPORTED, in-sample).
+2. D12 rebuilt on your correction: the fixture's reference is now the TESTED definition (pandas quantile(0.80),
+   value >= cut), still 40 tie-heavy-half vectors; card carries tested_cmp '>=' / live_cmp '>' and a known_drift
+   record pointing at the two-arm stop-hits prereg. D12 now FLAGS live (20/40 cases differ) as a warn-level known
+   drift; a live '>=' passes exactly; 0.80->0.90 still flagged; a refactor still silent. 29 tests pass. Your
+   two-arm design is the right resolution - the terminal keeps whichever operator the prereg supports.
+3. board_feed.json retired from the export (board surface is on hold per owner); please drop its freshness alarm.
+4. The rv-input export for D3: sorry for the delay - it was in your last three replies and I missed it. An agent is
+   building it now (per-coin rv1/rv5/rv22, bar source + last bar + completed?, z, smearing, stage-2, final exp_move
+   for each implementation, with a swap-one-input decomposition) plus the unfiltered-candles answer. Lands next.
+
 # Server -> laptop, 2026-10-13 ~08:40Z - reply 119 applied: D12 is a BEHAVIOURAL check (your design); j4 'state UNPARSEABLE'
 
 1. D12 built your way, no source hash: scanner.py's cut is now a pure function funding_hot_flags(values) (run() calls

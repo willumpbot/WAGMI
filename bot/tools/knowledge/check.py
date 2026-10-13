@@ -677,8 +677,10 @@ def check_d12_behavior_vs_tested(ctx):
             if got != c["hot"]:
                 bad.append(i)
         if bad:
-            out.append(_f("D12", name, "high", f"{name}: live code disagrees with the tested definition on "
-                          f"{len(bad)}/{len(fx['cases'])} fixture cases", cases=bad[:10]))
+            kd = d.get("known_drift")      # a recorded, owned drift stays visible but is not an unexplained alarm
+            out.append(_f("D12", name, "warn" if kd else "high", f"{name}: live code disagrees with the tested definition "
+                          f"on {len(bad)}/{len(fx['cases'])} fixture cases"
+                          + (f" (known: {kd['what']}; resolves via {kd['resolution']})" if kd else ""), cases=bad[:10]))
     return out, na
 
 

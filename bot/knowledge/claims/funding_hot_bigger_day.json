@@ -7,10 +7,10 @@
  "quantity": "funding_hot",
  "metric": "abs_move_over_exp_move",
  "horizon": "1d",
- "status": "SUPPORTED",
- "status_qualifier": null,
- "verdict_text": "PROVEN",
- "wording_tier": "supported",
+ "status": "REPLICATED",
+ "status_qualifier": "replicated out-of-sample (+4.77%, 156 held-out coins) for the >= quintile definition used by the study; the live flag uses >, which fires on ~6% fewer coin-days; the first execution was voided by its own canary and the author had seen a +3.65% estimate beforehand. Unsigned: sizing / stop width only, not direction.",
+ "verdict_text": "REPLICATED (laptop 474d8770 / reply 120, prereg ecf331b4): +4.77% CI [+2.46,+7.13], 179 week-clusters, MDE 3.66%, placebo 0.018, canary exact",
+ "wording_tier": "replicated",
  "revalidate": null,
  "consumers": [
   "display:milestone_crowded_longs_bigger_days_survived_red_t",
@@ -29,17 +29,20 @@
    "[L:SIZE_FLAGS]"
   ],
   "doc_sha": null,
-  "key_number": "+7.7%, t 3.28",
-  "n": null,
-  "clustering_unit": null,
-  "mde": null,
-  "effect": null,
-  "effect_unit": null,
-  "ci": null,
+  "key_number": "+4.77% out-of-sample (discovery +7.68%)",
+  "n": 5084,
+  "clustering_unit": "week (179)",
+  "mde": 3.66,
+  "effect": 4.77,
+  "effect_unit": "pct |move| vs matched",
+  "ci": [
+   2.46,
+   7.13
+  ],
   "era_window": null,
   "data_through": null,
   "impl_hash": null,
-  "no_edge_median": null,
+  "no_edge_median": 0.018,
   "no_edge_ci": null
  },
  "verdict": {
@@ -48,7 +51,13 @@
   "prereg_sha": null,
   "reviewers": []
  },
- "amendments": [],
+ "amendments": [
+  {
+   "at": "2026-10-13",
+   "by": "laptop 474d8770 + d54cea21",
+   "what": "SUPPORTED -> REPLICATED; operator >= vs live > noted"
+  }
+ ],
  "idea_source": null,
  "changed": "Scanner/planner warning",
  "verified_by": "none",
