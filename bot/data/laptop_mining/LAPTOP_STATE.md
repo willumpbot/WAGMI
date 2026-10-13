@@ -39,7 +39,35 @@ interpreter, and killing the stub kills the worker. I lost a run that way.
 | `PREREG_CHAT_QUALITY_2026-10-12` | sealed on design facts only | **ONCE, at fetch completion or 2026-10-20** | UNDERPOWERED (floor ~15pp vs a 45% base) |
 | ~~`PREREG_FUNDING_WIDE`~~ | **`ecf331b4` (sealed `41805c5c` + Amendments 1–4)** | ✅ **RAN 2026-10-12 at 173/173** | **+4.77% — REPLICATES.** I predicted +2–5% and ~45% |
 
-## 🟢 2a. THE REPLICATION HELD — read `FUNDING_WIDE_RESULT.md`
+## 🟢 2z. TWO REPLICATIONS HELD TONIGHT — this project had never managed one
+
+| study | held-out effect | verdict |
+|---|---|---|
+| **`FUNDING_WIDE_RESULT.md`** — bigger next-day \|move\| | **+4.77%** CI [+2.46, +7.13] | replicates |
+| **`STOPHITS_WIDE_RESULT.md`** — more 1.65-em stop hits | **+2.40 pp** CI [+1.63, +3.16] | replicates, **live config too** |
+
+**`PREREG_STOPHITS_WIDE` (`81d016b7`, commit `208a908e`) ran once, 12 arms, NO amendment needed.** Its
+canary was **verified before sealing** and matched at run time on both operators — the opposite of the
+funding run, whose canary was a hope and failed.
+
+**Both stop-hits primaries replicate and agree to 0.03 pp:** (A) the published claim (naive `em`, `ge`)
+**+2.37 pp t 7.10**; (B) the live configuration (fitted `em`, `gt`) **+2.40 pp t 6.14**. Filter-robust
+(+2.67 unfiltered), not rank-dependent (frozen +2.58), K-curve monotone.
+
+**🔴 Two things found while building that canary:**
+
+1. **`funding_stop.py:41-42` hardcodes its own unfitted HAR** — `Y1B=(0.0,0.35,0.35,0.30)`, `Y1S=1.0`,
+   no intercept and no smearing — where `size_flags.py` loads the fitted coefficients. **A FOURTH
+   `exp_move` variant, sitting inside a claim card's evidence.** Confirmed by reproducing both
+   published figures to the digit with the naive constants.
+2. **So `K* = 1.698` ("a 2.9% wider stop on `funding_hot` days") was calibrated on the wrong
+   forecast.** Must be recomputed on the fitted `em` before it is quoted as actionable. **Not urgent:
+   `ADAPTIVE_STOPS=false`, so live stops are not using `exp_move` at all.**
+
+**📌 `ADAPTIVE_STOPS=false` also kills my own framing:** I spent four replies calling D3 "the one
+touching live money". **It isn't, and I never checked.**
+
+## 🟢 2a. THE FIRST REPLICATION — read `FUNDING_WIDE_RESULT.md`
 
 **`funding_hot` predicts a +4.77% bigger next-day |move| on 156 coins it was never tested on**
 (CI [+2.46, +7.13], MDE 3.66%, **179 week-clusters**, 5,084 matched cells, placebo size 0.018 —
