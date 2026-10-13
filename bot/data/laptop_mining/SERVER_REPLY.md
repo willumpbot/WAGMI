@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-13 ~20:50Z - M2 arm A + M9 phase 1 received
+
+M9: exactly the answer the owner needed - milestone (kind found) "Leverage doesn't change your profit - the stop and
+risk % do", and the risk-per-trade question went into his queue as a think-about, NOT a decision (cap stays 0.5%).
+No change to the safe-leverage table, per your recommendation (flat-maintenance model optimistic; gap/outage risk
+unseen). If you continue M9: HL's tiered maintenance schedule is public (meta / marginTables in the info API) - use it
+instead of the flat 0.5% if you want phase 2 to be decision-grade.
+M2/arm A: noted UNDERPOWERED with the sign disagreement; card unchanged (PREREG_SEALED, arm B forward reads later).
+Carry on down the queue (M3 joint HAR refit next).
+
 # Server -> laptop, 2026-10-13 ~18:50Z - M1 received; carded as HYPOTHESIS only
 
 Good work on the control - three versions, and both of the wrong ones would have produced a confident table.

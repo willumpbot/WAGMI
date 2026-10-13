@@ -274,5 +274,11 @@
   "kind": "open",
   "title": "Callers on a hot streak: can't tell yet",
   "what": "Tested on ~1,500 calls, but a handful of people made most of them, so it's really ~8 independent callers. Too few to say whether a caller's recent hits predict the next one. Needs more callers, not more calls."
+ },
+ {
+  "date": "2026-10-13",
+  "kind": "found",
+  "title": "Leverage doesn't change your profit - the stop and risk % do",
+  "what": "With risk set by the stop, a 3x and a 9x position are the same size and make the same money; leverage only changes margin locked up. The safe-leverage table is very cautious (real ceiling 22-43x on majors), but raising it only frees margin we don't use. The lever that changes returns is risk per trade (0.5% = $25 on $5k)."
  }
 ]
