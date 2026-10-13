@@ -1,12 +1,18 @@
-"""PREREG_FUNDING_WIDE (sha256 41805c5c, commit b1144936) — the out-of-sample replication.
+"""PREREG_FUNDING_WIDE (sha256 ea162445 = sealed 41805c5c + amendments 1-3) — the out-of-sample
+replication.
 
 Does `funding_hot` replicate on the 156 coins it was never tested on?
 
-`SIZE_FLAGS` found funding_hot predicts a +7.4% bigger next-day |move| than the HAR forecast alone --
-the only finding that has ever survived a red team in this project. It was discovered on 17 perps
-because 17 was all that was cached. The universe is 173. **The other 156 are a genuine held-out
-sample**, and this project has never run a real out-of-sample replication: every prior
-"confirmation" was a re-cut of the discovery sample, which is how M2 survived six readings.
+`SIZE_FLAGS` found funding_hot predicts a **+7.7% level** bigger next-day |move| than the HAR forecast
+alone (+0.0740 is the week-mean LOG coefficient; I spent a session misquoting it as the percentage).
+It is the only finding that has ever survived a red team here -- though on audit it is **"positive but
+underpowered"**: significant at t 3.28 on 145 week-clusters, yet its effect sits under its own mde80.
+The PC's knowledge registry carded it PROVEN and has since downgraded it to SUPPORTED.
+
+It was discovered on 17 perps because 17 was all that was cached. The universe is 173. **The other
+156 are a genuine held-out sample**, and this project has never run a real out-of-sample replication:
+every prior "confirmation" was a re-cut of the discovery sample, which is how M2 survived six
+readings.
 
 GATE. Refuses to run below MIN_FUNDING_FILES of the qualifying perps. `load_funding` returns {} for a
 missing file, which marks a coin silently and permanently UNFLAGGED and biases the comparison. A
@@ -18,9 +24,15 @@ perp files are dated 2026-10-08 and all 161 new ones are dated 2026-10-12. That 
 recorded, independently.
 
 POPULATIONS -- not interchangeable, per the prereg:
-    (c) NEW156  held out. THE NUMBER TO ACT ON.
-    (b) ORIG17  discovery sample. A PIPELINE CANARY, not evidence. Expected near +7.4%.
-    (a) ALL173  reported for completeness. CONTAMINATED by (b); never quoted as the replication.
+    (c)     NEW156  volume-filtered. HELD OUT. **THE NUMBER TO ACT ON.**
+    (b)     ORIG17  volume-filtered. The discovery sample once fabricated rows are removed.
+    (b_raw) ORIG17  UNFILTERED. **THE PIPELINE CANARY** -- must reproduce ~+0.0740 log / +7.7%
+                    level, because SIZE_FLAGS itself ran on the contaminated panel. Rebuilds to
+                    exactly 19,853 coin-days, matching what SIZE_FLAGS reported.
+    (c_raw) NEW156  UNFILTERED. **SECONDARY sensitivity arm only** (amendment 3). Cannot change the
+                    verdict; if it disagrees, the result is "filter-dependent" and the FILTERED arm
+                    governs, because fabricated prices are not data.
+    (a)     ALL173  completeness only. CONTAMINATED by (b); never quoted as the replication.
 
 ARMS -- widening redefines the treatment, because funding_hot is a top-quintile RANK, not a
 threshold. Top 20% of 17 coins is not top 20% of 173.
@@ -430,20 +442,28 @@ def main():
     raw17 = build(list(ORIG17), vol_filter=False)
     print("canary panel (ORIG17, NO volume filter): %d coin-days -- SIZE_FLAGS reported 19,853"
           % len(raw17))
+    # AMENDMENT 3: the headline population is 12.1% synthetic, MORE than the discovery sample's
+    # 10.7%, so the filter decision gets a sensitivity arm. SECONDARY ONLY -- it cannot change the
+    # verdict. If the two disagree the result is "filter-dependent" and the FILTERED arm governs,
+    # because fabricated prices are not data.
+    rawnew = build([s for s in syms if s not in ORIG17], vol_filter=False)
+    print("sensitivity panel (NEW156, NO volume filter): %d coin-days" % len(rawnew))
     cutoffs = orig17_cutoffs(df)
     pops = [("c_NEW156", df[~df["sym"].isin(ORIG17)]),
             ("b_ORIG17", df[df["sym"].isin(ORIG17)]),
             ("b_raw_ORIG17_NOFILTER", raw17),
+            ("c_raw_NEW156_NOFILTER_sensitivity", rawnew),
             ("a_ALL173", df)]
-    out = {"prereg": "PREREG_FUNDING_WIDE 624a9e98 (amendments 1 and 2)", "start": START,
+    out = {"prereg": "PREREG_FUNDING_WIDE ea162445 (amendments 1-3)", "start": START,
            "universe": len(syms), "funding_files": have_f, "selftest": st,
            "vol_removed_rows": df.attrs.get("vol_removed"),
            "panel_rows_filtered": len(df), "panel_rows_canary": len(raw17), "results": []}
     for arm, fn in (("rank_PRIMARY", flag_rank), ("frozen_SECONDARY",
                                                   lambda s: flag_frozen(s, cutoffs))):
         for nm, sub in pops:
-            if nm == "b_raw_ORIG17_NOFILTER" and arm != "rank_PRIMARY":
-                continue        # the canary only means anything under the original rank rule
+            if (nm.endswith("NOFILTER") or nm.endswith("sensitivity")) \
+                    and arm != "rank_PRIMARY":
+                continue    # unfiltered arms only mean anything under the original rank rule
             sub = sub.reset_index(drop=True)
             r = analyse("%s|%s" % (nm, arm), sub, fn(sub))
             r["arm"] = arm

@@ -280,3 +280,61 @@ data and it is worth paying.
 Populations, arms, the gate at ≥170/173, the Amendment 1 verdict matrix, the prohibited list, and the
 report order. **`START` stays `2023-01-01`** — the volume filter now does the work that moving `START`
 would have done, and does it per coin instead of globally. **No held-out data has been read.**
+
+---
+
+# AMENDMENT 3 — made 2026-10-12 BEFORE any read, at 115/173 funding files. **Design closes here.**
+
+**Reason: the PC recommended running the key test with and without the backfill, and measurement says
+it matters to the population that produces the headline number.**
+
+Their words: *"your START exclusion is the conservative choice — if you include them, tag them
+source='hl_backfill' and run the key tests with and without."*
+
+**Measured synthetic share of the analysis window:**
+
+| population | rows | synthetic | share |
+|---|---|---|---|
+| (b) ORIG17 | 20,156 | 2,159 | **10.7%** |
+| **(c) NEW156** | 147,524 | 17,863 | **12.1%** |
+
+**The replication population is slightly MORE contaminated than the discovery sample.** Amendment 2
+gave the filter a with/without pair for ORIG17 only — (b) against (b_raw) — so the number that
+actually decides this study had no sensitivity check.
+
+## The arm, and its interpretation fixed in advance
+
+**Add `(c_raw) NEW156 with NO volume filter`, as an explicitly SECONDARY sensitivity arm.**
+
+**It cannot change the verdict.** Fabricated prices are not data, so **the filtered arm governs,
+always.** The pre-committed rule:
+
+- **Same verdict in both** → report the primary and note it is filter-robust.
+- **Different verdict** → report **"filter-dependent"**, state both, and **the FILTERED verdict is the
+  answer.** A result that exists only when fabricated rows are included is not a result.
+
+**This is a robustness report, not a second chance at a positive.** Writing that down now so it
+cannot be reinterpreted later.
+
+## On `v == 0` versus the PC's `n == 0`
+
+They specify **`n == 0`** as the backfill marker. **Our 1d CSVs store `t,o,h,l,c,v` and not `n`**, so
+the filter uses `v == 0`. On the backfill the two coincide — they confirmed *"every pre-launch bar has
+n=0 and v=0.0"*. The only divergence would be a genuinely untraded day on a live coin, which is
+exactly the **BANANA (8) / VVV (1)** interior case that Amendment 2 drops anyway. **So `v == 0` is a
+safe proxy here, and I am recording the substitution rather than leaving it implicit.**
+
+## Amendment discipline — three is enough
+
+**Three amendments before a single run is close to the line, so here is the honest accounting:**
+
+| # | why it was unavoidable |
+|---|---|
+| **1** | the verdict rule, applied to the discovery sample, declared that sample unmeasurable. A rule that rejects the result it exists to re-test is broken. |
+| **2** | 11.9% of the panel never traded, and the filter I was relying on could not see it. |
+| **3** | the headline population turned out MORE contaminated than the discovery sample, so the filter decision needed a sensitivity check. |
+
+**All three were found by checking my own claims against data, all three are recorded with reasons,
+and none involved reading a held-out predictor-outcome quantity.** **The design is now CLOSED.** No
+further amendments except for a defect that would make the run invalid — and if one appears, it gets
+the same treatment: written down, with the reason, before the run.
