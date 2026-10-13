@@ -1,0 +1,15 @@
+{
+ "prereg": "PREREG_PARTIAL_EXIT d78bbb05",
+ "arm": "A_LIVE",
+ "trades": 295,
+ "days": 59,
+ "R_is": "each trade's own stop distance |entry-sl| (declared)",
+ "pooled_diff_bps": -25.53,
+ "eq_day_diff_bps": 14.95,
+ "ci_bps": [
+  -39.08,
+  66.04
+ ],
+ "z": 0.55,
+ "skipped": {}
+}
