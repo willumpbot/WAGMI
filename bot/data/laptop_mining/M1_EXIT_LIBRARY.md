@@ -53,7 +53,7 @@ that single-cell winners do not have.
 **Trail flavour barely matters** — chandelier, 2×ATR and 1×`exp_move` land within ~0.7 bps of each
 other at every K. **So the gain, if real, is from taking the partial, not from the trailing method.**
 
-## 3. 🔴 Four reasons not to believe this yet
+## 3. 🔴 Three reasons not to believe this yet (a fourth was raised and has since been CLOSED)
 
 **1. Multiplicity. I tested 14 rules × 5 K = 70 combinations.** At z > 1.96 roughly 3.5 false
 positives are expected by chance; **8 cells clear z 2.16.** The Bonferroni threshold for 70 tests is
@@ -67,9 +67,11 @@ discovery/held-out split that disagrees in sign is a warning, not a footnote.**
 A 10 bps edge is barely more than one round trip in fees. **Nothing here survives a worse fill
 assumption.**
 
-**4. The 1h referee is unresolved.** Earlier tonight 1h bars contradicted 5m on **22%** of 1.66%
-stops. At K = 1.0 stops are ~350 bps, comparable in tightness. **No K = 1.0 number should be believed
-until the 5m referee runs** — 72 coins, ~21 days are on disk for exactly that.
+**4. ~~The 1h referee is unresolved.~~ ✅ CLOSED — see §6.** I raised this because 1h bars
+contradicted 5m on **22%** of 1.66% stops earlier tonight. **Measured here: 0.2–0.6% disagreement with
+a mean bias under 1.1 bps.** The 22% figure was a tight-stop problem and M1's stops are more than
+twice as wide, so it never applied. **Recorded rather than deleted, because the objection was right to
+raise and the answer came from measuring it, not from arguing about it.**
 
 ## 4. What the table says about the owner's actual question
 
@@ -99,6 +101,7 @@ this panel is random entries and the bot's entries are not random.
 
 ## Limits
 - EXPLORATORY. 70 combinations, one winner at the Bonferroni line, coin split disagreeing at low K.
+- 1h refereeing is validated (§6) but `p_stop` and `mae_R` still carry 5–50 bps of per-trade noise.
 - Fills assumed exactly at the stop/target; same-bar ties resolved to the **stop** (declared).
 - Trails move on closed bars only.
 - 1h bars, 2026-03-17 → 2026-10-13, ~210 days. One venue, one regime.
