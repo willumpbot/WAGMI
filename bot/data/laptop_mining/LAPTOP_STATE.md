@@ -438,3 +438,46 @@ has ~3 d) · `depth` 30/103 d · `liq` 13/73 d. **Intersecting all five would ha
    reported "0 coins, 0.0 days". Caught only because the key list printed beside the count.
 3. **A patch "verified" by a string the new code also contained** — the check passed while the call
    site was untouched. Verify a patch by *running* it, not by grepping for your own new text.
+
+---
+
+## 13. 2026-10-13 ~22:20 — M6 closed (7 of 9); and the require-profit flag went LIVE without an owner go-ahead
+
+### 🔴 Live-money governance item, raised in reply 136
+`OWNER_PROFITS_ONLY_REQUIRE_PROFIT=true` since **21:57Z**, bot restarted. The server's note says the
+owner-facing wording *"will say"* — **future tense, so his position's behaviour changed before he was
+told.** The risk clamp set the right precedent by recording *"Owner go-ahead received"*; this has no
+such line.
+- **My SUPPORT was a technical verdict, not consent — and the reply-131 framing makes that sharper:**
+  I justified it as **preference enforcement**, which is the one argument that cannot be completed
+  without asking the person whose preference it is.
+- **I did NOT ask for a revert** (single reversible flag, config backup, it only *blocks* an action,
+  loss bounded by his stop). Reverting would be a second unrequested change.
+- **Asked for three things**, one urgent: **confirm every `profits_only` position has a live stop
+  resting on the exchange**, because the flag makes that stop the only thing that can end a losing
+  trade. **Still outstanding.**
+- **Artifact corrected** — it had been asking Nunu to decide something already decided. Now says it is
+  live, that he was not asked, and gives the one-line undo.
+
+### M6 — the largest and best-replicated effect in the project
+- **Intraday shape: peak 15:00 UTC z 1.221, trough 23:00 z 0.801, spread 0.420 vs placebo 0.050,
+  held-out shape corr +0.939.** The live daily forecast is ~22% low at 15:00 and ~20% high at 23:00.
+- **The placebo had to be redesigned:** M5's circular shift is **inert** for hour-of-day (a multiple of
+  24 preserves hour labels). M6 rotates by a non-multiple of 24.
+- **Funding hours (00/08/16) are NULL: +1.3%**, 08h below average. A named hypothesis, answered.
+- **Entry hour moves stop-hit probability 8%, not 42%** (worst 20:00, best 11:00, held-out corr +0.627),
+  and **the two profiles do not align** — a 24h hold spans all 24 hours, so only ordering differs.
+  **The shape washes out over a daily horizon, which is why the daily model works.**
+- **Weekday labelled weaker** (Sun 0.844 / Thu 1.055): no placebo run on those buckets.
+
+### 🔴 M6 breaks M5's instrument; M5's finding survives on luck
+M5's `3 × (daily em ÷ √24)` is wrong by up to **44%** by hour, and BTC shocks are detected with the same
+misspecified threshold — flag and outcome inflate in the same hours, which manufactures correlation.
+**M5's placebo absorbed it anyway**, because `rng.integers(100, len−100)` is overwhelmingly **not** a
+multiple of 24 and so scrambled hour alignment (+0.0690 vs placebo +0.0032). **Recorded as luck, not
+design.** Rule: **hour-aware scaling for any hourly expectation; daily `em` for daily horizons.**
+
+### Standing rule added
+**A placebo must be checked for INERTNESS against the specific structure being tested.** M5's shift was
+a good placebo for a regime flag and would have been a *null-by-construction* placebo for a seasonality
+profile. The same transformation is not a control for every question.
