@@ -349,3 +349,51 @@ result doc so it cannot later read as waiting for a better n.
 **I am systematically too gloomy.** Over-predicted attenuation on both replications, and called this
 prereg's power "probably fatal" with a ~14 pp floor when the real MDE was **8.0 pp**. **The corpus
 growth mattered more than I expected, twice.**
+
+---
+
+## 11. 2026-10-13 late — mission queue M1–M4 + M9 closed; reply 131 red-team delivered
+
+**Queue status:** M1 ✅ M2 (arm A) ✅ M3 ✅ M4 ✅ M9 (phase 1) ✅ — **M5 is next.**
+M6/M7/M8 untouched. M9 phase 2 wants HL's tiered maintenance schedule (`meta`/`marginTables`).
+
+### M4 — closed UNDERPOWERED, with a structural finding worth more than the z
+`PREREG_M4_FUNDING_SIZING.md` sealed `1a00b1cf`, **amended `7c699867`**, run once.
+`M4_FUNDING_SIZING_RESULT.md`.
+
+- **Primary `P1 − P2` = +0.0015% of equity, z 1.91 vs 1.96, below the 0.0022 MDE → UNDERPOWERED.**
+- **Amendment 1 killed two outcome units that were artifacts**: bps-of-notional made P2 identically
+  zero (risk cancels); drawdown-in-R mechanically favours the wider stop (R *is* the stop). Caught
+  from algebra **before** running. The run then confirmed `P2/P0 = 0.93220` exactly.
+- **🔴 The drawdown verdict flips sign with the denominator** (% of equity → P2; R → P1), and
+  **`notional = risk ÷ stop` means matching notional and dollar risk forces the same policy** — so
+  "widen vs size down" has **no normalisation-free answer**. It is a preference about which quantity
+  to hold fixed, not an empirical question.
+- **Expectation 7.2 MISSED** — I predicted size-down would win; the point estimate runs the other way.
+- **Economics: the spread across all four policies is ~$0.08/trade on $5,000.** With M9 (leverage
+  cannot move P&L), two studies now say the **geometry dials are economically irrelevant at this
+  account size**; risk-per-trade and trade selection are the live dials.
+
+### 🔴 VOID RUN 1 — a verdict printed from ZERO rows
+`HIST` said `hist/`, the directory is `history/`. Every coin skipped — **and the script still printed
+`VERDICT: UNDERPOWERED` and scored an expectation**, because `(nan > 0) == (nan > 0)` is `True`.
+**Absence-is-not-evidence inside the instrument**, same family as the six `j4` false alarms.
+**Fixed structurally:** halts under 50 funding coins, or under 20 held-out / 3 discovery coins.
+**New standing rule: every harness must be unable to reach its verdict block on an empty panel.**
+
+### Reply 131 — red-team of `OWNER_PROFITS_ONLY_REQUIRE_PROFIT` (live-money flag)
+**SUPPORT, as preference enforcement, not EV.** The asymmetry objection I went looking for died:
+`exit_engine.py:110` already blocks early full close for restricted modes, so the flag closes the last
+hole rather than filtering only the gentle de-risk.
+- **Asked them to fix the record BEFORE flipping it:** a shadow-allowed partial lands in
+  `owner_exit_decisions.jsonl` with `position_entry` but **no decision-time price**, so in-profit vs
+  at-a-loss is unreconstructable. **The log is not the data.**
+- **Answered their gross-vs-net question against my first instinct: gross.** No funding field exists
+  on `Position`; the gross/net window is ~9 bps against ETH's ~180 bps em (~5% of the decision space);
+  and net makes the gate stricter, which has a cost I cannot sign.
+- **Reported that M2 arm A does not resolve it** — pooled −25.5 vs eq-day +14.9 bps, signs disagree.
+  **So it must not be justified as EV, including by me.**
+
+### Calibration — a sixth instance, same direction
+**M4's "UNDERPOWERED" call was right by 0.05 of a z.** I keep being too gloomy, and this time the
+prediction held only barely. The pattern is now six-for-six and belongs in every power statement.
