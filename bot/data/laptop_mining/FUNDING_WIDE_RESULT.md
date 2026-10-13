@@ -5,14 +5,14 @@
 reasons). Gate opened at **173 of 173** qualifying perps.
 
 **Read in the order the prereg fixes — placebo first, effect last. No number below was read before the
-one above it.**
+one above it.** **All eight arms verified byte-identical across two independent executions.**
 
 ---
 
 ## 1. Is the test valid? — placebo size at δ=0
 
-**Yes, and it is CONSERVATIVE.** Sizes across the eight population-arm combos: **0.018, 0.022, 0.028,
-0.030, 0.030, 0.033, 0.035** — all inside the gate, all **below** the nominal 0.05.
+**Yes, and it is CONSERVATIVE.** Sizes across all eight population-arm combos: **0.018, 0.020, 0.022,
+0.028, 0.030, 0.030, 0.033, 0.035** — all inside the gate, all **below** the nominal 0.05.
 
 **A conservative test under-rejects under the null, so significance here was won against a
 stricter-than-nominal bar.** That strengthens every positive below rather than weakening it. Each such
@@ -64,7 +64,7 @@ flag firing on **20.8%** against the original's **20.76%**. **So the reimplement
 | (b) ORIG17 filtered | rank | +7.30% | [+2.61, +12.21] | above 6.96% | replicates |
 | **(b_raw) ORIG17 canary** | rank | **+7.68%** | [+3.02, +12.56] | above 6.75% | reproduces exactly |
 | (a) ALL173 *(contaminated)* | rank | +6.03% | [+3.79, +8.31] | above 3.46% | replicates |
-| (a) ALL173 *(contaminated)* | frozen | +5.11%* | — | — | *from the void run; see §6 |
+| (a) ALL173 *(contaminated)* | frozen | +5.66% | [+3.61, +7.75] | above MDE | replicates |
 
 **`funding_hot` predicts a +4.77% bigger next-day |move| than the HAR forecast alone, on 156 coins
 that were never used to discover it, across 179 week-clusters and 5,084 matched cells, with a
@@ -142,9 +142,9 @@ is what `FUNDING_STOP` already pointed at, not entry direction.
   whatever bias that forecast carries.**
 - **Coin-days are not independent.** 5,084 cells sit inside 179 week-clusters, and the clustered
   figure is the one quoted throughout.
-- **The 8th combo** — (a) ALL173 under the frozen arm — was cut short when my tool timeout killed the
-  process; the value shown is from the void run and is marked. It is the contaminated population under
-  the secondary arm and is explicitly non-decisive. The completed run is recorded in
-  `size_flags_wide.json`.
+- **All eight population-arm combos completed, and the run is verified DETERMINISTIC.** A detached
+  re-execution reproduced **all eight arms byte-identically** — same effects, same CIs, same placebo
+  sizes, same cell and week counts — so the seeded result is reproducible rather than a one-off draw.
+  Recorded in `size_flags_wide.json`.
 - **`funding_hot_bigger_day` should move from SUPPORTED to a replicated tier** on the PC's registry —
   but **on the strength of §5, with §6 attached**, not on my say-so.

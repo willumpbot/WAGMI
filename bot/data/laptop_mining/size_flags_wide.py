@@ -1,4 +1,4 @@
-"""PREREG_FUNDING_WIDE (sha256 ea162445 = sealed 41805c5c + amendments 1-3) — the out-of-sample
+"""PREREG_FUNDING_WIDE (sha256 ecf331b4 = sealed 41805c5c + amendments 1-4) — the out-of-sample
 replication.
 
 Does `funding_hot` replicate on the 156 coins it was never tested on?
@@ -473,7 +473,7 @@ def main():
             ("b_raw_ORIG17_NOFILTER", raw17),
             ("c_raw_NEW156_NOFILTER_sensitivity", rawnew),
             ("a_ALL173", df)]
-    out = {"prereg": "PREREG_FUNDING_WIDE ea162445 (amendments 1-3)", "start": START,
+    out = {"prereg": "PREREG_FUNDING_WIDE ecf331b4 (amendments 1-4)", "start": START,
            "universe": len(syms), "funding_files": have_f, "selftest": st,
            "vol_removed_rows": df.attrs.get("vol_removed"),
            "panel_rows_filtered": len(df), "panel_rows_canary": len(raw17), "results": []}

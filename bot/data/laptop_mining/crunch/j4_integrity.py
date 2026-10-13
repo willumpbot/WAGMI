@@ -237,6 +237,31 @@ def snapshot_health(p):
     report that as the expected cause, so "stale because nothing closed" reads differently from
     "stale because the writer died".
     """
+    # FIFTH false alarm of this family -- and I CAUSED this one with the fix for the fourth.
+    # e6125cb7 correctly reclassified server_exports/state/ as snapshot, but this function then
+    # tried to json.load the DIRECTORY path, which raises OSError and so reported
+    # "state snapshot UNPARSEABLE" while all 10 files inside parse fine. A directory is not a
+    # snapshot; it CONTAINS them. Per-file now, as the server suggested: the directory is healthy
+    # if it is non-empty, every file inside parses, and the NEWEST file is fresh (a snapshot dir is
+    # current when anything in it was just rewritten).
+    if os.path.isdir(p):
+        files = [x for x in sorted(glob.glob(os.path.join(p, "*.json"))) if os.path.isfile(x)]
+        if not files:
+            return "empty"
+        bad = []
+        for x in files:
+            try:
+                json.load(io.open(x, encoding="utf-8"))
+            except (ValueError, OSError):
+                bad.append(os.path.basename(x))
+        if bad:
+            return "UNPARSEABLE (%d of %d: %s)" % (len(bad), len(files), ", ".join(bad[:3]))
+        newest = max(os.path.getmtime(x) for x in files)
+        dir_age = time.time() - newest
+        if dir_age <= SNAPSHOT_STALE_S:
+            return "ok (%d files, newest %.1fh)" % (len(files), dir_age / 3600.0)
+        return "stale %.1fh (%d files, none rewritten since)" % (dir_age / 3600.0, len(files))
+
     try:
         age = time.time() - os.path.getmtime(p)
     except OSError:
