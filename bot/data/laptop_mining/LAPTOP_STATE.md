@@ -9,10 +9,17 @@ have to re-explain anything. Everything below is current as of commit time.
 
 | | |
 |---|---|
-| `megacalls_fetch.py` | fetching 2,477 priceable calls, **935 unique done (38%)**, ETA **~16h**. Single process, holds `geckoterminal.lock`. |
-| **`fetch_funding_wide.py`** | **walking hourly funding for the 138 coins that had none, ~59/178 files, ETA ~4.5h.** Hyperliquid API — **no lock contention with the megacall fetch**, which is GeckoTerminal. **v1 was killed and rewritten**: `PAUSE=0.35s` generated its own 429s and spent 45 min to add 11 coins. v2 runs at 1.1s with adaptive backoff, **0 × 429 so far**. Measured cost is **~2.9s/page**, of which only 1.1s is the pause — HL's latency on 500-row historical queries is ~1.8s and inherent, so 4.5h is the honest floor, not a tuning failure. |
-| `WAGMI-LaptopCrunch` (hourly task) | 7 jobs, all green on the last cycle |
-| server `stop_shadow.py` | live 5m shadow stops, ~2 entries/day, accruing |
+**As of 2026-10-13 07:10 both long fetches are FINISHED. Nothing is downloading.**
+
+| | |
+|---|---|
+| ~~`megacalls_fetch.py`~~ | ✅ **DONE 2026-10-13 ~06:40** — live **1,924**, dead 182 of 2,106, **22.3 h**, final 429 rate 2.9%. `call_outcomes.jsonl` regenerated **384 → 2,442** rows, identity check PASSED. |
+| ~~`fetch_funding_wide.py`~~ | ✅ **DONE** — **~3,478,755 hourly rows across all 178 coins.** v1 was killed and rewritten twice: `PAUSE=0.35s` self-inflicted 429s, then v2's throttle could only *rise* so one burst pinned it at the 3.0s ceiling. v3 is AIMD and settled near 1.6s. |
+| `WAGMI-LaptopCrunch` (hourly task) | 7 jobs; j4 fixed three times tonight — see §9 and the per-path staleness table |
+| server `stop_shadow.py` | live 5m shadow stops, ~2 entries/day, accruing toward n=150 |
+
+**The only thing now waiting on anything is `PREREG_CALLER_FORM`**, which needs the server's step-2
+identity-local join against the new outcomes file. See §10.
 
 **🟢 THE DEEP UNIVERSE IS 173 PERPS, NOT 17.** Nunu pushed back on my claim that it was capped at 17
 (*"theres probably always another angle"*) and he was right: **17 was a directory listing.** HL caps
