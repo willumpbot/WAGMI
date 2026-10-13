@@ -22,6 +22,7 @@ Usage: python tools/knowledge/check.py [--data-dir PATH] [--registry bot/knowled
 """
 import argparse
 import ast
+import hashlib
 import csv
 import json
 import re
@@ -667,6 +668,10 @@ def check_d12_behavior_vs_tested(ctx):
             if d.get("kind") != "stream":
                 na.append(_na("D12", name, "no behaviour fixture on the card yet"))
             continue
+        sem, sh = d.get("tested_semantics"), d.get("tested_semantics_hash")
+        if sem and sh and hashlib.sha256(sem.encode()).hexdigest()[:16] != sh:     # laptop 0947ef0c: a stale hash
+            out.append(_f("D12", f"{name}:semantics_hash", "warn", f"{name}: tested_semantics_hash does not match the "
+                          "tested_semantics string (string edited without re-hashing)"))
         fn = _load_pure_fn(ctx, fx["fn"])
         if fn is None:
             out.append(_f("D12", name, "high", f"{name}: {fx['fn']} not found - live code moved, card out of date"))

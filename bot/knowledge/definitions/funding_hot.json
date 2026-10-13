@@ -33,7 +33,7 @@
  ],
  "verified_by": "none",
  "tested_semantics": "per-date cross-sectional rank of funding_h | pctile=0.80 | side=top | interp=linear(pandas) | cmp=> | floor=None | min_n=5",
- "tested_semantics_hash": "7ae061ca585d6fdb",
+ "tested_semantics_hash": "ee9a4809c8ab1af2",
  "behavior_fixture": {
   "fn": "tools/hivemind/scanner.py:funding_hot_flags",
   "reference": "pandas Series.quantile(0.80), flag = value > cut - the LIVE-CONFIG primary of PREREG_STOPHITS_WIDE (81d016b7), which replicated (+2.40 pp OOS)",

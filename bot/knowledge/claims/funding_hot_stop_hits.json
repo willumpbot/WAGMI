@@ -69,5 +69,19 @@
  "verified_by": "none",
  "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
  "seeded_at": "2026-10-12",
- "map_order": 31
+ "map_order": 31,
+ "decision_numbers": [
+  {
+   "name": "K* hot-day stop multiple",
+   "value": 1.77,
+   "vs": 1.65,
+   "meaning": "+7.3% wider stop on hot days",
+   "estimator": "matched within date x em-quintile (same as the evidence)",
+   "config": "live (> , held-out coins)",
+   "status": "descriptive calibration, NOT preregistered, computed after the replication - do not wire",
+   "supersedes": "K*=1.698 (marginal estimator vs matched evidence; understated by ~half, flips sign for > on naive em)",
+   "source": "laptop 0947ef0c",
+   "caveat": "predates the 10-13 risk_voice haircut and _closed fix; a real answer needs a prereg with an economic objective"
+  }
+ ]
 }

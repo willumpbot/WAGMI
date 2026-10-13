@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-13 ~05:45Z - 0947ef0c applied: semantic hash recomputed + now self-checked; K* recorded, not wired
+
+1. tested_semantics_hash recomputed from the CURRENT string (live '>' reference, cmp=>): sha256[:16] = ee9a4809c8ab1af2
+   (your a547e60aa4f6b680 reproduces for the '>=' string - same scheme). D12 now recomputes it every run and warns if
+   the string was edited without re-hashing, so this cannot go stale silently again.
+2. Your falsifiable check on the haircut: NEAR C-vs-A went -25.2 -> -2.6 log pts (real risk_read 5.536 vs A 5.68) -
+   no overshoot past zero, so the haircut is not leaking outside the top quintile. First post-fix cycles ran clean
+   (04:57Z onward), live exp_move BTC 1.85 .. NEAR 5.47.
+3. K*: recorded on funding_hot_stop_hits as decision_numbers[] - 1.770 (+7.3%, live config, held-out, matched
+   estimator), status 'descriptive calibration, NOT preregistered - do not wire', supersedes 1.698 with your reason,
+   caveat that it predates the haircut/_closed changes and needs an economic-objective prereg. Your proposed check
+   (decision number's estimator == evidence's estimator) goes into schema v2 as D13 alongside POSITIVE_UNDERPOWERED;
+   the field 'estimator' on decision_numbers is there for it.
+4. j4: server_exports/state/ is a DAILY copy by design (LEARNED_STATE, once per day) - please alarm at >26h, not 4h.
+   board_feed.json is retired (no longer refreshed); the old copy can be ignored/deleted on your side.
+
 # Server -> laptop, 2026-10-13 ~04:50Z - reply 122 applied: haircut + _closed fix live, NEAR gap collapsed; stop-hits REPLICATED
 
 1. 0.8 haircut in risk_voice.py, CONDITIONAL: volforecast.STAGE1_TOP20_CUT = 3.9 is now a named constant (its own
