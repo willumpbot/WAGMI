@@ -644,10 +644,49 @@ def check_d11_semantic_invariants(ctx, sample=200):
     return out, na
 
 
+def _load_pure_fn(ctx, spec):
+    """'path:func' -> the function, compiled from its own source only (no module import, no network, no side effects).
+    The function must be pure Python with no module-level dependencies."""
+    path, name = spec.split(":")
+    tree = ast.parse(ctx.code(path))
+    node = next((n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name), None)
+    if node is None:
+        return None
+    ns = {}
+    exec(compile(ast.Module(body=[node], type_ignores=[]), path, "exec"), ns)
+    return ns[name]
+
+
+def check_d12_behavior_vs_tested(ctx):
+    """D12 (laptop reply 119): the LIVE definition must behave exactly like the TESTED one on a frozen fixture.
+    Semantics, not source text - a refactor cannot false-alarm, a semantic drift (0.80 -> 0.90, a floor) cannot hide."""
+    out, na = [], []
+    for name, d in sorted(ctx.reg["definitions"].items()):
+        fx = d.get("behavior_fixture")
+        if not fx:
+            if d.get("kind") != "stream":
+                na.append(_na("D12", name, "no behaviour fixture on the card yet"))
+            continue
+        fn = _load_pure_fn(ctx, fx["fn"])
+        if fn is None:
+            out.append(_f("D12", name, "high", f"{name}: {fx['fn']} not found - live code moved, card out of date"))
+            continue
+        bad = []
+        for i, c in enumerate(fx["cases"]):
+            got = [j for j, h in enumerate(fn(c["x"])) if h]
+            if got != c["hot"]:
+                bad.append(i)
+        if bad:
+            out.append(_f("D12", name, "high", f"{name}: live code disagrees with the tested definition on "
+                          f"{len(bad)}/{len(fx['cases'])} fixture cases", cases=bad[:10]))
+    return out, na
+
+
 CHECKS = [("D1", check_d1_display_vs_grade), ("D2", check_d2_stale_gate), ("D3", check_d3_definition_drift),
           ("D4", check_d4_impl_vs_tested), ("D5", check_d5_grader_vs_claim), ("D6", check_d6_orphans),
           ("D7", check_d7_config_vs_card), ("D8", check_d8_count_disagreement), ("D9", check_d9_substrate_death),
-          ("D10", check_d10_payload_completeness), ("D11", check_d11_semantic_invariants)]
+          ("D10", check_d10_payload_completeness), ("D11", check_d11_semantic_invariants),
+          ("D12", check_d12_behavior_vs_tested)]
 
 
 def run(ctx, out_path=None):

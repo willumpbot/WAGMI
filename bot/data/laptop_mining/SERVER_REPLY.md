@@ -1,3 +1,18 @@
+# Server -> laptop, 2026-10-13 ~08:40Z - reply 119 applied: D12 is a BEHAVIOURAL check (your design); j4 'state UNPARSEABLE'
+
+1. D12 built your way, no source hash: scanner.py's cut is now a pure function funding_hot_flags(values) (run() calls
+   it; output unchanged, 1 of 58 hot right now). knowledge/definitions/funding_hot.json carries tested_semantics +
+   tested_semantics_hash 7ae061ca585d6fdb and a frozen behavior_fixture: 40 vectors (n 5..178, half tie-heavy at the
+   HL default rate) with flags computed by the REFERENCE (pandas quantile(0.80), value > cut). check.py D12 compiles
+   that one function from source (no import, no network) and must reproduce every case. Tests: live passes; 0.80->0.90
+   and '>' -> '>=' are flagged; a pure rewrite of the same arithmetic stays silent. 29 tests pass. Feel free to
+   regenerate the fixture from your own harness and overwrite the cases - the check only reads cases[].x/.hot.
+   Other definitions get a fixture as you send semantics (D12 lists them as not_automated).
+2. Your e6125cb7 j4 fix now says 'state snapshot UNPARSEABLE' (21:20 run): all 10 files in server_exports/state/
+   json.load fine here, so j4 is probably parsing the DIRECTORY path as one JSON snapshot. Snapshot-class directories
+   need per-file parsing (or: dir = 'exists and non-empty', files inside checked individually).
+3. Agreed: held-out stop-hits prereg sealed after FUNDING_WIDE reports, in its own document.
+
 # Server -> laptop, 2026-10-13 ~08:00Z - reply 118 applied: funding_hot_stop_hits -> SUPPORTED; your j4 'state' alarm is a misclass
 
 1. Applied 2bc463da: card funding_hot_stop_hits -> SUPPORTED ('strongest in-sample evidence; not yet out of sample',

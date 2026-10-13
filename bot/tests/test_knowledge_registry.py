@@ -432,3 +432,26 @@ def test_acceptance_real_streams_hold_invariants(real_report):
     for f in [f for f in real_report["discrepancies"] if f["check"] == "D11"]:
         m = __import__("re").search(r"(\d+)/(\d+) recent rows", f["what"])
         assert m and int(m.group(1)) <= 0.05 * int(m.group(2)), f["what"]
+
+
+def _d12_tree(tmp, scanner_src):
+    d = json.loads((common.KNOWLEDGE / "definitions" / "funding_hot.json").read_text(encoding="utf-8"))
+    _w(tmp / "k" / "definitions" / "funding_hot.json", d)
+    _w(tmp / "code" / "tools" / "hivemind" / "scanner.py", scanner_src)
+    return _ctx(tmp)
+
+
+def test_d12_live_funding_hot_behaves_as_tested(tmp_path):
+    src = (BOT / "tools" / "hivemind" / "scanner.py").read_text(encoding="utf-8")
+    assert check.check_d12_behavior_vs_tested(_d12_tree(tmp_path, src))[0] == []
+
+
+def test_d12_flags_semantic_drift_not_refactors(tmp_path):
+    src = (BOT / "tools" / "hivemind" / "scanner.py").read_text(encoding="utf-8")
+    drift = src.replace("pos = 0.8 * (len(fs) - 1)", "pos = 0.9 * (len(fs) - 1)")      # 0.80 -> 0.90
+    assert drift != src
+    assert [f["id"] for f in check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "a", drift))[0]] == ["funding_hot"]
+    ge = src.replace("return [v > cut for v in values]", "return [v >= cut for v in values]")   # '>=' flags ties
+    assert [f["id"] for f in check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "b", ge))[0]] == ["funding_hot"]
+    renamed = src.replace("pos = 0.8 * (len(fs) - 1)", "pos = (len(fs) - 1) * 0.8")     # pure refactor: silent
+    assert check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "c", renamed))[0] == []

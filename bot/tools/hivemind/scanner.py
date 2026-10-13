@@ -71,6 +71,19 @@ def _pct(xs, q):
     return xs[i]
 
 
+def funding_hot_flags(values):
+    """funding_hot per coin: strictly ABOVE the pandas-style linearly interpolated 80th percentile of the cross-section,
+    no absolute floor (the tested definition). Pure function - check.py D12 runs it against a frozen fixture."""
+    fs = sorted(values)
+    if not fs:
+        return []
+    pos = 0.8 * (len(fs) - 1)
+    lo = int(pos)
+    cut = fs[lo] + (fs[min(lo + 1, len(fs) - 1)] - fs[lo]) * (pos - lo)
+    # strictly ABOVE the cut: most HL coins sit exactly at the default funding rate, so ">=" flagged ~85% of coins
+    return [v > cut for v in values]
+
+
 def scan_coin(name, ctx, max_lev, now_ms):
     raw = hl.candles(name, "1d", now_ms - 400 * 864e5, now_ms, ttl=600)
     if not raw or len(raw) < 60:
@@ -167,16 +180,11 @@ def run():
     # funding_hot = top QUINTILE of funding across the scanned coins (pandas-style interpolated 80th percentile),
     # no absolute floor: the exact definition the laptop tested (SIZE_FLAGS / FUNDING_STOP). The previous live flag
     # (top decile + floor) was stricter than anything tested and not significant on its own (laptop 10-11).
-    fs = sorted(r["funding_h"] for r in rows)
-    cut = None
-    if fs:
-        pos = 0.8 * (len(fs) - 1)
-        lo = int(pos)
-        cut = fs[lo] + (fs[min(lo + 1, len(fs) - 1)] - fs[lo]) * (pos - lo)
-    for r in rows:
-        # strictly ABOVE the cut: most HL coins sit exactly at the default funding rate, so ">=" flagged ~85% of coins
-        if cut is not None and r["funding_h"] > cut:
+    hot = funding_hot_flags([r["funding_h"] for r in rows])
+    for r, h in zip(rows, hot):
+        if h:
             r["flags"].append("funding_hot")
+    for r in rows:
         r["n_tested"] = sum(FLAGS[k][1] == "tested" for k in r["flags"])
     by_vol = sorted(rows, key=lambda r: -r["vol24_usd"])
     big15 = {r["coin"] for r in by_vol[:15]}

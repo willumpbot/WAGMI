@@ -244,10 +244,10 @@ DEFINITIONS = [
      "invariants": [{"expr": "g('x') is None or g('x') >= 0", "why": "a move size is never negative"}]},
     {"name": "funding_hot", "kind": "flag",
      "plain": "Coin's funding is strictly above the interpolated 80th percentile of the scanned coins' funding.",
-     "canonical": "scanner.run funding_hot block",
+     "canonical": "scanner.funding_hot_flags",
      "implementations": [
-         {"label": "scanner.run funding_hot block", "path": "tools/hivemind/scanner.py",
-          "start": r"fs = sorted\(r\[\"funding_h\"\]", "end": r"r\[\"flags\"\]\.append\(\"funding_hot\"\)",
+         {"label": "scanner.funding_hot_flags", "path": "tools/hivemind/scanner.py",
+          "start": r"def funding_hot_flags\(values\)", "end": r"return \[v > cut for v in values\]",
           "note": "Strictly ABOVE the cut (HL default-funding ties; '>=' flagged ~85% of coins). Tested by laptop "
                   "SIZE_FLAGS / FUNDING_STOP_AUDIT with exactly this definition (definition-sensitive)."},
          {"label": "scanner.FLAGS text", "path": "tools/hivemind/scanner.py",
