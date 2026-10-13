@@ -44,7 +44,8 @@
   "data_through": null,
   "impl_hash": null,
   "no_edge_median": null,
-  "no_edge_ci": null
+  "no_edge_ci": null,
+  "estimator": "matched within date x em-quintile (PREREG_STOPHITS_WIDE)"
  },
  "verdict": {
   "by": null,

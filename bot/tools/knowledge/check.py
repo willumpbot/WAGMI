@@ -689,11 +689,27 @@ def check_d12_behavior_vs_tested(ctx):
     return out, na
 
 
+def check_d13_decision_estimator(ctx):
+    """D13 (laptop 0947ef0c): a claim's DECISION NUMBER must come from the same estimator as its EVIDENCE. K*=1.698 was
+    marginal while the test that justified it was matched - half the size, and for '>' on the naive em the wrong sign."""
+    out, na = [], []
+    for cid, c in sorted(ctx.reg["claims"].items()):
+        for dn in c.get("decision_numbers") or []:
+            ev = (c.get("evidence") or {}).get("estimator")
+            if not ev or not dn.get("estimator"):
+                na.append(_na("D13", f"{cid}:{dn.get('name')}", "estimator not recorded on the evidence or the number"))
+            elif dn["estimator"].split("(")[0].strip().lower() != ev.split("(")[0].strip().lower():
+                out.append(_f("D13", f"{cid}:{dn.get('name')}", "high", f"{cid}: decision number '{dn.get('name')}' uses "
+                              f"estimator '{dn['estimator']}' but the evidence used '{ev}'"))
+    return out, na
+
+
 CHECKS = [("D1", check_d1_display_vs_grade), ("D2", check_d2_stale_gate), ("D3", check_d3_definition_drift),
           ("D4", check_d4_impl_vs_tested), ("D5", check_d5_grader_vs_claim), ("D6", check_d6_orphans),
           ("D7", check_d7_config_vs_card), ("D8", check_d8_count_disagreement), ("D9", check_d9_substrate_death),
           ("D10", check_d10_payload_completeness), ("D11", check_d11_semantic_invariants),
-          ("D12", check_d12_behavior_vs_tested)]
+          ("D12", check_d12_behavior_vs_tested),
+          ("D13", check_d13_decision_estimator)]
 
 
 def run(ctx, out_path=None):

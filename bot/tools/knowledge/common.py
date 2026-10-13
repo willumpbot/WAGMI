@@ -20,11 +20,12 @@ DATA = BOT / "data"
 # Status set (brief section 2) and the strongest wording any surface may use for each.
 #   rank: how strong a statement the status allows. A display that asserts more than its claim's rank is a D1 hit.
 # ---------------------------------------------------------------------------------------------------------------
-STATUSES = ["HYPOTHESIS", "PREREG_SEALED", "SUPPORTED", "REPLICATED", "PROVEN",
+STATUSES = ["HYPOTHESIS", "PREREG_SEALED", "POSITIVE_UNDERPOWERED", "SUPPORTED", "REPLICATED", "PROVEN",
             "UNDERPOWERED", "REFUTED", "RETRACTED", "STALE", "RETIRED"]
 
 WORDING_TIER = {            # status -> wording tier (the label surfaces must not exceed)
     "PROVEN": "proven",          # "shown", "tested", "proven" allowed
+    "POSITIVE_UNDERPOWERED": "leaning",  # "leans positive, not enough data yet" - CI excludes 0 but effect < its MDE
     "SUPPORTED": "supported",    # "evidence suggests", "so far"
     "REPLICATED": "replicated",  # "held up on data it was never fitted on" - one out-of-sample replication, not PROVEN
     "PREREG_SEALED": "sealed",   # "being tested; sealed, reads at N" (no running tally - laptop answer 10)
@@ -35,7 +36,7 @@ WORDING_TIER = {            # status -> wording tier (the label surfaces must no
     "STALE": "stale",            # "was true in <era>; not current" - may not bind (laptop amendment 3)
     "RETIRED": "stale",
 }
-TIER_RANK = {"refuted": 0, "stale": 1, "hypothesis": 2, "unknown": 2, "sealed": 2, "supported": 3, "replicated": 3.5, "proven": 4}
+TIER_RANK = {"refuted": 0, "stale": 1, "hypothesis": 2, "unknown": 2, "sealed": 2, "leaning": 2.5, "supported": 3, "replicated": 3.5, "proven": 4}
 
 # Statuses a live rule may never bind to (laptop amendment 3: expiry by default, renewal by evidence).
 DEAD_STATUSES = {"STALE", "RETIRED", "REFUTED", "RETRACTED"}

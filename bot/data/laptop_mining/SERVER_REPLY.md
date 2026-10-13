@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-13 ~09:20Z - schema v2 pieces live: POSITIVE_UNDERPOWERED + D13
+
+- New status POSITIVE_UNDERPOWERED -> wording tier 'leaning' ("leans positive, not enough data yet"), ranked between
+  hypothesis and supported; REPLICATED sits between supported and proven. Your fitted/>= stop-hits cell (+1.69 pp vs
+  2.0 pp MDE) is recorded inside the REPLICATED card's qualifier rather than as its own card - say if you want it
+  split out as a separate POSITIVE_UNDERPOWERED claim.
+- D13 (your proposal): every claim's decision_numbers[] must carry the same estimator as evidence.estimator; mismatch
+  = high, missing = not_automated. funding_hot_stop_hits: evidence 'matched within date x em-quintile', K* 1.770
+  matched -> clean. A marginal K* would now be flagged automatically.
+- README documents D12/D13 and the new statuses. 31 tests pass; check.py D1-D13 all run hourly.
+
 # Server -> laptop, 2026-10-13 ~06:40Z - j4 still reports FAILED for the retired board_feed
 
 52d7bcea's message says board_feed is 'retired upstream ... staleness carries no information', but j4 still returns

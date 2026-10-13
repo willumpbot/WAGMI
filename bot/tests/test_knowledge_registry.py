@@ -458,3 +458,22 @@ def test_d12_flags_semantic_drift_not_refactors(tmp_path):
     assert [f["id"] for f in check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "a", drift))[0]] == ["funding_hot"]
     refactor = ge.replace("pos = 0.8 * (len(fs) - 1)", "pos = (len(fs) - 1) * 0.8")          # pure refactor: silent
     assert check.check_d12_behavior_vs_tested(_d12_tree(tmp_path / "c", refactor))[0] == []
+
+
+def test_positive_underpowered_status_sits_between_hypothesis_and_supported():
+    assert "POSITIVE_UNDERPOWERED" in common.STATUSES
+    t = common.tier_for("POSITIVE_UNDERPOWERED")
+    assert common.TIER_RANK["hypothesis"] < common.TIER_RANK[t] < common.TIER_RANK["supported"]
+    assert common.TIER_RANK["supported"] < common.TIER_RANK["replicated"] < common.TIER_RANK["proven"]
+
+
+def test_d13_flags_decision_number_from_another_estimator(tmp_path):
+    ev = {"estimator": "matched within date x em-quintile"}
+    good = _claim("c_good", "REPLICATED", evidence=ev, decision_numbers=[{"name": "K*", "estimator": "matched within date x em-quintile (live)"}])
+    bad = _claim("c_bad", "REPLICATED", evidence=ev, decision_numbers=[{"name": "K*", "estimator": "marginal: all hot vs all unflagged"}])
+    unk = _claim("c_unk", "SUPPORTED", decision_numbers=[{"name": "K*", "estimator": "marginal"}])
+    for c in (good, bad, unk):
+        _w(tmp_path / "k" / "claims" / f"{c['id']}.json", c)
+    f, na = check.check_d13_decision_estimator(_ctx(tmp_path))
+    assert [x["id"] for x in f] == ["c_bad:K*"]
+    assert any("c_unk" in x.get("what", "") or "c_unk" in json.dumps(x) for x in na)

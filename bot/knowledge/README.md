@@ -25,7 +25,7 @@ Tools (`bot/tools/knowledge/`): `seed_from_map.py` (build cards from the docs + 
 | `kind` | magnitude / direction / exit / integrity / process |
 | `quantity` | name of a Definition card (e.g. `exp_move`, `funding_hot`) or null |
 | `metric`, `horizon` | the claim's OWN metric (D5 compares graders against it) |
-| `status` | HYPOTHESIS, PREREG_SEALED, SUPPORTED, PROVEN, UNDERPOWERED, REFUTED, RETRACTED, STALE, RETIRED |
+| `status` | HYPOTHESIS, PREREG_SEALED, POSITIVE_UNDERPOWERED, SUPPORTED, REPLICATED, PROVEN, UNDERPOWERED, REFUTED, RETRACTED, STALE, RETIRED |
 | `status_qualifier`, `verdict_text`, `status_note` | the original verdict wording and any qualifier ("definition-sensitive") |
 | `wording_tier` | strongest language any surface may use; derived from status (table below) |
 | `revalidate` | date or n at which the claim goes STALE unless renewed |
@@ -42,7 +42,7 @@ metric; PROVEN needs the effect outside that spread, never a boolean "placebo co
 has closed is STALE by default and may not bind a live rule. The server may auto-downgrade (STALE, failing grader);
 only a laptop verdict upgrades to PROVEN.
 
-Status -> wording tier: PROVEN `proven` | SUPPORTED `supported` | PREREG_SEALED `sealed` ("sealed, reads at N", no
+Status -> wording tier: PROVEN `proven` | REPLICATED `replicated` (held up once out of sample) | SUPPORTED `supported` | POSITIVE_UNDERPOWERED `leaning` (CI excludes 0, effect below its MDE) | PREREG_SEALED `sealed` ("sealed, reads at N", no
 running tally) | HYPOTHESIS `hypothesis` | UNDERPOWERED `unknown` | REFUTED, RETRACTED `refuted` | STALE, RETIRED
 `stale`. Rank: proven 4 > supported 3 > hypothesis/unknown/sealed 2 > stale 1 > refuted 0. A display asserting the
 NEGATION of a claim ("no AI predicts price") is allowed `proven` only when the claim is REFUTED.
@@ -71,7 +71,8 @@ notional; never dollars, never a fee floor), `window` / `window_target` (rolling
 ## Checks (`tools/knowledge/check.py`)
 D1 display > grade; D2 stale gate; D3 definition drift (+ exp_move numeric cross-check); D4 impl != tested; D5 grader
 != claim; D6 orphan (PROVEN with no live consumer, rule with no / dead claim, prompt-only cap); D7 decision card vs
-.env; D8 count disagreement; D9 stream death (+ off-box archive); D10 payload completeness; D11 semantic invariants.
+.env; D8 count disagreement; D9 stream death (+ off-box archive); D10 payload completeness; D11 semantic invariants; D12 live definition behaves like the tested one (frozen behaviour
+fixture + semantic hash); D13 a claim's decision_numbers[] use the same estimator as its evidence.
 Anything a check cannot verify is listed under `not_automated` - never a silent pass.
 
 ```
