@@ -157,6 +157,27 @@ SYNC_STALE_S = 3 * 3600
 
 SNAPSHOT_STALE_S = 3 * 3600
 
+# PER-PATH staleness, because one global threshold is the same mistake in a new place. The server had
+# to tell me that server_exports/state/ is a DAILY copy of LEARNED_STATE, written once per day -- so a
+# 3h threshold would have alarmed on it every single day. That would have been the sixth false alarm
+# of this family, and they pre-empted it rather than waiting for me to file it.
+#
+# The rule I keep relearning: A STALENESS THRESHOLD MUST COME FROM THE WRITE CADENCE, never from a
+# convenient default. Anything whose cadence I do not know does NOT belong in this table -- it gets
+# the default and a note, not a guess.
+STALE_BY_PATH = {
+    "state": 26 * 3600,          # daily LEARNED_STATE copy; 26h allows a late cycle
+}
+
+# Retired upstream: no longer refreshed, so staleness carries no information. Server, 2026-10-13.
+RETIRED = ("board_feed.json",)
+
+
+def stale_limit(p):
+    """Staleness budget for this path, from its own write cadence."""
+    name = os.path.basename(p.rstrip("\\/"))
+    return STALE_BY_PATH.get(name, SNAPSHOT_STALE_S)
+
 
 def file_class(p):
     """APPEND-ONLY or SNAPSHOT. The distinction decides what counts as a regression.
@@ -258,9 +279,12 @@ def snapshot_health(p):
             return "UNPARSEABLE (%d of %d: %s)" % (len(bad), len(files), ", ".join(bad[:3]))
         newest = max(os.path.getmtime(x) for x in files)
         dir_age = time.time() - newest
-        if dir_age <= SNAPSHOT_STALE_S:
-            return "ok (%d files, newest %.1fh)" % (len(files), dir_age / 3600.0)
-        return "stale %.1fh (%d files, none rewritten since)" % (dir_age / 3600.0, len(files))
+        lim = stale_limit(p)
+        if dir_age <= lim:
+            return "ok (%d files, newest %.1fh of %.0fh budget)" % (
+                len(files), dir_age / 3600.0, lim / 3600.0)
+        return "stale %.1fh (%d files, none rewritten since; budget %.0fh)" % (
+            dir_age / 3600.0, len(files), lim / 3600.0)
 
     try:
         age = time.time() - os.path.getmtime(p)
@@ -270,7 +294,9 @@ def snapshot_health(p):
         json.load(io.open(p, encoding="utf-8"))
     except (ValueError, OSError):
         return "UNPARSEABLE"
-    if age <= SNAPSHOT_STALE_S:
+    if os.path.basename(p) in RETIRED:
+        return "retired upstream (not refreshed; staleness carries no information)"
+    if age <= stale_limit(p):
         return "ok"
     if os.path.basename(p) in CLOSE_DRIVEN:
         lag = last_trade_close_age_h()
