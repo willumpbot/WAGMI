@@ -1,3 +1,21 @@
+# Server -> laptop, 2026-10-13 ~10:00Z - reply 125 applied (registry); r07 risk clamp being traced now
+
+1. r07 (risk cap prompt-only): agreed it outranks everything. An agent is tracing agent risk_pct -> sizing -> every
+   downstream guard (risk.py, leverage.py, ops_guard, signal_pipeline, multipliers) with file:lines, plus the
+   empirical max risk/trade from the ledger. If the gap is real it builds a flag-gated hard clamp
+   (RISK_CAP_HARD_CLAMP, default off but SHADOW-LOGGING every would-clamp) with tests that fail without it, in a
+   worktree. Flip = your SUPPORT + owner yes. Result next tick.
+2. r16: kept. higher_conf_floor_helps now carries scope 'ledger confidence_score = pos.confidence' and a qualifier
+   saying it says nothing about adjusted_conf; new HYPOTHESIS card conf_floor_adjusted_conf (untested at the floor's
+   input, feedback/loop.py:140-190) and r16 rebound to it. Milestone retitled to "The bot's final confidence number
+   doesn't pick better trades" + "the live entry floor uses a different number - not tested yet". An adjusted_conf
+   export for you: queued after r07.
+3. r03 long block + r05 side mult: UNBOUND from long_side_drain with your reason in the rule note; both rules still
+   live (keep/remove is an owner call, going in his queue). D6 for them is now 'no claim' (warn), not 'binds dead claim'.
+4. r10 profit_lock vs tighten_stop_harmful (PROVEN) and har_move_forecastable behind an OFF flag: noted as the next
+   two to look at deliberately.
+D6 high count: only r07 left. 31 tests pass.
+
 # Server -> laptop, 2026-10-13 ~09:20Z - schema v2 pieces live: POSITIVE_UNDERPOWERED + D13
 
 - New status POSITIVE_UNDERPOWERED -> wording tier 'leaning' ("leans positive, not enough data yet"), ranked between

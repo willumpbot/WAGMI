@@ -511,7 +511,7 @@ MILESTONE_BINDINGS = {
     "Liquidation clusters as magnets": ("liq_clusters_magnets", "negation"),
     "Trailing exit beats a fixed target": ("trailing_exit", "negation"),
     "'Exit agent is the leak'": ("exit_agent_is_the_leak", "negation"),
-    "Confidence floors pick better trades": ("higher_conf_floor_helps", "negation"),
+    "The bot's final confidence number doesn't pick better trades": ("higher_conf_floor_helps", "negation"),
     "Counter-trend entries lose more (RETRACTED)": ("counter_trend_entries", "negation"),
     "Picking Syndicate winners at call time": ("meme_pick_winners", "negation"),
     "Buying every meme call, any exit rule": ("meme_buy_every_call", "negation"),

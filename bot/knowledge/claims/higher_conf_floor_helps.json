@@ -8,7 +8,7 @@
  "metric": null,
  "horizon": null,
  "status": "REFUTED",
- "status_qualifier": null,
+ "status_qualifier": "REFUTED for the ledger confidence_score only (CONF_FLOOR.md headline: the two confidence numbers are different); says nothing about adjusted_conf vs effective_floor, which the live floor gates (see conf_floor_adjusted_conf)",
  "verdict_text": "REFUTED",
  "wording_tier": "refuted",
  "revalidate": null,
@@ -46,11 +46,18 @@
   "prereg_sha": null,
   "reviewers": []
  },
- "amendments": [],
+ "amendments": [
+  {
+   "at": "2026-10-13",
+   "by": "laptop 35d9d1aa (reply 125)",
+   "what": "refutation scoped to the ledger column"
+  }
+ ],
  "idea_source": null,
  "changed": "None",
  "verified_by": "none",
  "seeded_from": "KNOWLEDGE_MAP.md section 3 / Entries / direction",
  "seeded_at": "2026-10-12",
- "map_order": 4
+ "map_order": 4,
+ "scope": "ledger confidence_score = pos.confidence (multi_strategy_main.py:4274), the FINAL position confidence - NOT the trigger floor's input"
 }

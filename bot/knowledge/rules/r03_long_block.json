@@ -2,7 +2,7 @@
  "id": "r03_long_block",
  "n": 3,
  "description": "Long block outside trending_bull - entry_selectivity.py:364-396,535-545 - LONG_REGIME_VETO, UPTREND_REGIMES - n=22 June; LONG_SIDE says one-month artifact - 1",
- "claim_id": "long_side_drain",
+ "claim_id": null,
  "unit": "win-rate vs breakeven ($ payoff)",
  "window": "whole ledger (LIVE_EDGE_WINDOW_DAYS=0)",
  "min_n": 13,
@@ -33,5 +33,6 @@
   "n_ignored_newer": 19,
   "ignored_net_usd": -7.1,
   "fee_floor_on": true
- }
+ },
+ "note": "unbound 10-13 (laptop 125): long_side_drain is one month (June holds 19/25 profitable-path exits), no mechanism found (TP/trail exactly symmetric). Rule still live - keep/remove is an owner decision; it now stands without a claim (D6 warn)."
 }

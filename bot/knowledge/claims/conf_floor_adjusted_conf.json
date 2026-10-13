@@ -1,0 +1,54 @@
+{
+ "section": "Entries / direction",
+ "kind": "direction",
+ "horizon": null,
+ "live_bot_flags": [],
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "evidence": {
+  "source": null,
+  "doc_sha": null,
+  "key_number": null,
+  "n": null,
+  "clustering_unit": null,
+  "mde": null,
+  "effect": null,
+  "effect_unit": null,
+  "ci": null,
+  "era_window": null,
+  "data_through": null,
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null,
+  "sources": []
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "idea_source": null,
+ "id": "conf_floor_adjusted_conf",
+ "statement_plain": "The trigger confidence floor (adjusted_conf vs effective_floor) lets through better trades than it blocks",
+ "question": "Does the live trigger floor pick better trades?",
+ "quantity": "adjusted_conf",
+ "metric": "pnl_bps_passed_vs_blocked",
+ "status": "HYPOTHESIS",
+ "wording_tier": "hypothesis",
+ "status_qualifier": "UNTESTED at the floor's actual input (feedback/loop.py:140-190); needs an adjusted_conf export",
+ "verdict_text": "untested",
+ "consumers": [
+  "rule:r16_trigger_conf_floor"
+ ],
+ "live_bot_terms": [
+  "adjusted_conf",
+  "effective_floor"
+ ],
+ "verified_by": "none",
+ "seeded_from": "laptop reply 125 (35d9d1aa)",
+ "seeded_at": "2026-10-13",
+ "amendments": [],
+ "changed": "none - the rule stays as is"
+}

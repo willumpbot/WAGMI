@@ -2,7 +2,7 @@
  "id": "r05_side_size_mult",
  "n": 5,
  "description": "Side size mult - feedback/live_edge.py:179-183 - 1+avg$/20 clipped 0.25-1.5 - same July data - 1",
- "claim_id": "long_side_drain",
+ "claim_id": null,
  "unit": "dollars (1 + avg$/20, clip 0.25-1.5)",
  "window": "whole ledger (LIVE_EDGE_WINDOW_DAYS=0)",
  "min_n": 13,
@@ -33,5 +33,6 @@
   "n_ignored_newer": 3,
   "ignored_net_usd": -6.8,
   "fee_floor_on": true
- }
+ },
+ "note": "unbound 10-13 (laptop 125): long_side_drain is one month (June holds 19/25 profitable-path exits), no mechanism found (TP/trail exactly symmetric). Rule still live - keep/remove is an owner decision; it now stands without a claim (D6 warn)."
 }

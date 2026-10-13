@@ -2,10 +2,10 @@
  "updated": "2026-10-13",
  "decisions_waiting": [],
  "in_flight": [
-  "'Profits only' is LIVE for your plans (laptop OK + your yes); your ETH long runs under it",
-  "HIVEMIND phase 0 LIVE: knowledge registry + hourly mismatch checks; first run found and fixed 3 misleading texts",
-  "Laptop: signing the knowledge cards, picking the one true 'expected move' (3 versions disagree up to 27%)",
-  "Laptop: meme-call download -> your hot-streak caller test",
+  "Checking whether the bot's 0.5%-per-trade risk cap is actually enforced in code (laptop flagged it may only be an instruction to the AI)",
+  "Two findings held up on 156 new coins: crowded-long days move ~5% more and hit stops ~2.4 pts more often (sizing only)",
+  "Expected-move fixes live: NEAR's estimates now agree; half-finished days no longer count as complete",
+  "Laptop: meme-call download ~88% -> your hot-streak caller test runs once when it finishes",
   "Next build (needs laptop SUPPORT + your yes): unfreeze the bot's learning gates, shadow-first, in bps not dollars"
  ],
  "you_can_do": [

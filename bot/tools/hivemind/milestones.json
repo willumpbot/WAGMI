@@ -212,8 +212,8 @@
  {
   "date": "2026-10-11",
   "kind": "refuted",
-  "title": "Confidence floors pick better trades",
-  "what": "On 176 real trades a higher floor only means fewer trades; shuffled confidence did as well. No change."
+  "title": "The bot's final confidence number doesn't pick better trades",
+  "what": "On 176 real trades a higher cut on the final confidence only meant fewer trades; shuffled did as well. The live entry floor uses a different number - not tested yet."
  },
  {
   "date": "2026-10-13",

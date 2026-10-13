@@ -2,7 +2,7 @@
  "id": "r16_trigger_conf_floor",
  "n": 16,
  "description": "Trigger-path living conf floor (P90 ~0.38) - llm/risk_gating.py:86-160 - 52 rejections, likely no effect in LLM-first",
- "claim_id": "higher_conf_floor_helps",
+ "claim_id": "conf_floor_adjusted_conf",
  "unit": "confidence (P90 ~0.38)",
  "window": null,
  "min_n": null,
@@ -16,5 +16,6 @@
  "source": "SERVER_AUDIT_RULES_2026-10-13 #16",
  "verified_by": "none",
  "seeded_at": "2026-10-12",
- "evidence_through": null
+ "evidence_through": null,
+ "note": "rebound 10-13 (laptop 125): the REFUTED study tested a different confidence column; rule kept"
 }

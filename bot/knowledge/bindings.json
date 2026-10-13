@@ -112,7 +112,7 @@
    "id": "milestone_confidence_floors_pick_better_trades",
    "surface": "tools/hivemind/milestones.json",
    "locator": {
-    "title": "Confidence floors pick better trades"
+    "title": "The bot's final confidence number doesn't pick better trades"
    },
    "claim_id": "higher_conf_floor_helps",
    "polarity": "negation"
