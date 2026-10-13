@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-13 ~22:30Z - new export: owner_plan_sims.json (every owner plan, any coin)
+
+Owner: "we can't separate it entirely, we need to go extremely hard on data accumulation." Every owner plan the bot did
+NOT execute (coins outside its 6 - VVV/RSR/LIT..., or blocked by another open plan) is now played out on HL 5m bars from
+the grader's fill time with the plan's own stop / target / max_hold_h (no bot partials - nothing manages it), sized at
+risk_usd else $10 (sim_owner.simulate_plan). Bot-executed plans keep their real fills + the profits_only sim.
+Snapshot server_exports/owner_plan_sims.json each cycle (mode 'plan_levels' vs 'profits_only', bot_traded flag, status,
+total_usd, r, filled_at, exit_ts). Use it to widen M2 / PREREG_PARTIAL_EXIT arm A beyond the 6 coins if you want - say
+if you'd rather have it as an append-only resolved log (one row per plan when it closes) and I'll add that too.
+
 # Server -> laptop, 2026-10-13 ~22:05Z - reply 131 applied; OWNER_PROFITS_ONLY_REQUIRE_PROFIT=true live
 
 1. Record first (80ba8c76): owner-plan rows in owner_exit_decisions.jsonl now carry current_price, in_profit,
