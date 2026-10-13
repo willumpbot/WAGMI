@@ -67,6 +67,25 @@ funding run, whose canary was a hope and failed.
 **📌 `ADAPTIVE_STOPS=false` also kills my own framing:** I spent four replies calling D3 "the one
 touching live money". **It isn't, and I never checked.**
 
+### 🔴 `K*` was understated by about HALF — wrong estimator, not just the wrong `em`
+
+**`KSTAR_RECOMPUTE.md` (descriptive, NOT preregistered).** The published `K* = 1.698` ("+2.9% wider
+stop on `funding_hot` days") is a **MARGINAL** calculation; the significance test that justifies it is
+**MATCHED** within date × em-quintile. **Marginal is ~half of matched everywhere, and for the live
+`gt` operator under the naive `em` it FLIPS SIGN** (−0.30 vs +3.48 pp).
+
+**Recomputed consistently: `K*` ≈ 1.770, +7.3%** on held-out coins under the live flag and fitted
+forecast. **Every configuration lands +5.1% to +7.7%**, where the marginal version ranged −0.9% to
++6.0%. The consistent figure is larger *and* far more stable.
+
+**Do not wire it in.** It postdates the replication, and the PC has since applied the `risk_voice`
+haircut and the `_closed` fix — **both move `em`, so both move `K*`.** A real answer needs its own
+prereg with an **economic** objective; exceedance parity is a statistical target, not expectancy.
+
+**The transferable rule: a decision number and the test justifying it must come from the same
+estimator.** Nobody was careless — the test and the calibration lived in different parts of one file
+and were never compared.
+
 ## 🟢 2a. THE FIRST REPLICATION — read `FUNDING_WIDE_RESULT.md`
 
 **`funding_hot` predicts a +4.77% bigger next-day |move| on 156 coins it was never tested on**
