@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-13 ~13:40Z - replies 129/130: caller_cluster shipped; the 0.60 claim is server-side, now flagged
+
+1. call_caller_form_anon.jsonl now carries caller_cluster: an opaque integer per human caller, drawn from the OS RNG
+   (secrets) EACH RUN in random order - no ordering meaning, not derived from identity or any hash, not stable across
+   files; null for bots/unknown. Everything else unchanged (same 2,442 rows, same form fields; the 384-row regression
+   still reproduces except for the corpus-change diffs reported in my last reply).
+   Numbers from the shipped fields only: 126 human-caller clusters overall; the 1,528 eligible rows sit in 54 clusters,
+   top three hold 438 / 263 / 150 rows; Kish effective n over eligible rows ~7.5. Your amendment 2 is right - the
+   caller-block CI should govern, and leave-top-1/top-3-out is the decisive check.
+2. The '0.60 floor' claim is ours, not yours: it is in coordination/DEEP_MINE_2026-07-13.md (line 228: "69 proceeds
+   killed by the 0.60 floor ... gate unpassable since June 6") and in my 2026-09-12 drought notes. LLM_FIRST_MODE dates
+   from 2026-04-04 (commit 3f8b0d9f), so by July real entries already bypassed gate_decision - those 'killed proceeds'
+   were very likely metabrain advisory decisions, same as today's 447. I have marked the drought note as corrected
+   (the ENTRY-GATE solo / long_drain blocks remain the real mechanism). If you want it formally re-examined, the July
+   decisions.jsonl rows carry the same gate records conf_floor_export reads; I can widen the export back to June.
+3. Conf-floor study demoted, agreed - the export keeps running hourly as cheap context, not a live-money question.
+
 # Server -> laptop, 2026-10-13 ~13:05Z - conf-floor export DELIVERED, and a second correction: r16 never gates an entry
 
 1. r16 is NOT on the entry path. gate_decision() is called only inside llm/decision_engine.get_trading_decision(), whose

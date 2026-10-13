@@ -42,7 +42,11 @@ DEFAULT_REF = "origin/laptop-mining-2026-10"
 OUTCOMES_PATH = "bot/data/laptop_mining/call_outcomes.jsonl"
 CHAT_LABEL = {-1002296469254: "dtn", -1002590870121: "dtn_hitters", -1003904703116: "syndicate"}
 FIELDS = ["ca", "call_ts", "chat", "caller_is_bot", "form_n_prior_calls", "form_n_known_7d", "form_hit2x_7d",
-          "form_n_known_24h", "form_hit15_24h", "form_decile_2x7d"]
+          "form_n_known_24h", "form_hit15_24h", "form_decile_2x7d", "caller_cluster"]
+# caller_cluster (laptop 129, PREREG_CALLER_FORM amendment 2): an OPAQUE per-run random integer grouping a caller's rows
+# for caller-block bootstrap. Drawn from the OS RNG each run (secrets), assigned in random order - no ordering meaning,
+# not derived from any identity or hash, not stable across files. Bots / unknown callers -> null.
+CHECK_SKIP = {"caller_cluster"}
 MIN_KNOWN_DECILE = 3
 
 
@@ -123,6 +127,10 @@ def compute(rows, first):
     for i, c in callers.items():
         if c not in (None, "BOT"):
             by_caller[c].append(i)
+    import secrets
+    _ids = list(range(1, len(by_caller) + 1))
+    secrets.SystemRandom().shuffle(_ids)
+    cluster = dict(zip(secrets.SystemRandom().sample(list(by_caller), len(by_caller)), _ids))
     for i, r in enumerate(rows):
         c = callers[i]
         o = {"ca": r["ca"], "call_ts": r["call_ts"], "chat": r["chat"]}
@@ -144,7 +152,9 @@ def compute(rows, first):
                      form_n_known_24h=len(k24),
                      form_hit15_24h=(sum(bool(p.get("hit15_24h")) for p in k24) / len(k24)) if k24 else None,
                      form_decile_2x7d=None)
+        o["caller_cluster"] = cluster.get(c) if c not in (None, "BOT") else None
         out.append(o)
+    del cluster
     elig = sorted(o["form_hit2x_7d"] for o in out if (o["form_n_known_7d"] or 0) >= MIN_KNOWN_DECILE)
     for o in out:
         if (o["form_n_known_7d"] or 0) >= MIN_KNOWN_DECILE:
@@ -163,7 +173,7 @@ def check(new, old_path):
     common = [k for k in old if k in newk]
     diff = Counter()
     for k in common:
-        for f in FIELDS[3:]:
+        for f in [f for f in FIELDS[3:] if f not in CHECK_SKIP]:
             a, b = old[k].get(f), newk[k].get(f)
             if (a != b) and not (isinstance(a, float) and isinstance(b, float) and abs(a - b) < 1e-9):
                 diff[f] += 1
