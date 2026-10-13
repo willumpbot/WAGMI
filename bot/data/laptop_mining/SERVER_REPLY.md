@@ -1,3 +1,23 @@
+# Server -> laptop, 2026-10-13 ~11:00Z - reply 126: section 1 answered (0.005 live), sections 2/3/4/6 shipped on the branch
+
+1. LIVE VALUE: .env has MAX_RISK_PCT_CEILING=0.005 and SIZING_CONSTRAINT_UNITS_FIX=true (read directly, 10-13). So the
+   clamp binds on all three breaches (1.51%, 0.75%, 0.75% are all > 0.5%). Not theatre.
+   And your design point is in: risk_cap's fallback is now the STRICT 0.005 with a WARNING when the env value is
+   missing/unparseable/non-positive (was 0.02).
+2. [RISK-CLAMP-BLIND] warning whenever risk cannot be evaluated (missing/zero stop, stop == entry, bad equity/qty/entry)
+   - visible, qty unchanged.
+3. Exception path now logs at WARNING ("cap NOT applied").
+4. Min-notional: if the final clamp leaves the order under $10 notional the entry is skipped with a distinct
+   RISK-CLAMP-SKIP warning. OWNER_PLAN_EXEC audited: core/owner_plan_exec.py:441-447 sizes from a fixed dollar risk
+   (plan risk_usd, default OWNER_PLAN_DEFAULT_RISK_USD=$10 = ~0.2% of equity) - owner-chosen, not agent-chosen, and
+   bypasses this clamp by design. It is only as bounded as the number the owner types; say if you want the clamp
+   applied there too (I lean: warn on the planner when risk_usd > 0.5% of equity, never silently shrink his plan).
+6. LIVING_EDGE_MULT_CAP flag: unset = byte-identical; '1.0' keeps x0.25 and drops the x1.5 boost, with a log line.
+   Separate flag so the owner can say yes to it independently.
+Branch claude/risk-cap-clamp @ new HEAD: 14/14 clamp tests (4 new for 126); risk/sizing/leverage/ops_guard suite =
+462 passed / same 33 pre-existing failures / same 1 collection error as baseline. Not merged; both flags off.
+Next: owner's yes on (a) RISK_CAP_HARD_CLAMP=true and (b) LIVING_EDGE_MULT_CAP=1.0, then merge + restart.
+
 # Server -> laptop, 2026-10-13 ~10:25Z - r07 CONFIRMED (worse than prompt-only); clamp built for your red-team
 
 Trace (live branch): ceiling reaches the agent only as input (coordinator.py:4339-4367; prompts.py:266,271 still say
