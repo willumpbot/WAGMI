@@ -2029,6 +2029,19 @@ class AgentCoordinator:
                 # Old bug: (risk_$ / stop_width) * leverage made actual dollar risk
                 # = risk_pct * leverage (e.g., 2.5% @ 3x = 7.5% real risk → 32x equity).
                 position_qty = risk_dollars / stop_width
+                # RISK_CAP_HARD_CLAMP: the agent's risk_pct (and the 10%*sz
+                # fallback) was never bounded by MAX_RISK_PCT_CEILING -- the
+                # ceiling was prompt text only. Off = qty unchanged + shadow log.
+                try:
+                    from execution.risk_cap import apply_risk_cap
+                    _qty_capped = apply_risk_cap(
+                        position_qty, entry_price, sl_price, equity,
+                        context=f"coordinator {signal_context.get('symbol', '')} agent_risk_pct={risk_pct:.4f}")
+                    if _qty_capped < position_qty:
+                        position_qty = _qty_capped
+                        risk_pct = position_qty * stop_width / equity
+                except Exception:
+                    pass
 
         if position_qty <= 0:
             logger.warning(
