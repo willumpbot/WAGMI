@@ -481,3 +481,52 @@ design.** Rule: **hour-aware scaling for any hourly expectation; daily `em` for 
 **A placebo must be checked for INERTNESS against the specific structure being tested.** M5's shift was
 a good placebo for a regime flag and would have been a *null-by-construction* placebo for a seasonality
 profile. The same transformation is not a control for every question.
+
+---
+
+## 14. 2026-10-13 ~23:10 — MISSION QUEUE COMPLETE, nine of nine
+
+All three wake priorities done. **Everything still open is data-blocked, not effort-blocked.**
+
+### M8 closed (reply 141) — confirmed, and the hazard is bigger than the claim
+The July *"0.60 floor killed proceeds"* claim is **metabrain-only: confirmed three ways** — `gate_decision`
+takes an `LLMDecision`; the export's own `path` field reads `metabrain_advisory` in **491 of 491** rows;
+and 125 of 149 trades came from the mechanical path. **July's count of 69 stays UNVERIFIED** (those gate
+records are not on this disk) and I left it that way rather than inferring it from another month.
+- **The floor is INERT on current data: 0 of 491 actions changed, while 449 of 491 (91.4%) sit BELOW
+  their own floor and all 491 read `proceed`.** The r16 pattern from the other side — in reply 123 I
+  called something a gate rejecting 165 entries when it was advisory-only.
+- 🔴 **`LIVING_CONF_FLOOR` is in no `.env`/config/script here and defaults to FALSE, which returns the
+  legacy 0.60** — yet the live log shows a **0.41** floor in force. Both cannot be true, so **either the
+  desktop sets it outside `.env` or my `.env` is stale; asked which.** Either way one variable stands
+  between the bot and a 0.60 floor against a live distribution with **p90 0.395** — and their own comment
+  records what that did: **zero trades 2026-07-29 → 09-12.** Recommended making the gate self-checking
+  (clamp to the observed p99 and log loudly) rather than only flipping the default.
+- Corrected their comment: the scale does **not** top out near 0.55 — median 0.365, p90 0.395, **max
+  0.680**, three decisions cleared 0.60.
+
+### `owner_plan_sims.json` arrived at n=4 (reply 142) — does not unblock anything
+Four distinct plans, two coins, all SHORT, two resolved. **Two near-misses caught by checking:** I was
+about to report n as effectively 2 (the BTC rows have distinct `plan_id`s **and** distinct levels, so
+`mode` is not two readings of one plan), and one step from calling the VVV pair a duplication bug
+(distinct ids, but byte-identical levels — flagged as a question about intake dedupe, not a defect).
+**Named and refused the tempting number:** profits_only +0.685R vs plan_levels +1.0R is n=1 vs n=1 on
+different plans, and it agrees with M2 arm A's pooled sign, which is exactly why it is not read.
+**The append-only resolved log is now the binding ask** — this is a snapshot with `expires_ts`, and a
+snapshot cannot accumulate.
+
+### Snapshot stamping retrofitted
+`panel_snapshot.py` is the single source; M4/M5/M6 now print `SOURCE SNAPSHOT` and carry
+`source_snapshot` in their JSON. **Verified by RUNNING all three**, not by grepping for my own new
+string — all emitted `rows=885160`, already past the 885,145 M7 recorded. **Published JSONs restored
+from git and deliberately unchanged:** re-running would replace a recorded result with an unrecorded one.
+
+### The cross-study conclusion, now on Nunu's artifact in plain words
+**M9 / M4 / M6 / M7 all say the same thing: these dials move VARIANCE, never EXPECTANCY.** Leverage
+cannot change P&L; widen-vs-size-down is worth ~8¢/trade; a 42% intraday shape washes to 8% over a day;
+two positions bunch bad days rather than costing profit. **The levers that would change returns are
+risk-per-trade and trade selection.**
+
+### Open, all awaiting data
+`owner_plan_sims` accumulation · the live dissent series for M3 stage 2 · **whether
+`LIVING_CONF_FLOOR` is set in the live environment** (the one that matters most).
