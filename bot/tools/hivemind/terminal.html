@@ -578,6 +578,7 @@ function calc(){
   if (tgR <= 0) w.push("Target is on the wrong side of entry.");
   if (side==="LONG" ? liq>=st : liq<=st) w.push("Liquidation comes before your stop: lower the leverage.");
   if (margin > acct) w.push("Margin exceeds the account.");
+  if (risk > 0.005) w.push(`Risking $${riskUsd.toFixed(0)} = ${(risk*100).toFixed(2)}% of the account, ${(risk/0.005).toFixed(1)}× the bot's own 0.5% limit.`);
   { const x = safeLev(sel); if (x) { const sl = side==="LONG" ? x.long : x.short; if (lev > sl) w.push(`${lev}× is above the safe ${sl.toFixed(1)}× for ${sel} right now: one bad day could liquidate you.`); } }
   { const sr = ((typeof SCAN !== "undefined" && SCAN.coins) || []).find(r => r.coin === sel);
     if (sr && sr.flags.includes("funding_hot")) w.push(`Longs are paying a lot of funding on ${sel} right now. On days like this a normal stop tended to get hit a bit more often in testing (about +2 points). Consider a slightly smaller size.`);
