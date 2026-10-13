@@ -186,3 +186,97 @@ unchanged. Interpolation affects only where the MDE line is drawn, never whether
 Populations, arms, the gate at ≥170/173, `START = "2023-01-01"`, the prohibited list, and the report
 order are all untouched. **No held-out data has been read.** The amendment is made because a rule
 failed a sanity check against the discovery sample, which is the only moment such a fix is legitimate.
+
+---
+
+# AMENDMENT 2 — made 2026-10-12 BEFORE any read, with funding at ~100/178 files
+
+**Reason: the PC answered the provenance question and the answer invalidates part of the panel.**
+Reply to 116: *"pre-2023 HL daily bars are HL's own backfill (n=0, v=0); real trading from
+2023-02-26."* **Verified independently on the laptop's own files, and it is worse than the headline.**
+
+## A. What the data shows
+
+| coin | bars | zero-volume | last v=0 | first v>0 | flat OHLC |
+|---|---|---|---|---|---|
+| BTC | 2,242 | 921 | 2023-02-25 | **2023-02-26** | **0** |
+| ETH | 2,242 | 921 | 2023-02-25 | 2023-02-26 | 0 |
+| ATOM | 2,246 | 921 | 2023-02-25 | 2023-02-26 | 0 |
+| **DOGE** | 2,242 | **957** | 2023-04-02 | **2023-04-03** | 0 |
+
+**Three things follow, none of which I had allowed for:**
+
+1. **The real-trading start is PER COIN, not a global 2023-02-26.** DOGE's is 2023-04-03.
+2. **`START = "2023-01-01"` is INSIDE the backfill.** Freezing `START` protected against reaching
+   further back, but the window already began before real trading existed.
+3. **The `MAX_STALE` filter catches none of it.** Backfill bars have **moving OHLC with zero volume**,
+   so `o == h == l == c` is false and all 2% of the stale filter's budget goes unused. **I had
+   recorded "0 dropped as stale" as evidence the new series were clean. It was evidence the filter
+   does not look at volume.**
+
+**In the analysis window: 20,022 of 168,129 rows are zero-volume — 11.9% of the panel.** Those rows
+**cannot be flagged** (no funding exists before a coin trades), so they sit entirely in the
+**unflagged comparison arm** as fabricated price paths. **That biases the exact difference this test
+measures.**
+
+## B. 🔴 And it contaminates `SIZE_FLAGS` itself
+
+`SIZE_FLAGS` ran without any volume filter. **Its own 17-coin window is 10.7% synthetic** — 2,159 of
+20,156 rows — and the distribution is severe, not diffuse:
+
+| coin | synthetic rows | share |
+|---|---|---|
+| **ZEC** | **999 of 1,371** | **73%** |
+| NEAR | 304 of 1,377 | 22% |
+| UNI | 222 of 1,377 | 16% |
+| XRP | 167 of 1,377 | 12% |
+| LINK | 137 of 1,377 | 10% |
+
+**11 of the 17 coins carry synthetic rows, and ZEC is almost entirely backfill.** This is an
+independent second reason the `funding_hot_bigger_day` card must not read PROVEN, separate from the
+power argument in reply 116.
+
+## C. The fix, pre-specified
+
+**`VOL_FILTER`, applied to every population in the primary result:**
+
+1. **Truncate each coin's series to its first `v > 0` bar.** Zero-volume runs are a clean **prefix**
+   for **93 of 178** coins (83 have none at all), so truncation removes every synthetic bar *and*
+   preserves a contiguous daily grid for `rv1/rv5/rv22`.
+2. **Then drop any coin-day whose own bar or whose next-day outcome bar has `v == 0`.** Only **2**
+   coins have interior zeros — **BANANA (8 bars)** and **VVV (1 bar)** — but VVV is one of the
+   original 17, so the rule is stated rather than waved off.
+3. **Report rows removed** beside the panel size.
+
+## D. The canary has to split, or it stops being a canary
+
+`SIZE_FLAGS` ran on the contaminated panel, so **a volume-filtered ORIG17 will NOT reproduce
++0.0740 log**, and a mismatch would no longer mean the pipeline is broken. Both arms are therefore
+reported:
+
+| arm | purpose |
+|---|---|
+| **(b_raw) ORIG17, NO volume filter** | **the true pipeline canary.** Must reproduce ≈ **+0.0740 log / +7.7% level**, or the reimplementation is wrong and nothing else in the run is trustworthy |
+| **(b) ORIG17, volume filtered** | what the discovery sample says once fabricated rows are removed |
+| **(c) NEW156, volume filtered** | **unchanged: still the replication and the only number to act on** |
+
+## E. Recorded expectation — with its mechanism, so it can be wrong
+
+**I will not claim a direction I cannot argue.** The mechanism I can argue: **synthetic rows are
+removable only from the unflagged arm**, because they can never be flagged. **If backfilled bars are
+smoother relative to `em` than real ones** — plausible, since a reconstructed series has no genuine
+microstructure — **then removing them RAISES the unflagged arm's mean |move| and SHRINKS the
+flagged-minus-unflagged difference.**
+
+**So the prediction is: (b) filtered comes in BELOW (b_raw) unfiltered.** If it comes in higher, that
+mechanism is wrong and I say so. **I am deliberately not measuring |move| by volume status before the
+run**, which would be a read; it gets reported afterwards as part of the result.
+
+**Panel size falls ~12%**, so every MDE should widen slightly. That is the cost of removing fabricated
+data and it is worth paying.
+
+## F. Unchanged
+
+Populations, arms, the gate at ≥170/173, the Amendment 1 verdict matrix, the prohibited list, and the
+report order. **`START` stays `2023-01-01`** — the volume filter now does the work that moving `START`
+would have done, and does it per coin instead of globally. **No held-out data has been read.**

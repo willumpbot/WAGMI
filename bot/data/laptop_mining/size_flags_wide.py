@@ -154,18 +154,41 @@ def universe():
     return syms, drop
 
 
-def build(syms):
-    """Panel of coin-days with the HAR forecast `em`, next-day |move|, and raw funding."""
+def build(syms, vol_filter=True):
+    """Panel of coin-days with the HAR forecast `em`, next-day |move|, and raw funding.
+
+    AMENDMENT 2: `vol_filter` removes Hyperliquid's own pre-listing backfill, which carries MOVING
+    OHLC with v=0 and n=0 and is therefore invisible to the MAX_STALE check (o==h==l==c is false).
+    11.9% of the analysis window is such rows, and they can never be flagged -- no funding exists
+    before a coin trades -- so they sit entirely in the UNFLAGGED arm as fabricated price paths.
+
+    Zero-volume runs are a clean PREFIX for 93 of 178 coins (83 have none), so truncating to the
+    first v>0 bar removes every synthetic bar while keeping a contiguous daily grid for rv1/rv5/rv22.
+    Only BANANA (8 bars) and VVV (1) have interior zeros; those coin-days are dropped individually.
+
+    vol_filter=False reproduces SIZE_FLAGS' contaminated panel, needed for the (b_raw) canary.
+    """
     rows = []
+    removed = 0
     for s in syms:
         d = load_daily(s)
+        if vol_filter:
+            fz = next((i for i, x in enumerate(d) if x[5] > 0), None)
+            if fz is None:
+                continue                      # never traded: no real bars at all
+            removed += fz
+            d = d[fz:]
         fnd = load_funding(s)
         t = [x[0] for x in d]
         c = [x[4] for x in d]
+        vol = [x[5] for x in d]
         day = [datetime.datetime.fromtimestamp(x, datetime.UTC).strftime("%Y-%m-%d") for x in t]
         rets = [0.0] + [(c[i] / c[i - 1] - 1) * 100 for i in range(1, len(c))]
         for i in range(30, len(c) - 2):
             if day[i] < START:
+                continue
+            if vol_filter and (vol[i] == 0 or vol[i + 1] == 0):
+                removed += 1                  # interior zero on the row or its outcome bar
                 continue
             rv1, rv5, rv22 = abs(rets[i]), sd(rets[i - 4:i + 1]), sd(rets[i - 21:i + 1])
             if rv22 <= 0 or rv5 <= 0:
@@ -183,6 +206,8 @@ def build(syms):
                          "em": em, "move": nxt, "funding": fnd.get(day[i])})
     df = pd.DataFrame(rows)
     df["lr"] = np.log(df["move"] + EPS) - np.log(df["em"] + EPS)
+    df.attrs["vol_removed"] = removed
+    df.attrs["vol_filter"] = vol_filter
     return df
 
 
@@ -400,15 +425,25 @@ def main():
         print("HALTING: the rewritten statistic does not match the original.")
         return
 
+    # AMENDMENT 2(D): SIZE_FLAGS ran on the contaminated panel, so a volume-filtered ORIG17 cannot
+    # serve as the pipeline canary. The unfiltered ORIG17 is the canary; it must reproduce +0.0740.
+    raw17 = build(list(ORIG17), vol_filter=False)
+    print("canary panel (ORIG17, NO volume filter): %d coin-days -- SIZE_FLAGS reported 19,853"
+          % len(raw17))
     cutoffs = orig17_cutoffs(df)
     pops = [("c_NEW156", df[~df["sym"].isin(ORIG17)]),
             ("b_ORIG17", df[df["sym"].isin(ORIG17)]),
+            ("b_raw_ORIG17_NOFILTER", raw17),
             ("a_ALL173", df)]
-    out = {"prereg": "PREREG_FUNDING_WIDE 41805c5c", "start": START,
-           "universe": len(syms), "funding_files": have_f, "selftest": st, "results": []}
+    out = {"prereg": "PREREG_FUNDING_WIDE 624a9e98 (amendments 1 and 2)", "start": START,
+           "universe": len(syms), "funding_files": have_f, "selftest": st,
+           "vol_removed_rows": df.attrs.get("vol_removed"),
+           "panel_rows_filtered": len(df), "panel_rows_canary": len(raw17), "results": []}
     for arm, fn in (("rank_PRIMARY", flag_rank), ("frozen_SECONDARY",
                                                   lambda s: flag_frozen(s, cutoffs))):
         for nm, sub in pops:
+            if nm == "b_raw_ORIG17_NOFILTER" and arm != "rank_PRIMARY":
+                continue        # the canary only means anything under the original rank rule
             sub = sub.reset_index(drop=True)
             r = analyse("%s|%s" % (nm, arm), sub, fn(sub))
             r["arm"] = arm
