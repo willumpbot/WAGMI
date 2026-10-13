@@ -1,7 +1,7 @@
 {
  "id": "r16_trigger_conf_floor",
  "n": 16,
- "description": "Trigger-path living conf floor (P90 ~0.38) - llm/risk_gating.py:86-160 - 52 rejections, likely no effect in LLM-first",
+ "description": "Metabrain/advisory living conf floor (P90 ~0.38) - llm/risk_gating.py:86-160 - NOT on the LLM-first entry path",
  "claim_id": "conf_floor_adjusted_conf",
  "unit": "confidence (P90 ~0.38)",
  "window": null,
@@ -17,5 +17,5 @@
  "verified_by": "none",
  "seeded_at": "2026-10-12",
  "evidence_through": null,
- "note": "rebound 10-13 (laptop 125): the REFUTED study tested a different confidence column; rule kept"
+ "note": "10-13 (conf_floor_export): r16 gate_decision() runs ONLY in llm/decision_engine.get_trading_decision - the metabrain advisory path (lead-lag / divergence / position-closed triggers) and the PRE_TRADE veto, which LLM_FIRST_MODE=true bypasses (and a confidence_too_low there returns None = proceed). Real entries (coordinator.get_entry_decision) never reach it: its 'rejections' block no trade. Rule kept; claim conf_floor_adjusted_conf."
 }

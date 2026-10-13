@@ -134,6 +134,14 @@ def main():
                 stamp.write_text(str(time.time()))
         except Exception as e:
             log(f"knowledge check failed: {e}")
+        try:   # r16 confidence-floor decisions -> server_exports (append-only, idempotent; laptop reply 128), hourly
+            stamp = HERE.parents[1] / "data" / "laptop_mining" / ".last_conf_floor_export"
+            if not stamp.exists() or time.time() - stamp.stat().st_mtime > 3600:
+                import conf_floor_export
+                conf_floor_export.run()
+                stamp.write_text(str(time.time()))
+        except Exception as e:
+            log(f"conf_floor_export failed: {e}")
         try:
             import decisions
             decisions.build()

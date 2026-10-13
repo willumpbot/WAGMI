@@ -37,7 +37,7 @@
  "metric": "pnl_bps_passed_vs_blocked",
  "status": "HYPOTHESIS",
  "wording_tier": "hypothesis",
- "status_qualifier": "UNTESTED at the floor's actual input: llm/risk_gating.py:86 compares entry_decision.confidence (LLM, 0-1) with living_conf_floor.base_floor (P90 of live confidences, 0.38 now; 165 + 36 'confidence_too_low' rejections 10-11/10-12). NOT feedback/loop.py adjusted_conf - that floor has logged nothing since 2026-06-06 (dormant in the LLM-first path). The REFUTED CONF_FLOOR study used ledger confidence_score = pos.confidence = raw_signal (ensemble) confidence, msm:9459.",
+ "status_qualifier": "UNTESTED. The floor gates the LLM metabrain's ADVISORY decisions (entry_decision.confidence vs living P90 ~0.38, llm/risk_gating.py:86) - not real entries (LLM_FIRST_MODE routes entries through coordinator.get_entry_decision). Export: server_exports/conf_floor_decisions.jsonl (+ _resolutions), 488 decisions 09-13..10-13 (41 pass / 447 reject), forward-return counterfactuals. feedback/loop.py adjusted_conf floor is dormant since 06-06. CONF_FLOOR's refuted column was raw_signal confidence.",
  "verdict_text": "untested",
  "consumers": [
   "rule:r16_trigger_conf_floor"
@@ -55,6 +55,11 @@
    "at": "2026-10-13",
    "by": "server",
    "what": "input corrected: risk_gating LLM confidence, not feedback/loop.py adjusted_conf (dormant)"
+  },
+  {
+   "at": "2026-10-13",
+   "by": "server conf_floor_export",
+   "what": "r16 is advisory-only, not on the entry path"
   }
  ],
  "changed": "none - the rule stays as is"
