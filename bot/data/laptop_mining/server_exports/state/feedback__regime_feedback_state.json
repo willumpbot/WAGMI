@@ -44,9 +44,9 @@
   "consolidation": {
     "regime": "consolidation",
     "win_count": 12,
-    "loss_count": 31,
-    "total_pnl": -1.4261461472198143,
-    "win_rate": 0.27906976744186046,
+    "loss_count": 32,
+    "total_pnl": -1.427526850863085,
+    "win_rate": 0.2727272727272727,
     "profit_factor": 0.0,
     "confidence_floor": 65.0,
     "risk_multiplier": 1.0,
@@ -54,7 +54,7 @@
     "strategy_weights": {
       "": 0.2727272727272727
     },
-    "last_updated": "2026-10-11T00:25:57.387153+00:00",
+    "last_updated": "2026-10-12T06:20:20.645046+00:00",
     "recent_trades_count": 1
   },
   "range": {

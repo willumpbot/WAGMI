@@ -6437,47 +6437,6 @@
    "overall_health": "critical",
    "strengths": [],
    "weaknesses": [
-    "WR declining: 40% -> 10%",
-    "consolidation regime: 25% WR over 20 trades",
-    "SELL trades: 22% WR (18 trades)",
-    "Active loss streak: 9 consecutive"
-   ],
-   "root_causes": [
-    "recent_trades_underperforming",
-    "poor_consolidation_regime_performance",
-    "sell_directional_weakness",
-    "loss_streak_regime_mismatch"
-   ],
-   "urgency": "high",
-   "metrics": {
-    "wr_last_10": 0.1,
-    "wr_last_20": 0.25,
-    "wr_trend": "declining",
-    "avg_pnl_last_10": -7.6,
-    "avg_pnl_all": -3.44,
-    "avg_pnl_trend": "stable",
-    "regime_performance": {
-     "consolidation": {
-      "wr": 0.25,
-      "n": 20
-     }
-    },
-    "best_regime": "consolidation",
-    "worst_regime": "consolidation",
-    "best_symbol": "BTC",
-    "worst_symbol": "XRP",
-    "exit_efficiency": 0.8,
-    "sizing_correlation": 0.0,
-    "max_loss_streak_window": 9,
-    "current_loss_streak": 9
-   },
-   "n_trades": 20,
-   "timestamp": "2026-07-29T22:13:30.752383+00:00"
-  },
-  {
-   "overall_health": "critical",
-   "strengths": [],
-   "weaknesses": [
     "WR declining: 40% -> 0%",
     "consolidation regime: 20% WR over 20 trades",
     "SOL: 0% WR over 5 trades",
@@ -7316,9 +7275,50 @@
    },
    "n_trades": 20,
    "timestamp": "2026-10-11T00:26:18.132779+00:00"
+  },
+  {
+   "overall_health": "healthy",
+   "strengths": [
+    "WR improving: 30% -> 40%"
+   ],
+   "weaknesses": [
+    "High-leverage trades underperform: 0% vs 39%"
+   ],
+   "root_causes": [
+    "overleveraging_losers"
+   ],
+   "urgency": "low",
+   "metrics": {
+    "wr_last_10": 0.4,
+    "wr_last_20": 0.35,
+    "wr_trend": "improving",
+    "avg_pnl_last_10": 5.04,
+    "avg_pnl_all": 1.3,
+    "avg_pnl_trend": "improving",
+    "regime_performance": {
+     "consolidation": {
+      "wr": 0.316,
+      "n": 19
+     },
+     "trend": {
+      "wr": 1.0,
+      "n": 1
+     }
+    },
+    "best_regime": "trend",
+    "worst_regime": "consolidation",
+    "best_symbol": "SOL",
+    "worst_symbol": "ETH",
+    "exit_efficiency": 2.0,
+    "sizing_correlation": -0.389,
+    "max_loss_streak_window": 6,
+    "current_loss_streak": 3
+   },
+   "n_trades": 20,
+   "timestamp": "2026-10-12T06:20:38.850446+00:00"
   }
  ],
- "cycle_count": 192,
+ "cycle_count": 193,
  "version": 1,
  "parameter_recommendations": [
   {
