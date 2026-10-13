@@ -301,3 +301,44 @@ The pre-2023 daily bars are **confirmed foreign backfill**. `ATOM` funding begin
 its daily price claims **2020-08-19** — and Hyperliquid cannot have funding for a coin that was not
 listed there. Same shape for every coin with the suspicious 865-row pre-2023 block. **`START =
 "2023-01-01"` stays frozen**; the ~123 extra weeks are not ours to use.
+
+## 10. 2026-10-13 07:10 — fetch COMPLETE, chat quality ran, caller form blocked
+
+**`megacalls_fetch` DONE: live 1,924, dead 182 of 2,106, 22.3 hours, final 429 rate 2.9%.**
+`call_outcomes.jsonl` regenerated **384 → 2,442 rows**, identity check PASSED.
+
+### `PREREG_CHAT_QUALITY` — ran ONCE. **UNDERPOWERED.** `CHAT_QUALITY_RESULT.md`
+
+| | eq-weighted (governs) | pooled | CI | z | verdict |
+|---|---|---|---|---|---|
+| **`dtn_hitters` − `syndicate`** | **+14.5 pp** | +8.9 pp | **[−0.7, +29.6]** | **1.87** | **UNDERPOWERED** |
+| `dtn` − `dtn_hitters` | +12.7 pp | +19.5 pp | [−5.5, +28.9] | 1.45 | UNDERPOWERED (sign flips) |
+
+Placebo valid (0.067 / 0.078), MDE **8.0 pp** well under the 15 pp floor, **32 shared days — exactly
+the "~32" the prereg predicted.** The primary clears four of five SUPPORT criteria and **fails only
+significance: lower bound −0.7, z 1.87 against the 2.24 bar.** **Not reported as suggestive** — the bar
+was fixed in advance so a 1.87 could not be talked across it.
+
+**Death rates: `dtn` 5.3% · `dtn_hitters` 30.5% · `syndicate` 34.4%.** Looks decisive, **is unusable** —
+`dtn` ends 06-21 and `syndicate` starts 08-24, so it is pure era confound, which is why the prereg
+excluded that pair permanently. The era-matched 4-point death gap runs the same way as the hit gap, so
+the primary may be substantially **survival** rather than target-reaching. Flagged, not claimed.
+
+**VOID RUN 1:** `day_of` divided `call_ts` by 1000 when the file stores **seconds**, collapsing all
+calls into January 1970 → "shared days: 1". **The prereg's own recorded count caught it** (14 at 384
+rows cannot become 1 at 2,442). **It computed no effect, placebo or MDE, so the re-run was genuinely
+blind** — unlike the funding void run. Units now detected *and* year-range-checked, so a repeat halts.
+
+### 🔴 `PREREG_CALLER_FORM` — gate open, **NOT RUN**, blocked on the server
+
+`call_caller_form_anon.jsonl` is still the 384-row file from 10-12, giving
+`form_n_known_7d ≥ 3` = **exactly 126** — and **Amendment 1 forbids a run at n=126.** The server must
+re-run step 2 (identity-local join) against the new 2,442-row outcomes file; the prereg expects
+**~650** rows at threshold. **The deferral is a data dependency, not a choice**, and that goes in the
+result doc so it cannot later read as waiting for a better n.
+
+### Calibration note — three instances now, all the same direction
+
+**I am systematically too gloomy.** Over-predicted attenuation on both replications, and called this
+prereg's power "probably fatal" with a ~14 pp floor when the real MDE was **8.0 pp**. **The corpus
+growth mattered more than I expected, twice.**
