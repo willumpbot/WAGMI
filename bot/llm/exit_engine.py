@@ -73,12 +73,12 @@ class ExitEngine:
         ok, reason = self._safety_gate(decision, position, current_price)
         if not ok:
             logger.info(f"[EXIT-ENGINE] {decision.symbol} safety gate: {reason}")
-            self._log_decision(decision, position, False, reason)
+            self._log_decision(decision, position, False, reason, current_price)
             return {"applied": False, "action": "safety_gated", "details": reason}
 
         # Apply the decision
         result = self._execute(decision, position, current_price)
-        self._log_decision(decision, position, result["applied"], result["details"])
+        self._log_decision(decision, position, result["applied"], result["details"], current_price)
         self.mark_evaluated(decision.symbol)
         return result
 
@@ -119,8 +119,10 @@ class ExitEngine:
                         if os.getenv("OWNER_PROFITS_ONLY_REQUIRE_PROFIT", "false").strip().lower() in ("1", "true", "yes"):
                             return False, (f"owner plan exit_mode={_om}: partial only while in profit "
                                            f"(price {current_price} vs entry {position.entry})")
-                        logger.info(f"[OWNER-PROFITS-ONLY-SHADOW] {decision.symbol} would block a partial at a loss "
-                                    f"(price {current_price} vs entry {position.entry}); flag off, allowed")
+                        from core.owner_plan_exec import log_owner_exit_block
+                        log_owner_exit_block(position, "exit_engine", "partial",
+                                             f"[OWNER-PROFITS-ONLY-SHADOW] would block a partial at a loss (price "
+                                             f"{current_price} vs entry {position.entry}); flag off, allowed", once=True)
                     _allow = owner_partial_allowance(position)
                     _min_q = get_min_qty(position.symbol)
                     if _allow < _min_q or position.qty <= 0:
@@ -337,6 +339,7 @@ class ExitEngine:
         position: Position,
         applied: bool,
         details: str,
+        current_price: Optional[float] = None,
     ):
         """Log exit decision to exit_decisions.jsonl."""
         try:
@@ -369,6 +372,15 @@ class ExitEngine:
                 entry["exit_mode"] = _oem(position)
                 entry["source"] = "exit_engine"
                 entry["partial_pct"] = decision.partial_pct if decision.exit_action == "partial" else None
+                # laptop 131: the decision-time price + profit state must be in the RECORD, not only a text log line,
+                # so the profits_only require-profit shadow window is countable.
+                entry["current_price"] = current_price
+                if current_price and position.entry:
+                    _sg = 1 if position.side == "LONG" else -1
+                    entry["in_profit"] = (current_price - position.entry) * _sg > 0
+                    entry["unrealized_bps"] = round((current_price - position.entry) * _sg / position.entry * 1e4, 1)
+                    entry["would_block_require_profit"] = (decision.exit_action == "partial" and entry["exit_mode"] == "profits_only"
+                                                           and not entry["in_profit"])
             with open(_log_file, "a") as f:
                 f.write(json.dumps(entry) + "\n")
         except Exception as e:

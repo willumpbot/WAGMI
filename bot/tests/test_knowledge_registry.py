@@ -477,3 +477,12 @@ def test_d13_flags_decision_number_from_another_estimator(tmp_path):
     f, na = check.check_d13_decision_estimator(_ctx(tmp_path))
     assert [x["id"] for x in f] == ["c_bad:K*"]
     assert any("c_unk" in x.get("what", "") or "c_unk" in json.dumps(x) for x in na)
+
+
+def test_d9_flags_a_stale_derived_product(tmp_path):
+    _w(tmp_path / "data" / "hivemind" / "plans.json", {"updated": "2026-10-13T17:39:15+00:00", "plans": []})
+    _w(tmp_path / "data" / "hivemind" / "scan.json", {"updated": "2026-10-13T21:00:00+00:00"})
+    from datetime import datetime
+    now = datetime.fromisoformat("2026-10-13T21:20:00+00:00").timestamp()
+    ids = {f["id"] for f in check.check_d9_substrate_death(_ctx(tmp_path, now=now))[0]}
+    assert "product:hivemind/plans.json" in ids and "product:hivemind/scan.json" not in ids

@@ -529,6 +529,9 @@ def _last_rows(path, n):
     return rows
 
 
+PRODUCTS = {"hivemind/plans.json": 1.0, "hivemind/scan.json": 1.0}   # derived files the 15-min cycle rebuilds
+
+
 def check_d9_substrate_death(ctx):
     """D9: an un-backfillable stream whose newest row (or newest off-box archive shard) is older than max_age_days."""
     out, na = [], []
@@ -558,6 +561,22 @@ def check_d9_substrate_death(ctx):
                                   f"{days[-1]} ({a_age:.1f} days)"))
         elif s.get("archive"):
             na.append(_na("D9", f"{name} off-box copy", f"no archive dir {adir}"))
+    # Derived products rebuilt every 15-min cycle: a builder that throws every cycle is silent unless its OUTPUT ages
+    # (laptop 131: plan grading was down 3.5h on 10-13 with only a per-cycle error line).
+    for rel, max_h in PRODUCTS.items():
+        fp = ctx.data_dir / rel
+        if not fp.exists():
+            out.append(_f("D9", "product:" + rel, "high", f"{rel} is missing"))
+            continue
+        ts = None
+        try:
+            ts = datetime.fromisoformat(str(common.load_json(fp, {}).get("updated"))).timestamp()
+        except Exception:
+            ts = fp.stat().st_mtime
+        age_h = (ctx.now - ts) / 3600
+        if age_h > max_h:
+            out.append(_f("D9", "product:" + rel, "high", f"{rel} last rebuilt {age_h:.1f}h ago (limit {max_h}h) - "
+                          "its builder is failing every cycle", path=rel))
     na.append(_na("D9", "copy actually on the laptop", "checks the export staging dir, not the laptop's disk"))
     return out, na
 

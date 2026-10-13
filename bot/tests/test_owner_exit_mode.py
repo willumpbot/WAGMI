@@ -420,3 +420,12 @@ def test_require_profit_never_touches_bot_positions(sandbox, monkeypatch):
     monkeypatch.setenv("OWNER_PROFITS_ONLY_REQUIRE_PROFIT", "true")
     eng = _engine(sandbox, monkeypatch)
     assert eng.apply_exit_decision(_partial(0.3), _pos("bot_manages"), 2980.0)["applied"]
+
+
+def test_owner_exit_row_records_price_and_profit_state(sandbox, monkeypatch):
+    monkeypatch.setenv("OWNER_PROFITS_ONLY_REQUIRE_PROFIT", "false")
+    eng = _engine(sandbox, monkeypatch)
+    eng.apply_exit_decision(_partial(0.3), _pos("profits_only"), 2980.0)
+    row = _owner_log(sandbox)[-1]
+    assert row["current_price"] == 2980.0 and row["in_profit"] is False
+    assert row["would_block_require_profit"] is True and row["unrealized_bps"] < 0
