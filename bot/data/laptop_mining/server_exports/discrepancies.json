@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-13T02:26:28+00:00",
- "now": "2026-10-13T02:26:28+00:00",
+ "generated": "2026-10-13T03:30:49+00:00",
+ "now": "2026-10-13T03:30:49+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 4,
+   "flagged": 3,
    "high": 3,
    "not_automated": 0
   },
@@ -60,7 +60,7 @@
    "not_automated": 3
   },
   "D12": {
-   "flagged": 0,
+   "flagged": 1,
    "high": 0,
    "not_automated": 4
   }
@@ -159,17 +159,6 @@
      "impl_hash": "af42d2e18c676c6096433286e59c512f1c11c2669aaab17f70ef39d7d135ff15"
     }
    ]
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_BTC",
-   "severity": "warn",
-   "what": "exp_move for BTC disagrees by 14% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 2.06,
-    "scan.exp_move": 1.91,
-    "chief.expected_move_pct": 1.8
-   }
   },
   {
    "check": "D5",
@@ -321,9 +310,27 @@
    "check": "D11",
    "id": "stream_market_depth:depth bands are cumulative",
    "severity": "high",
-   "what": "stream stream_market_depth: 2/189 recent rows break 'depth bands are cumulative'",
+   "what": "stream stream_market_depth: 2/193 recent rows break 'depth bands are cumulative'",
    "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
    "example": "{\"ts\": \"2026-10-13T00:07:02Z\", \"symbol\": \"PENGU\", \"l2\": {\"mid\": 0.0075185, \"spread\": 3e-06, \"spread_bps\": 3.9902, \"bid_depth_0_1pct\": 32887168.0, \"ask_depth_0_1pct\": 967015.0, \"imbalance_0_1pct\": 0.9429, \"bid_depth_0_5pct\": 12326145.0, \"ask_depth_0_5pct\": 26166450.0, \"imbalance_0_5pct\": -0.3596, \"bi"
+  },
+  {
+   "check": "D12",
+   "id": "funding_hot",
+   "severity": "warn",
+   "what": "funding_hot: live code disagrees with the tested definition on 20/40 fixture cases (known: live uses > (tie-heavy HL default funding: >= flagged ~85% of live coins on 10-11), evidence measured with >=; resolves via held-out stop-hits prereg runs BOTH operators as arms; the result decides which the terminal keeps)",
+   "cases": [
+    0,
+    2,
+    4,
+    5,
+    6,
+    10,
+    12,
+    14,
+    18,
+    20
+   ]
   }
  ],
  "not_automated": [
