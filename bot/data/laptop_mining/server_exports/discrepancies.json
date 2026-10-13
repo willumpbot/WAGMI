@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-13T03:30:49+00:00",
- "now": "2026-10-13T03:30:49+00:00",
+ "generated": "2026-10-13T04:35:02+00:00",
+ "now": "2026-10-13T04:35:02+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -60,7 +60,7 @@
    "not_automated": 3
   },
   "D12": {
-   "flagged": 1,
+   "flagged": 0,
    "high": 0,
    "not_automated": 4
   }
@@ -100,12 +100,12 @@
     {
      "label": "volforecast.forecast",
      "where": "tools/hivemind/volforecast.py:36",
-     "impl_hash": "ae0f3f71b5c362ce96a083d751240c9e3aae822ab8d6e419623af757fb04203a"
+     "impl_hash": "1b646d12eadaf207eeb9a41df87485ec434586cbf49a676b6dad6326989c29f2"
     },
     {
      "label": "risk_voice.risk_read (via assemble.voice_risk)",
      "where": "data/laptop_mining/risk_voice.py:142",
-     "impl_hash": "55531d46137b6cddda257559f96b477296c83c7da46632971331dafd1f8785cc"
+     "impl_hash": "2ba5644a2e7d3d604286894252011640daebc1706081600f6f27c74d0f87bf8c"
     },
     {
      "label": "chief expected_move_pct",
@@ -310,27 +310,9 @@
    "check": "D11",
    "id": "stream_market_depth:depth bands are cumulative",
    "severity": "high",
-   "what": "stream stream_market_depth: 2/193 recent rows break 'depth bands are cumulative'",
+   "what": "stream stream_market_depth: 1/195 recent rows break 'depth bands are cumulative'",
    "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
-   "example": "{\"ts\": \"2026-10-13T00:07:02Z\", \"symbol\": \"PENGU\", \"l2\": {\"mid\": 0.0075185, \"spread\": 3e-06, \"spread_bps\": 3.9902, \"bid_depth_0_1pct\": 32887168.0, \"ask_depth_0_1pct\": 967015.0, \"imbalance_0_1pct\": 0.9429, \"bid_depth_0_5pct\": 12326145.0, \"ask_depth_0_5pct\": 26166450.0, \"imbalance_0_5pct\": -0.3596, \"bi"
-  },
-  {
-   "check": "D12",
-   "id": "funding_hot",
-   "severity": "warn",
-   "what": "funding_hot: live code disagrees with the tested definition on 20/40 fixture cases (known: live uses > (tie-heavy HL default funding: >= flagged ~85% of live coins on 10-11), evidence measured with >=; resolves via held-out stop-hits prereg runs BOTH operators as arms; the result decides which the terminal keeps)",
-   "cases": [
-    0,
-    2,
-    4,
-    5,
-    6,
-    10,
-    12,
-    14,
-    18,
-    20
-   ]
+   "example": "{\"ts\": \"2026-10-13T04:22:01Z\", \"symbol\": \"WIF\", \"l2\": {\"mid\": 0.208235, \"spread\": 3e-05, \"spread_bps\": 1.4407, \"bid_depth_0_1pct\": 53655.0, \"ask_depth_0_1pct\": 108339.0, \"imbalance_0_1pct\": -0.3376, \"bid_depth_0_5pct\": 931462.0, \"ask_depth_0_5pct\": 849914.0, \"imbalance_0_5pct\": 0.0458, \"bid_depth_1p"
   }
  ],
  "not_automated": [
