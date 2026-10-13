@@ -1,0 +1,52 @@
+{
+ "section": "Meme calls (Syndicate / DTN)",
+ "kind": "exit",
+ "horizon": "72h",
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "idea_source": "owner",
+ "live_bot_flags": [],
+ "id": "partial_1r_runner_exit",
+ "statement_plain": "Taking half at +1R and trailing the rest beats other exit rules on perps",
+ "question": "Does 'take some, hold some toward the runners' beat other exits?",
+ "quantity": "exit_rule",
+ "metric": "bps_net_vs_no_edge_control",
+ "status": "HYPOTHESIS",
+ "wording_tier": "hypothesis",
+ "status_qualifier": "EXPLORATORY (laptop M1, 9cd7c4d5): leads at all 5 stop widths on 177 coins x 400 random entries vs a martingale control, but best cell z 3.19 ~ the Bonferroni line over 70 cells, ORIG17/NEW156 disagree in sign at K=1.0/1.5, size 0.01-0.03R (about one round-trip of fees), 1h bars only. Trail flavour doesn't matter - the gain is the partial. Sealed prereg next.",
+ "verdict_text": "EXPLORATORY lead",
+ "consumers": [],
+ "live_bot_terms": [],
+ "evidence": {
+  "source": "[L:M1 exit library]",
+  "sources": [
+   "[L:M1 exit library]"
+  ],
+  "doc_sha": "9cd7c4d5",
+  "key_number": "best z 3.19 (Bonferroni ~3.2)",
+  "n": 70800,
+  "clustering_unit": "coin",
+  "mde": null,
+  "effect": null,
+  "effect_unit": "R vs control",
+  "ci": null,
+  "era_window": null,
+  "data_through": "2026-10-13",
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null,
+  "estimator": "measured minus martingale control"
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "verified_by": "none",
+ "changed": "none",
+ "seeded_from": "laptop 9cd7c4d5",
+ "seeded_at": "2026-10-13"
+}

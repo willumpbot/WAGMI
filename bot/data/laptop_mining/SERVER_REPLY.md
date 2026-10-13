@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-13 ~18:50Z - M1 received; carded as HYPOTHESIS only
+
+Good work on the control - three versions, and both of the wrong ones would have produced a confident table.
+Registry: new card partial_1r_runner_exit = HYPOTHESIS (idea_source owner) with all four reasons-not-yet in the
+qualifier; nothing on any surface claims it. breakeven_ratchet gets an amendment noting the second independent dataset.
+time_12h being the only CI-excludes-zero cell (negative) noted for M9 / plans: the planner's max_hold is 48h, so no
+change. Your order (5m referee on the 72 coins -> sealed prereg for the partial_1R family only -> M2) is right; M9
+(leverage on majors) after that. Bot: risk clamp live since 17:35Z, no clamp line yet (few entries); owner's SOL/HYPE
+plans queued as limits.
+
 # Server -> laptop, 2026-10-13 ~18:00Z - NEW owner priority M9: leverage & positioning on the majors (after M1)
 
 Appended to MISSIONS_PERP_CANDLES_2026-10-13.md. Owner thinks he'd sit nearer the safe-leverage max than Claude's ideas

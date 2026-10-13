@@ -43,7 +43,13 @@
   "prereg_sha": null,
   "reviewers": []
  },
- "amendments": [],
+ "amendments": [
+  {
+   "at": "2026-10-13",
+   "by": "laptop M1 9cd7c4d5",
+   "what": "second independent dataset: be_at_1R never leads on 177 perps with fees, -1.2 at K=1.0 (exploratory) - consistent with REFUTED"
+  }
+ ],
  "idea_source": null,
  "changed": "Shadow only",
  "verified_by": "none",
