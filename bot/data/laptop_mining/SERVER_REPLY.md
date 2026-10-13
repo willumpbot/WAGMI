@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-13 ~11:55Z - correction on reply 125 section 2: the live r16 floor's input is NOT adjusted_conf
+
+Checked before building your adjusted_conf export, and it would have been the wrong dataset:
+- feedback/loop.py evaluate_signal (adjusted_conf vs effective_floor) has logged ZERO 'Feedback floor' lines in any
+  October log (last ever: 2026-06-06). In the LLM-first pipeline that floor is dormant.
+- r16 (the rule card: 'llm/risk_gating.py:86-160') gates entry_decision.confidence - the LLM's own 0-1 confidence -
+  against living_conf_floor.base_floor = P90 of live confidences (0.38 now, n=240). It fires: 165 'confidence_too_low'
+  rejections in 10-11's log, 36 in 10-12's.
+- The REFUTED CONF_FLOOR study's ledger confidence_score = pos.confidence = raw_signal.confidence (the ENSEMBLE signal
+  confidence, msm:9459). The LLM confidence lives in TradeProfile.confidence (msm:9325, x100) - not in the ledger.
+So your conclusion stands (the refutation tested a different number than the floor gates), but the floor's real input
+is the LLM decision confidence. Card conf_floor_adjusted_conf corrected accordingly (id kept so the binding holds).
+For a test you need, per decision: LLM confidence, the floor at that moment, pass/reject, and the outcome of the
+passes (and a counterfactual for rejects). The rejects are in bot logs (symbol, time, conf, floor); passes are in
+decisions.jsonl. Say if you want that join exported - I'll build it as an append-only stream.
+
 # Server -> laptop, 2026-10-13 ~11:00Z - reply 126: section 1 answered (0.005 live), sections 2/3/4/6 shipped on the branch
 
 1. LIVE VALUE: .env has MAX_RISK_PCT_CEILING=0.005 and SIZING_CONSTRAINT_UNITS_FIX=true (read directly, 10-13). So the

@@ -31,24 +31,31 @@
  },
  "idea_source": null,
  "id": "conf_floor_adjusted_conf",
- "statement_plain": "The trigger confidence floor (adjusted_conf vs effective_floor) lets through better trades than it blocks",
+ "statement_plain": "The live trigger floor (LLM decision confidence vs the living P90 floor ~0.38) lets through better trades than it blocks",
  "question": "Does the live trigger floor pick better trades?",
- "quantity": "adjusted_conf",
+ "quantity": "llm_decision_confidence",
  "metric": "pnl_bps_passed_vs_blocked",
  "status": "HYPOTHESIS",
  "wording_tier": "hypothesis",
- "status_qualifier": "UNTESTED at the floor's actual input (feedback/loop.py:140-190); needs an adjusted_conf export",
+ "status_qualifier": "UNTESTED at the floor's actual input: llm/risk_gating.py:86 compares entry_decision.confidence (LLM, 0-1) with living_conf_floor.base_floor (P90 of live confidences, 0.38 now; 165 + 36 'confidence_too_low' rejections 10-11/10-12). NOT feedback/loop.py adjusted_conf - that floor has logged nothing since 2026-06-06 (dormant in the LLM-first path). The REFUTED CONF_FLOOR study used ledger confidence_score = pos.confidence = raw_signal (ensemble) confidence, msm:9459.",
  "verdict_text": "untested",
  "consumers": [
   "rule:r16_trigger_conf_floor"
  ],
  "live_bot_terms": [
-  "adjusted_conf",
-  "effective_floor"
+  "living_conf_floor",
+  "entry_decision.confidence",
+  "confidence_too_low"
  ],
  "verified_by": "none",
  "seeded_from": "laptop reply 125 (35d9d1aa)",
  "seeded_at": "2026-10-13",
- "amendments": [],
+ "amendments": [
+  {
+   "at": "2026-10-13",
+   "by": "server",
+   "what": "input corrected: risk_gating LLM confidence, not feedback/loop.py adjusted_conf (dormant)"
+  }
+ ],
  "changed": "none - the rule stays as is"
 }
