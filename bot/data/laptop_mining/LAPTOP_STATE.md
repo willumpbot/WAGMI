@@ -24,6 +24,15 @@ limit and the cause was literally **`TOP_N = 40`** in mission 10's fetcher.
 **Three "limits" checked, three were config constants or directory listings. Before calling anything a
 limit, ask the source once.**
 
+**📌 HOW TO TELL IF THE FETCH IS ALIVE — do not use the log.** `megacalls_fetch.log` prints only
+every **50 calls**, which takes **~32 min** (measured: 31.3–33.3 min over six intervals, max observed
+gap **66.5 min**). I twice read a quiet log as a possible stall.
+
+**Use the per-call signals instead:** `megacalls_paths.jsonl` mtime, and the `geckoterminal.lock`
+heartbeat — **both update on every call.** If those two are current, it is working no matter how quiet
+the log is. **And use `ls --time-style` WITH the date**: a time-only listing made an archived
+`megacalls_paths_WRONG_TOKEN_SIDE.jsonl` from 2026-10-12 look like it had just been written.
+
 **If the fetch dies:** it is resumable — restart with
 `Start-Process cmd '/c "<pythoncore path>" -u megacalls_fetch.py >> megacalls_fetch.log 2>&1'`.
 **Do NOT launch it via a `WindowsApps\python.exe` alias** — that is a stub that spawns the real
