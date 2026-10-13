@@ -3,7 +3,7 @@
 _Written by `crunch/j4_integrity.py` every hour. Reports presence, growth, fill
 rates and gaps. Flags regressions; does not interpret them._
 
-_Updated 2026-10-13 05:20._
+_Updated 2026-10-13 06:20._
 
 ## Growth -- is each export still being written?
 
@@ -14,22 +14,22 @@ _Updated 2026-10-13 05:20._
 | `SYNDICATE_DUDS_PREREG.md` | 4026 bytes | reference | reference — present |
 | `SYNDICATE_DUDS_REPORT.md` | 3478 bytes | reference | reference — present |
 | `SYNDICATE_RECALL_PREREG.md` | 3896 bytes | reference | reference — present |
-| `agent_grades_resolved.jsonl` | 2504 rows | append | +24 rows |
+| `agent_grades_resolved.jsonl` | 2523 rows | append | +19 rows |
 | `ai_plans.json` | 9986 bytes | snapshot | snapshot — ok |
 | `archive` | 212700 rows+bytes | append | unchanged |
 | `board_feed.json` | 7139 bytes | snapshot | snapshot — info: retired upstream -- not refreshed, so staleness carries no information |
 | `bulk` | 841488 rows+bytes | append | unchanged |
 | `call_caller_form_anon.jsonl` | 384 rows | append | unchanged |
-| `call_snapshots.jsonl` | 22 rows | append | +2 rows |
-| `candles_5m` | 35736 rows+bytes | append | +96 rows+bytes |
+| `call_snapshots.jsonl` | 22 rows | append | unchanged |
+| `candles_5m` | 35820 rows+bytes | append | +84 rows+bytes |
 | `chief.py` | 12441 bytes | reference | reference — present |
-| `chief_calls.jsonl` | 182 rows | append | +6 rows |
-| `chief_scorecard.json` | 664 bytes | snapshot | snapshot — ok |
-| `confidence_state.json` | 3204 bytes | snapshot | snapshot — stale 27.2h — EXPECTED: written on trade close and the last close was 28.0h ago. Not a fault. |
+| `chief_calls.jsonl` | 182 rows | append | unchanged |
+| `chief_scorecard.json` | 665 bytes | snapshot | snapshot — ok |
+| `confidence_state.json` | 3204 bytes | snapshot | snapshot — stale 28.2h — EXPECTED: written on trade close and the last close was 29.0h ago. Not a fault. |
 | `copilot_call_ledger.jsonl` | 395 rows | append | unchanged |
 | `copilot_call_ledger_resolved.jsonl` | 374 rows | append | unchanged |
-| `ctx_snapshots` | 46814 rows+bytes | append | +1068 rows+bytes |
-| `discrepancies.json` | 14586 bytes | snapshot | snapshot — ok |
+| `ctx_snapshots` | 47704 rows+bytes | append | +890 rows+bytes |
+| `discrepancies.json` | 14437 bytes | snapshot | snapshot — ok |
 | `entry_gate_log.jsonl.gz` | 5387 rows | append | unchanged |
 | `entry_mom.jsonl` | 1633 rows | append | unchanged |
 | `execution_analytics.csv` | 174 rows | append | unchanged |
@@ -37,22 +37,22 @@ _Updated 2026-10-13 05:20._
 | `expmove_log.jsonl` | 187 rows | append | unchanged |
 | `floor_decisions_log.jsonl.gz` | 1369 rows | append | unchanged |
 | `funding_oi_history.jsonl.gz` | 50942 rows | append | unchanged |
-| `geometry_shadow.json` | 647 bytes | snapshot | snapshot — ok |
-| `geometry_shadow_results.jsonl` | 592 rows | append | +6 rows |
+| `geometry_shadow.json` | 646 bytes | snapshot | snapshot — ok |
+| `geometry_shadow_results.jsonl` | 597 rows | append | +5 rows |
 | `ic_dropped_resolved.jsonl` | 998 rows | append | unchanged |
-| `live_scorecard.json` | 1344 bytes | snapshot | snapshot — ok |
+| `live_scorecard.json` | 1343 bytes | snapshot | snapshot — ok |
 | `llm_exits_resolved.jsonl` | 29 rows | append | unchanged |
 | `owner_fills.jsonl` | 6 rows | append | unchanged |
 | `owner_plans.jsonl` | 7 rows | append | unchanged |
-| `plans.json` | 12516 bytes | snapshot | snapshot — ok |
+| `plans.json` | 12518 bytes | snapshot | snapshot — ok |
 | `position_journal.jsonl` | 3111 rows | append | unchanged |
 | `position_manager.py` | 144251 bytes | reference | reference — present |
-| `scan_grades.json` | 16800 bytes | snapshot | snapshot — ok |
-| `scan_log.jsonl` | 516 rows | append | +4 rows |
+| `scan_grades.json` | 16885 bytes | snapshot | snapshot — ok |
+| `scan_log.jsonl` | 517 rows | append | +1 rows |
 | `scanner.py` | 11125 bytes | reference | reference — present |
 | `signal_filtered.jsonl.gz` | 9845 rows | append | unchanged |
-| `state` | 529583 rows+bytes | snapshot | snapshot — ok (10 files, newest 9.2h of 26h budget) |
-| `stop_shadow.json` | 1817 bytes | snapshot | snapshot — ok |
+| `state` | 529583 rows+bytes | snapshot | snapshot — ok (10 files, newest 10.2h of 26h budget) |
+| `stop_shadow.json` | 1818 bytes | snapshot | snapshot — ok |
 | `syndicate_calls_anon.jsonl` | 211 rows | append | unchanged |
 | `syndicate_features_anon.jsonl` | 313 rows | append | unchanged |
 | `syndicate_paths_anon.jsonl.gz` | 56 rows | append | unchanged |
@@ -62,16 +62,16 @@ _Updated 2026-10-13 05:20._
 | `tg_mentions_anon.jsonl.gz` | 50447 rows | append | unchanged |
 | `trade_ledger.csv` | 296 rows | append | unchanged |
 | `trades.csv` | 238 rows | append | unchanged |
-| `uptime.jsonl` | 226 rows | append | +6 rows |
+| `uptime.jsonl` | 231 rows | append | +5 rows |
 
 ## Known failure modes
 
-- `uptime.jsonl` 226 rows, 2 alive:false of which **2 are read errors** (hb_age_s > 1e8) and 0 are real. Read errors must never alert.
-- `ctx_snapshots/` 2026-10-11: 108 stamps, median cadence 898s, **0 gaps > 3x**; 2026-10-12: 103 stamps, median cadence 900s, **0 gaps > 3x**; 2026-10-13: 45 stamps, median cadence 897s, **0 gaps > 3x**
+- `uptime.jsonl` 231 rows, 2 alive:false of which **2 are read errors** (hb_age_s > 1e8) and 0 are real. Read errors must never alert.
+- `ctx_snapshots/` 2026-10-11: 108 stamps, median cadence 898s, **0 gaps > 3x**; 2026-10-12: 103 stamps, median cadence 900s, **0 gaps > 3x**; 2026-10-13: 50 stamps, median cadence 898s, **0 gaps > 3x**
 
 ## Fill rates on the ledgers that get reasoned about
 
-- `agent_grades_resolved.jsonl` 2504 rows, 34 columns. **always-empty: `sig_strats`**. under-50% filled: `r12h` 44%
+- `agent_grades_resolved.jsonl` 2523 rows, 34 columns. **always-empty: `sig_strats`**. under-50% filled: `r12h` 44%
 - `exit_decisions.jsonl` 1336 rows, 15 columns. **always-empty: `new_tp`**. under-50% filled: `new_sl` 9%
 - `chief_calls.jsonl` 182 rows, 12 columns. no always-empty columns. 
 - `owner_plans.jsonl` 7 rows, 19 columns. no always-empty columns. 
@@ -82,7 +82,7 @@ _Updated 2026-10-13 05:20._
 _The jobs report what they did. Nothing reported whether the SCHEDULER fired, and a
 stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing changed`._
 
-- fresh -- previous run was 1.0 h ago, inside the 2.5 h alarm Scheduler says: state **Running**, last result **267009**, next 10/13/2026 6:10:00 AM, missed 0.
+- fresh -- previous run was 1.0 h ago, inside the 2.5 h alarm Scheduler says: state **Running**, last result **267009**, next 10/13/2026 7:10:00 AM, missed 0.
 
 - server feed fresh -- `.last_sync` 0.2 h old, alarm at 3 h
 
@@ -91,9 +91,9 @@ stopped scheduler leaves a stale STATUS.md that reads exactly like `nothing chan
 
 ## Panel store
 
-- `candles_1h` 883023 rows, 178 coins, 210.1 days pooled span  (every coin current within 3 days)
-- `candles_5m` 374550 rows, 69 coins, 20.7 days pooled span  (every coin current within 3 days)
-- `ctx` 46814 rows, 178 coins, 2.5 days pooled span  (every coin current within 3 days)
-- `funding_hist` 1514070 rows, 178 coins, 366.6 days pooled span  (every coin current within 3 days)
+- `candles_1h` 883202 rows, 178 coins, 210.2 days pooled span  (every coin current within 3 days)
+- `candles_5m` 380304 rows, 70 coins, 20.7 days pooled span  (every coin current within 3 days)
+- `ctx` 47704 rows, 178 coins, 2.5 days pooled span  (every coin current within 3 days)
+- `funding_hist` 1514248 rows, 178 coins, 366.7 days pooled span  (every coin current within 3 days)
 
 No regressions this run.
