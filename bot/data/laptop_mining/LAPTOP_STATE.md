@@ -397,3 +397,44 @@ hole rather than filtering only the gentle de-risk.
 ### Calibration — a sixth instance, same direction
 **M4's "UNDERPOWERED" call was right by 0.05 of a z.** I keep being too gloomy, and this time the
 prediction held only barely. The pattern is now six-for-six and belongs in every power statement.
+
+---
+
+## 12. 2026-10-13 late — M5 closed; THREE corrections now point the same way
+
+**Queue:** M1 ✅ M2(A) ✅ M3 ✅ M4 ✅ M5 ✅ M9 ✅+corrected — **M6 next.** M7/M8 after.
+
+### M5 — `btc_shock` is the finding; the placebo killed the biggest number
+`M5_TAIL_CASCADE_RESULT.md`, EXPLORATORY.
+- **BTC moves >3× its hourly expectation ⇒ every other coin's 3× tail rate goes 4.0% → 10.9%.**
+  Lift +0.0690, z 26.4, 174 coins, **pooled +0.0691 vs eq-weighted +0.0690** — four-decimal agreement.
+- **The circular-shift placebo came out positive 3 of 5 times and killed two findings.** `liq_burst`
+  had the **largest** lift (+0.0707, z 3.18) with a placebo at **57% of it**, on only 4 coins.
+  `depth_thin`'s placebo exceeded its effect. **A placebo that can fail, did.**
+- `funding_extreme` survives but **eq-weighted +0.0385 vs pooled +0.0164** (2.3×) — concentrated in
+  thin coins, so for majors the pooled read governs. Leverage table conditioned on `btc_shock` instead.
+- **Pooled tail inflation 1.60×** (p99.9 of `|move|/em` 8.40 → 13.43, n 742k/15.7k) ⇒ ceilings cut to
+  **~72%** in shock hours. Per-coin flagged quantiles were **unestimable and said so** (~90 shock hours
+  in 210 days; the 0.999 quantile of 90 points is the max).
+
+### 🔴 The calibration pattern that matters more than any single result
+My estimate of the leverage table's timidity: **4.6–6.7× → 2.6–3.7× → 1.7–2.2×**, each step from using a
+**less convenient risk measure** (flat margin → real margin → fat 1h tails, shock-conditioned).
+**Three corrections, all the same direction, threefold total.** And it **reverses** phase 1's claim that
+the `/1.5` divisor guards nothing: the regime conditioning calls for **~1.4**, almost exactly 1.5.
+**The terminal's rule was closer to right than I said.** Standing rule: when a result makes an existing
+safeguard look foolish, re-derive it with the most conservative risk measure available *before*
+publishing, not after.
+
+### Coverage audit (why M5 is five panels, not one table)
+`funding` 178 coins/367 d · `btc_shock` 178/210 d · `oi` 31/128 d (the **gz**, not `panels.ctx` which
+has ~3 d) · `depth` 30/103 d · `liq` 13/73 d. **Intersecting all five would have left 13 coins over
+73 days.** Each condition runs on its own maximal panel with its own counts printed.
+
+### Instrument fixes this round
+1. **M4: a verdict printed from ZERO rows** (`(nan>0)==(nan>0)` is `True`). Now halts on an empty
+   panel. **New standing rule: a harness must be unable to reach its verdict block with no data.**
+2. **A parse miss read as "no data":** probing the OI export for `t`/`ts` when the key is `timestamp`
+   reported "0 coins, 0.0 days". Caught only because the key list printed beside the count.
+3. **A patch "verified" by a string the new code also contained** — the check passed while the call
+   site was untouched. Verify a patch by *running* it, not by grepping for your own new text.
