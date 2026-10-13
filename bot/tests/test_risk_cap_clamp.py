@@ -8,6 +8,7 @@ risk_pct the agent RETURNED became position size unbounded
 import logging
 import os
 import sys
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -129,3 +130,38 @@ def test_final_order_point_is_wired():
     i_cap = src.index("_apply_risk_cap(", i_edge)
     i_order = src.index("self.order_executor.open_position(", i_edge)
     assert i_edge < i_cap < i_order
+
+
+# --- laptop red-team 126 -----------------------------------------------------------------------------------------
+def test_ceiling_fails_strict_not_loose(monkeypatch, caplog):
+    from execution import risk_cap
+    for bad in (None, "", "abc", "0", "-1"):
+        if bad is None:
+            monkeypatch.delenv("MAX_RISK_PCT_CEILING", raising=False)
+        else:
+            monkeypatch.setenv("MAX_RISK_PCT_CEILING", bad)
+        with caplog.at_level(logging.WARNING):
+            assert risk_cap.risk_ceiling() == 0.005
+    assert "strict fallback" in caplog.text
+
+
+def test_missing_stop_is_visible_not_silent(ceiling_env, caplog, monkeypatch):
+    from execution import risk_cap
+    monkeypatch.setenv("RISK_CAP_HARD_CLAMP", "true")
+    with caplog.at_level(logging.WARNING):
+        assert risk_cap.apply_risk_cap(10.0, 100.0, 0.0, 1000.0, context="t") == 10.0
+        assert risk_cap.apply_risk_cap(10.0, 100.0, 100.0, 1000.0, context="t") == 10.0
+    assert caplog.text.count("RISK-CLAMP-BLIND") == 2
+
+
+def test_internal_error_logs_at_warning(ceiling_env, caplog, monkeypatch):
+    from execution import risk_cap
+    monkeypatch.setattr(risk_cap, "realized_risk_frac", lambda *a: (_ for _ in ()).throw(RuntimeError("boom")))
+    with caplog.at_level(logging.WARNING):
+        assert risk_cap.apply_risk_cap(10.0, 100.0, 90.0, 1000.0) == 10.0
+    assert "cap NOT applied" in caplog.text
+
+
+def test_side_mult_cap_and_min_notional_skip_are_wired():
+    src = (Path(__file__).resolve().parents[1] / "multi_strategy_main.py").read_text(encoding="utf-8")
+    assert "LIVING_EDGE_MULT_CAP" in src and "RISK-CLAMP-SKIP" in src

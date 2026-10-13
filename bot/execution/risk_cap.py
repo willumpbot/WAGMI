@@ -26,7 +26,9 @@ import os
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_CEILING = 0.02  # matches coordinator's MAX_RISK_PCT_CEILING default
+# Fail STRICT (laptop red-team 126): a risk control must not fail loose. A missing / unparseable / non-positive
+# MAX_RISK_PCT_CEILING falls back to the 0.5% policy value (not the coordinator's 2% prompt default) and warns.
+_DEFAULT_CEILING = 0.005
 
 
 def clamp_enabled() -> bool:
@@ -35,11 +37,16 @@ def clamp_enabled() -> bool:
 
 def risk_ceiling() -> float:
     """MAX_RISK_PCT_CEILING as a fraction of equity (0.005 = 0.5%)."""
+    raw = os.getenv("MAX_RISK_PCT_CEILING")
     try:
-        c = float(os.getenv("MAX_RISK_PCT_CEILING", str(_DEFAULT_CEILING)))
+        c = float(raw)
+        if c > 0:
+            return c
     except (TypeError, ValueError):
-        c = _DEFAULT_CEILING
-    return c if c > 0 else _DEFAULT_CEILING
+        pass
+    logger.warning("[RISK-CLAMP] MAX_RISK_PCT_CEILING=%r missing/invalid - using strict fallback %.4f",
+                   raw, _DEFAULT_CEILING)
+    return _DEFAULT_CEILING
 
 
 def realized_risk_frac(qty: float, entry: float, stop: float, equity: float) -> float:
@@ -62,8 +69,13 @@ def apply_risk_cap(qty: float, entry: float, stop: float, equity: float,
     """
     try:
         ceiling = risk_ceiling()
+        if not (qty and qty > 0 and entry and entry > 0 and stop and stop > 0 and equity and equity > 0)                 or abs(entry - stop) <= 0:
+            # the one case with genuinely unbounded risk (no stop) must be VISIBLE, never a silent pass (laptop 126 #2)
+            logger.warning("[RISK-CLAMP-BLIND] %s cannot evaluate risk (stop=%s entry=%s equity=%s qty=%s) - qty unchanged",
+                           context, stop, entry, equity, qty)
+            return qty
         risk = realized_risk_frac(qty, entry, stop, equity)
-        if risk <= ceiling or risk <= 0:
+        if risk <= ceiling:
             return qty
         capped = qty * (ceiling / risk)
         if capped >= qty:  # defensive: never increase size
@@ -79,5 +91,5 @@ def apply_risk_cap(qty: float, entry: float, stop: float, equity: float,
             context, qty, capped, risk * 100, ceiling * 100)
         return qty
     except Exception as e:  # never break the entry path
-        logger.debug(f"[RISK-CLAMP] error (qty unchanged): {e}")
+        logger.warning(f"[RISK-CLAMP] error - cap NOT applied, qty unchanged: {e}")   # laptop 126 #3: never silent
         return qty

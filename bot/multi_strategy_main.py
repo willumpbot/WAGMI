@@ -9371,6 +9371,17 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         try:
             from trading_config import get_symbol_side_risk_mult as _living_side_mult
             _se_mult = _living_side_mult(symbol, side)
+            # LIVING_EDGE_MULT_CAP (laptop 126 #6): the x1.5 upside caused 2 of 3 risk breaches and r05 has no claim
+            # behind it since 10-13. Unset = unchanged; "1.0" keeps the protective x0.25 and drops only the boost.
+            _cap_raw = os.getenv("LIVING_EDGE_MULT_CAP", "").strip()
+            if _cap_raw and _se_mult:
+                try:
+                    _cap = float(_cap_raw)
+                    if _se_mult > _cap > 0:
+                        logger.info(f"[{trace_id}][{symbol}] LIVING-EDGE CAP: x{_se_mult:.2f} -> x{_cap:.2f}")
+                        _se_mult = _cap
+                except ValueError:
+                    logger.warning(f"[{symbol}] LIVING_EDGE_MULT_CAP={_cap_raw!r} invalid - ignored")
             if _se_mult and abs(_se_mult - 1.0) > 1e-6 and qty > 0 and actual_entry > 0:
                 _q_pre_edge = qty
                 qty = qty * _se_mult
@@ -9397,9 +9408,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 context=f"[{trace_id}][{symbol}] final")
             if _q_capped < qty:
                 qty = round_qty(symbol, _q_capped)
-                if qty <= 0:
+                if qty <= 0 or qty * actual_entry < 10.0:
                     logger.warning(
-                        f"[{trace_id}][{symbol}] LLM-FIRST qty=0 after risk cap")
+                        f"[{trace_id}][{symbol}] RISK-CLAMP-SKIP: clamped qty {qty:.6f} "
+                        f"(${qty * actual_entry:.2f}) is below the exchange minimum - entry skipped by the risk cap")
                     return
         except Exception as _rc_e:
             logger.debug(f"[{symbol}] risk cap skipped: {_rc_e}")
