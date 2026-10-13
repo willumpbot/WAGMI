@@ -1,0 +1,914 @@
+{
+ "generated_utc": "2026-10-13T03:33:37+00:00",
+ "coins": {
+  "BTC": {
+   "inputs_shared": {
+    "dis6": 1.3333333333333333,
+    "dissent_families": 2,
+    "n_families": 9,
+    "funding_hourly": 5.296e-06,
+    "funding_day_pct": 0.0127104,
+    "btc_rv5_basemap": 1.5697059537200584,
+    "btc_rv5_fresh": 1.6188129847497863
+   },
+   "A_assemble_vol_voice": {
+    "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
+    "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
+    "cache_written_utc": "2026-10-12 23:05",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "last_bar_close_used": 81952.0,
+    "last_bar_true_close": 81812.0,
+    "rv1": 2.1223232094017552,
+    "rv5": 1.5697059537200584,
+    "rv22": 1.9073625233785125,
+    "units": "percent (simple returns x100)",
+    "z": 0.07957091567149926,
+    "stage2": {
+     "stage1_smearing_used": 1.7017,
+     "raw1": 1.842638785984849,
+     "log_terms": {
+      "intercept": -0.36316,
+      "disagree": -0.08529333333333333,
+      "funding": 0.006627710976000001,
+      "btc_rv5": -0.017102193885262854
+     },
+     "adj": 0.6319608605625687,
+     "stage2_smearing": 1.6959,
+     "pred2_pre_haircut": 1.974834157993941,
+     "top20_haircut_0.8_applied": false,
+     "final": 1.974834157993941
+    },
+    "final": 1.974834157993941,
+    "real_function_output": {
+     "rv1": 2.12,
+     "rv5": 1.57,
+     "rv22": 1.91,
+     "model": "HAR + stage-2 error model (VOL_ERROR.md)",
+     "next_day_move_pct": 1.97,
+     "next_5d_vol_pct": 2.56
+    },
+    "state_file_value": 1.97,
+    "zero_volume_bars_in_last23": 0,
+    "zero_volume_bars_in_full_cache": 921
+   },
+   "B_scanner_exp_move": {
+    "where": "scanner.py:88-101 -> volforecast.forecast(c) stage-1, x0.8 if >=3.9 (volforecast.py:64-65)",
+    "bar_source": "HL candleSnapshot 1d fresh (ttl 600s), closed = t+1d<=now",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": true,
+    "forming_bar_excluded": true,
+    "rv1": 2.2895293148132656,
+    "rv5": 1.6188129847497863,
+    "rv22": 1.916772946234937,
+    "units": "percent",
+    "z": 0.09268311942269214,
+    "smearing": 1.7389,
+    "pre_haircut": 1.9077715799051174,
+    "haircut_0.8_applied": false,
+    "final": 1.9077715799051174,
+    "real_function_output": 1.91,
+    "zero_volume_bars_in_last23": 0
+   },
+   "C_risk_voice": {
+    "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
+    "bar_source": "same basemap df as A (.tail(60))",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "rv1": 2.1223232094017552,
+    "rv5": 1.5697059537200584,
+    "rv22": 1.9073625233785125,
+    "units": "percent",
+    "z": 0.07957091567149926,
+    "smearing": 1.7389,
+    "stage2": null,
+    "haircut": null,
+    "final": 1.8829197772516035,
+    "real_function_output": 1.883,
+    "state_file_stop_long": 3.766
+   },
+   "D_chief": {
+    "ts_utc": "2026-10-13 01:08",
+    "expected_move_pct": 1.8,
+    "har_move_pct_shown": 1.76,
+    "atr_pct_1d_shown": 2.5,
+    "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
+   },
+   "decomposition": {
+    "A_vs_C_total_logpts": 0.04766077911398958,
+    "A_vs_C_parts_logpts": {
+     "rv_inputs (zA-zC)": 0.0,
+     "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
+     "stage2 intercept": -0.36316,
+     "stage2 disagree term": -0.08529333333333333,
+     "stage2 funding term": 0.006627710976000001,
+     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2_smearing 1.6959": 0.5282135733672177,
+     "top20 haircut x0.8": 0.0
+    },
+    "C_on_fresh_bars": 1.9077715799051174,
+    "C_bar_source_effect_logpts": 0.013112203751192875,
+    "B_vs_C_total_logpts": 0.013112203751192814,
+    "B_vs_C_parts_logpts": {
+     "bar source (zB-zC)": 0.013112203751192875,
+     "0.8 haircut >=3.9": 0.0
+    },
+    "A_on_fresh_bars": 1.998562556122044,
+    "A_bar_source_effect_logpts": 0.011943776025158377
+   }
+  },
+  "ETH": {
+   "inputs_shared": {
+    "dis6": 2.727272727272727,
+    "dissent_families": 5,
+    "n_families": 11,
+    "funding_hourly": -4.6892e-06,
+    "funding_day_pct": -0.01125408,
+    "btc_rv5_basemap": 1.5697059537200584,
+    "btc_rv5_fresh": 1.6188129847497863
+   },
+   "A_assemble_vol_voice": {
+    "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
+    "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
+    "cache_written_utc": "2026-10-12 23:06",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "last_bar_close_used": 2452.2,
+    "last_bar_true_close": 2445.6,
+    "rv1": 3.289162328442974,
+    "rv5": 2.436116947350703,
+    "rv22": 2.0106230257577327,
+    "units": "percent (simple returns x100)",
+    "z": 0.22400690249246497,
+    "stage2": {
+     "stage1_smearing_used": 1.7017,
+     "raw1": 2.128962248856409,
+     "log_terms": {
+      "intercept": -0.36316,
+      "disagree": -0.17446363636363635,
+      "funding": -0.0058683274752,
+      "btc_rv5": -0.017102193885262854
+     },
+     "adj": 0.5708697763765711,
+     "stage2_smearing": 1.6959,
+     "pred2_pre_haircut": 2.0611293681300267,
+     "top20_haircut_0.8_applied": false,
+     "final": 2.0611293681300267
+    },
+    "final": 2.0611293681300267,
+    "real_function_output": {
+     "rv1": 3.29,
+     "rv5": 2.44,
+     "rv22": 2.01,
+     "model": "HAR + stage-2 error model (VOL_ERROR.md)",
+     "next_day_move_pct": 2.06,
+     "next_5d_vol_pct": 2.89
+    },
+    "state_file_value": 2.06,
+    "zero_volume_bars_in_last23": 0,
+    "zero_volume_bars_in_full_cache": 921
+   },
+   "B_scanner_exp_move": {
+    "where": "scanner.py:88-101 -> volforecast.forecast(c) stage-1, x0.8 if >=3.9 (volforecast.py:64-65)",
+    "bar_source": "HL candleSnapshot 1d fresh (ttl 600s), closed = t+1d<=now",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": true,
+    "forming_bar_excluded": true,
+    "rv1": 3.5494557501183133,
+    "rv5": 2.500891749234302,
+    "rv22": 2.0295659749739676,
+    "units": "percent",
+    "z": 0.23847572048174395,
+    "smearing": 1.7389,
+    "pre_haircut": 2.207208179824837,
+    "haircut_0.8_applied": false,
+    "final": 2.207208179824837,
+    "real_function_output": 2.21,
+    "zero_volume_bars_in_last23": 0
+   },
+   "C_risk_voice": {
+    "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
+    "bar_source": "same basemap df as A (.tail(60))",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "rv1": 3.289162328442974,
+    "rv5": 2.436116947350703,
+    "rv22": 2.0106230257577327,
+    "units": "percent",
+    "z": 0.22400690249246497,
+    "smearing": 1.7389,
+    "stage2": null,
+    "haircut": null,
+    "final": 2.1755024120211606,
+    "real_function_output": 2.176,
+    "state_file_stop_long": 4.351
+   },
+   "D_chief": {
+    "ts_utc": "2026-10-13 01:08",
+    "expected_move_pct": 2.1,
+    "har_move_pct_shown": 2.02,
+    "atr_pct_1d_shown": 3.47,
+    "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
+   },
+   "decomposition": {
+    "A_vs_C_total_logpts": -0.05400556236751374,
+    "A_vs_C_parts_logpts": {
+     "rv_inputs (zA-zC)": 0.0,
+     "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
+     "stage2 intercept": -0.36316,
+     "stage2 disagree term": -0.17446363636363635,
+     "stage2 funding term": -0.0058683274752,
+     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2_smearing 1.6959": 0.5282135733672177,
+     "top20 haircut x0.8": 0.0
+    },
+    "C_on_fresh_bars": 2.207208179824837,
+    "C_bar_source_effect_logpts": 0.014468817989278987,
+    "B_vs_C_total_logpts": 0.014468817989278902,
+    "B_vs_C_parts_logpts": {
+     "bar source (zB-zC)": 0.014468817989278987,
+     "0.8 haircut >=3.9": 0.0
+    },
+    "A_on_fresh_bars": 2.0887263113419716,
+    "A_bar_source_effect_logpts": 0.01330039026324457
+   }
+  },
+  "SOL": {
+   "inputs_shared": {
+    "dis6": 2.4000000000000004,
+    "dissent_families": 4,
+    "n_families": 10,
+    "funding_hourly": 2.242e-06,
+    "funding_day_pct": 0.0053808,
+    "btc_rv5_basemap": 1.5697059537200584,
+    "btc_rv5_fresh": 1.6188129847497863
+   },
+   "A_assemble_vol_voice": {
+    "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
+    "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
+    "cache_written_utc": "2026-10-12 23:06",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "last_bar_close_used": 106.0,
+    "last_bar_true_close": 105.69,
+    "rv1": 4.770460875033688,
+    "rv5": 3.2470842798002293,
+    "rv22": 2.790276701475376,
+    "units": "percent (simple returns x100)",
+    "z": 0.4753925130239207,
+    "stage2": {
+     "stage1_smearing_used": 1.7017,
+     "raw1": 2.7374320267384866,
+     "log_terms": {
+      "intercept": -0.36316,
+      "disagree": -0.15352800000000003,
+      "funding": 0.002805764352,
+      "btc_rv5": -0.017102193885262854
+     },
+     "adj": 0.5880258146781934,
+     "stage2_smearing": 1.6959,
+     "pred2_pre_haircut": 2.7298574951430687,
+     "top20_haircut_0.8_applied": false,
+     "final": 2.7298574951430687
+    },
+    "final": 2.7298574951430687,
+    "real_function_output": {
+     "rv1": 4.77,
+     "rv5": 3.25,
+     "rv22": 2.79,
+     "model": "HAR + stage-2 error model (VOL_ERROR.md)",
+     "next_day_move_pct": 2.73,
+     "next_5d_vol_pct": 3.55
+    },
+    "state_file_value": 2.73,
+    "zero_volume_bars_in_last23": 0,
+    "zero_volume_bars_in_full_cache": 901
+   },
+   "B_scanner_exp_move": {
+    "where": "scanner.py:88-101 -> volforecast.forecast(c) stage-1, x0.8 if >=3.9 (volforecast.py:64-65)",
+    "bar_source": "HL candleSnapshot 1d fresh (ttl 600s), closed = t+1d<=now",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": true,
+    "forming_bar_excluded": true,
+    "rv1": 5.048962357380294,
+    "rv5": 3.312875365334826,
+    "rv22": 2.8126371026918413,
+    "units": "percent",
+    "z": 0.4867986198389532,
+    "smearing": 1.7389,
+    "pre_haircut": 2.829362296238758,
+    "haircut_0.8_applied": false,
+    "final": 2.829362296238758,
+    "real_function_output": 2.83,
+    "zero_volume_bars_in_last23": 0
+   },
+   "C_risk_voice": {
+    "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
+    "bar_source": "same basemap df as A (.tail(60))",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "rv1": 4.770460875033688,
+    "rv5": 3.2470842798002293,
+    "rv22": 2.790276701475376,
+    "units": "percent",
+    "z": 0.4753925130239207,
+    "smearing": 1.7389,
+    "stage2": null,
+    "haircut": null,
+    "final": 2.7972736388879085,
+    "real_function_output": 2.797,
+    "state_file_stop_long": 5.595
+   },
+   "D_chief": {
+    "ts_utc": "2026-10-13 01:08",
+    "expected_move_pct": 2.8,
+    "har_move_pct_shown": 2.71,
+    "atr_pct_1d_shown": 4.75,
+    "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
+   },
+   "decomposition": {
+    "A_vs_C_total_logpts": -0.02439583417667744,
+    "A_vs_C_parts_logpts": {
+     "rv_inputs (zA-zC)": 0.0,
+     "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
+     "stage2 intercept": -0.36316,
+     "stage2 disagree term": -0.15352800000000003,
+     "stage2 funding term": 0.002805764352,
+     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2_smearing 1.6959": 0.5282135733672177,
+     "top20 haircut x0.8": 0.0
+    },
+    "C_on_fresh_bars": 2.829362296238758,
+    "C_bar_source_effect_logpts": 0.011406106815032457,
+    "B_vs_C_total_logpts": 0.011406106815032273,
+    "B_vs_C_parts_logpts": {
+     "bar source (zB-zC)": 0.011406106815032457,
+     "0.8 haircut >=3.9": 0.0
+    },
+    "A_on_fresh_bars": 2.757948447865874,
+    "A_bar_source_effect_logpts": 0.010237679088997904
+   }
+  },
+  "HYPE": {
+   "inputs_shared": {
+    "dis6": 2.4000000000000004,
+    "dissent_families": 4,
+    "n_families": 10,
+    "funding_hourly": 1.25e-05,
+    "funding_day_pct": 0.030000000000000002,
+    "btc_rv5_basemap": 1.5697059537200584,
+    "btc_rv5_fresh": 1.6188129847497863
+   },
+   "A_assemble_vol_voice": {
+    "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
+    "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
+    "cache_written_utc": "2026-10-12 23:06",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "last_bar_close_used": 82.169,
+    "last_bar_true_close": 80.894,
+    "rv1": 5.16919028713877,
+    "rv5": 3.3470329685434357,
+    "rv22": 2.9848191086384817,
+    "units": "percent (simple returns x100)",
+    "z": 0.5211255349629047,
+    "stage2": {
+     "stage1_smearing_used": 1.7017,
+     "raw1": 2.865529891185039,
+     "log_terms": {
+      "intercept": -0.36316,
+      "disagree": -0.15352800000000003,
+      "funding": 0.015643200000000003,
+      "btc_rv5": -0.017102193885262854
+     },
+     "adj": 0.5956232194939439,
+     "stage2_smearing": 1.6959,
+     "pred2_pre_haircut": 2.8945216547130888,
+     "top20_haircut_0.8_applied": false,
+     "final": 2.8945216547130888
+    },
+    "final": 2.8945216547130888,
+    "real_function_output": {
+     "rv1": 5.17,
+     "rv5": 3.35,
+     "rv22": 2.98,
+     "model": "HAR + stage-2 error model (VOL_ERROR.md)",
+     "next_day_move_pct": 2.89,
+     "next_5d_vol_pct": 3.69
+    },
+    "state_file_value": 2.89,
+    "zero_volume_bars_in_last23": 0,
+    "zero_volume_bars_in_full_cache": 0
+   },
+   "B_scanner_exp_move": {
+    "where": "scanner.py:88-101 -> volforecast.forecast(c) stage-1, x0.8 if >=3.9 (volforecast.py:64-65)",
+    "bar_source": "HL candleSnapshot 1d fresh (ttl 600s), closed = t+1d<=now",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": true,
+    "forming_bar_excluded": true,
+    "rv1": 6.6406610654602405,
+    "rv5": 3.7939788479537317,
+    "rv22": 3.1071237302910033,
+    "units": "percent",
+    "z": 0.5819232654876767,
+    "smearing": 1.7389,
+    "pre_haircut": 3.1117211417475525,
+    "haircut_0.8_applied": false,
+    "final": 3.1117211417475525,
+    "real_function_output": 3.11,
+    "zero_volume_bars_in_last23": 0
+   },
+   "C_risk_voice": {
+    "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
+    "bar_source": "same basemap df as A (.tail(60))",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "rv1": 5.16919028713877,
+    "rv5": 3.3470329685434357,
+    "rv22": 2.9848191086384817,
+    "units": "percent",
+    "z": 0.5211255349629047,
+    "smearing": 1.7389,
+    "stage2": null,
+    "haircut": null,
+    "final": 2.9281717857328933,
+    "real_function_output": 2.928,
+    "state_file_stop_long": 5.856
+   },
+   "D_chief": {
+    "ts_utc": "2026-10-13 01:08",
+    "expected_move_pct": 2.9,
+    "har_move_pct_shown": 2.83,
+    "atr_pct_1d_shown": 5.36,
+    "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
+   },
+   "decomposition": {
+    "A_vs_C_total_logpts": -0.011558398528677639,
+    "A_vs_C_parts_logpts": {
+     "rv_inputs (zA-zC)": 0.0,
+     "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
+     "stage2 intercept": -0.36316,
+     "stage2 disagree term": -0.15352800000000003,
+     "stage2 funding term": 0.015643200000000003,
+     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2_smearing 1.6959": 0.5282135733672177,
+     "top20 haircut x0.8": 0.0
+    },
+    "C_on_fresh_bars": 3.1117211417475525,
+    "C_bar_source_effect_logpts": 0.060797730524772,
+    "B_vs_C_total_logpts": 0.06079773052477209,
+    "B_vs_C_parts_logpts": {
+     "bar source (zB-zC)": 0.060797730524772,
+     "0.8 haircut >=3.9": 0.0
+    },
+    "A_on_fresh_bars": 3.072369747751467,
+    "A_bar_source_effect_logpts": 0.05962930279873781
+   }
+  },
+  "NEAR": {
+   "inputs_shared": {
+    "dis6": 2.6666666666666665,
+    "dissent_families": 4,
+    "n_families": 9,
+    "funding_hourly": 1.25e-05,
+    "funding_day_pct": 0.030000000000000002,
+    "btc_rv5_basemap": 1.5697059537200584,
+    "btc_rv5_fresh": 1.6188129847497863
+   },
+   "A_assemble_vol_voice": {
+    "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
+    "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
+    "cache_written_utc": "2026-10-12 23:06",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "last_bar_close_used": 5.0768,
+    "last_bar_true_close": 5.09,
+    "rv1": 13.945249597423503,
+    "rv5": 13.757560364948763,
+    "rv22": 7.9352244472446065,
+    "units": "percent (simple returns x100)",
+    "z": 1.3842863415125586,
+    "stage2": {
+     "stage1_smearing_used": 1.7017,
+     "raw1": 6.7931455259506865,
+     "log_terms": {
+      "intercept": -0.36316,
+      "disagree": -0.17058666666666666,
+      "funding": 0.015643200000000003,
+      "btc_rv5": -0.017102193885262854
+     },
+     "adj": 0.5855488534602965,
+     "stage2_smearing": 1.6959,
+     "pred2_pre_haircut": 6.745812929832076,
+     "top20_haircut_0.8_applied": true,
+     "final": 5.3966503438656614
+    },
+    "final": 5.3966503438656614,
+    "real_function_output": {
+     "rv1": 13.95,
+     "rv5": 13.76,
+     "rv22": 7.94,
+     "model": "HAR + stage-2 error model (VOL_ERROR.md)",
+     "next_day_move_pct": 5.4,
+     "next_5d_vol_pct": 7.6
+    },
+    "state_file_value": 5.4,
+    "zero_volume_bars_in_last23": 0,
+    "zero_volume_bars_in_full_cache": 991
+   },
+   "B_scanner_exp_move": {
+    "where": "scanner.py:88-101 -> volforecast.forecast(c) stage-1, x0.8 if >=3.9 (volforecast.py:64-65)",
+    "bar_source": "HL candleSnapshot 1d fresh (ttl 600s), closed = t+1d<=now",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": true,
+    "forming_bar_excluded": true,
+    "rv1": 13.72150182218832,
+    "rv5": 13.70201397672068,
+    "rv22": 7.914993030619861,
+    "units": "percent",
+    "z": 1.381248915845435,
+    "smearing": 1.7389,
+    "pre_haircut": 6.920594284819385,
+    "haircut_0.8_applied": true,
+    "final": 5.536475427855509,
+    "real_function_output": 5.54,
+    "zero_volume_bars_in_last23": 0
+   },
+   "C_risk_voice": {
+    "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
+    "bar_source": "same basemap df as A (.tail(60))",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "rv1": 13.945249597423503,
+    "rv5": 13.757560364948763,
+    "rv22": 7.9352244472446065,
+    "units": "percent",
+    "z": 1.3842863415125586,
+    "smearing": 1.7389,
+    "stage2": null,
+    "haircut": null,
+    "final": 6.94164703242384,
+    "real_function_output": 6.942,
+    "state_file_stop_long": 13.883
+   },
+   "D_chief": {
+    "ts_utc": "2026-10-13 01:08",
+    "expected_move_pct": 5.5,
+    "har_move_pct_shown": 5.24,
+    "atr_pct_1d_shown": 11.54,
+    "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
+   },
+   "decomposition": {
+    "A_vs_C_total_logpts": -0.2517606165095536,
+    "A_vs_C_parts_logpts": {
+     "rv_inputs (zA-zC)": 0.0,
+     "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
+     "stage2 intercept": -0.36316,
+     "stage2 disagree term": -0.17058666666666666,
+     "stage2 funding term": 0.015643200000000003,
+     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2_smearing 1.6959": 0.5282135733672177,
+     "top20 haircut x0.8": -0.2231435513142097
+    },
+    "C_on_fresh_bars": 6.920594284819385,
+    "C_bar_source_effect_logpts": -0.0030374256671235056,
+    "B_vs_C_total_logpts": -0.2261809769813331,
+    "B_vs_C_parts_logpts": {
+     "bar source (zB-zC)": -0.0030374256671235056,
+     "0.8 haircut >=3.9": -0.2231435513142097
+    },
+    "A_on_fresh_bars": 5.374000488079781,
+    "A_bar_source_effect_logpts": -0.004205853393157885
+   }
+  },
+  "XRP": {
+   "inputs_shared": {
+    "dis6": 2.4000000000000004,
+    "dissent_families": 4,
+    "n_families": 10,
+    "funding_hourly": 1.674e-06,
+    "funding_day_pct": 0.0040176000000000005,
+    "btc_rv5_basemap": 1.5697059537200584,
+    "btc_rv5_fresh": 1.6188129847497863
+   },
+   "A_assemble_vol_voice": {
+    "where": "assemble.py:288-297 -> volforecast.forecast with stage-2 (volforecast.py:54-61, 26-33)",
+    "bar_source": "HL candleSnapshot 1d via basemap file cache (REBUILD_S=20h, basemap.py:28,31-39)",
+    "cache_written_utc": "2026-10-12 23:06",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "last_bar_close_used": 1.3426,
+    "last_bar_true_close": 1.3415,
+    "rv1": 4.786894546486053,
+    "rv5": 2.5950360078489036,
+    "rv22": 3.014021693375139,
+    "units": "percent (simple returns x100)",
+    "z": 0.4676524950898381,
+    "stage2": {
+     "stage1_smearing_used": 1.7017,
+     "raw1": 2.7163260394859274,
+     "log_terms": {
+      "intercept": -0.36316,
+      "disagree": -0.15352800000000003,
+      "funding": 0.002094937344,
+      "btc_rv5": -0.017102193885262854
+     },
+     "adj": 0.5876079785699078,
+     "stage2_smearing": 1.6959,
+     "pred2_pre_haircut": 2.7068850975404035,
+     "top20_haircut_0.8_applied": false,
+     "final": 2.7068850975404035
+    },
+    "final": 2.7068850975404035,
+    "real_function_output": {
+     "rv1": 4.79,
+     "rv5": 2.6,
+     "rv22": 3.01,
+     "model": "HAR + stage-2 error model (VOL_ERROR.md)",
+     "next_day_move_pct": 2.71,
+     "next_5d_vol_pct": 3.52
+    },
+    "state_file_value": 2.71,
+    "zero_volume_bars_in_last23": 0,
+    "zero_volume_bars_in_full_cache": 999
+   },
+   "B_scanner_exp_move": {
+    "where": "scanner.py:88-101 -> volforecast.forecast(c) stage-1, x0.8 if >=3.9 (volforecast.py:64-65)",
+    "bar_source": "HL candleSnapshot 1d fresh (ttl 600s), closed = t+1d<=now",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": true,
+    "forming_bar_excluded": true,
+    "rv1": 4.864903198354731,
+    "rv5": 2.6228415148968947,
+    "rv22": 3.0197326002569667,
+    "units": "percent",
+    "z": 0.47176321555019934,
+    "smearing": 1.7389,
+    "pre_haircut": 2.787139901034875,
+    "haircut_0.8_applied": false,
+    "final": 2.787139901034875,
+    "real_function_output": 2.79,
+    "zero_volume_bars_in_last23": 0
+   },
+   "C_risk_voice": {
+    "where": "assemble.py:312-326 -> risk_voice.risk_read (risk_voice.py:81-103)",
+    "bar_source": "same basemap df as A (.tail(60))",
+    "last_bar_t_utc": "2026-10-12 00:00",
+    "last_bar_complete": false,
+    "rv1": 4.786894546486053,
+    "rv5": 2.5950360078489036,
+    "rv22": 3.014021693375139,
+    "units": "percent",
+    "z": 0.4676524950898381,
+    "smearing": 1.7389,
+    "stage2": null,
+    "haircut": null,
+    "final": 2.7757062643603923,
+    "real_function_output": 2.776,
+    "state_file_stop_long": 5.551
+   },
+   "D_chief": {
+    "ts_utc": "2026-10-13 01:08",
+    "expected_move_pct": 2.8,
+    "har_move_pct_shown": 2.84,
+    "atr_pct_1d_shown": 5.0,
+    "rv": "n/a (LLM; reads har_move_pct + atr from the state file)"
+   },
+   "decomposition": {
+    "A_vs_C_total_logpts": -0.025106661184677418,
+    "A_vs_C_parts_logpts": {
+     "rv_inputs (zA-zC)": 0.0,
+     "smearing swap 1.7017 vs 1.7389": -0.021624978010632196,
+     "stage2 intercept": -0.36316,
+     "stage2 disagree term": -0.15352800000000003,
+     "stage2 funding term": 0.002094937344,
+     "stage2 btc_rv5 term": -0.017102193885262854,
+     "stage2_smearing 1.6959": 0.5282135733672177,
+     "top20 haircut x0.8": 0.0
+    },
+    "C_on_fresh_bars": 2.787139901034875,
+    "C_bar_source_effect_logpts": 0.004110720460361261,
+    "B_vs_C_total_logpts": 0.004110720460361138,
+    "B_vs_C_parts_logpts": {
+     "bar source (zB-zC)": 0.004110720460361261,
+     "0.8 haircut >=3.9": 0.0
+    },
+    "A_on_fresh_bars": 2.7148612742647624,
+    "A_bar_source_effect_logpts": 0.002942292734326856
+   }
+  }
+ },
+ "coefficients": {
+  "y1_beta": [
+   -0.3921,
+   0.0521,
+   0.2143,
+   0.5201
+  ],
+  "y1_smearing": 1.7389,
+  "stage1_smearing(vol_error.json)": 1.7017,
+  "stage2_coef[int,disagree,funding_day_pct,log_btc_rv5]": [
+   -0.36316,
+   -0.06397,
+   0.52144,
+   -0.03793
+  ],
+  "stage2_smearing": 1.6959,
+  "TOP20_CUT": 3.66,
+  "stage1_fallback_cut": 3.9
+ },
+ "stale_bar_sensitivity": {
+  "BTC": {
+   "h2": {
+    "n": 20,
+    "median_abs_logpts": 0.1302664517902136,
+    "p90_abs_logpts": 0.24758434857659914,
+    "max_abs_logpts": 0.26779113876257743
+   },
+   "h6": {
+    "n": 20,
+    "median_abs_logpts": 0.06970539668303675,
+    "p90_abs_logpts": 0.18744469714890177,
+    "max_abs_logpts": 0.2158350909394259
+   },
+   "h12": {
+    "n": 20,
+    "median_abs_logpts": 0.09561878302409671,
+    "p90_abs_logpts": 0.17951047910485174,
+    "max_abs_logpts": 0.21087817204168324
+   },
+   "h18": {
+    "n": 20,
+    "median_abs_logpts": 0.06323493683139962,
+    "p90_abs_logpts": 0.148428859961494,
+    "max_abs_logpts": 0.1952128032226643
+   },
+   "h23": {
+    "n": 20,
+    "median_abs_logpts": 0.01311402474692083,
+    "p90_abs_logpts": 0.09235511174582779,
+    "max_abs_logpts": 0.11790719687807971
+   }
+  },
+  "ETH": {
+   "h2": {
+    "n": 20,
+    "median_abs_logpts": 0.13134052630940857,
+    "p90_abs_logpts": 0.3219581519568104,
+    "max_abs_logpts": 0.4026992957747652
+   },
+   "h6": {
+    "n": 20,
+    "median_abs_logpts": 0.09486466550007189,
+    "p90_abs_logpts": 0.21527632638081176,
+    "max_abs_logpts": 0.4469950046102713
+   },
+   "h12": {
+    "n": 20,
+    "median_abs_logpts": 0.09742897040419782,
+    "p90_abs_logpts": 0.3056311600901376,
+    "max_abs_logpts": 0.9934647879473135
+   },
+   "h18": {
+    "n": 20,
+    "median_abs_logpts": 0.047947802525679206,
+    "p90_abs_logpts": 0.13232715792856556,
+    "max_abs_logpts": 0.14034953194140354
+   },
+   "h23": {
+    "n": 20,
+    "median_abs_logpts": 0.014307589542850664,
+    "p90_abs_logpts": 0.08291889891781472,
+    "max_abs_logpts": 0.13323767268133915
+   }
+  },
+  "SOL": {
+   "h2": {
+    "n": 20,
+    "median_abs_logpts": 0.12588676902572601,
+    "p90_abs_logpts": 0.23080446309797006,
+    "max_abs_logpts": 0.31779352370458924
+   },
+   "h6": {
+    "n": 20,
+    "median_abs_logpts": 0.107564352161323,
+    "p90_abs_logpts": 0.21383031749666503,
+    "max_abs_logpts": 0.2711618130264932
+   },
+   "h12": {
+    "n": 20,
+    "median_abs_logpts": 0.06561632581074817,
+    "p90_abs_logpts": 0.22358107370907976,
+    "max_abs_logpts": 0.26499105638219145
+   },
+   "h18": {
+    "n": 20,
+    "median_abs_logpts": 0.03867984613012928,
+    "p90_abs_logpts": 0.12352076812144568,
+    "max_abs_logpts": 0.1340074293705686
+   },
+   "h23": {
+    "n": 20,
+    "median_abs_logpts": 0.016398184214193274,
+    "p90_abs_logpts": 0.05660440960963423,
+    "max_abs_logpts": 0.15180637328906038
+   }
+  },
+  "HYPE": {
+   "h2": {
+    "n": 20,
+    "median_abs_logpts": 0.10829299731283348,
+    "p90_abs_logpts": 0.30452999392126195,
+    "max_abs_logpts": 0.32076340043353546
+   },
+   "h6": {
+    "n": 20,
+    "median_abs_logpts": 0.11076185920266948,
+    "p90_abs_logpts": 0.31552173127151256,
+    "max_abs_logpts": 0.39606361717809635
+   },
+   "h12": {
+    "n": 20,
+    "median_abs_logpts": 0.08959338946343029,
+    "p90_abs_logpts": 0.2663448405072757,
+    "max_abs_logpts": 0.3492528676947611
+   },
+   "h18": {
+    "n": 20,
+    "median_abs_logpts": 0.037598771483667734,
+    "p90_abs_logpts": 0.12303512129132839,
+    "max_abs_logpts": 0.28423484590751114
+   },
+   "h23": {
+    "n": 20,
+    "median_abs_logpts": 0.01816951821898591,
+    "p90_abs_logpts": 0.09051468013363043,
+    "max_abs_logpts": 0.18156487282292683
+   }
+  },
+  "NEAR": {
+   "h2": {
+    "n": 20,
+    "median_abs_logpts": 0.1375659364265086,
+    "p90_abs_logpts": 0.29978205336677965,
+    "max_abs_logpts": 0.378687699614806
+   },
+   "h6": {
+    "n": 20,
+    "median_abs_logpts": 0.11841461646608063,
+    "p90_abs_logpts": 0.3845736839285038,
+    "max_abs_logpts": 0.4151198313550421
+   },
+   "h12": {
+    "n": 20,
+    "median_abs_logpts": 0.09442070762363677,
+    "p90_abs_logpts": 0.2328902903730883,
+    "max_abs_logpts": 0.2664357283086336
+   },
+   "h18": {
+    "n": 20,
+    "median_abs_logpts": 0.045877372028238876,
+    "p90_abs_logpts": 0.19752702152940418,
+    "max_abs_logpts": 0.2184756675667041
+   },
+   "h23": {
+    "n": 20,
+    "median_abs_logpts": 0.01185437109466315,
+    "p90_abs_logpts": 0.04921990485996832,
+    "max_abs_logpts": 0.06777256520762415
+   }
+  },
+  "XRP": {
+   "h2": {
+    "n": 20,
+    "median_abs_logpts": 0.10172949849454851,
+    "p90_abs_logpts": 0.27805042971499205,
+    "max_abs_logpts": 0.3726244852633821
+   },
+   "h6": {
+    "n": 20,
+    "median_abs_logpts": 0.0629589241838186,
+    "p90_abs_logpts": 0.2977389278250114,
+    "max_abs_logpts": 0.300574225339375
+   },
+   "h12": {
+    "n": 20,
+    "median_abs_logpts": 0.05192324889707157,
+    "p90_abs_logpts": 0.31736003027854337,
+    "max_abs_logpts": 0.34993863782858675
+   },
+   "h18": {
+    "n": 20,
+    "median_abs_logpts": 0.06280617966514217,
+    "p90_abs_logpts": 0.16756797180558813,
+    "max_abs_logpts": 0.23861344626593592
+   },
+   "h23": {
+    "n": 20,
+    "median_abs_logpts": 0.015326791170912814,
+    "p90_abs_logpts": 0.0348652953413886,
+    "max_abs_logpts": 0.04671400799200915
+   }
+  }
+ }
+}

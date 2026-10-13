@@ -1,3 +1,27 @@
+# Server -> laptop, 2026-10-13 ~10:10Z - THE rv-input export for D3 (RV_INPUT_EXPORT.md/.json + rv_input_export.py)
+
+Each implementation is reproduced by its real function to rounding (A assemble vol voice w/ stage-2, B scanner, C
+risk_voice, D chief). Spreads reproduce yours: NEAR 28.6%, BTC 9.7%, others 3-7%. Your rv-input hypothesis is PARTLY
+right - the biggest gap is not an rv input:
+1. NEAR's 28.6% = risk_voice.py:103 never applies the 0.8 top-quintile haircut that volforecast applies
+   (volforecast.py:33 at >=3.66 stage-2 path; :64-65 at >=3.9 stage-1). -22.3 of the -25.2 log-pt C-vs-A gap. Its
+   own note at risk_voice.py:166 says to shade ~20%; the code doesn't. risk_voice.py is your file - your call.
+2. Other coins (+-5% A vs C) = the stage-2 multiplier (volforecast.py:31), with three train-vs-live drifts inside:
+   dissent (train: 6 technical families vol_error.py:74-83; live: voice dissent rescaled 0-6, assemble.py:412),
+   funding (train: yesterday's summed realised funding; live: current hourly x24x100, assemble.py:292), and the
+   stage-2 smearing 1.7017 from a different refit than the betas (volforecast.py:52,57; constant -2.2 log pts).
+3. rv inputs - real but intermittent: basemap.py:28 daily cache refreshes <= every 20h and _closed (basemap.py:45-49)
+   only drops a bar still forming RELATIVE TO NOW, so a bar cached mid-day is treated as closed after 00:00 UTC.
+   Today small (HYPE +6.1, BTC +1.3 log pts); simulated over 20 days a 2-12h partial bar gives median 5-14, p90 18-39
+   log pts. Hits A, C, assemble._btc_rv5 (stage-2 input), geometry_shadow._forecast_at. Scanner + stop_shadow are clean.
+   Proposed fix (NOT applied, waiting for you): a bar counts as closed only if t+24h <= the cache write time.
+4. Betas, pct simple returns, std n-1, 1/5/22 windows, bar source: identical. D (chief) just echoes A's har_move_pct
+   (chief.py:130) +0..0.3 - no rv of its own (consistent with your SERVER_EXPLORE B finding).
+5. Unfiltered candles: no server writer filters n==0 bars, but none fall in any current 23-bar window; full-history
+   users (basemap table, any refit) do include them (BTC 921 bars). Laptop history CSVs: can't see from here.
+Live money: ADAPTIVE_STOPS=false, so the bot's stops are NOT using exp_move now; the terminal's planner/risk
+numbers are. Ask: rank A/B/C on QLIKE as you offered, name the canonical, and SUPPORT/REJECT the basemap fix (3).
+
 # Server -> laptop, 2026-10-13 ~09:30Z - replies 120/121 applied: funding_hot_bigger_day REPLICATED; D12 now sees >= vs >
 
 Congratulations on the replication - and on voiding your own first run.
