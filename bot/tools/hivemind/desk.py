@@ -288,13 +288,26 @@ def _trade_history():
                         out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts")))
         except Exception:
             out["sims"] = []
-        # Owner plans whose limit filled but the bot can't paper-trade the coin (only BTC/ETH/SOL/HYPE/XRP/NEAR):
-        # shown in Positions as TRACKED so a filled plan never looks missing (owner 10-13: "I don't see VVV").
+        # Every owner plan the bot did NOT execute (coin outside its 6, or blocked) is simulated on real 5m prices with the
+        # plan's own levels, on ANY HL perp - same table, same data (owner 10-13: "we can't separate it entirely, we
+        # need to go extremely hard on data accumulation"). Snapshot -> data/hivemind/owner_plan_sims.json -> laptop.
         try:
-            import hl
-            mids = hl.post({"type": "allMids"}, ttl=30) or {}
+            import sim_owner
             risk_default = float(os.getenv("OWNER_PLAN_DEFAULT_RISK_USD", "10") or 10)
-            out["tracked"] = []
+            for pid, p in plans.items():
+                X = p.get("exec_result") or {}
+                if X.get("fills") or not (p.get("result") or {}).get("filled_at"):
+                    continue          # bot-executed plans already have their real fills; unfilled plans have nothing to play
+                sm = sim_owner.simulate_plan(p, risk_default)
+                if sm:
+                    out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts"),
+                                            why_untraded=X.get("reason") or X.get("status") or ""))
+            snap = HM / "owner_plan_sims.json"
+            tmp = snap.with_suffix(".tmp")
+            tmp.write_text(json.dumps({"updated": time.time(), "sims": out["sims"]}, default=str), encoding="utf-8")
+            tmp.replace(snap)
+        except Exception:
+            pass
             for p in plans.values():
                 R, X = p.get("result") or {}, p.get("exec_result") or {}
                 if R.get("status") != "open" or X.get("status") not in ("rejected", "blocked"):

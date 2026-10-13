@@ -80,6 +80,57 @@ def simulate(plan_id, plan):
             "r": round(total / risk, 3) if risk else None, "exit_ts": exit_ts, "expires_ts": t_end, "as_of": now}
 
 
+def simulate_plan(plan, risk_default=10.0):
+    """Any owner plan the bot did NOT execute (coin outside its 6, or blocked): play it out on HL 5m bars from the
+    grader's fill time with the plan's own stop / target / max_hold_h - the same 'Profits only' rules minus the bot's
+    partials (there is no bot managing it). Sized at the plan's risk_usd (else risk_default). Works on any HL perp."""
+    R = plan.get("result") or {}
+    t_open = R.get("filled_at")
+    if not t_open:
+        return None
+    side, entry = plan["side"], float(plan["entry"])
+    stop, target = float(plan["stop"]), float(plan["target"])
+    if entry <= 0 or entry == stop:
+        return None
+    risk = float(plan.get("risk_usd") or 0) or risk_default
+    q0 = risk / abs(entry - stop)
+    sg = 1 if side == "LONG" else -1
+    t_open = float(t_open)
+    t_end = t_open + float(plan.get("max_hold_h") or 48) * 3600
+    now = time.time()
+    try:
+        bars = sorted(hl.candles(plan["coin"], "5m", int(t_open * 1000), int(min(now, t_end) * 1000), ttl=240) or [],
+                      key=lambda b: b["t"])
+    except Exception:
+        bars = []
+    status, exit_px, exit_ts = "open", None, None
+    for b in bars:
+        t, hi, lo = int(b["t"]) / 1000, float(b["h"]), float(b["l"])
+        if t + 300 <= t_open:
+            continue
+        if (sg < 0 and hi >= stop) or (sg > 0 and lo <= stop):
+            status, exit_px, exit_ts = "stop", stop, t
+            break
+        if (sg < 0 and lo <= target) or (sg > 0 and hi >= target):
+            status, exit_px, exit_ts = "target", target, t
+            break
+    if status == "open" and now >= t_end and bars:
+        status, exit_px, exit_ts = "time limit", float(bars[-1]["c"]), t_end
+    if status == "open":
+        try:
+            mark = float(hl.post({"type": "allMids"}, ttl=30)[plan["coin"]])
+        except Exception:
+            mark = float(bars[-1]["c"]) if bars else entry
+    else:
+        mark = exit_px
+    total = sg * (mark - entry) * q0
+    return {"mode": "plan_levels", "status": status, "lev": float(plan.get("leverage") or 1), "entry": entry, "stop": stop,
+            "target": target, "partials": [], "banked_usd": 0.0, "open_qty": round(q0, 6), "mark": mark,
+            "open_pnl_usd": round(total, 2) if status == "open" else 0.0, "total_usd": round(total, 2),
+            "r": round(total / risk, 3), "risk_usd": risk, "exit_ts": exit_ts, "expires_ts": t_end, "as_of": now,
+            "filled_at": t_open, "bot_traded": False}
+
+
 if __name__ == "__main__":
     for p in json.loads((HM / "plans.json").read_text(encoding="utf-8")).get("plans", []):
         if (p.get("exec_result") or {}).get("fills"):

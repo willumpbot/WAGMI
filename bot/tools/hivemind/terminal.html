@@ -1065,10 +1065,7 @@ function renderBotPos(){
   const rows = [];
   for (const m of ((DATA.tradeHist||{}).sims||[]).filter(m => m.status === "open"))
     rows.push(posRow({coin:m.coin, side:m.side, lev:m.lev||1, qty:m.open_qty, entry:m.entry, mark:m.mark, stop:m.stop, target:m.target,
-      total:m.total_usd, note:`banked $${m.banked_usd.toFixed(2)} · closes ${t(m.expires_ts*1000)}`}));
-  for (const m of ((DATA.tradeHist||{}).tracked||[]))
-    rows.push(posRow({coin:m.coin, side:m.side, lev:m.lev||1, qty:m.qty, entry:m.entry, mark:m.mark, stop:m.stop, target:m.target,
-      total:m.total_usd, note:`tracked · bot can't trade ${m.coin} · sized at $${(+m.risk_usd).toFixed(0)} risk`}));
+      total:m.total_usd, note:(m.bot_traded===false?`simulated on live prices · `:`banked $${m.banked_usd.toFixed(2)} · `)+`closes ${t(m.expires_ts*1000)}`}));
   for (const s of SYMS) { const b = botPos(s); if (!b) continue;
     rows.push(posRow({coin:s, side:b.side, lev:b.leverage, qty:b.qty, entry:b.entry, mark:b.now, stop:b.sl, target:b.tp2||b.tp1, total:b.total,
       note:(b.realized_pnl?`banked $${(+b.realized_pnl).toFixed(2)} · `:"") + `opened ${t(b.open_time)}`})); }

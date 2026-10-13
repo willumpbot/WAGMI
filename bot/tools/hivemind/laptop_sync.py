@@ -22,6 +22,7 @@ FILES = {
     "owner_plans.jsonl": BOT / "data" / "hivemind" / "owner_plans.jsonl",
     "owner_fills.jsonl": BOT / "data" / "hivemind" / "owner_fills.jsonl",
     "plans.json": BOT / "data" / "hivemind" / "plans.json",
+    "owner_plan_sims.json": BOT / "data" / "hivemind" / "owner_plan_sims.json",   # every owner plan played out on 5m, any coin
     "ai_plans.json": BOT / "data" / "hivemind" / "ai_plans.json",
     "scan_grades.json": BOT / "data" / "hivemind" / "scan_grades.json",
     "scan_log.jsonl": BOT / "data" / "hivemind" / "scan_log.jsonl",
