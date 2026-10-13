@@ -172,6 +172,20 @@ def file_class(p):
     """
     name = os.path.basename(p)
     if os.path.isdir(p):
+        # FOURTH false alarm of this family, and the server had to explain this one too: I
+        # reported `state/` as "state SHRANK 2517 rows+bytes". It is not a row drop.
+        # `server_exports/state/` is the bot's LEARNED_STATE daily copy -- position_state.json,
+        # ic_history.json, llm__*.json -- mutable snapshots rewritten in place, and
+        # position_state.json SHRINKS whenever a position closes (it did at 19:12).
+        #
+        # The file-level rules below already got this right; directories never got the same
+        # treatment. So a directory's class now follows its CONTENTS rather than being assumed
+        # append-only: a directory of .json snapshots is a snapshot, shard directories of
+        # .jsonl/.gz still only gain files. Mixed or empty stays append, which is the
+        # conservative side.
+        files = [x for x in glob.glob(os.path.join(p, "*")) if os.path.isfile(x)]
+        if files and all(x.endswith(".json") for x in files):
+            return "snapshot"
         return "append"                      # the shard directories only gain files
     if name.endswith((".jsonl", ".jsonl.gz", ".csv")):
         return "append"
