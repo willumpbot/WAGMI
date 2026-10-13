@@ -1,0 +1,489 @@
+{
+ "generated": "2026-10-12T23:47:07+00:00",
+ "now": "2026-10-12T23:47:07+00:00",
+ "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
+ "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
+ "summary": {
+  "D1": {
+   "flagged": 0,
+   "high": 0,
+   "not_automated": 1
+  },
+  "D2": {
+   "flagged": 3,
+   "high": 1,
+   "not_automated": 8
+  },
+  "D3": {
+   "flagged": 6,
+   "high": 3,
+   "not_automated": 0
+  },
+  "D4": {
+   "flagged": 0,
+   "high": 0,
+   "not_automated": 5
+  },
+  "D5": {
+   "flagged": 3,
+   "high": 3,
+   "not_automated": 0
+  },
+  "D6": {
+   "flagged": 17,
+   "high": 6,
+   "not_automated": 5
+  },
+  "D7": {
+   "flagged": 0,
+   "high": 0,
+   "not_automated": 1
+  },
+  "D8": {
+   "flagged": 2,
+   "high": 0,
+   "not_automated": 1
+  },
+  "D9": {
+   "flagged": 0,
+   "high": 0,
+   "not_automated": 2
+  },
+  "D10": {
+   "flagged": 0,
+   "high": 0,
+   "not_automated": 1
+  },
+  "D11": {
+   "flagged": 0,
+   "high": 0,
+   "not_automated": 3
+  }
+ },
+ "discrepancies": [
+  {
+   "check": "D2",
+   "id": "r03_long_block",
+   "severity": "high",
+   "what": "r03_long_block: evidence frozen at 2026-07-23 while 19 newer trades (net $-7.1) were ignored by the $0.5 fee filter (newest trade 2026-10-12)",
+   "evidence_through": "2026-07-23",
+   "n_rows": 119,
+   "n_qualifying": 22,
+   "n_ignored_newer": 19,
+   "ignored_net_usd": -7.1
+  },
+  {
+   "check": "D2",
+   "id": "r05_side_size_mult_unit",
+   "severity": "warn",
+   "what": "r05_side_size_mult: learning gate in dollars (dollars (1 + avg$/20, clip 0.25-1.5)); target unit is bps of notional",
+   "unit": "dollars (1 + avg$/20, clip 0.25-1.5)"
+  },
+  {
+   "check": "D2",
+   "id": "r06_dust_filter_unit",
+   "severity": "warn",
+   "what": "r06_dust_filter: learning gate in dollars (dollars of fees (< $0.50 ignored)); target unit is bps of notional",
+   "unit": "dollars of fees (< $0.50 ignored)"
+  },
+  {
+   "check": "D3",
+   "id": "exp_move",
+   "severity": "high",
+   "what": "'exp_move' has 3 different implementations: volforecast.forecast; risk_voice.risk_read (via assemble.voice_risk); chief expected_move_pct",
+   "implementations": [
+    {
+     "label": "volforecast.forecast",
+     "where": "tools/hivemind/volforecast.py:36",
+     "impl_hash": "ae0f3f71b5c362ce96a083d751240c9e3aae822ab8d6e419623af757fb04203a"
+    },
+    {
+     "label": "risk_voice.risk_read (via assemble.voice_risk)",
+     "where": "data/laptop_mining/risk_voice.py:142",
+     "impl_hash": "55531d46137b6cddda257559f96b477296c83c7da46632971331dafd1f8785cc"
+    },
+    {
+     "label": "chief expected_move_pct",
+     "where": "tools/hivemind/chief.py:57",
+     "impl_hash": "67897b1df677583092c77f954cdba08600aac8f8ff03d7b9c22bdbc5805be94a"
+    }
+   ]
+  },
+  {
+   "check": "D3",
+   "id": "notional",
+   "severity": "high",
+   "what": "'notional' has 3 different implementations: PositionManager.get_total_open_notional; LLM-first notional cap; coordinator sizing (base exposure)",
+   "implementations": [
+    {
+     "label": "PositionManager.get_total_open_notional",
+     "where": "execution/position_manager.py:2685",
+     "impl_hash": "bb7ff756c4dc5f9c4a6a8936627283793e96edffa8d524f2f462ae0e3a842978"
+    },
+    {
+     "label": "LLM-first notional cap",
+     "where": "multi_strategy_main.py:9099",
+     "impl_hash": "d2b94e2aa24ea1961b9d78d2ba015e5f98dbb217ad0ce75ac588c3d224d246c1"
+    },
+    {
+     "label": "coordinator sizing (base exposure)",
+     "where": "llm/agents/coordinator.py:4327",
+     "impl_hash": "1659fc191296911782c9b5e8dc1103c376fa84c1f119271a5a575f756d19462e"
+    }
+   ]
+  },
+  {
+   "check": "D3",
+   "id": "smallcap_breakout",
+   "severity": "high",
+   "what": "'smallcap_breakout' has 3 different implementations: scanner momentum_small flag; terminal.html planner warning; laptop prereg (PREREG_SMALLCAP_FADE)",
+   "implementations": [
+    {
+     "label": "scanner momentum_small flag",
+     "where": "tools/hivemind/scanner.py:181",
+     "impl_hash": "11d5a22d587929ad84d0f06b6990bb572da53f437dace1211957a8d3932e7590"
+    },
+    {
+     "label": "terminal.html planner warning",
+     "where": "tools/hivemind/terminal.html:583",
+     "impl_hash": "111c2239cbc25246b59ea67218c341258bc0460f2b5d86851b816b8523e7efd4"
+    },
+    {
+     "label": "laptop prereg (PREREG_SMALLCAP_FADE)",
+     "where": "origin/laptop-mining-2026-10:bot/data/laptop_mining/PREREG_SMALLCAP_FADE_2026-10-11.md:",
+     "impl_hash": "af42d2e18c676c6096433286e59c512f1c11c2669aaab17f70ef39d7d135ff15"
+    }
+   ]
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_BTC",
+   "severity": "warn",
+   "what": "exp_move for BTC disagrees by 10% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 1.72,
+    "scan.exp_move": 1.81,
+    "chief.expected_move_pct": 1.9
+   }
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_HYPE",
+   "severity": "warn",
+   "what": "exp_move for HYPE disagrees by 12% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 2.51,
+    "scan.exp_move": 2.6,
+    "chief.expected_move_pct": 2.8
+   }
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_NEAR",
+   "severity": "warn",
+   "what": "exp_move for NEAR disagrees by 30% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 4.63,
+    "scan.exp_move": 5.23,
+    "chief.expected_move_pct": 6.0
+   }
+  },
+  {
+   "check": "D5",
+   "id": "scan_grader_funding_hot_day",
+   "severity": "high",
+   "what": "tools/hivemind/scan_grader.py grades 'funding_hot' on abs_excess_return_vs_universe_median, but claim funding_hot_bigger_day is about abs_move_over_exp_move - its forward grade cannot confirm or refute the claim",
+   "grader_metric": "abs_excess_return_vs_universe_median",
+   "claim_metric": "abs_move_over_exp_move"
+  },
+  {
+   "check": "D5",
+   "id": "scan_grader_funding_hot_stop",
+   "severity": "high",
+   "what": "tools/hivemind/scan_grader.py grades 'funding_hot' on abs_excess_return_vs_universe_median, but claim funding_hot_stop_hits is about stop_hit_rate - its forward grade cannot confirm or refute the claim",
+   "grader_metric": "abs_excess_return_vs_universe_median",
+   "claim_metric": "stop_hit_rate"
+  },
+  {
+   "check": "D5",
+   "id": "scan_grader_momentum_small",
+   "severity": "high",
+   "what": "tools/hivemind/scan_grader.py grades 'momentum_small' on signed_excess_return_vs_universe_median, but claim momentum_small_fade is about excess_return_vs_nonbreakout_smallcap_peers - its forward grade cannot confirm or refute the claim",
+   "grader_metric": "signed_excess_return_vs_universe_median",
+   "claim_metric": "excess_return_vs_nonbreakout_smallcap_peers"
+  },
+  {
+   "check": "D6",
+   "id": "claim_funding_hot_bigger_day",
+   "severity": "high",
+   "what": "PROVEN claim funding_hot_bigger_day reaches no live bot code (funding_hot not in core, execution, multi_strategy_main.py)",
+   "claim_id": "funding_hot_bigger_day"
+  },
+  {
+   "check": "D6",
+   "id": "claim_funding_hot_stop_hits",
+   "severity": "high",
+   "what": "PROVEN claim funding_hot_stop_hits reaches no live bot code (funding_hot not in core, execution, multi_strategy_main.py)",
+   "claim_id": "funding_hot_stop_hits"
+  },
+  {
+   "check": "D6",
+   "id": "claim_har_move_forecastable_flag_off",
+   "severity": "warn",
+   "what": "PROVEN claim har_move_forecastable reaches the bot only behind ADAPTIVE_STOPS, which is OFF in .env",
+   "claim_id": "har_move_forecastable",
+   "where": [
+    "multi_strategy_main.py:8321",
+    "multi_strategy_main.py:9192"
+   ]
+  },
+  {
+   "check": "D6",
+   "id": "rule_r02_solo_gate",
+   "severity": "warn",
+   "what": "live rule r02_solo_gate has no claim behind it",
+   "rule": "Solo gate - core/entry_selectivity.py:254-297; msm 8925-9042 - ENTRY_SELECTIVITY - n=32 old - 0"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r03_long_block",
+   "severity": "high",
+   "what": "live rule r03_long_block binds claim long_side_drain, which is STALE - a dead claim may not bind",
+   "claim_id": "long_side_drain"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r05_side_size_mult",
+   "severity": "high",
+   "what": "live rule r05_side_size_mult binds claim long_side_drain, which is STALE - a dead claim may not bind",
+   "claim_id": "long_side_drain"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r06_dust_filter",
+   "severity": "warn",
+   "what": "live rule r06_dust_filter has no claim behind it",
+   "rule": "Dust filter - live_edge.py:63, entry_selectivity.py:66 - fees < $0.50 ignored - set 07-24 when notional ~$278"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r07_risk_cap_0_5pct_prompt_only",
+   "severity": "high",
+   "what": "r07_risk_cap_0_5pct: the cap (MAX_RISK_PCT_CEILING, SIZING_CONSTRAINT_UNITS_FIX) only reaches the agent's prompt - no code clamps the risk the agent returns",
+   "env_value": {
+    "MAX_RISK_PCT_CEILING": "0.005",
+    "SIZING_CONSTRAINT_UNITS_FIX": "true"
+   }
+  },
+  {
+   "check": "D6",
+   "id": "rule_r08_fallback_risk",
+   "severity": "warn",
+   "what": "live rule r08_fallback_risk has no claim behind it",
+   "rule": "Fallback risk 10% x size mult if Risk Agent omits risk - coordinator.py:2024"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r10_profit_lock",
+   "severity": "warn",
+   "what": "live rule r10_profit_lock has no claim behind it",
+   "rule": "Profit lock 0.3R -> BE+fees+0.1%, 0.6R -> +0.3R - position_manager.py:1091-1124,1203-1219 - 07-02 in-sample n=90; conflicts with refuted BE ratchet + GEOMETRY_V"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r10_profit_lock_vs_breakeven_ratchet",
+   "severity": "warn",
+   "what": "live rule r10_profit_lock conflicts with breakeven_ratchet (REFUTED)"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r10_profit_lock_vs_tighten_stop_harmful",
+   "severity": "warn",
+   "what": "live rule r10_profit_lock conflicts with tighten_stop_harmful (PROVEN)"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r12_exit_keyword_thresholds",
+   "severity": "warn",
+   "what": "live rule r12_exit_keyword_thresholds has no claim behind it",
+   "rule": "Exit-agent keyword close rules 0.60/0.80/0.90 - llm/exit_engine.py:181-235 - 10 blocked"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r13_min_exit_hold_2h",
+   "severity": "warn",
+   "what": "live rule r13_min_exit_hold_2h has no claim behind it",
+   "rule": "2h min exit hold - core/position_wiring.py:714-725 - 10"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r14_time_stop_handoff",
+   "severity": "warn",
+   "what": "live rule r14_time_stop_handoff has no claim behind it",
+   "rule": "Time stop hands to exit agent; real close only at 1.5x max hold - position_manager.py:1250-1324"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r15_regime_stickiness",
+   "severity": "warn",
+   "what": "live rule r15_regime_stickiness has no claim behind it",
+   "rule": "Regime stickiness >60% - strategies/regime_detector.py:26 - ~590 (367 held high_volatility vs trend)"
+  },
+  {
+   "check": "D6",
+   "id": "rule_r16_trigger_conf_floor",
+   "severity": "high",
+   "what": "live rule r16_trigger_conf_floor binds claim higher_conf_floor_helps, which is REFUTED - a dead claim may not bind",
+   "claim_id": "higher_conf_floor_helps"
+  },
+  {
+   "check": "D8",
+   "id": "prereg_oi:reads_out_date",
+   "severity": "warn",
+   "what": "PREREG_OI: reads_out_date is ~2027-01-24 per [L:crunch/TRACKERS] but ~2027-03 per REGISTER"
+  },
+  {
+   "check": "D8",
+   "id": "prereg_ideas:n",
+   "severity": "warn",
+   "what": "PREREG_IDEAS: n is 4 per [L:TRACKERS] but 1 per server stats"
+  }
+ ],
+ "not_automated": [
+  {
+   "check": "D1",
+   "what": "terminal.html / desk.py rendered strings",
+   "why": "surfaces carry no claim_id yet (phase 3 render.py); only milestones, scanner chips and bound prompt sentences are graded"
+  },
+  {
+   "check": "D2",
+   "what": "rule r01_ic_mute",
+   "why": "evidence source not machine-readable yet"
+  },
+  {
+   "check": "D2",
+   "what": "rule r08_fallback_risk",
+   "why": "evidence source not machine-readable yet"
+  },
+  {
+   "check": "D2",
+   "what": "rule r10_profit_lock",
+   "why": "evidence source not machine-readable yet"
+  },
+  {
+   "check": "D2",
+   "what": "rule r12_exit_keyword_thresholds",
+   "why": "evidence source not machine-readable yet"
+  },
+  {
+   "check": "D2",
+   "what": "rule r13_min_exit_hold_2h",
+   "why": "evidence source not machine-readable yet"
+  },
+  {
+   "check": "D2",
+   "what": "rule r14_time_stop_handoff",
+   "why": "evidence source not machine-readable yet"
+  },
+  {
+   "check": "D2",
+   "what": "rule r15_regime_stickiness",
+   "why": "evidence source not machine-readable yet"
+  },
+  {
+   "check": "D2",
+   "what": "rule r16_trigger_conf_floor",
+   "why": "evidence source not machine-readable yet"
+  },
+  {
+   "check": "D4",
+   "what": "R",
+   "why": "no tested_impl_hash on the card yet (laptop to record the hash it tested)"
+  },
+  {
+   "check": "D4",
+   "what": "exp_move",
+   "why": "no tested_impl_hash on the card yet (laptop to record the hash it tested)"
+  },
+  {
+   "check": "D4",
+   "what": "funding_hot",
+   "why": "no tested_impl_hash on the card yet (laptop to record the hash it tested)"
+  },
+  {
+   "check": "D4",
+   "what": "notional",
+   "why": "no tested_impl_hash on the card yet (laptop to record the hash it tested)"
+  },
+  {
+   "check": "D4",
+   "what": "smallcap_breakout",
+   "why": "no tested_impl_hash on the card yet (laptop to record the hash it tested)"
+  },
+  {
+   "check": "D6",
+   "what": "claim costs",
+   "why": "no live_bot_terms: consumer search not automated"
+  },
+  {
+   "check": "D6",
+   "what": "claim funding_persistence",
+   "why": "no live_bot_terms: consumer search not automated"
+  },
+  {
+   "check": "D6",
+   "what": "claim h3_liq_clustering",
+   "why": "no live_bot_terms: consumer search not automated"
+  },
+  {
+   "check": "D6",
+   "what": "claim intraday_reversal",
+   "why": "no live_bot_terms: consumer search not automated"
+  },
+  {
+   "check": "D6",
+   "what": "claim tighten_stop_harmful",
+   "why": "no live_bot_terms: consumer search not automated"
+  },
+  {
+   "check": "D7",
+   "what": "free-text claims about behaviour ('confirmed live')",
+   "why": "only KEY=value quotes are checked"
+  },
+  {
+   "check": "D8",
+   "what": "live recount of prereg trackers",
+   "why": "laptop crunch TRACKERS is not readable from the server yet; only disagreements recorded on threads are checked"
+  },
+  {
+   "check": "D9",
+   "what": "stream_depth_all off-box copy",
+   "why": "no archive dir C:\\Users\\vince\\WAGMI\\bot\\data\\laptop_mining\\server_exports\\archive\\depth_all"
+  },
+  {
+   "check": "D9",
+   "what": "copy actually on the laptop",
+   "why": "checks the export staging dir, not the laptop's disk"
+  },
+  {
+   "check": "D10",
+   "what": "source API field set",
+   "why": "the collectors' raw API payloads are not captured; only the written schema over time is compared"
+  },
+  {
+   "check": "D11",
+   "what": "stream_depth_all:imbalance is a share difference",
+   "why": "invariant not evaluable on any recent row"
+  },
+  {
+   "check": "D11",
+   "what": "stream_depth_all:depth is non-negative",
+   "why": "invariant not evaluable on any recent row"
+  },
+  {
+   "check": "D11",
+   "what": "definition invariants on quantities (R, exp_move)",
+   "why": "evaluated on streams + scan.json only"
+  }
+ ]
+}

@@ -1,16 +1,6 @@
 {
   "lessons": [
     {
-      "ts": 1783919340.1993651,
-      "lesson": "SOL SHORT in trend won by SL despite 20% regime WR\u2014luck not edge. Skip trend shorts <80% confidence; consolidation regime preferred.",
-      "category": "regime_mismatch",
-      "strength": "strong",
-      "symbol": "SOL",
-      "regime": "trend",
-      "side": "SHORT",
-      "outcome": "WIN"
-    },
-    {
       "ts": 1783926241.5119529,
       "lesson": "Consolidation regime favors SHORTs: HYPE SHORT won $6.87 over 3.2h vs 3 recent consolidation LONG losses. High confluence (72.5%=2+ agreement) + SHORT + consolidation + >2h hold = winner. Avoid consolidation LONGs.",
       "category": "pattern_win",
@@ -1999,6 +1989,16 @@
       "regime": "consolidation",
       "side": "LONG",
       "outcome": "LOSS"
+    },
+    {
+      "ts": 1791786038.2204041,
+      "lesson": "NEAR LONG in consolidation ground 6.5h to a tiny SL (-$0.07) after dead-capital drift near entry. Exploration entries with no edge tie up capital. Require a catalyst or skip.",
+      "category": "pattern_loss",
+      "strength": "moderate",
+      "symbol": "NEAR",
+      "regime": "consolidation",
+      "side": "LONG",
+      "outcome": "LOSS"
     }
   ],
   "prompt_injections": {
@@ -2144,7 +2144,6 @@
       68.39999999999999,
       68.39999999999999,
       68.39999999999999,
-      68.39999999999999,
       88.35,
       88.35,
       61.99999999999999,
@@ -2240,6 +2239,7 @@
       70.178264,
       70.178264,
       67.0,
+      67.0,
       67.0
     ],
     "actual": [
@@ -2248,7 +2248,6 @@
       0.0,
       0.0,
       0.0,
-      0.0,
       1.0,
       0.0,
       0.0,
@@ -2341,6 +2340,7 @@
       0.0,
       1.0,
       1.0,
+      0.0,
       0.0,
       0.0
     ]
@@ -3148,13 +3148,13 @@
     },
     "NEAR_LONG_consolidation": {
       "wins": 6,
-      "total": 10,
+      "total": 11,
       "recent_wins": 0,
       "recent_total": 1
     }
   },
   "stats": {
-    "total_processed": 547,
-    "last_updated": 1791678377.8759627
+    "total_processed": 548,
+    "last_updated": 1791786038.2211273
   }
 }
