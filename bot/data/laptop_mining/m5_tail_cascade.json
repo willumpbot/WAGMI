@@ -1,0 +1,217 @@
+{
+ "unconditional_tail_rate": 0.041595603937567685,
+ "tail_mult": 3.0,
+ "extreme_quantile": 0.95,
+ "coins_1h": 177,
+ "conditions": [
+  {
+   "condition": "funding_extreme",
+   "source": "funding_hist",
+   "coins": 158,
+   "p_tail_flagged": 0.07849404892434653,
+   "p_tail_unflagged": 0.03995936164054871,
+   "lift": 0.03853468728379782,
+   "ci": [
+    0.03148508086992941,
+    0.0461767392435918
+   ],
+   "se": 0.0037575933417188104,
+   "z": 10.255151044676685,
+   "ratio": 1.9643469190132106,
+   "pooled_lift": 0.016374655522585407,
+   "placebo_lift": -0.001311463147673243,
+   "hours_flagged": 42345,
+   "hours_unflagged": 637317,
+   "verdict": "CUT LEVERAGE"
+  },
+  {
+   "condition": "btc_shock",
+   "source": "candles_1h/BTC",
+   "coins": 174,
+   "p_tail_flagged": 0.10917549883067124,
+   "p_tail_unflagged": 0.04013026684728678,
+   "lift": 0.06904523198338448,
+   "ci": [
+    0.06395021940577145,
+    0.07399943140096574
+   ],
+   "se": 0.0026182813712866564,
+   "z": 26.37044006827073,
+   "ratio": 2.7205276069090636,
+   "pooled_lift": 0.06905668401448423,
+   "placebo_lift": 0.003182074685553408,
+   "hours_flagged": 15647,
+   "hours_unflagged": 738823,
+   "verdict": "CUT LEVERAGE"
+  },
+  {
+   "condition": "oi_jump",
+   "source": "funding_oi_history.jsonl.gz",
+   "coins": 13,
+   "p_tail_flagged": 0.031279914873429245,
+   "p_tail_unflagged": 0.03620773049249144,
+   "lift": -0.004927815619062197,
+   "ci": [
+    -0.010851516718772542,
+    0.0008900939871623313
+   ],
+   "se": 0.0030653990488354057,
+   "z": -1.6075608886661439,
+   "ratio": 0.8639015604669258,
+   "pooled_lift": -0.010918057788041193,
+   "placebo_lift": 0.012629436165141228,
+   "hours_flagged": 2125,
+   "hours_unflagged": 54308,
+   "verdict": "not actionable"
+  },
+  {
+   "condition": "depth_thin",
+   "source": "panels.depth",
+   "coins": 12,
+   "p_tail_flagged": 0.04310286425714758,
+   "p_tail_unflagged": 0.03518476957582924,
+   "lift": 0.007918094681318337,
+   "ci": [
+    -0.003279296940946729,
+    0.01907751762938916
+   ],
+   "se": 0.005769949819503128,
+   "z": 1.3722987077901823,
+   "ratio": 1.2250432439028336,
+   "pooled_lift": 0.0015909277098887092,
+   "placebo_lift": 0.011644263527891753,
+   "hours_flagged": 2007,
+   "hours_unflagged": 50085,
+   "verdict": "not actionable"
+  },
+  {
+   "condition": "liq_burst",
+   "source": "panels.liq_events",
+   "coins": 4,
+   "p_tail_flagged": 0.10405657181571816,
+   "p_tail_unflagged": 0.03336106323966547,
+   "lift": 0.0706955085760527,
+   "ci": [
+    0.03831448866327042,
+    0.12031921273217505
+   ],
+   "se": 0.02223128303079143,
+   "z": 3.1800012836927096,
+   "ratio": 3.119102381964778,
+   "pooled_lift": 0.06478935630436666,
+   "placebo_lift": 0.04058077892146611,
+   "hours_flagged": 163,
+   "hours_unflagged": 17201,
+   "verdict": "not actionable"
+  }
+ ],
+ "leverage_table": [
+  {
+   "coin": "BTC",
+   "mm_frac": 0.0125,
+   "hl_cap": 40.0,
+   "p999_1h_pct": 2.541398400778232,
+   "ceiling_calm": 32.31053127539186,
+   "ceiling_flagged": NaN,
+   "flagged_hours": 90
+  },
+  {
+   "coin": "ETH",
+   "mm_frac": 0.02,
+   "hl_cap": 25.0,
+   "p999_1h_pct": 4.080960068739343,
+   "ceiling_calm": 19.603342843123755,
+   "ceiling_flagged": NaN,
+   "flagged_hours": 90
+  },
+  {
+   "coin": "SOL",
+   "mm_frac": 0.025,
+   "hl_cap": 20.0,
+   "p999_1h_pct": 3.4781967765454587,
+   "ceiling_calm": 17.924576852318424,
+   "ceiling_flagged": NaN,
+   "flagged_hours": 90
+  },
+  {
+   "coin": "HYPE",
+   "mm_frac": 0.05,
+   "hl_cap": 10.0,
+   "p999_1h_pct": 4.185766391929875,
+   "ceiling_calm": 10.0,
+   "ceiling_flagged": NaN,
+   "flagged_hours": 90
+  },
+  {
+   "coin": "XRP",
+   "mm_frac": 0.025,
+   "hl_cap": 20.0,
+   "p999_1h_pct": 5.645880650014881,
+   "ceiling_calm": 16.57173985742356,
+   "ceiling_flagged": NaN,
+   "flagged_hours": 90
+  },
+  {
+   "coin": "NEAR",
+   "mm_frac": 0.05,
+   "hl_cap": 10.0,
+   "p999_1h_pct": 7.128780500741236,
+   "ceiling_calm": 8.554112923815522,
+   "ceiling_flagged": NaN,
+   "flagged_hours": 90
+  }
+ ],
+ "leverage_condition": "btc_shock",
+ "pooled_tail_inflation": {
+  "condition": "btc_shock",
+  "q999_calm": 8.39909323865184,
+  "q999_flagged": 13.434397250777849,
+  "inflation": 1.5995056691303309,
+  "n_calm": 742430,
+  "n_flagged": 15703
+ },
+ "leverage_table_pooled": [
+  {
+   "coin": "BTC",
+   "em_1h_pct": 0.36717465651782216,
+   "ceiling_calm": 23.07372377220063,
+   "ceiling_flagged": 16.1739797580426,
+   "cut_to_pct": 70.09696361854307
+  },
+  {
+   "coin": "ETH",
+   "em_1h_pct": 0.4625407244977507,
+   "ceiling_calm": 16.992576721590083,
+   "ceiling_flagged": 12.174401954130799,
+   "cut_to_pct": 71.64541407462056
+  },
+  {
+   "coin": "SOL",
+   "em_1h_pct": 0.5002724211821103,
+   "ceiling_calm": 14.92128712862552,
+   "ceiling_flagged": 10.844977249483295,
+   "cut_to_pct": 72.68124496229223
+  },
+  {
+   "coin": "HYPE",
+   "em_1h_pct": 0.7114740617589361,
+   "ceiling_calm": 9.111005499465065,
+   "ceiling_flagged": 6.868969175049502,
+   "cut_to_pct": 75.39199900003133
+  },
+  {
+   "coin": "XRP",
+   "em_1h_pct": 0.4863562702292476,
+   "ceiling_calm": 15.186140331812883,
+   "ceiling_flagged": 11.06941221752026,
+   "cut_to_pct": 72.89154436648631
+  },
+  {
+   "coin": "NEAR",
+   "em_1h_pct": 0.808419749505428,
+   "ceiling_calm": 8.481769349206735,
+   "ceiling_flagged": 6.304918972979968,
+   "cut_to_pct": 74.33494962427434
+  }
+ ]
+}
