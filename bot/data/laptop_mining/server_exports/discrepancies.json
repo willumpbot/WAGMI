@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-13T04:35:02+00:00",
- "now": "2026-10-13T04:35:02+00:00",
+ "generated": "2026-10-13T05:42:03+00:00",
+ "now": "2026-10-13T05:42:02+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -310,7 +310,7 @@
    "check": "D11",
    "id": "stream_market_depth:depth bands are cumulative",
    "severity": "high",
-   "what": "stream stream_market_depth: 1/195 recent rows break 'depth bands are cumulative'",
+   "what": "stream stream_market_depth: 1/199 recent rows break 'depth bands are cumulative'",
    "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
    "example": "{\"ts\": \"2026-10-13T04:22:01Z\", \"symbol\": \"WIF\", \"l2\": {\"mid\": 0.208235, \"spread\": 3e-05, \"spread_bps\": 1.4407, \"bid_depth_0_1pct\": 53655.0, \"ask_depth_0_1pct\": 108339.0, \"imbalance_0_1pct\": -0.3376, \"bid_depth_0_5pct\": 931462.0, \"ask_depth_0_5pct\": 849914.0, \"imbalance_0_5pct\": 0.0458, \"bid_depth_1p"
   }
