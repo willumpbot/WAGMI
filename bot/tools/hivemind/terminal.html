@@ -137,6 +137,7 @@ table.pos{width:100%;border-collapse:collapse;font-size:12px} .pos td,.pos th{pa
 .tabp{display:none;flex-direction:column;gap:8px} .tabp.on{display:flex}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chip.tested{border:1px solid var(--good);color:var(--good)}
+.chip.supported{border:1px dashed var(--good);color:var(--good)}
 .rbar{position:relative;display:inline-block;width:70px;height:8px;border-radius:3px;background:var(--panel2);vertical-align:middle}
 .rbar i{position:absolute;top:0;bottom:0;border-radius:3px}.rbar b{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--soft)}
 .chip.f{cursor:pointer;border:1px solid var(--line)} .chip.f.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
@@ -943,7 +944,7 @@ async function makePlan(){
 }
 const SCOLS = [
   ["coin", "Coin", r => r.coin, r => `<b>${r.coin}</b>`],
-  ["flags", "Setups", r => r.n_tested*10 + r.flags.length, r => r.flags.map(k => { const f = (SCAN.flags||{})[k] || {}; return `<span class="chip ${f.evidence==="tested"?"tested":""}" title="${esc(f.why||"")}">${esc(f.label||k)}</span>`; }).join(" ")],
+  ["flags", "Setups", r => r.n_tested*10 + r.flags.length, r => r.flags.map(k => { const f = (SCAN.flags||{})[k] || {}; return `<span class="chip ${f.evidence==="tested"?"tested":f.evidence==="supported"?"supported":""}" title="${esc(f.why||"")}">${esc(f.label||k)}</span>`; }).join(" ")],
   ["spark", "30D", null, r => `<span style="display:inline-block;width:80px">${miniSpark(r.spark||[])}</span>`],
   ["px", "Last", r => r.px, r => `<span class="num" id="sp_${r.coin}">${fmt(midOf(r.coin) || r.px)}</span>`],
   ["chg_24h", "24h", r => r.chg_24h, r => `<span class="num ${r.chg_24h>=0?"up":"dn"}">${pct(r.chg_24h,1)}</span>`],
@@ -962,7 +963,7 @@ function renderScan(){
   if (!all.length) { $("scan_note").textContent = "Scanner hasn't run yet (it runs with every 15-min hivemind cycle)."; return; }
   const age = Math.round((Date.now() - Date.parse(SCAN.updated))/60000);
   $("scan_note").innerHTML = `Top ${all.length} Hyperliquid perps by volume, scanned ${age}m ago. <span class="chip tested">green</span> = the number itself is tested (e.g. move size); none of these flags has a proven trading edge yet, each is being graded live. Click a coin to chart it.`;
-  $("scanf").innerHTML = Object.entries(F).map(([k,f]) => `<span class="chip f ${f.evidence==="tested"?"tested":""} ${SCANF.has(k)?"on":""}" data-k="${k}" title="${esc(f.why)}">${esc(f.label)} <span class="num">${all.filter(r=>r.flags.includes(k)).length}</span></span>`).join("")
+  $("scanf").innerHTML = Object.entries(F).map(([k,f]) => `<span class="chip f ${f.evidence==="tested"?"tested":f.evidence==="supported"?"supported":""} ${SCANF.has(k)?"on":""}" data-k="${k}" title="${esc(f.why)}">${esc(f.label)} <span class="num">${all.filter(r=>r.flags.includes(k)).length}</span></span>`).join("")
     + (SCANF.size ? `<span class="chip f" data-k="_clear">clear</span>` : "");
   let rows = all.filter(r => [...SCANF].every(k => r.flags.includes(k)));
   if (scanSort) { const c = SCOLS.find(x => x[0] === scanSort); rows = rows.slice().sort((a,b) => ((c[2](a) ?? -1e18) > (c[2](b) ?? -1e18) ? 1 : -1) * scanDir); }

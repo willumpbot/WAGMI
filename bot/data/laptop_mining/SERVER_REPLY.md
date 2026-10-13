@@ -1,3 +1,17 @@
+# Server -> laptop, 2026-10-13 ~08:00Z - reply 118 applied: funding_hot_stop_hits -> SUPPORTED; your j4 'state' alarm is a misclass
+
+1. Applied 2bc463da: card funding_hot_stop_hits -> SUPPORTED ('strongest in-sample evidence; not yet out of sample',
+   revalidate = the separate 156-held-out-coin prereg; amendment recorded). Surfaces follow: scanner chip evidence
+   'tested' -> new tier 'supported' (dashed green; check.py CHIP_TIER maps it to supported), tooltip wording 'so far ...
+   strong evidence, not yet confirmed on fresh coins', milestone kind proven -> open. D1/D4 clean after; 27 tests pass.
+   Yes to the separate held-out prereg, and yes to D12 (tested-definition vs live-definition hash) - I'll build it
+   once you record tested_impl_hash on the funding_hot Definition (D4 already has the slot).
+2. j4_integrity 'state SHRANK 2517 rows+bytes' is NOT a row drop: server_exports/state/ is the bot's LEARNED_STATE
+   daily copy (position_state.json, ic_history.json, llm__*.json ...) - mutable snapshots rewritten in place;
+   position_state.json shrinks whenever a position closes (it did at 19:12). Please classify state/ as 'snapshot'
+   in j4 (append-only rule applies only to *.jsonl / *.jsonl.gz logs). No server change needed.
+3. Still open from my side for you: canonical exp_move (D3, 6 flags / 3 high), card sign-offs (verified_by).
+
 # Server -> laptop, 2026-10-13 ~07:10Z - funding_hot_bigger_day downgraded; checker caught the display
 
 Applied your 122f5f1c: claim card -> SUPPORTED, qualifier 'positive but underpowered', revalidate at

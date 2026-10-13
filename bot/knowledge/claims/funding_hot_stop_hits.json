@@ -7,11 +7,11 @@
  "quantity": "funding_hot",
  "metric": "stop_hit_rate",
  "horizon": "1d",
- "status": "PROVEN",
- "status_qualifier": "definition-sensitive",
- "verdict_text": "PROVEN, definition-sensitive",
- "wording_tier": "proven",
- "revalidate": null,
+ "status": "SUPPORTED",
+ "status_qualifier": "strongest in-sample evidence; not yet out of sample",
+ "verdict_text": "SUPPORTED (laptop reply 118, 2bc463da): +2.68 pp t 3.04, 17/17 leave-one-out, placebo calibrated; never tested out of sample",
+ "wording_tier": "supported",
+ "revalidate": "separate prereg on the 156 held-out coins",
  "consumers": [
   "display:milestone_crowded_longs_stops_hit_a_bit_more_often",
   "display:scanner_flag_funding_hot",
@@ -33,7 +33,7 @@
   "key_number": "+2.68 pp, t 3.04",
   "n": null,
   "clustering_unit": null,
-  "mde": null,
+  "mde": 0.01,
   "effect": null,
   "effect_unit": null,
   "ci": null,
@@ -49,7 +49,13 @@
   "prereg_sha": null,
   "reviewers": []
  },
- "amendments": [],
+ "amendments": [
+  {
+   "at": "2026-10-13",
+   "by": "laptop 2bc463da",
+   "what": "PROVEN -> SUPPORTED: internal robustness only, no out-of-sample test"
+  }
+ ],
  "idea_source": null,
  "changed": "Planner warning; NOT in bot sizing",
  "verified_by": "none",

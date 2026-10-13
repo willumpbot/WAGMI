@@ -217,8 +217,8 @@
  },
  {
   "date": "2026-10-11",
-  "kind": "proven",
-  "title": "Crowded longs: stops hit a bit more often",
+  "kind": "open",
+  "title": "Crowded longs: stops hit a bit more often (strong, not yet confirmed on new coins)",
   "what": "On days when a coin's funding is in the top 20% (strictly above the cut), a normal stop is hit ~2.7 pts more often (t=3.0, 1,010 days). Live flag now matches what was tested. Size down a little."
  },
  {

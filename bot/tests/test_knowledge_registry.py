@@ -89,7 +89,7 @@ def test_seeded_claims_shape(seeded):
         assert "placebo_could_fail" not in c["evidence"]
         assert c["evidence"]["no_edge_median"] is None or isinstance(c["evidence"]["no_edge_median"], (int, float))
     assert claims["long_side_drain"]["status"] == "STALE"            # era window closed -> may not bind
-    assert claims["funding_hot_stop_hits"]["status"] == "PROVEN"
+    assert claims["funding_hot_stop_hits"]["status"] == "PROVEN"      # as the map seeds it; the live card is SUPPORTED
     assert claims["ic_gate_keep"]["status"] == "SUPPORTED"
     assert claims["momentum_small_fade"]["needs_source"] is True       # the map's warning sign
     assert claims["volume_surge_size"]["needs_source"] is True
@@ -403,9 +403,9 @@ def test_acceptance_d3_exp_move_multiple_impls(real_report):
 @needs_live
 def test_acceptance_d6_funding_hot_and_risk_cap(real_report):
     ids = {f["id"] for f in real_report["discrepancies"] if f["check"] == "D6"}
-    # funding_hot_bigger_day was downgraded to SUPPORTED on 2026-10-13 (laptop 122f5f1c), so only the stop-hit claim
-    # remains a PROVEN-but-unused orphan.
-    assert "claim_funding_hot_stop_hits" in ids
+    # both funding_hot claims were downgraded to SUPPORTED on 2026-10-13 (laptop 122f5f1c, 2bc463da) -> no longer
+    # PROVEN-but-unused orphans; the prompt-only risk cap still is one.
+    assert "claim_funding_hot_stop_hits" not in ids
     assert "rule_r07_risk_cap_0_5pct_prompt_only" in ids
 
 

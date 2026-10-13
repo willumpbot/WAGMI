@@ -49,7 +49,7 @@
    "id": "milestone_crowded_longs_stops_hit_a_bit_more_often",
    "surface": "tools/hivemind/milestones.json",
    "locator": {
-    "title": "Crowded longs: stops hit a bit more often"
+    "title": "Crowded longs: stops hit a bit more often (strong, not yet confirmed on new coins)"
    },
    "claim_id": "funding_hot_stop_hits",
    "polarity": "claim"

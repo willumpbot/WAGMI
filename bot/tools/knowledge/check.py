@@ -38,7 +38,7 @@ STRONG_WORD = re.compile(r"\b(proven|confirmed)\b", re.I)
 NEGATION = re.compile(r"(\bnot\b|\bnever\b|\bno\b|n't\b|\bnothing\b|\bnor\b)[^.;:]{0,40}$", re.I)
 MILESTONE_KIND = {"proven": ("claim", "proven"), "refuted": ("negation", "proven"),
                   "found": ("claim", "supported"), "open": ("claim", "hypothesis")}
-CHIP_TIER = {"tested": "proven"}          # scanner evidence chips that assert something ("context" asserts nothing)
+CHIP_TIER = {"tested": "proven", "supported": "supported"}          # scanner evidence chips that assert something ("context" asserts nothing)
 
 
 class Ctx:

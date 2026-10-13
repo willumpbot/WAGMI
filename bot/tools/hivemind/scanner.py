@@ -8,6 +8,7 @@ the coin's own 99th-percentile 1-day adverse move over the last year, divided by
 
 Flag evidence levels:
   tested   - backed by an out-of-sample test (LEVELS.md, VOL forecast walk-forward)
+  supported - strong in-sample evidence, not yet confirmed out of sample
   context  - useful to know, no tested directional edge
 Writes data/hivemind/scan.json.
 """
@@ -34,10 +35,10 @@ FLAGS = {
     "vol_expanding": ("Moves getting bigger", "context",
                       "Recent 5-day volatility is well above its 22-day level. Tested (laptop SIZE_FLAGS + red team): "
                       "adds nothing beyond the expected-move number, which already includes it. Use the expected move."),
-    "funding_hot": ("Longs paying a lot", "tested",
-                    "Funding in the top 20% of the scanned coins: longs are crowded. In testing a normal stop got hit somewhat more "
-                    "often on days like this (+2.7 pts, ~24% vs ~22%; t=3.0 on 1,010 days with exactly this definition). "
-                    "Size down a little. Not direction. (Tested on history; checking it live needs years of data.)"),
+    "funding_hot": ("Longs paying a lot", "supported",
+                    "Funding in the top 20% of the scanned coins: longs are crowded. So far a normal stop has been hit somewhat more "
+                    "often on days like this (+2.7 pts, ~24% vs ~22%; t=3.0 on 1,010 days with exactly this definition) - "
+                    "strong evidence, not yet confirmed on fresh coins. Size down a little. Not direction."),
     "funding_cold": ("Shorts paying", "context", "Negative funding: shorts are paying longs. Context only."),
     "volume_surge": ("Volume surge", "context", "24h volume over 2.5x its 20-day average. Suggestive: next day's move "
                      "~12% bigger than forecast, but it just failed the red team's bar (p=0.027 vs 0.025). Not direction."),

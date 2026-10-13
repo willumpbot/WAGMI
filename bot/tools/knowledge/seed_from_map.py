@@ -504,7 +504,7 @@ MILESTONE_BINDINGS = {
     "Move SIZE is forecastable": ("har_move_forecastable", "claim"),
     "The bot's hidden filter is right": ("ic_gate_keep", "claim"),
     "Crowded longs = bigger days (survived red team)": ("funding_hot_bigger_day", "claim"),
-    "Crowded longs: stops hit a bit more often": ("funding_hot_stop_hits", "claim"),
+    "Crowded longs: stops hit a bit more often (strong, not yet confirmed on new coins)": ("funding_hot_stop_hits", "claim"),
     "Tailwind gate": ("tailwind_gate", "negation"),
     "2x stop / 0.5R target / 48h recipe": ("two_x_stop_recipe", "negation"),
     "50-day pullback as a trade": ("ma50_pullback_trade", "negation"),
