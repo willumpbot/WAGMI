@@ -295,7 +295,7 @@ def snapshot_health(p):
     except (ValueError, OSError):
         return "UNPARSEABLE"
     if os.path.basename(p) in RETIRED:
-        return "retired upstream (not refreshed; staleness carries no information)"
+        return "info: retired upstream -- not refreshed, so staleness carries no information"
     if age <= stale_limit(p):
         return "ok"
     if os.path.basename(p) in CLOSE_DRIVEN:
@@ -440,7 +440,13 @@ def main():
             # An EXPLAINED staleness is not a regression. Counting it as one means the job
             # reports FAILED every hour for a file behaving exactly as designed, which trains
             # a reader to ignore the whole report -- the same cost as a false alarm.
-            explained = h == "ok" or "EXPECTED" in h
+            # STRUCTURAL FIX, after my own change broke this twice. The test used to be
+            # `h == "ok"` -- exact equality against a PROSE string -- so the moment I made
+            # snapshot_health more informative ("ok (10 files, newest 4.5h of 26h budget)",
+            # "retired upstream (...)") both became regressions. The server caught the retired
+            # one; the state/ directory had been silently failing since the earlier dir fix.
+            # Job status must not depend on the wording of a human-readable message.
+            explained = (h.startswith("ok") or h.startswith("info:") or "EXPECTED" in h)
             ch = "snapshot — %s" % h if explained else "snapshot — **%s**" % h
             if not explained:
                 regress.append("%s snapshot %s" % (name, h))
