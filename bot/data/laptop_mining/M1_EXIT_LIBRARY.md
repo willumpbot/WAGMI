@@ -103,3 +103,37 @@ this panel is random entries and the bot's entries are not random.
 - Trails move on closed bars only.
 - 1h bars, 2026-03-17 → 2026-10-13, ~210 days. One venue, one regime.
 - Random entries: this measures exit mechanics, **not** the bot's actual population.
+
+---
+
+## 6. ✅ The 5m referee ran — and clears objection #4
+
+`m1_referee_5m.py`, 72 coins with 5m bars, **17,750 paired entries per (K, rule)**. Same entries,
+same geometry, two grids: 72 one-hour bars against 864 five-minute bars over the identical wall-clock
+span. **The 5m answer is treated as truth, because a finer grid can only resolve ordering the coarse
+grid had to guess.**
+
+| K | ordering disagreement | 1h mean bias | per-trade abs error |
+|---|---|---|---|
+| 1.0 | **0.4 – 0.6%** | −1.1 to +0.9 bps | 5 – 30 bps |
+| 1.5 | 0.4 – 0.6% | −0.8 to 0.0 bps | 11 – 40 bps |
+| 2.0 | **0.2 – 0.4%** | −0.7 to +0.3 bps | 24 – 50 bps |
+
+**So the 1h engine gets the ordering right 99.4–99.8% of the time, and its mean bias is under 1.1 bps
+with no consistent sign.** Against effects of +5 to +11 bps that is ~10–20% noise, not a
+sign-threatening distortion. **M1's K = 1.0 rows stand on refereeing grounds.**
+
+**Why this differs so sharply from the 22% contradiction earlier tonight:** that comparison used a
+**1.66% stop (166 bps)**. M1's *tightest* stop averages **352 bps**, more than twice as wide, and
+disagreement falls further as K rises — 0.2% at K = 2.0. **Both-touches-in-one-bar is a tight-stop
+problem, and M1 never operates there.** The earlier figure was right for its own setting and simply
+does not transfer.
+
+**One limitation this does NOT remove:** per-trade absolute error is **5–50 bps** even though the mean
+bias is ~0. Errors cancel in a mean but not in a distribution, **so `p_stop` and `mae_R` in §2 carry
+real noise and should not be quoted tightly.** And the 5m window is 21 days on 72 coins, so this
+validates the **refereeing**, never the magnitudes.
+
+**Objection #4 is closed. #1 (70-way multiplicity), #2 (the ORIG17/NEW156 sign disagreement at low K)
+and #3 (0.01–0.03R magnitudes) all stand, and they are the reasons the sealed prereg is the next step
+rather than a claim.**
