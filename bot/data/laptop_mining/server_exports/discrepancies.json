@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-13T09:15:40+00:00",
- "now": "2026-10-13T09:15:39+00:00",
+ "generated": "2026-10-13T09:58:43+00:00",
+ "now": "2026-10-13T09:58:40+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -30,8 +30,8 @@
    "not_automated": 0
   },
   "D6": {
-   "flagged": 15,
-   "high": 4,
+   "flagged": 14,
+   "high": 1,
    "not_automated": 5
   },
   "D7": {
@@ -210,16 +210,16 @@
   {
    "check": "D6",
    "id": "rule_r03_long_block",
-   "severity": "high",
-   "what": "live rule r03_long_block binds claim long_side_drain, which is STALE - a dead claim may not bind",
-   "claim_id": "long_side_drain"
+   "severity": "warn",
+   "what": "live rule r03_long_block has no claim behind it",
+   "rule": "Long block outside trending_bull - entry_selectivity.py:364-396,535-545 - LONG_REGIME_VETO, UPTREND_REGIMES - n=22 June; LONG_SIDE says one-month artifact - 1"
   },
   {
    "check": "D6",
    "id": "rule_r05_side_size_mult",
-   "severity": "high",
-   "what": "live rule r05_side_size_mult binds claim long_side_drain, which is STALE - a dead claim may not bind",
-   "claim_id": "long_side_drain"
+   "severity": "warn",
+   "what": "live rule r05_side_size_mult has no claim behind it",
+   "rule": "Side size mult - feedback/live_edge.py:179-183 - 1+avg$/20 clipped 0.25-1.5 - same July data - 1"
   },
   {
    "check": "D6",
@@ -291,13 +291,6 @@
    "severity": "warn",
    "what": "live rule r15_regime_stickiness has no claim behind it",
    "rule": "Regime stickiness >60% - strategies/regime_detector.py:26 - ~590 (367 held high_volatility vs trend)"
-  },
-  {
-   "check": "D6",
-   "id": "rule_r16_trigger_conf_floor",
-   "severity": "high",
-   "what": "live rule r16_trigger_conf_floor binds claim higher_conf_floor_helps, which is REFUTED - a dead claim may not bind",
-   "claim_id": "higher_conf_floor_helps"
   },
   {
    "check": "D8",
