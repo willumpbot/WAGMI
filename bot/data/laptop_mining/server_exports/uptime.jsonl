@@ -244,3 +244,7 @@
 {"t": 1791899422, "hb_age_s": 17, "pid": 25388, "scans": 2003, "alive": true, "llm_ok": true, "can_trade": true}
 {"t": 1791900322, "hb_age_s": 16, "pid": 25388, "scans": 2035, "alive": true, "llm_ok": true, "can_trade": true}
 {"t": 1791901222, "hb_age_s": 8, "pid": 25388, "scans": 2068, "alive": true, "llm_ok": true, "can_trade": true}
+{"t": 1791902122, "hb_age_s": 6, "pid": 25388, "scans": 2101, "alive": true, "llm_ok": true, "can_trade": true}
+{"t": 1791903022, "hb_age_s": 5, "pid": 25388, "scans": 2134, "alive": true, "llm_ok": true, "can_trade": true}
+{"t": 1791903922, "hb_age_s": 0, "pid": 25388, "scans": null, "alive": true, "llm_ok": true, "can_trade": true}
+{"t": 1791904822, "hb_age_s": 4, "pid": 25388, "scans": 2199, "alive": true, "llm_ok": true, "can_trade": true}
