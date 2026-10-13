@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-13T18:55:51+00:00",
- "now": "2026-10-13T18:55:49+00:00",
+ "generated": "2026-10-13T20:05:21+00:00",
+ "now": "2026-10-13T20:05:18+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -169,9 +169,9 @@
    "check": "D3",
    "id": "exp_move_NEAR",
    "severity": "warn",
-   "what": "exp_move for NEAR disagrees by 12% across live outputs",
+   "what": "exp_move for NEAR disagrees by 11% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 5.37,
+    "state.vol.next_day_move_pct": 5.41,
     "scan.exp_move": 5.54,
     "chief.expected_move_pct": 6.0
    }
