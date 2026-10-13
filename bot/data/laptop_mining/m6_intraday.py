@@ -39,6 +39,8 @@ import sqlite3
 
 import numpy as np
 
+import panel_snapshot
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "crunch", "panels.sqlite")
 EPS = 1e-8
@@ -188,6 +190,8 @@ def main():
     print("every number is z = |1h move| / (daily em / sqrt 24), so the DAILY forecast is divided out.")
     print("flat z across hours == no intraday shape == M5's sqrt(24) assumption holds.\n")
     c = sqlite3.connect("file:%s?mode=ro" % DB.replace("\\", "/"), uri=True)
+    _snap = panel_snapshot.stamp(c)
+    print("SOURCE SNAPSHOT: %s" % panel_snapshot.describe(_snap))
     bars = load_1h(c)
     c.close()
     print("coins with >= %d 1h bars: %d" % (MIN_BARS, len(bars)))
@@ -262,6 +266,7 @@ def main():
         print("  No replicating intraday shape beyond the placebo: M5's sqrt(24) scaling stands.")
 
     io.open(os.path.join(HERE, "m6_intraday.json"), "w", encoding="utf-8").write(json.dumps({
+        "source_snapshot": _snap,
         "coins": len(ph), "hour_profile": all_m.tolist(), "ci_lo": lo.tolist(), "ci_hi": hi.tolist(),
         "orig17_profile": o_m.tolist(), "new_profile": n_m.tolist(),
         "placebo_profile": pl_m.tolist(), "spread": spread, "placebo_spread": pl_spread,

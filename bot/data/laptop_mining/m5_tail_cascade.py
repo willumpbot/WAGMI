@@ -45,6 +45,8 @@ import sqlite3
 
 import numpy as np
 
+import panel_snapshot
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "crunch", "panels.sqlite")
 EPS = 1e-8
@@ -304,6 +306,8 @@ def main():
     print("M5 -- tail / cascade risk. EXPLORATORY, magnitude only, no card above HYPOTHESIS.")
     print("tail = |next 1h move| > %.0fx the live HAR expectation scaled to 1h.\n" % TAIL_MULT)
     c = sqlite3.connect("file:%s?mode=ro" % DB.replace("\\", "/"), uri=True)
+    _snap = panel_snapshot.stamp(c)
+    print("SOURCE SNAPSHOT: %s" % panel_snapshot.describe(_snap))
     bars = load_1h(c)
     print("loaded %d coins of 1h bars" % len(bars))
 
@@ -451,6 +455,8 @@ def main():
                                             "q999_flagged": qf, "inflation": qf / qc if qc else None,
                                             "n_calm": int(len(zc)), "n_flagged": int(len(zf))}
             out["leverage_table_pooled"] = lev2
+
+    out["source_snapshot"] = _snap
 
     io.open(os.path.join(HERE, "m5_tail_cascade.json"), "w", encoding="utf-8").write(
         json.dumps(out, indent=1, default=float))

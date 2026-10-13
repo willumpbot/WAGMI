@@ -47,6 +47,8 @@ import sqlite3
 
 import numpy as np
 
+import panel_snapshot
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "crunch", "panels.sqlite")
 HIST = os.path.join(HERE, "history")     # VOID RUN 1: I wrote "hist". 178 funding files, 0 found.
@@ -262,6 +264,10 @@ def main():
     print("P2 = P0 x %.5f EXACTLY -- arithmetic, not an estimate (A1c). Primary: P1 - P2.\n" % SHRINK)
 
     c = sqlite3.connect("file:%s?mode=ro" % DB.replace("\\", "/"), uri=True)
+
+    _snap = panel_snapshot.stamp(c)
+
+    print("SOURCE SNAPSHOT: %s" % panel_snapshot.describe(_snap))
     coins = [r[0] for r in c.execute("SELECT DISTINCT coin FROM candles_1h ORDER BY coin")]
     fund = {}
     for s in sorted({os.path.basename(p).split("_funding")[0]
@@ -382,6 +388,8 @@ def main():
           % ("HELD" if d["eq_mean"] < 0 else "MISSED -- the wider stop did not lose"))
     out["verdict"] = {"text": v, "signs_agree": bool(signs_agree), "above_mde": bool(above_mde),
                       "clears_z": bool(clears), "z_threshold": Z_THR}
+
+    out["source_snapshot"] = _snap
 
     io.open(os.path.join(HERE, "m4_funding_sizing.json"), "w", encoding="utf-8").write(
         json.dumps(out, indent=1, default=float))
