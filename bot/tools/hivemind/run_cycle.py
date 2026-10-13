@@ -75,6 +75,13 @@ def _uptime_ping():
 
 
 def main():
+    # 10-13: cycles started hanging past the 25-min task limit. If one runs 20 min, dump every thread's stack so the
+    # hang has a location instead of a missing log line.
+    import faulthandler
+    _hang = open(Path(__file__).resolve().parents[2] / "data" / "hivemind" / "cycle_hang.txt", "a", encoding="utf-8")
+    _hang.write(f"--- cycle start {datetime.now(timezone.utc).isoformat(timespec='seconds')}" + chr(10))
+    _hang.flush()
+    faulthandler.dump_traceback_later(1200, exit=False, file=_hang)
     import assemble, desk, chief   # assemble fixes sys.path order (copilot before tools)
     sys.path.remove(str(assemble.BOT / "tools" / "copilot"))
     sys.path.insert(0, str(assemble.BOT / "tools" / "copilot"))
@@ -113,8 +120,11 @@ def main():
         except Exception as e:
             log(f"journal failed: {e}")
         for mod, fn in (("scanner", "run"), ("plans", "resolve"), ("tg_track", "run"), ("call_snapshot", "run"), ("candle_archive", "run"), ("depth_all", "run"), ("entry_mom", "run"), ("stop_shadow", "run"), ("ai_plans", "run"), ("history", "build"), ("laptop_sync", "run")):
+            _t0 = time.time()
             try:
                 res = getattr(__import__(mod), fn)()
+                if time.time() - _t0 > 120:
+                    log(f"{mod} slow: {time.time() - _t0:.0f}s")
                 if mod == "scanner":
                     import scan_grader
                     scan_grader.log(res)

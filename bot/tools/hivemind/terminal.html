@@ -1050,7 +1050,8 @@ function posRow(p){
   // Hyperliquid-style positions row: Coin (leverage badge, side colour) | Size | Position Value | Entry | Mark |
   // PNL (ROE %) | TP/SL | Note. ROE = PnL / margin, margin = entry x size / leverage (same as HL's returnOnEquity).
   const sg = p.side==="SHORT" ? -1 : 1, col = sg>0 ? "var(--pos)" : "var(--neg)", up = v => v>=0 ? "up" : "dn", sgn = v => v>=0 ? "+" : "";
-  const lev = p.lev || 1, margin = p.entry * p.qty / lev, roe = margin ? p.total / margin * 100 : null;
+  const lev = p.lev || 1, margin = p.entry * p.qty / lev, roe = (margin && p.total!=null) ? p.total / margin * 100 : null;
+  if (p.total == null || p.mark == null) return `<tr data-c="${p.coin}"><td style="text-align:left;border-left:3px solid ${col};padding-left:8px"><b style="color:${col}">${p.coin}</b> <span class="pill" style="font-size:10.5px">${lev}x</span></td><td>${sg<0?"-":""}${p.qty} ${p.coin}</td><td>—</td><td>${fmt(p.entry)}</td><td>—</td><td class="mut">— (no live price)</td><td><span class="up">${p.target?fmt(p.target):"--"}</span> / <span class="dn">${p.stop?fmt(p.stop):"--"}</span></td><td class="mut" style="font-size:11px">${p.note||""}</td></tr>`;
   return `<tr data-c="${p.coin}" style="cursor:pointer">
     <td style="text-align:left;border-left:3px solid ${col};padding-left:8px"><b style="color:${col}">${p.coin}</b> <span class="pill" style="font-size:10.5px;border-color:${col};color:${col}">${lev}x</span></td>
     <td><span style="color:${col}">${sg<0?"-":""}${p.qty}</span> ${p.coin}</td>

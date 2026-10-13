@@ -120,9 +120,15 @@ def simulate_plan(plan, risk_default=10.0):
         try:
             mark = float(hl.post({"type": "allMids"}, ttl=30)[plan["coin"]])
         except Exception:
-            mark = float(bars[-1]["c"]) if bars else entry
+            mark = float(bars[-1]["c"]) if bars else None   # unknown, never a fake 0.00 (laptop 138)
     else:
         mark = exit_px
+    if mark is None:
+        total = None
+        return {"mode": "plan_levels", "status": status, "lev": float(plan.get("leverage") or 1), "entry": entry,
+                "stop": stop, "target": target, "partials": [], "banked_usd": 0.0, "open_qty": round(q0, 6), "mark": None,
+                "open_pnl_usd": None, "total_usd": None, "r": None, "risk_usd": risk, "exit_ts": exit_ts,
+                "expires_ts": t_end, "as_of": now, "filled_at": t_open, "bot_traded": False}
     total = sg * (mark - entry) * q0
     return {"mode": "plan_levels", "status": status, "lev": float(plan.get("leverage") or 1), "entry": entry, "stop": stop,
             "target": target, "partials": [], "banked_usd": 0.0, "open_qty": round(q0, 6), "mark": mark,
