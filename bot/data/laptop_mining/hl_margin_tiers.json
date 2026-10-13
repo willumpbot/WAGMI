@@ -1,0 +1,1496 @@
+{
+ "BTC": {
+  "max_leverage": 40,
+  "margin_table_id": 56,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 40
+   },
+   {
+    "lower_usd": 150000000.0,
+    "max_lev": 20
+   }
+  ]
+ },
+ "ETH": {
+  "max_leverage": 25,
+  "margin_table_id": 55,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 25
+   },
+   {
+    "lower_usd": 100000000.0,
+    "max_lev": 15
+   }
+  ]
+ },
+ "ATOM": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "MATIC": {
+  "max_leverage": 20,
+  "margin_table_id": 20,
+  "tiers": []
+ },
+ "DYDX": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "SOL": {
+  "max_leverage": 20,
+  "margin_table_id": 54,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 20
+   },
+   {
+    "lower_usd": 70000000.0,
+    "max_lev": 10
+   }
+  ]
+ },
+ "AVAX": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "BNB": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "APE": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "OP": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "LTC": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "ARB": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "DOGE": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "INJ": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "SUI": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "kPEPE": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "CRV": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "LDO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "LINK": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "STX": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "RNDR": {
+  "max_leverage": 20,
+  "margin_table_id": 20,
+  "tiers": []
+ },
+ "CFX": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "FTM": {
+  "max_leverage": 10,
+  "margin_table_id": 10,
+  "tiers": []
+ },
+ "GMX": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SNX": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "XRP": {
+  "max_leverage": 20,
+  "margin_table_id": 53,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 20
+   },
+   {
+    "lower_usd": 40000000.0,
+    "max_lev": 10
+   }
+  ]
+ },
+ "BCH": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "APT": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "AAVE": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "COMP": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "MKR": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "WLD": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "FXS": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "HPOS": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "RLB": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "UNIBOT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "YGG": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "TRX": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "kSHIB": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "UNI": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "SEI": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "RUNE": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "OX": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "FRIEND": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SHIA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "CYBER": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ZRO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "BLZ": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "DOT": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "BANANA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "TRB": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "FTT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "LOOM": {
+  "max_leverage": 10,
+  "margin_table_id": 10,
+  "tiers": []
+ },
+ "OGN": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "RDNT": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "ARK": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "BNT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "CANTO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "REQ": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "BIGTIME": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "KAS": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ORBS": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "BLUR": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "TIA": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "BSV": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ADA": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "TON": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "MINA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "POLYX": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "GAS": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "PENDLE": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "STG": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "FET": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "STRAX": {
+  "max_leverage": 10,
+  "margin_table_id": 10,
+  "tiers": []
+ },
+ "NEAR": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "MEME": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ORDI": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "BADGER": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "NEO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "ZEN": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "FIL": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "PYTH": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "SUSHI": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ILV": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "IMX": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "kBONK": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "GMT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SUPER": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "USTC": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "NFTI": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "JUP": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "kLUNC": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "RSR": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "GALA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "JTO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "NTRN": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ACE": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "MAV": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "WIF": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "CAKE": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "PEOPLE": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ENS": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "ETC": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "XAI": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "MANTA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "UMA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ONDO": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "ALT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ZETA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "DYM": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "MAVIA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "W": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "PANDORA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "STRK": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "PIXEL": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "AI": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "TAO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "AR": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "MYRO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "kFLOKI": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "BOME": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ETHFI": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "ENA": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "MNT": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "TNSR": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SAGA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "MERL": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "HBAR": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "POPCAT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "OMNI": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "EIGEN": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "REZ": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "NOT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "TURBO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "BRETT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "IO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ZK": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "BLAST": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "LISTA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "MEW": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "RENDER": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "kDOGS": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "POL": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "CATI": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "CELO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "HMSTR": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SCR": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "NEIROETH": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "kNEIRO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "GOAT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "MOODENG": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "GRASS": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "PURR": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "PNUT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "XLM": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "CHILLGUY": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SAND": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "IOTA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ALGO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "HYPE": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "ME": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "MOVE": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "VIRTUAL": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "PENGU": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "USUAL": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "FARTCOIN": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "AI16Z": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "AIXBT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ZEREBRO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "BIO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "GRIFFAIN": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SPX": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "S": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "MORPHO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "TRUMP": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "MELANIA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ANIME": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "VINE": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "VVV": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "JELLY": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "BERA": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "TST": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "LAYER": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "IP": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "OM": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "KAITO": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "NIL": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "PAXG": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "PROMPT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "BABY": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "WCT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "HYPER": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ZORA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "INIT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "DOOD": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "LAUNCHCOIN": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "NXPC": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SOPH": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "RESOLV": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SYRUP": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "PUMP": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "PROVE": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "YZY": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "XPL": {
+  "max_leverage": 10,
+  "margin_table_id": 51,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 3000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "WLFI": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "LINEA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "SKY": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ASTER": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "AVNT": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "STBL": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "0G": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "HEMI": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "APEX": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "2Z": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ZEC": {
+  "max_leverage": 10,
+  "margin_table_id": 52,
+  "tiers": [
+   {
+    "lower_usd": 0.0,
+    "max_lev": 10
+   },
+   {
+    "lower_usd": 20000000.0,
+    "max_lev": 5
+   }
+  ]
+ },
+ "MON": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "MET": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "MEGA": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "CC": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "ICP": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "AERO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "STABLE": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "FOGO": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "LIT": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "XMR": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "AXS": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "DASH": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "SKR": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "AZTEC": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "CHIP": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "GRAM": {
+  "max_leverage": 5,
+  "margin_table_id": 5,
+  "tiers": []
+ },
+ "CASHCAT": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "PONS": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ },
+ "USELESS": {
+  "max_leverage": 3,
+  "margin_table_id": 3,
+  "tiers": []
+ }
+}

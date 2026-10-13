@@ -1,0 +1,164 @@
+[
+ {
+  "coin": "BTC",
+  "em_pct": 1.7987811099006836,
+  "p99_adv_pct": 6.685794903253698,
+  "mm_frac": 0.0125,
+  "hl_max_leverage": 40.0,
+  "ceiling_phase1_flat_mm": 43.50131448762444,
+  "ceiling_real_mm_uncapped": 32.79999330724585,
+  "ceiling_real_mm_capped": 32.79999330724585,
+  "cap_binds": false,
+  "safe_L": 8.866276058742548,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0033333333333333335
+  }
+ },
+ {
+  "coin": "ETH",
+  "em_pct": 2.26597752055348,
+  "p99_adv_pct": 8.169698503147204,
+  "mm_frac": 0.02,
+  "hl_max_leverage": 25.0,
+  "ceiling_phase1_flat_mm": 36.153583771711105,
+  "ceiling_real_mm_uncapped": 23.44128620420525,
+  "ceiling_real_mm_capped": 23.44128620420525,
+  "cap_binds": false,
+  "safe_L": 7.015304990428904,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0016666666666666668
+  }
+ },
+ {
+  "coin": "SOL",
+  "em_pct": 2.45082432856577,
+  "p99_adv_pct": 8.628525755123965,
+  "mm_frac": 0.025,
+  "hl_max_leverage": 20.0,
+  "ceiling_phase1_flat_mm": 33.888835411833675,
+  "ceiling_real_mm_uncapped": 20.19865649908235,
+  "ceiling_real_mm_capped": 20.0,
+  "cap_binds": true,
+  "safe_L": 6.475514389178499,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0
+  }
+ },
+ {
+  "coin": "HYPE",
+  "em_pct": 3.485496833069599,
+  "p99_adv_pct": 13.686527482221207,
+  "mm_frac": 0.05,
+  "hl_max_leverage": 10.0,
+  "ceiling_phase1_flat_mm": 25.090974648443208,
+  "ceiling_real_mm_uncapped": 11.784813778997703,
+  "ceiling_real_mm_capped": 10.0,
+  "cap_binds": true,
+  "safe_L": 3.9169924706869312,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0016666666666666668
+  }
+ },
+ {
+  "coin": "XRP",
+  "em_pct": 2.382649390529651,
+  "p99_adv_pct": 10.40553028165598,
+  "mm_frac": 0.025,
+  "hl_max_leverage": 20.0,
+  "ceiling_phase1_flat_mm": 34.69030966045657,
+  "ceiling_real_mm_uncapped": 20.480684153557945,
+  "ceiling_real_mm_capped": 20.0,
+  "cap_binds": true,
+  "safe_L": 5.522330935458236,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0
+  }
+ },
+ {
+  "coin": "NEAR",
+  "em_pct": 3.960431768553784,
+  "p99_adv_pct": 19.34881418064238,
+  "mm_frac": 0.05,
+  "hl_max_leverage": 10.0,
+  "ceiling_phase1_flat_mm": 22.419354266329968,
+  "ceiling_real_mm_uncapped": 11.160176494055266,
+  "ceiling_real_mm_capped": 10.0,
+  "cap_binds": true,
+  "safe_L": 2.939169081128217,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0016666666666666668
+  }
+ },
+ {
+  "coin": "AAVE",
+  "em_pct": 3.36497549911509,
+  "p99_adv_pct": 14.823701676834572,
+  "mm_frac": 0.05,
+  "hl_max_leverage": 10.0,
+  "ceiling_phase1_flat_mm": 25.87338523178106,
+  "ceiling_real_mm_uncapped": 11.954607638788511,
+  "ceiling_real_mm_capped": 10.0,
+  "cap_binds": true,
+  "safe_L": 3.671671428145259,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0
+  }
+ },
+ {
+  "coin": "ADA",
+  "em_pct": 2.949127963700077,
+  "p99_adv_pct": 11.332572628060575,
+  "mm_frac": 0.05,
+  "hl_max_leverage": 10.0,
+  "ceiling_phase1_flat_mm": 28.992835595674528,
+  "ceiling_real_mm_uncapped": 12.579996253256068,
+  "ceiling_real_mm_capped": 10.0,
+  "cap_binds": true,
+  "safe_L": 4.5456903134493025,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0
+  }
+ },
+ {
+  "coin": "APT",
+  "em_pct": 3.1759655237544324,
+  "p99_adv_pct": 12.71738660643931,
+  "mm_frac": 0.05,
+  "hl_max_leverage": 10.0,
+  "ceiling_phase1_flat_mm": 27.203737182460138,
+  "ceiling_real_mm_uncapped": 12.230971340260696,
+  "ceiling_real_mm_capped": 10.0,
+  "cap_binds": true,
+  "safe_L": 4.153500087025441,
+  "liq_before_stop": {
+   "50%": 0.0,
+   "80%": 0.0,
+   "100%": 0.0,
+   "120%": 0.0
+  }
+ }
+]
