@@ -10,6 +10,7 @@ Order per coin is fixed so the eye always finds things in the same place:
 """
 import html
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -287,6 +288,30 @@ def _trade_history():
                         out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts")))
         except Exception:
             out["sims"] = []
+        # Owner plans whose limit filled but the bot can't paper-trade the coin (only BTC/ETH/SOL/HYPE/XRP/NEAR):
+        # shown in Positions as TRACKED so a filled plan never looks missing (owner 10-13: "I don't see VVV").
+        try:
+            import hl
+            mids = hl.post({"type": "allMids"}, ttl=30) or {}
+            risk_default = float(os.getenv("OWNER_PLAN_DEFAULT_RISK_USD", "10") or 10)
+            out["tracked"] = []
+            for p in plans.values():
+                R, X = p.get("result") or {}, p.get("exec_result") or {}
+                if R.get("status") != "open" or X.get("status") not in ("rejected", "blocked"):
+                    continue
+                e, st = float(p["entry"]), float(p["stop"])
+                if e <= 0 or e == st:
+                    continue
+                risk = float(p.get("risk_usd") or 0) or risk_default
+                qty = risk / abs(e - st)
+                mark = float(mids.get(p["coin"]) or 0) or e
+                sg = 1 if p["side"] == "LONG" else -1
+                out["tracked"].append({"plan_id": p["id"], "coin": p["coin"], "side": p["side"], "lev": float(p.get("leverage") or 1),
+                                       "entry": e, "stop": st, "target": float(p["target"]), "qty": round(qty, 6), "mark": mark,
+                                       "total_usd": round(sg * (mark - e) * qty, 2), "risk_usd": risk,
+                                       "why": X.get("reason") or "", "filled_at": R.get("filled_at")})
+        except Exception:
+            out["tracked"] = []
     except OSError:
         pass
     return out
