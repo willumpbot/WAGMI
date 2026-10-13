@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-12T23:47:07+00:00",
- "now": "2026-10-12T23:47:07+00:00",
+ "generated": "2026-10-13T00:57:29+00:00",
+ "now": "2026-10-13T00:57:29+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -30,8 +30,8 @@
    "not_automated": 0
   },
   "D6": {
-   "flagged": 17,
-   "high": 6,
+   "flagged": 16,
+   "high": 5,
    "not_automated": 5
   },
   "D7": {
@@ -47,7 +47,7 @@
   "D9": {
    "flagged": 0,
    "high": 0,
-   "not_automated": 2
+   "not_automated": 1
   },
   "D10": {
    "flagged": 0,
@@ -55,8 +55,8 @@
    "not_automated": 1
   },
   "D11": {
-   "flagged": 0,
-   "high": 0,
+   "flagged": 1,
+   "high": 1,
    "not_automated": 3
   }
  },
@@ -157,23 +157,12 @@
   },
   {
    "check": "D3",
-   "id": "exp_move_BTC",
-   "severity": "warn",
-   "what": "exp_move for BTC disagrees by 10% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 1.72,
-    "scan.exp_move": 1.81,
-    "chief.expected_move_pct": 1.9
-   }
-  },
-  {
-   "check": "D3",
    "id": "exp_move_HYPE",
    "severity": "warn",
-   "what": "exp_move for HYPE disagrees by 12% across live outputs",
+   "what": "exp_move for HYPE disagrees by 15% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 2.51,
-    "scan.exp_move": 2.6,
+    "state.vol.next_day_move_pct": 2.71,
+    "scan.exp_move": 3.11,
     "chief.expected_move_pct": 2.8
    }
   },
@@ -181,11 +170,22 @@
    "check": "D3",
    "id": "exp_move_NEAR",
    "severity": "warn",
-   "what": "exp_move for NEAR disagrees by 30% across live outputs",
+   "what": "exp_move for NEAR disagrees by 13% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 4.63,
-    "scan.exp_move": 5.23,
+    "state.vol.next_day_move_pct": 5.3,
+    "scan.exp_move": 5.54,
     "chief.expected_move_pct": 6.0
+   }
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_XRP",
+   "severity": "warn",
+   "what": "exp_move for XRP disagrees by 12% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 2.69,
+    "scan.exp_move": 2.79,
+    "chief.expected_move_pct": 2.5
    }
   },
   {
@@ -211,13 +211,6 @@
    "what": "tools/hivemind/scan_grader.py grades 'momentum_small' on signed_excess_return_vs_universe_median, but claim momentum_small_fade is about excess_return_vs_nonbreakout_smallcap_peers - its forward grade cannot confirm or refute the claim",
    "grader_metric": "signed_excess_return_vs_universe_median",
    "claim_metric": "excess_return_vs_nonbreakout_smallcap_peers"
-  },
-  {
-   "check": "D6",
-   "id": "claim_funding_hot_bigger_day",
-   "severity": "high",
-   "what": "PROVEN claim funding_hot_bigger_day reaches no live bot code (funding_hot not in core, execution, multi_strategy_main.py)",
-   "claim_id": "funding_hot_bigger_day"
   },
   {
    "check": "D6",
@@ -347,6 +340,14 @@
    "id": "prereg_ideas:n",
    "severity": "warn",
    "what": "PREREG_IDEAS: n is 4 per [L:TRACKERS] but 1 per server stats"
+  },
+  {
+   "check": "D11",
+   "id": "stream_market_depth:depth bands are cumulative",
+   "severity": "high",
+   "what": "stream stream_market_depth: 2/183 recent rows break 'depth bands are cumulative'",
+   "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
+   "example": "{\"ts\": \"2026-10-13T00:07:02Z\", \"symbol\": \"PENGU\", \"l2\": {\"mid\": 0.0075185, \"spread\": 3e-06, \"spread_bps\": 3.9902, \"bid_depth_0_1pct\": 32887168.0, \"ask_depth_0_1pct\": 967015.0, \"imbalance_0_1pct\": 0.9429, \"bid_depth_0_5pct\": 12326145.0, \"ask_depth_0_5pct\": 26166450.0, \"imbalance_0_5pct\": -0.3596, \"bi"
   }
  ],
  "not_automated": [
@@ -454,11 +455,6 @@
    "check": "D8",
    "what": "live recount of prereg trackers",
    "why": "laptop crunch TRACKERS is not readable from the server yet; only disagreements recorded on threads are checked"
-  },
-  {
-   "check": "D9",
-   "what": "stream_depth_all off-box copy",
-   "why": "no archive dir C:\\Users\\vince\\WAGMI\\bot\\data\\laptop_mining\\server_exports\\archive\\depth_all"
   },
   {
    "check": "D9",
