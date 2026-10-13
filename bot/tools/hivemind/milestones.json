@@ -157,9 +157,9 @@
  },
  {
   "date": "2026-10-10",
-  "kind": "proven",
-  "title": "Crowded longs = bigger days (survived red team)",
-  "what": "When longs pay high funding, the next day moves ~7-8% more than forecast. First finding to survive a red team. Volume surge: suggestive only."
+  "kind": "open",
+  "title": "Crowded longs = bigger days (supported, not yet proven)",
+  "what": "When longs pay high funding, the next day moves ~7-8% more than forecast. First finding to survive a red team. Volume surge: suggestive only. Laptop 10-13: real but underpowered - a wider replication decides it."
  },
  {
   "date": "2026-10-10",

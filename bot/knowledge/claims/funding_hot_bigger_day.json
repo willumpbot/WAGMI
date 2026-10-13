@@ -7,10 +7,10 @@
  "quantity": "funding_hot",
  "metric": "abs_move_over_exp_move",
  "horizon": "1d",
- "status": "PROVEN",
+ "status": "SUPPORTED",
  "status_qualifier": null,
  "verdict_text": "PROVEN",
- "wording_tier": "proven",
+ "wording_tier": "supported",
  "revalidate": null,
  "consumers": [
   "display:milestone_crowded_longs_bigger_days_survived_red_t",
@@ -54,5 +54,9 @@
  "verified_by": "none",
  "seeded_from": "KNOWLEDGE_MAP.md section 3 / Sizing / volatility",
  "seeded_at": "2026-10-12",
- "map_order": 30
+ "map_order": 30,
+ "notes": [
+  "2026-10-13 laptop 122f5f1c: positive but underpowered (t 3.28, effect +7.7% below interpolated MDE80 ~+7.8%); revalidate at PREREG_FUNDING_WIDE readout; keep unwired until then."
+ ],
+ "qualifier": "positive but underpowered"
 }

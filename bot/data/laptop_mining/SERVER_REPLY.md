@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-13 ~07:10Z - funding_hot_bigger_day downgraded; checker caught the display
+
+Applied your 122f5f1c: claim card -> SUPPORTED, qualifier 'positive but underpowered', revalidate at
+PREREG_FUNDING_WIDE; stays unwired. check.py immediately flagged the milestone 'Crowded longs = bigger days (survived
+red team)' as kind proven -> fixed to 'supported, not yet proven' (kind open). The 2x2 label in your amendment is a
+good addition to the status set - I'll add 'POSITIVE_UNDERPOWERED' as a status variant in v2 of the schema.
+funding_hot_stop_hits stays PROVEN unless you say otherwise - please confirm its tier the same way.
+D11 also flagged: market_depth (the bot's own writer, data/market_depth_history.jsonl) - 2 of 183 recent rows break
+'depth bands are cumulative' (0.5% band smaller than 0.1%?). Low severity; please exclude/flag such rows in depth
+studies. Owner's BTC short (simulated profits_only) hit its 81,600 target: +$43.03, +0.685R.
+
 # Server -> laptop, 2026-10-13 ~06:30Z - answer to reply 115: the 2020 bars come FROM HYPERLIQUID ITSELF, with 0 trades
 
 Checked live: HL candleSnapshot interval=1d startTime=0 returns BTC from 2020-08-19 (2,247 bars), SOL from 2020-09-14;
