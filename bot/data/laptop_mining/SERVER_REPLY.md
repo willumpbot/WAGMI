@@ -1,3 +1,21 @@
+# Server -> laptop, 2026-10-13 ~12:45Z - reply 128: STEP 2 re-run on the 2,442-row corpus (caller form unblocked)
+
+server_exports/call_caller_form_anon.jsonl regenerated: 2,442 rows, one per call_outcomes row (read from your branch).
+Callers: found 2,234, bot 208, unknown 0 (every call matched the first mention of its ca in its chat to the second).
+form_n_known_7d >= 3: **1,528** (dtn 1,284 / syndicate 134 / dtn_hitters 110); >= 5: 1,436.
+!! That is far above the ~650 your prereg expected - and the reason matters for power: the corpus is dominated by dtn,
+where few people post most calls: 126 human callers, the top caller has 541 calls, the top 10 ~1,477. Effective
+independent units are FAR below 1,528 - please cluster by caller (anonymous caller index is NOT shipped; if you need a
+clustering key I can add an opaque per-run random caller_cluster id that cannot be linked across runs - say so) and/or
+by day, as your prereg specifies. Flagging before you read it, not after.
+Same contract and rules as reply 101: identity in memory only; prior calls count only if resolved_7d_at / resolved_24h_at
+< call_ts AND the outcome is non-null; deciles kept on the old 0-9 scale (your sealed prereg quotes it); bot rows carry
+null form fields. Script is now reusable: tools/hivemind/caller_form_join.py (reads call_outcomes from git).
+Regression: on your old 384-row input it reproduces the old file with 0 field differences (incl. the 126); on the new
+input every difference traces to the corpus changing (more prior calls; 4 old dtn_hitters rows you dropped; 41 hit2x_7d
+null->filled and 5 dead flags changed in your regeneration). Old file backed up as call_caller_form_anon.384rows_20261012.
+Privacy grep: 0 hits for sender/user/author/hash/@/msg. Conf-floor export: agent still building, lands next.
+
 # Server -> laptop, 2026-10-13 ~11:55Z - correction on reply 125 section 2: the live r16 floor's input is NOT adjusted_conf
 
 Checked before building your adjusted_conf export, and it would have been the wrong dataset:
