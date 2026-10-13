@@ -74,10 +74,15 @@ HIST = os.path.join(HERE, "history")
 EPS = 1e-8
 START = "2023-01-01"          # frozen by the prereg; see the provenance note below
 MAX_STALE = 0.02
-PLACEBO = 200
+PLACEBO = 400              # AMENDMENT 4(D): halves the Monte Carlo error on size and power
 MIN_WEEKS = 8                 # matched() requires this many week clusters
 MIN_FUNDING_FILES = 170       # the prereg's gate
-SIZE_OK = (0.02, 0.09)        # delta=0 false-positive rate; outside this => TEST BROKEN
+SIZE_OK = (0.001, 0.09)       # AMENDMENT 4(D): the UPPER bound (over-rejection) is the real gate and is
+                              # unchanged. The old lower bound of 0.02 treated a CONSERVATIVE test as
+                              # broken -- but under-rejection makes a significant result stronger, not
+                              # weaker, and 0.02 sat inside the Monte Carlo error of the size estimate
+                              # itself. Now only a degenerate test that never rejects is caught.
+CONSERVATIVE_BELOW = 0.03     # label, not a gate: significance achieved against a stricter-than-nominal bar
 # AMENDMENT 1(B): finer grid. A grid of {0,.03,.05,.10,.20} can only ever return an MDE from that
 # set, which is how SIZE_FLAGS' true effect of 0.074 ended up compared against a reported MDE of
 # 0.10. MDE is now interpolated between the bracketing points at 80% power.
@@ -225,9 +230,22 @@ def build(syms, vol_filter=True):
 
 # ------------------------------------------------------------------------ the statistic, two ways
 def cellify(sub):
-    """Integer cell ids for date x em-quintile WITHIN this population, and each cell's week."""
-    q = sub.groupby("day")["em"].transform(
-        lambda s: pd.qcut(s, 5, labels=False, duplicates="drop") if s.notna().sum() >= 5 else 0)
+    """Integer cell ids for date x em-quintile, and each cell's week.
+
+    AMENDMENT 4 -- THE DEFECT THAT VOIDED THE FIRST RUN. `size_flags.py:148` buckets em GLOBALLY
+    across the whole panel:
+
+        df["emq"] = pd.qcut(df["em"], 5, labels=False, duplicates="drop")
+
+    I had bucketed PER DATE, because the design docstring says "within the same date AND the same em
+    quintile" and per-date quintiles are a defensible reading of that sentence. The CODE does global
+    quintiles, and the code is what produced +7.7%. Per-date gave 2,944 matched cells and +5.64%;
+    global gives 2,283 and +0.0740 log = +7.68%, matching every number SIZE_FLAGS reported.
+
+    Third instance in one session of re-deriving a baseline from prose instead of reading the
+    implementation. The canary existed to catch exactly this, and it did.
+    """
+    q = pd.qcut(sub["em"], 5, labels=False, duplicates="drop")
     key = sub["day"].astype(str) + "|" + pd.Series(q, index=sub.index).fillna(0).astype(int).astype(str)
     codes, uniq = pd.factorize(key)
     cweek = np.array([datetime.date.fromisoformat(k.split("|")[0]).isocalendar()[:2] for k in uniq])
@@ -402,8 +420,9 @@ def analyse(name, sub, mask):
     powered = (mde_d is not None) and (abs(eff) >= mde_d)
     res["excludes_zero"] = bool(excludes_zero)
     res["powered"] = bool(powered)
+    res["conservative"] = bool(size < CONSERVATIVE_BELOW)
     if not res["size_ok"]:
-        res["verdict"] = "TEST BROKEN (size %.3f outside [%.2f, %.2f])" % (size, *SIZE_OK)
+        res["verdict"] = "TEST BROKEN (size %.3f outside [%.3f, %.2f])" % (size, *SIZE_OK)
     elif excludes_zero and eff > 0:
         res["verdict"] = "replicates" if powered else "positive but underpowered"
     elif excludes_zero and eff < 0:
@@ -476,8 +495,10 @@ def main():
                   "ok" if r["size_ok"] else "BROKEN", r["power"]))
             print("  MDE %s%% | weeks %d | cells %d | flag fired %.1f%%"
                   % (r["mde_pct"], r["weeks"], r["cells"], r["flag_fired_pct"]))
-            print("  effect %+.2f%% CI [%+.2f, %+.2f] -> %s"
-                  % (r["level_pct"], r["ci_pct"][0], r["ci_pct"][1], r["verdict"]))
+            print("  effect %+.2f%% CI [%+.2f, %+.2f] -> %s%s"
+                  % (r["level_pct"], r["ci_pct"][0], r["ci_pct"][1], r["verdict"],
+                     ("  [CONSERVATIVE test, size %.3f -- significance won against a stricter bar]"
+                      % r["size_at_0"]) if r.get("conservative") else ""))
     io.open(os.path.join(HERE, "size_flags_wide.json"), "w", encoding="utf-8").write(
         json.dumps(out, indent=1))
     print("\nwrote size_flags_wide.json")

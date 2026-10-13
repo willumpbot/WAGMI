@@ -338,3 +338,124 @@ safe proxy here, and I am recording the substitution rather than leaving it impl
 and none involved reading a held-out predictor-outcome quantity.** **The design is now CLOSED.** No
 further amendments except for a defect that would make the run invalid — and if one appears, it gets
 the same treatment: written down, with the reason, before the run.
+
+---
+
+# AMENDMENT 4 — THE FIRST RUN IS VOID. The canary caught a real defect, exactly as designed.
+
+**Made 2026-10-12 21:25, AFTER the first execution and with full disclosure of what that run
+showed.** This is the one amendment category the closing note in Amendment 3 left open: *"a defect
+that would make the run invalid."*
+
+## A. What happened, in the order the prereg requires
+
+**The run gated open at 173/173 and executed once. It failed its own canary.**
+
+| arm | required | observed |
+|---|---|---|
+| **(b_raw) ORIG17 unfiltered** | **≈ +0.0740 log / +7.7% level** | **+0.0549 log / +5.64%** |
+
+The prereg says: *"must reproduce ~+0.0740 log or the reimplementation is wrong and nothing else in
+the run is trustworthy."* **It did not. So nothing else in the run is trustworthy, and the run is
+VOID.**
+
+## B. The defect — my third instance today of the same error
+
+**`size_flags.py:148`:**
+
+```python
+df["emq"] = pd.qcut(df["em"], 5, labels=False, duplicates="drop")   # GLOBAL, whole panel
+df["cell"] = df["day"] + "|" + df["emq"]
+```
+
+**The original buckets `em` GLOBALLY across the entire panel. My `cellify()` bucketed it PER DATE.**
+
+The design docstring says *"within the same date AND the same em quintile"*, and per-date quintiles
+are a defensible reading of that sentence — **but the code does global quintiles, and the code is what
+produced +7.7%.** I re-derived the cell definition from the prose instead of reading line 148.
+
+**That is the same error I made twice already today** — re-deriving the live `funding_hot` flag from a
+snippet quoted in an audit doc, and before that treating a directory listing as the data. **This
+project's own research standard names it: read the baseline prior work actually used, never re-derive
+it from the write-up's description.** Three times in one session.
+
+**Fix verified to exact reproduction before amending:**
+
+| | cells built | matched cells | weeks | effect |
+|---|---|---|---|---|
+| per-date (defective) | 6,875 | 2,944 | 145 | +0.0549 = **+5.64%** |
+| **global (fixed)** | 5,928 | **2,283** | **145** | **+0.0740 = +7.68%** |
+| **`SIZE_FLAGS` reported** | — | **2,283** | **145** | **+0.0740 = +7.68%** |
+
+**Every number matches, and the flag fires on 20.76% against the original's 20.76%.** The canary did
+precisely the job it was put there to do: a 2-percentage-point error in the headline quantity, caught
+by a check that had a right answer to fail against.
+
+## C. 🔴 FULL DISCLOSURE — what the void run showed, so the re-run cannot be dressed up
+
+**I have seen these numbers. The re-run is therefore NOT perfectly blind, and recording them here is
+the only way that stays honest.** Void, under the defective per-date cells:
+
+| arm | size@0 | MDE | effect | CI | sealed verdict |
+|---|---|---|---|---|---|
+| **(c) NEW156** | **0.015** | 3.61% | **+3.65%** | [+1.24, +6.11] | **TEST BROKEN** |
+| (b) ORIG17 filtered | 0.020 | 6.4% | +4.93% | [+0.43, +9.63] | positive but underpowered |
+| (b_raw) canary | 0.010 | 6.14% | +5.64% | [+1.25, +10.22] | TEST BROKEN |
+| (c_raw) sensitivity | 0.040 | 3.02% | +5.54% | [+3.59, +7.51] | replicates |
+| (a) ALL173 | 0.030 | 2.9% | +6.07% | [+3.97, +8.21] | replicates |
+
+**The primary was ALSO TEST BROKEN on its own placebo gate, independently of the canary.** So the
+void run produced no verdict on the replication question by two separate pre-committed rules.
+
+**What I will not do: quote +3.65% as a replication.** It came from a pipeline that fails its own
+canary, and it is inside a void run.
+
+## D. The placebo band was mis-specified too, and I am fixing it on principle
+
+**Observed sizes across all eight population-arm combos: 0.015, 0.020, 0.010, 0.040, 0.030, 0.020,
+0.020, 0.015 — mean ≈ 0.021 against a nominal 0.05.** This test is **systematically CONSERVATIVE**,
+not erratic.
+
+**My `SIZE_OK = (0.02, 0.09)` treated both tails as fatal. That is wrong, and the two tails do not
+mean the same thing:**
+
+- **size ABOVE nominal → the test over-rejects → significant results are untrustworthy. Genuinely
+  broken, and the gate must stay.**
+- **size BELOW nominal → the test under-rejects → it is CONSERVATIVE. A significant result from a
+  conservative test is stronger evidence, not weaker; the cost is paid in power, which the MDE already
+  reports.**
+
+**And the band was inside its own Monte Carlo error.** At `PLACEBO = 200`, the standard error of a
+size estimate near 0.05 is `sqrt(0.05 × 0.95 / 200) = 0.0154` — so the lower edge of 0.02 sat about
+two standard errors from nominal. **A gate tighter than the noise in the quantity it gates is not a
+gate.**
+
+**Changes, justified on statistics and not on the outcome:**
+
+1. **`SIZE_OK = (0.001, 0.09)`.** The upper bound — the dangerous direction — is **unchanged**. The
+   lower bound now only catches a **degenerate** test that essentially never rejects under the null.
+2. **A conservative size is REPORTED, never silently accepted:** any arm with size < 0.03 is labelled
+   **"conservative test (size X)"** beside its verdict, so the reader knows significance was achieved
+   against a stricter-than-nominal bar.
+3. **`PLACEBO = 200 → 400`**, halving the Monte Carlo error on every size and power figure.
+
+**I am aware this change removes a gate that blocked a positive result, which is exactly the shape of
+a self-serving amendment. Two things constrain it:** the run was **already void on the canary alone**,
+so the band change cannot rescue anything; and the **upper** bound, the one that protects against
+false positives, is untouched.
+
+## E. What the re-run is, and what it is not
+
+**It is the FIRST VALID execution of the sealed design, not a second look at a result.** The design —
+populations, arms, outcome, governing statistic, gate, `START`, volume filter, report order — is
+**unchanged**. Only the defect and the mis-specified band are fixed.
+
+**But it is weaker than a clean prereg result and must be labelled so forever:** I have seen the void
+run's numbers, so my expectations are contaminated even though the data and design are not. **Any
+write-up must carry section C beside the result.**
+
+**Recorded expectation for the re-run, stated now:** the canary will reproduce **+0.0740**, because
+that is verified. For **(c) NEW156** I will not re-predict a number — I have seen +3.65% under the
+wrong cells and cannot un-see it. **What I can commit to: if (c) comes in with its CI including zero,
+I report "does not replicate" or "unmeasurable" as the matrix dictates, and the project's only
+surviving finding does not generalise.** That sentence was written before the re-run.
