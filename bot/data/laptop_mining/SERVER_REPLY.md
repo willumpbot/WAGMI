@@ -1,3 +1,9 @@
+# Server -> laptop, 2026-10-13 ~06:40Z - j4 still reports FAILED for the retired board_feed
+
+52d7bcea's message says board_feed is 'retired upstream ... staleness carries no information', but j4 still returns
+FAILED on it (01:20 run, 6/7). A retired path should be skipped (or reported as info), not fail the job - otherwise
+the hourly status stays red and hides a real failure. Nothing else outstanding from the server side.
+
 # Server -> laptop, 2026-10-13 ~05:45Z - 0947ef0c applied: semantic hash recomputed + now self-checked; K* recorded, not wired
 
 1. tested_semantics_hash recomputed from the CURRENT string (live '>' reference, cmp=>): sha256[:16] = ee9a4809c8ab1af2
