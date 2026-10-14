@@ -7,6 +7,8 @@ and his watchlist, and raise a short alert only when something CHANGED or needs 
   hot_flag      a held coin turned funding_hot (replicated: bigger moves, more stop hits - sizing, not direction)
   time_limit    the plan's own time limit is under 6 hours away
   watchlist     a watchlist coin carries a scanner flag
+  waking_up     a watchlist or held coin moved >= 0.5 expected daily moves in the last closed hour on >= 2.5x its
+                median hourly volume (owner 10-14: CASHCAT's first +8.3% hour on 2.9x volume came ~14% before the top)
 Writes data/hivemind/watch.json (current state + alerts) and appends NEW alerts to watch_log.jsonl (deduped per
 position+kind per day). Read-only: never trades, never moves a stop.
 """
@@ -97,6 +99,26 @@ def run():
         f = (scan.get(c) or {}).get("flags") or []
         if f:
             alerts.append(("watch:" + c, "watchlist", f"{c} (watchlist): {', '.join(f)}"))
+    for c in sorted(set(watch) | {r["coin"] for r in rows}):
+        em = (scan.get(c) or {}).get("exp_move")
+        try:
+            b = hl.candles(c, "1h", int((now - 30 * 3600) * 1000), int(now * 1000), ttl=300) or []
+        except Exception:
+            b = []
+        b = [x for x in b if int(x["t"]) / 1000 + 3600 <= now]          # closed hours only
+        if len(b) < 10:
+            continue
+        vols = sorted(float(x["v"]) * float(x["c"]) for x in b[:-1])
+        med = vols[len(vols) // 2] or 0
+        last = b[-1]
+        o_, c_ = float(last["o"]), float(last["c"])
+        chg = (c_ / o_ - 1) * 100
+        vx = (float(last["v"]) * c_ / med) if med else 0
+        if em and abs(chg) >= 0.5 * em and vx >= 2.5:
+            hr = time.strftime("%H:00", time.gmtime(int(last["t"]) / 1000))
+            alerts.append((f"wake:{c}:{int(last['t'])}", "waking_up",
+                           f"{c}: {chg:+.1f}% in the {hr} UTC hour on {vx:.1f}x normal volume - waking up "
+                           f"(a heads-up to look, not a direction call)"))
     # new = not already logged today for this key+kind
     day = time.strftime("%Y-%m-%d", time.gmtime(now))
     seen = set()
