@@ -1,17 +1,17 @@
 {
- "updated": "2026-10-14T17:36+00:00",
+ "updated": "2026-10-14T18:51+00:00",
  "horizons": {
   "1d": {
-   "n_calls": 188,
+   "n_calls": 194,
    "n_directional": 0,
    "directional_hit": null,
    "directional_mean_pct": null,
    "always_long_mean_pct": null,
-   "neutral_quiet_rate": 0.915,
+   "neutral_quiet_rate": 0.918,
    "by_conviction": {}
   },
   "5d": {
-   "n_calls": 44,
+   "n_calls": 50,
    "n_directional": 0,
    "directional_hit": null,
    "directional_mean_pct": null,
@@ -21,12 +21,12 @@
   }
  },
  "brier_24h": {
-  "n": 96,
-  "brier": 0.2488,
+  "n": 102,
+  "brier": 0.2486,
   "always_50": 0.25,
-  "base_rate_up": 0.375,
-  "always_base_rate": 0.2344,
-  "skill": null
+  "base_rate_up": 0.353,
+  "always_base_rate": 0.2284,
+  "skill": -0.089
  },
  "verdict": "collecting"
 }
