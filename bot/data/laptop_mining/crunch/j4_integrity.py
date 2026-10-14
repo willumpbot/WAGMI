@@ -10,6 +10,7 @@ So this reports, per export: whether it is present, whether it is GROWING, its f
 its gaps. It flags regressions rather than interpreting them.
 """
 import csv
+import datetime
 import glob
 import subprocess
 import gzip
@@ -248,6 +249,68 @@ def last_trade_close_age_h():
 # files the bot writes ONLY on a trade close, so their staleness is explained by the ledger
 CLOSE_DRIVEN = ("confidence_state.json",)
 
+# Files whose CONTENT changes only when an event happens, so a climbing age is the normal resting
+# state rather than a stall. Server, 2026-10-14 ~21:05Z: `stop_shadow.run()` executes every cycle,
+# but the bytes only move when the bot opens a position or an arm resolves. It currently holds 3
+# arms, all done=True, and no trade has opened since -- so identical bytes cycle after cycle.
+#
+# A BLANKET "never alarm" WOULD BE THE WRONG FIX. It would also silence the one failure that
+# matters: a position opening and never getting an arm. So the check is CONDITIONAL and can still
+# fire -- it alarms only when a TRADE_OPENED is older than UNMATCHED_OPEN_GRACE_H and its
+# position_id never appeared in the file. That is the server's own suggestion, and the ids line up:
+# stop_shadow.json is keyed by position_id, exactly the field TRADE_OPENED carries.
+EVENT_DRIVEN = ("stop_shadow.json",)
+UNMATCHED_OPEN_GRACE_H = 1.0
+
+
+def unmatched_opens(p, grace_h=UNMATCHED_OPEN_GRACE_H):
+    """position_ids opened > grace_h ago that never reached this file's keys.
+
+    Returns (list_of_ids, arms_total, arms_done, note). `note` is non-empty when the question could
+    not be answered -- a missing events export is NOT the same as "nothing unmatched", and must
+    never be reported as a clean bill of health.
+    """
+    try:
+        shadow = json.load(io.open(p, encoding="utf-8"))
+    except (ValueError, OSError) as e:
+        return [], 0, 0, "stop_shadow unreadable (%s)" % type(e).__name__
+    if not isinstance(shadow, dict):
+        return [], 0, 0, "stop_shadow is not keyed by position_id"
+    total = len(shadow)
+    done = sum(1 for v in shadow.values() if isinstance(v, dict) and v.get("done") is True)
+
+    d = os.path.join(EXP, "bulk", "trade_events")
+    files = sorted(glob.glob(os.path.join(d, "*.jsonl.gz"))) if os.path.isdir(d) else []
+    if not files:
+        return [], total, done, "no trade_events export on this disk, so unmatched opens are UNKNOWN"
+    cutoff = time.time() - grace_h * 3600.0
+    missing = []
+    for fp in files:
+        try:
+            with gzip.open(fp, "rt", encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    try:
+                        r = json.loads(line)
+                    except ValueError:
+                        continue
+                    if (r.get("event") or r.get("type")) != "TRADE_OPENED":
+                        continue
+                    pid = r.get("position_id")
+                    if not pid or pid in shadow:
+                        continue
+                    ts = r.get("timestamp")
+                    if isinstance(ts, str):
+                        try:
+                            ts = datetime.datetime.fromisoformat(
+                                ts.replace("Z", "+00:00")).timestamp()
+                        except ValueError:
+                            continue
+                    if isinstance(ts, (int, float)) and ts < cutoff:
+                        missing.append(pid)
+        except OSError:
+            continue
+    return missing, total, done, ""
+
 
 def snapshot_health(p):
     """A snapshot is healthy if it parses and is fresh. Size is never evidence either way.
@@ -298,6 +361,19 @@ def snapshot_health(p):
         return "info: retired upstream -- not refreshed, so staleness carries no information"
     if age <= stale_limit(p):
         return "ok"
+    if os.path.basename(p) in EVENT_DRIVEN:
+        miss, total, done, note = unmatched_opens(p)
+        if note:
+            return ("stale %.1fh — event-driven, but %s. Cannot confirm, so NOT cleared."
+                    % (age / 3600.0, note))
+        if miss:
+            return ("🔴 stale %.1fh and %d TRADE_OPENED position_id(s) older than %.0fh never "
+                    "reached this file (%s) — an arm is missing, not just quiet"
+                    % (age / 3600.0, len(miss), UNMATCHED_OPEN_GRACE_H, ", ".join(miss[:3])))
+        return ("info: event-driven quiet — content moves only on a new position or an arm "
+                "resolving; %d arms, %d done, no unmatched TRADE_OPENED past %.0fh. Age %.1fh "
+                "carries no information." % (total, done, UNMATCHED_OPEN_GRACE_H, age / 3600.0))
+
     if os.path.basename(p) in CLOSE_DRIVEN:
         lag = last_trade_close_age_h()
         if lag is None:
