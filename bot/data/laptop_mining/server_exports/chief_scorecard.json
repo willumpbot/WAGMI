@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-13T22:51+00:00",
+ "updated": "2026-10-14T00:06+00:00",
  "horizons": {
   "1d": {
    "n_calls": 164,
@@ -11,7 +11,7 @@
    "by_conviction": {}
   },
   "5d": {
-   "n_calls": 14,
+   "n_calls": 20,
    "n_directional": 0,
    "directional_hit": null,
    "directional_mean_pct": null,

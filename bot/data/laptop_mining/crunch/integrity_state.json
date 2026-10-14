@@ -20,15 +20,15 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 2779,
+  "v": 2805,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 14463,
+  "v": 14492,
   "u": "bytes"
  },
  "archive": {
-  "v": 212700,
+  "v": 248013,
   "u": "rows+bytes"
  },
  "board_feed.json": {
@@ -36,7 +36,7 @@
   "u": "bytes"
  },
  "bulk": {
-  "v": 841488,
+  "v": 849938,
   "u": "rows+bytes"
  },
  "call_caller_form_anon.384rows_20261012.jsonl": {
@@ -52,11 +52,11 @@
   "u": "rows"
  },
  "call_snapshots.jsonl": {
-  "v": 39,
+  "v": 40,
   "u": "rows"
  },
  "candles_5m": {
-  "v": 36690,
+  "v": 36780,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -76,7 +76,7 @@
   "u": "rows"
  },
  "conf_floor_resolutions.jsonl": {
-  "v": 894,
+  "v": 897,
   "u": "rows"
  },
  "confidence_state.json": {
@@ -92,11 +92,11 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 56248,
+  "v": 57138,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
-  "v": 14716,
+  "v": 14437,
   "u": "bytes"
  },
  "entry_gate_log.jsonl.gz": {
@@ -116,7 +116,7 @@
   "u": "rows"
  },
  "expmove_log.jsonl": {
-  "v": 193,
+  "v": 251,
   "u": "rows"
  },
  "floor_decisions_log.jsonl.gz": {
@@ -124,7 +124,7 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 50984,
+  "v": 51022,
   "u": "rows"
  },
  "geometry_shadow.json": {
@@ -132,7 +132,7 @@
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 668,
+  "v": 680,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -140,7 +140,7 @@
   "u": "rows"
  },
  "live_scorecard.json": {
-  "v": 1343,
+  "v": 1344,
   "u": "bytes"
  },
  "llm_exits_resolved.jsonl": {
@@ -152,7 +152,7 @@
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 2151,
+  "v": 2157,
   "u": "bytes"
  },
  "owner_plans.jsonl": {
@@ -160,7 +160,7 @@
   "u": "rows"
  },
  "plans.json": {
-  "v": 40556,
+  "v": 40555,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -172,11 +172,11 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 18208,
+  "v": 21356,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 537,
+  "v": 568,
   "u": "rows"
  },
  "scanner.py": {
@@ -188,7 +188,7 @@
   "u": "rows"
  },
  "state": {
-  "v": 529583,
+  "v": 529599,
   "u": "rows+bytes"
  },
  "stop_shadow.json": {
@@ -232,7 +232,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 279,
+  "v": 284,
   "u": "rows"
  }
 }
