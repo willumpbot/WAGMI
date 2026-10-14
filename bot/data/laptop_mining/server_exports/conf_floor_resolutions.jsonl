@@ -946,3 +946,4 @@
 {"decision_id":"cfd_1791743277.562997","kind":"trade_link_v1","resolved_at":"2026-10-14T18:54:24+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
 {"decision_id":"cfd_1791743544.983871","kind":"trade_link_v1","resolved_at":"2026-10-14T18:54:24+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
 {"decision_id":"cfd_1791746657.565774","kind":"trade_link_v1","resolved_at":"2026-10-14T19:59:58+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
+{"decision_id":"cfd_1791755481.097800","kind":"trade_link_v1","resolved_at":"2026-10-14T22:27:37+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
