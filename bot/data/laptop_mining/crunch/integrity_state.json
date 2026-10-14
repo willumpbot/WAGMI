@@ -20,11 +20,11 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 3148,
+  "v": 3174,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 20608,
+  "v": 22409,
   "u": "bytes"
  },
  "archive": {
@@ -52,11 +52,11 @@
   "u": "rows"
  },
  "call_snapshots.jsonl": {
-  "v": 54,
+  "v": 57,
   "u": "rows"
  },
  "candles_5m": {
-  "v": 37944,
+  "v": 38040,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -64,7 +64,7 @@
   "u": "bytes"
  },
  "chief_calls.jsonl": {
-  "v": 224,
+  "v": 230,
   "u": "rows"
  },
  "chief_scorecard.json": {
@@ -72,11 +72,11 @@
   "u": "bytes"
  },
  "conf_floor_decisions.jsonl": {
-  "v": 493,
+  "v": 494,
   "u": "rows"
  },
  "conf_floor_resolutions.jsonl": {
-  "v": 923,
+  "v": 929,
   "u": "rows"
  },
  "confidence_state.json": {
@@ -92,15 +92,15 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 69064,
+  "v": 70132,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
-  "v": 15269,
+  "v": 15546,
   "u": "bytes"
  },
  "dissent_log.jsonl": {
-  "v": 348,
+  "v": 383,
   "u": "rows"
  },
  "entry_gate_log.jsonl.gz": {
@@ -128,15 +128,15 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 51585,
+  "v": 51634,
   "u": "rows"
  },
  "geometry_shadow.json": {
-  "v": 647,
+  "v": 645,
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 776,
+  "v": 782,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -156,7 +156,7 @@
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 5344,
+  "v": 5353,
   "u": "bytes"
  },
  "owner_plan_sims_resolved.jsonl": {
@@ -168,7 +168,7 @@
   "u": "rows"
  },
  "plans.json": {
-  "v": 41796,
+  "v": 41923,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -180,11 +180,11 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 29543,
+  "v": 29750,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 634,
+  "v": 636,
   "u": "rows"
  },
  "scanner.py": {
@@ -204,7 +204,7 @@
   "u": "bytes"
  },
  "syndicate_calls_anon.jsonl": {
-  "v": 222,
+  "v": 224,
   "u": "rows"
  },
  "syndicate_features_anon.jsonl": {
@@ -240,7 +240,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 351,
+  "v": 357,
   "u": "rows"
  }
 }
