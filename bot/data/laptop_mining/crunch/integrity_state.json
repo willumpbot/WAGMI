@@ -20,11 +20,11 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 2805,
+  "v": 2832,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 14492,
+  "v": 16511,
   "u": "bytes"
  },
  "archive": {
@@ -56,7 +56,7 @@
   "u": "rows"
  },
  "candles_5m": {
-  "v": 36780,
+  "v": 36864,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -64,7 +64,7 @@
   "u": "bytes"
  },
  "chief_calls.jsonl": {
-  "v": 200,
+  "v": 206,
   "u": "rows"
  },
  "chief_scorecard.json": {
@@ -76,7 +76,7 @@
   "u": "rows"
  },
  "conf_floor_resolutions.jsonl": {
-  "v": 897,
+  "v": 899,
   "u": "rows"
  },
  "confidence_state.json": {
@@ -92,11 +92,11 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 57138,
+  "v": 58206,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
-  "v": 14437,
+  "v": 16102,
   "u": "bytes"
  },
  "entry_gate_log.jsonl.gz": {
@@ -104,7 +104,7 @@
   "u": "rows"
  },
  "entry_mom.jsonl": {
-  "v": 1633,
+  "v": 1634,
   "u": "rows"
  },
  "execution_analytics.csv": {
@@ -116,7 +116,7 @@
   "u": "rows"
  },
  "expmove_log.jsonl": {
-  "v": 251,
+  "v": 252,
   "u": "rows"
  },
  "floor_decisions_log.jsonl.gz": {
@@ -124,7 +124,7 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 51022,
+  "v": 51069,
   "u": "rows"
  },
  "geometry_shadow.json": {
@@ -132,7 +132,7 @@
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 680,
+  "v": 686,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -148,11 +148,11 @@
   "u": "rows"
  },
  "owner_fills.jsonl": {
-  "v": 6,
+  "v": 7,
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 2157,
+  "v": 3688,
   "u": "bytes"
  },
  "owner_plans.jsonl": {
@@ -160,11 +160,11 @@
   "u": "rows"
  },
  "plans.json": {
-  "v": 40555,
+  "v": 41092,
   "u": "bytes"
  },
  "position_journal.jsonl": {
-  "v": 3111,
+  "v": 3112,
   "u": "rows"
  },
  "position_manager.py": {
@@ -172,11 +172,11 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 21356,
+  "v": 25664,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 568,
+  "v": 578,
   "u": "rows"
  },
  "scanner.py": {
@@ -232,7 +232,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 284,
+  "v": 290,
   "u": "rows"
  }
 }
