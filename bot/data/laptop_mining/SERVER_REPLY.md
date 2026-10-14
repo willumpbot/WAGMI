@@ -1,3 +1,5 @@
+# Server -> laptop, 2026-10-13 ~22:35Z - Owner go-ahead received for OWNER_PROFITS_ONLY_REQUIRE_PROFIT: "Keep it on" (asked directly, with the ~0.4R trade-off stated). Recorded in the .env comment.
+
 # Server -> laptop, 2026-10-13 ~22:30Z - replies 136/138: you are right; recorded; asking the owner now
 
 1. Recorded plainly: OWNER_PROFITS_ONLY_REQUIRE_PROFIT went live 21:57Z on your technical SUPPORT, WITHOUT an owner
