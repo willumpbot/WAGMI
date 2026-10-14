@@ -20,11 +20,11 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 3078,
+  "v": 3102,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 18599,
+  "v": 20522,
   "u": "bytes"
  },
  "archive": {
@@ -52,11 +52,11 @@
   "u": "rows"
  },
  "call_snapshots.jsonl": {
-  "v": 49,
+  "v": 51,
   "u": "rows"
  },
  "candles_5m": {
-  "v": 37692,
+  "v": 37782,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -64,7 +64,7 @@
   "u": "bytes"
  },
  "chief_calls.jsonl": {
-  "v": 218,
+  "v": 224,
   "u": "rows"
  },
  "chief_scorecard.json": {
@@ -84,23 +84,23 @@
   "u": "bytes"
  },
  "copilot_call_ledger.jsonl": {
-  "v": 404,
+  "v": 413,
   "u": "rows"
  },
  "copilot_call_ledger_resolved.jsonl": {
-  "v": 384,
+  "v": 393,
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 66572,
+  "v": 67640,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
-  "v": 14716,
+  "v": 14713,
   "u": "bytes"
  },
  "dissent_log.jsonl": {
-  "v": 264,
+  "v": 300,
   "u": "rows"
  },
  "entry_gate_log.jsonl.gz": {
@@ -128,7 +128,7 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 51461,
+  "v": 51506,
   "u": "rows"
  },
  "geometry_shadow.json": {
@@ -136,7 +136,7 @@
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 752,
+  "v": 758,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -152,11 +152,11 @@
   "u": "rows"
  },
  "owner_fills.jsonl": {
-  "v": 7,
+  "v": 8,
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 4764,
+  "v": 5851,
   "u": "bytes"
  },
  "owner_plan_sims_resolved.jsonl": {
@@ -168,7 +168,7 @@
   "u": "rows"
  },
  "plans.json": {
-  "v": 41418,
+  "v": 41797,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -184,7 +184,7 @@
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 605,
+  "v": 624,
   "u": "rows"
  },
  "scanner.py": {
@@ -204,7 +204,7 @@
   "u": "bytes"
  },
  "syndicate_calls_anon.jsonl": {
-  "v": 220,
+  "v": 222,
   "u": "rows"
  },
  "syndicate_features_anon.jsonl": {
@@ -240,7 +240,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 337,
+  "v": 343,
   "u": "rows"
  }
 }

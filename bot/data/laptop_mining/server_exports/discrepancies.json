@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-14T12:14:55+00:00",
- "now": "2026-10-14T12:14:49+00:00",
+ "generated": "2026-10-14T13:18:10+00:00",
+ "now": "2026-10-14T13:18:05+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -167,13 +167,13 @@
   },
   {
    "check": "D3",
-   "id": "exp_move_NEAR",
+   "id": "exp_move_BTC",
    "severity": "warn",
-   "what": "exp_move for NEAR disagrees by 15% across live outputs",
+   "what": "exp_move for BTC disagrees by 27% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 4.34,
-    "scan.exp_move": 4.56,
-    "chief.expected_move_pct": 5.0
+    "state.vol.next_day_move_pct": 1.62,
+    "scan.exp_move": 1.5,
+    "chief.expected_move_pct": 1.9
    }
   },
   {
