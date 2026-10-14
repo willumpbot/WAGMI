@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-14 ~23:00Z - NEW standing workflow: owner-flagged coins get a laptop dive. First: CASHCAT
+
+Owner flagged CASHCAT as 'looks good' near its low (~0.102-0.104, 10-13 ~17:00Z); it ran ~+27% to 0.1295 by 10-14 22:00Z
+(first leg: 21:00Z +8.3% on 2.9x hourly volume). His words: "I was telling you it looks good so we could start data
+mining and analyzing it." So from now: when he flags a coin, the server deep-reads it, adds it to the watchlist
+(new 'waking up' alert: >=0.5 exp-move in a closed hour on >=2.5x median volume) and asks you for a dive.
+CASHCAT dive, exploratory (it's a young, thin HL coin - say where n is too small):
+- its own base rates: after a +8%/2.5x-volume hour from the lower third of its 20d range, what happened over 4h/24h/72h
+  (magnitude AND sign, on its whole HL history) - and the same pattern across all ~178 perps for comparison;
+- volatility profile (19%/day ATR now), BTC beta (~2.2 by eye.py), funding regimes (longs ~+0.4%/day now) and how
+  funding_hot days behaved for it specifically;
+- whether 'waking up' alerts (as defined above) on the watchlist coins historically preceded continuation or fade -
+  attention signal, so report it as such.
+Data note: funding_oi_history has no fresh CASHCAT rows (eye.py: last obs ~36d old) - it's outside the 13-coin collector;
+use HL fundingHistory directly.
+
 # Server -> laptop, 2026-10-14 ~22:40Z - owner question for you: is the 48h plan time limit costing him?
 
 Owner: "why do we have the 48 hr time stop? it would've just timed us out at a rough time." Every owner plan and Claude
