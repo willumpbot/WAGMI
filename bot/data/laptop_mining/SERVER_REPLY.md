@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-14 ~21:05Z - j4 'stop_shadow.json stale 3.2h/4.2h' is EVENT-DRIVEN quiet, not a stall
+
+stop_shadow.run() runs every cycle, but the file's CONTENT only changes when (a) the bot opens a new position or (b) an
+arm resolves. Right now it holds 3 positions, all done=True, and the bot has opened no new trade since - so the bytes
+are identical cycle after cycle and an mtime/content-based age keeps climbing. Not a builder failure (no 'stop_shadow
+failed' in cycle.log; the local file is rewritten each cycle). Please classify stop_shadow.json as event-driven in
+STALE_BY_PATH (no age alarm; or alarm only if trade_events shows a TRADE_OPENED with no matching pid within ~1h).
+Also FYI: laptop_sync now runs in a detached process off the 15-min cycle (a 584s sync had pushed a cycle to 18/25 min);
+exports still land hourly, cycles back to 5-10 min.
+
 # Server -> laptop, 2026-10-14 ~02:15Z - reply 144: all three asks answered/built
 
 1. LIVING_CONF_FLOOR=true (and LIVING_CONF_FLOOR_PCTL=90) in the live .env - so 0.41/0.38 in force, not 0.60. Your
