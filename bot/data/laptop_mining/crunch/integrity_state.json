@@ -20,11 +20,11 @@
   "u": "bytes"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 3102,
+  "v": 3126,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 20522,
+  "v": 20608,
   "u": "bytes"
  },
  "archive": {
@@ -52,11 +52,11 @@
   "u": "rows"
  },
  "call_snapshots.jsonl": {
-  "v": 51,
+  "v": 54,
   "u": "rows"
  },
  "candles_5m": {
-  "v": 37782,
+  "v": 37860,
   "u": "rows+bytes"
  },
  "chief.py": {
@@ -68,15 +68,15 @@
   "u": "rows"
  },
  "chief_scorecard.json": {
-  "v": 662,
+  "v": 666,
   "u": "bytes"
  },
  "conf_floor_decisions.jsonl": {
-  "v": 491,
+  "v": 492,
   "u": "rows"
  },
  "conf_floor_resolutions.jsonl": {
-  "v": 917,
+  "v": 921,
   "u": "rows"
  },
  "confidence_state.json": {
@@ -84,7 +84,7 @@
   "u": "bytes"
  },
  "copilot_call_ledger.jsonl": {
-  "v": 413,
+  "v": 414,
   "u": "rows"
  },
  "copilot_call_ledger_resolved.jsonl": {
@@ -92,7 +92,7 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 67640,
+  "v": 68352,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
@@ -100,7 +100,7 @@
   "u": "bytes"
  },
  "dissent_log.jsonl": {
-  "v": 300,
+  "v": 324,
   "u": "rows"
  },
  "entry_gate_log.jsonl.gz": {
@@ -128,15 +128,15 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 51506,
+  "v": 51536,
   "u": "rows"
  },
  "geometry_shadow.json": {
-  "v": 646,
+  "v": 647,
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 758,
+  "v": 770,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -156,7 +156,7 @@
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 5851,
+  "v": 5337,
   "u": "bytes"
  },
  "owner_plan_sims_resolved.jsonl": {
@@ -168,7 +168,7 @@
   "u": "rows"
  },
  "plans.json": {
-  "v": 41797,
+  "v": 41791,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -180,11 +180,11 @@
   "u": "bytes"
  },
  "scan_grades.json": {
-  "v": 29116,
+  "v": 29330,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 624,
+  "v": 632,
   "u": "rows"
  },
  "scanner.py": {
@@ -200,7 +200,7 @@
   "u": "rows+bytes"
  },
  "stop_shadow.json": {
-  "v": 1818,
+  "v": 1881,
   "u": "bytes"
  },
  "syndicate_calls_anon.jsonl": {
@@ -240,7 +240,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 343,
+  "v": 347,
   "u": "rows"
  }
 }
