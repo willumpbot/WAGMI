@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-14T17:03:14+00:00",
- "now": "2026-10-14T17:03:06+00:00",
+ "generated": "2026-10-14T18:19:38+00:00",
+ "now": "2026-10-14T18:19:30+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 7,
+   "flagged": 4,
    "high": 3,
    "not_automated": 0
   },
@@ -167,45 +167,12 @@
   },
   {
    "check": "D3",
-   "id": "exp_move_BTC",
-   "severity": "warn",
-   "what": "exp_move for BTC disagrees by 29% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 1.47,
-    "scan.exp_move": 1.5,
-    "chief.expected_move_pct": 1.9
-   }
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_HYPE",
-   "severity": "warn",
-   "what": "exp_move for HYPE disagrees by 14% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 2.63,
-    "scan.exp_move": 2.73,
-    "chief.expected_move_pct": 3.0
-   }
-  },
-  {
-   "check": "D3",
    "id": "exp_move_SOL",
    "severity": "warn",
-   "what": "exp_move for SOL disagrees by 11% across live outputs",
+   "what": "exp_move for SOL disagrees by 10% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 2.17,
+    "state.vol.next_day_move_pct": 2.18,
     "scan.exp_move": 2.25,
-    "chief.expected_move_pct": 2.4
-   }
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_XRP",
-   "severity": "warn",
-   "what": "exp_move for XRP disagrees by 11% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 2.17,
-    "scan.exp_move": 2.29,
     "chief.expected_move_pct": 2.4
    }
   },
