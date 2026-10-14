@@ -792,3 +792,10 @@
 {"sym": "BTC", "ts": 1791828261.262438, "side": -1, "entry": 82478.0, "sl": 82932.78571428571, "tp": 81568.42857142858, "src": "ic_muted", "r_current": -1.163, "r_proposal": 0.193, "r_adaptive": 0.235, "fc": 1.81}
 {"sym": "HYPE", "ts": 1791828262.171996, "side": -1, "entry": 83.518, "sl": 84.95941428571429, "tp": 81.75627142857144, "src": "ic_muted", "r_current": 1.17, "r_proposal": 0.279, "r_adaptive": 0.483, "fc": 2.6}
 {"sym": "NEAR", "ts": 1791828642.640971, "side": -1, "entry": 5.4186, "sl": 5.637595714285714, "tp": 5.150938571428571, "src": "ic_muted", "r_current": 1.2, "r_proposal": 0.341, "r_adaptive": 0.491, "fc": 5.23}
+{"sym": "XRP", "ts": 1791831654.323396, "side": -1, "entry": 1.3585, "sl": 1.3798685714285714, "tp": 1.332382857142857, "src": "ic_muted", "r_current": 1.165, "r_proposal": 0.186, "r_adaptive": 0.481, "fc": 2.43}
+{"sym": "SOL", "ts": 1791831664.93223, "side": -1, "entry": 107.54, "sl": 109.42857142857144, "tp": 103.76285714285713, "src": "ic_muted", "r_current": 1.949, "r_proposal": 0.219, "r_adaptive": 0.482, "fc": 2.46}
+{"sym": "BTC", "ts": 1791831665.910076, "side": -1, "entry": 82422.0, "sl": 83269.57142857143, "tp": 80726.85714285713, "src": "ic_muted", "r_current": -1.088, "r_proposal": 0.079, "r_adaptive": 0.18, "fc": 1.81}
+{"sym": "ETH", "ts": 1791831675.910529, "side": -1, "entry": 2512.8, "sl": 2547.4857142857145, "tp": 2443.4285714285716, "src": "ic_muted", "r_current": 1.935, "r_proposal": 0.29, "r_adaptive": 0.478, "fc": 2.07}
+{"sym": "HYPE", "ts": 1791831676.823526, "side": -1, "entry": 83.236, "sl": 84.79057142857143, "tp": 80.12685714285716, "src": "ic_muted", "r_current": 1.952, "r_proposal": 0.126, "r_adaptive": 0.483, "fc": 2.6}
+{"sym": "NEAR", "ts": 1791832050.174538, "side": -1, "entry": 5.4131, "sl": 5.634557142857143, "tp": 4.970185714285714, "src": "ic_muted", "r_current": 1.978, "r_proposal": 0.34, "r_adaptive": 0.491, "fc": 5.23}
+{"sym": "NEAR", "ts": 1791835325.995549, "side": -1, "entry": 5.4131, "sl": 5.634557142857143, "tp": 4.970185714285714, "src": "ic_muted", "r_current": 1.978, "r_proposal": 0.351, "r_adaptive": 0.491, "fc": 5.23}
