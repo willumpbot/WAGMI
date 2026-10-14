@@ -119,7 +119,7 @@ def main():
             journal.main()
         except Exception as e:
             log(f"journal failed: {e}")
-        for mod, fn in (("scanner", "run"), ("plans", "resolve"), ("tg_track", "run"), ("call_snapshot", "run"), ("candle_archive", "run"), ("depth_all", "run"), ("entry_mom", "run"), ("stop_shadow", "run"), ("ai_plans", "run"), ("history", "build"), ("laptop_sync", "run")):
+        for mod, fn in (("scanner", "run"), ("plans", "resolve"), ("tg_track", "run"), ("call_snapshot", "run"), ("candle_archive", "run"), ("depth_all", "run"), ("entry_mom", "run"), ("stop_shadow", "run"), ("ai_plans", "run"), ("history", "build")):
             _t0 = time.time()
             try:
                 res = getattr(__import__(mod), fn)()
@@ -134,6 +134,21 @@ def main():
                     expmove_grade.resolve()
             except Exception as e:
                 log(f"{mod} failed: {e}")
+        try:   # laptop export, hourly, in a DETACHED process (10-14: a 584s sync pushed a cycle to 18 of its 25 min)
+            import laptop_sync, subprocess
+            lock = HERE.parents[1] / "data" / "hivemind" / ".laptop_sync.lock"
+            due = (not laptop_sync.STAMP.exists()
+                   or time.time() - float(laptop_sync.STAMP.read_text() or 0) >= laptop_sync.EVERY_S)
+            busy = lock.exists() and time.time() - lock.stat().st_mtime < 45 * 60
+            if due and not busy:
+                lock.write_text(str(time.time()))
+                subprocess.Popen([sys.executable, "-c",
+                                  "import sys, os; sys.path.insert(0, r'%s'); import laptop_sync; "
+                                  "r = laptop_sync.run(); os.remove(r'%s')" % (str(HERE), str(lock))],
+                                 cwd=str(HERE.parents[1]), creationflags=0x00000008 | 0x08000000,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as e:
+            log(f"laptop_sync launch failed: {e}")
         try:   # HIVEMIND phase 0: discrepancy checks D1-D11, hourly (tools/knowledge/check.py -> data/knowledge/discrepancies.json)
             stamp = HERE.parents[1] / "data" / "knowledge" / ".last_check"
             if not stamp.exists() or time.time() - stamp.stat().st_mtime > 3600:
