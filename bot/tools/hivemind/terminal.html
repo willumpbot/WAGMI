@@ -241,6 +241,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
       <div class="calc">
         <label>Side<select id="c_side"><option>LONG</option><option>SHORT</option></select></label>
         <label>Leverage<input id="c_lev" type="number" value="3" step="1"></label>
+        <label>Time limit<select id="c_hold"><option value="24">24 hours</option><option value="48" selected>48 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="720">none (30 days)</option></select></label>
         <label>Entry<input id="c_entry" type="number" step="any"></label>
         <label>Stop<input id="c_stop" type="number" step="any"></label>
         <label>Target<input id="c_tgt" type="number" step="any"></label>
@@ -930,7 +931,8 @@ async function makePlan(){
   const side = $("c_side").value, et = $("c_etype").value, now = px(sel);
   const body = {coin: sel, side, entry: +$("c_entry").value, stop: +$("c_stop").value, target: +$("c_tgt").value, entry_type: et, price: now,
     leverage: +$("c_lev").value, risk_usd: +$("c_acct").value * +$("c_risk").value / 100, setup: $("c_setup").value, reason: $("c_reason").value,
-    exit_mode: ($("c_exitmode") && $("c_exitmode").value) || "profits_only"};
+    exit_mode: ($("c_exitmode") && $("c_exitmode").value) || "profits_only",
+    max_hold_h: +(($("c_hold") && $("c_hold").value) || 48)};
   if (window.LOADED_IDEA && window.LOADED_IDEA.coin === sel) { body.source_idea_id = window.LOADED_IDEA.id; body.adopt_mode = "adjust"; }
   try {
     const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken}, body: JSON.stringify(body)});
@@ -1094,11 +1096,13 @@ function renderBotPos(){
 function aiPlans(){
   const A = DATA.aiPlans || {}, I = (A.ideas || []).slice().reverse(), S = A.stats || {};
   $("ai_note").textContent = S.n ? `track record: ${S.n} finished, ${(S.win_rate*100).toFixed(0)}% won, ${S.avg_r>=0?"+":""}${S.avg_r}R avg` : "graded the same way as your plans; new ideas twice a day";
+  const taken = new Set(((typeof PLANS !== "undefined" && PLANS.length) ? PLANS : ((DATA.plans||{}).plans || [])).map(p => p.source_idea_id).filter(Boolean));
   const act = I.filter(q => ["waiting","open"].includes((q.result||{}).status)), done = I.filter(q => !["waiting","open"].includes((q.result||{}).status)).slice(0, 8);
   const row = q => { const r = q.result || {}, sg = q.side==="LONG"?"up":"dn";
     return `<div style="border-bottom:1px solid var(--line);padding:6px 0"><div><b>${q.coin}</b> <span class="pill ${sg}">${q.side}</span> <span class="mut">${q.entry_type} ${fmt(q.entry)} · stop ${fmt(q.stop)} · target ${fmt(q.target)} · ${q.leverage}× · confidence ${q.confidence}/5</span>
       <span style="float:right">${r.r!=null?`<span class="num ${r.r>=0?"up":"dn"}">${r.status} ${r.r>=0?"+":""}${(+r.r).toFixed(2)}R</span>`:`<span class="mut">${r.status||""}${r.status==="open"&&r.live_r!=null?" "+(r.live_r>=0?"+":"")+r.live_r+"R":""}</span>`}
-      ${r.status==="waiting"?` <button class="aiadj" data-id="${q.id}" style="background:none;border:1px solid var(--accent);border-radius:5px;color:var(--accent);font-weight:700;padding:2px 9px;cursor:pointer" title="Load into my planner to change leverage, entry, stop or target before saving">Adjust</button> <button class="aiadopt" data-id="${q.id}" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:2px 9px;cursor:pointer" title="Copy into MY plans (graded as yours too)">I'd take it</button>`:""}</span></div>
+      ${r.status==="waiting" && taken.has(q.id)?` <span class="pill up" title="Already in your plans - adopting again would open it twice">✓ taken</span>`:""}
+      ${r.status==="waiting" && !taken.has(q.id)?` <button class="aiadj" data-id="${q.id}" style="background:none;border:1px solid var(--accent);border-radius:5px;color:var(--accent);font-weight:700;padding:2px 9px;cursor:pointer" title="Load into my planner to change leverage, entry, stop or target before saving">Adjust</button> <button class="aiadopt" data-id="${q.id}" style="background:var(--accent);border:0;border-radius:5px;color:var(--bg);font-weight:700;padding:2px 9px;cursor:pointer" title="Copy into MY plans (graded as yours too)">I'd take it</button>`:""}</span></div>
       <div style="font-size:12px;margin-top:2px">${esc(q.reason)}</div>${q.leverage_why?`<div class="mut" style="font-size:11px">Leverage ${q.leverage}×: ${esc(q.leverage_why)}</div>`:""}<div class="mut" style="font-size:11px">Wrong if: ${esc(q.invalidation||"–")} · ${new Date(q.ts*1000).toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit"})}</div></div>`; };
   $("aiplans").innerHTML = (act.length ? act.map(row).join("") : `<div class="mut" style="font-size:12px">No open ideas. ${esc(A.last_note||"")}</div>`)
     + (done.length ? `<details style="margin-top:6px"><summary class="mut" style="cursor:pointer;font-size:11.5px">Finished ideas (${done.length})</summary>${done.map(row).join("")}</details>` : "");
@@ -1313,8 +1317,8 @@ document.querySelectorAll(".seg button[data-tf]").forEach(b=>b.onclick=()=>{tf=b
 document.querySelectorAll("#ovseg button").forEach(b=>{ b.classList.toggle("on", !!OV[b.dataset.ov]); b.onclick=()=>{ OV[b.dataset.ov] = OV[b.dataset.ov] ? 0 : 1; b.classList.toggle("on", !!OV[b.dataset.ov]); try { localStorage.setItem("ov", JSON.stringify(OV)); } catch(e) {} drawChart(); }; });
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 try { showTab(localStorage.getItem("tab") || "t_brief"); const t0 = localStorage.getItem("tf"); if (t0 && TF_MS[t0]) { tf = t0; document.querySelectorAll(".seg button[data-tf]").forEach(x=>x.classList.toggle("on", x.dataset.tf===tf)); } } catch(e) {}
-["c_acct","c_risk","c_side","c_lev"].forEach(id=>$(id).oninput=()=>{ try { localStorage.setItem(id, $(id).value); } catch(e) {} calc(); });
-try { for (const id of ["c_acct","c_risk"]) { const v = localStorage.getItem(id); if (v) $(id).value = v; } } catch(e) {}
+["c_acct","c_risk","c_side","c_lev","c_hold"].forEach(id=>$(id).oninput=()=>{ try { localStorage.setItem(id, $(id).value); } catch(e) {} calc(); });
+try { for (const id of ["c_acct","c_risk","c_hold"]) { const v = localStorage.getItem(id); if (v) $(id).value = v; } } catch(e) {}
 ["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;if(id==="c_stop")delete $("c_tgt").dataset.touched;calc()});
 $("c_side").onchange=()=>{delete $("c_stop").dataset.touched;delete $("c_tgt").dataset.touched;calc()};
 $("al_add").onclick = () => { const p = +$("al_px").value; if (!p) return; const now = px(sel);

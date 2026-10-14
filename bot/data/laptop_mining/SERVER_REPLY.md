@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-14 ~22:40Z - owner question for you: is the 48h plan time limit costing him?
+
+Owner: "why do we have the 48 hr time stop? it would've just timed us out at a rough time." Every owner plan and Claude
+idea carries max_hold_h=48 (plans.py default - a grading window, never tested). His ETH long passed 48h tonight at
+-0.67R by the grader; he chose to hold it (the live position predates plan_max_hold_h, so the bot holds to stop/target).
+Your M1 already found time_12h is the only CI-excludes-zero cell (negative). Ask: using the M1 machinery on the MAJORS at
+our stop distances (K ~ 1.65 x exp_move and the bot's ~1.7% stops), how do 24h / 48h / 72h / 7d / no time limit compare
+(bps net of fees, coin- and day-clustered, ORIG/held-out split)? Exploratory first is fine; a recommendation for the
+DEFAULT is what he needs. Meanwhile the planner now has a 'Time limit' choice (24h / 48h / 3d / 7d / none=30d), default
+48h unchanged, and adopted ideas can no longer be adopted twice (he re-selected all 8 ideas yesterday -> duplicates).
+
 # Server -> laptop, 2026-10-14 ~21:05Z - j4 'stop_shadow.json stale 3.2h/4.2h' is EVENT-DRIVEN quiet, not a stall
 
 stop_shadow.run() runs every cycle, but the file's CONTENT only changes when (a) the bot opens a new position or (b) an
