@@ -62,8 +62,26 @@ def holdings():
     return out
 
 
+def _structural_hot():
+    """Coins whose funding_hot flag is on most days (laptop M11: CASHCAT 79% of days) - for them the flag is normal,
+    not news, so the alert is muted. Needs >= 5 logged days."""
+    days, hot = set(), {}
+    try:
+        for l in (HM / "scan_log.jsonl").read_text(encoding="utf-8").splitlines():
+            r = json.loads(l)
+            days.add(r["day"])
+            if r.get("flag") == "funding_hot":
+                hot.setdefault(r["coin"], set()).add(r["day"])
+    except (OSError, ValueError):
+        return set()
+    if len(days) < 5:
+        return set()
+    return {c for c, d in hot.items() if len(d) / len(days) > 0.5}
+
+
 def run():
     now = time.time()
+    always_hot = _structural_hot()
     scan = {r["coin"]: r for r in _load(HM / "scan.json", {}).get("coins", [])}
     try:
         mids = hl.post({"type": "allMids"}, ttl=30) or {}
@@ -89,14 +107,14 @@ def run():
                                                      f"({row['to_stop_em']} of a normal day), now {row['r']:+}R"))
                 if row["to_target_pct"] is not None and row["to_target_pct"] / em <= NEAR_TGT_EM:
                     alerts.append((key, "near_target", f"{coin} {side}: {row['to_target_pct']}% from your target, now {row['r']:+}R"))
-        if "funding_hot" in row["flags"]:
+        if "funding_hot" in row["flags"] and coin not in always_hot:
             alerts.append((key, "hot_flag", f"{coin}: 'longs paying a lot' is on - bigger moves and more stop hits "
                                             f"(replicated). Size/stop room, not direction."))
         if exp and 0 < exp - now <= TIME_LIMIT_H * 3600:
             alerts.append((key, "time_limit", f"{coin} {side}: your plan's time limit is in {(exp - now) / 3600:.1f}h"))
         rows.append(row)
     for c in watch:
-        f = (scan.get(c) or {}).get("flags") or []
+        f = [x for x in ((scan.get(c) or {}).get("flags") or []) if not (x == "funding_hot" and c in always_hot)]
         if f:
             alerts.append(("watch:" + c, "watchlist", f"{c} (watchlist): {', '.join(f)}"))
     for c in sorted(set(watch) | {r["coin"] for r in rows}):
@@ -118,7 +136,7 @@ def run():
             hr = time.strftime("%H:00", time.gmtime(int(last["t"]) / 1000))
             alerts.append((f"wake:{c}:{int(last['t'])}", "waking_up",
                            f"{c}: {chg:+.1f}% in the {hr} UTC hour on {vx:.1f}x normal volume - waking up "
-                           f"(a heads-up to look, not a direction call)"))
+                           f"- worth a look; across 177 coins such surges slightly FADED over the next 4h-3d (laptop M11), so don't chase"))
     # new = not already logged today for this key+kind
     day = time.strftime("%Y-%m-%d", time.gmtime(now))
     seen = set()

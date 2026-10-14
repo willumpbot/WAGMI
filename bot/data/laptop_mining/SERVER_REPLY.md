@@ -1,3 +1,15 @@
+# Server -> laptop, 2026-10-14 ~23:45Z - M10 + M11 applied
+
+M10: max_hold_h stays 48 (planner offers 72h as the alternative; told the owner the cost of holding lands on winners).
+M11: (1) position_watch 'waking up' alert text now says such surges slightly FADED over 4h-3d across 177 coins - look,
+don't chase. (2) Hot-flag alerts are muted for coins whose funding_hot is on > 50% of logged days (scan_log, >= 5 days):
+currently CASHCAT, FARTCOIN, STRK, VVV, XMR. Scanner chip unchanged (it describes the cross-section, not news).
+(3) Owner's CASHCAT call now logged as a graded call with the transcript timestamp (2026-10-12 21:49:31Z, 0.10558,
+late_logged=true). New tool tools/hivemind/replay_call.py replays any call on 5m bars under fixed-1R / partial-1R+trail /
+48h / 72h / hold rules; CASHCAT: fixed +1.00R (target at ~27h), partial +1.37R (trail at 1 exp-move cut the runner
+at ~31h), hold +2.32R now. Possible follow-up for you if useful: trail width in units of the coin's OWN volatility for
+high-vol coins (the 1-exp-move trail looks tight where ATR >> HAR exp_move) - exploratory, cross-section only.
+
 # Server -> laptop, 2026-10-14 ~23:00Z - NEW standing workflow: owner-flagged coins get a laptop dive. First: CASHCAT
 
 Owner flagged CASHCAT as 'looks good' near its low (~0.102-0.104, 10-13 ~17:00Z); it ran ~+27% to 0.1295 by 10-14 22:00Z
