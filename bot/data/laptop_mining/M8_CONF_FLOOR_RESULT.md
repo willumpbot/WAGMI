@@ -1,4 +1,4 @@
-# M8 — the "0.60 floor killed proceeds" claim is **metabrain-only: confirmed.** On the month of data I have, the floor changes **nothing at all** — and that exposes a live latent hazard worth more than the original question.
+# M8 — the "0.60 floor killed proceeds" claim is **metabrain-only: confirmed.** On the month of data I have, the floor changes **nothing at all** — and that exposed a **latent** hazard worth more than the original question (§4 corrected: it is latent, not live — the flag is set).
 
 _2026-10-13. **EXPLORATORY.** Source: `server_exports/conf_floor_decisions.jsonl`, 491 rows,
 **2026-09-13 → 2026-10-13**. The July `decisions.jsonl` gate records are **not on this disk**, so the
@@ -60,26 +60,36 @@ worth correcting because "tops out at X" is the kind of phrase that later gets u
 **living** floor, not the legacy 0.60. 453 of 491 rows carry
 `floor_source = replay_exact_matches_log`, so that 0.41 is matched against what the live log recorded.
 
-## 4. 🔴 The hazard, which is worth more than the original question
+## 4. 🔴 CORRECTED 2026-10-14 02:15Z — the hazard is LATENT, not live. I had this wrong.
 
-**`LIVING_CONF_FLOOR` appears in no `.env`, no config, no script, no service file — only in code
-defaults and tests.** And `living_conf_floor.enabled()` reads
-`os.getenv("LIVING_CONF_FLOOR", "false")`, so **the default is off, and off means `base_floor()` returns
-the legacy 0.60.**
+> **The server answered: `LIVING_CONF_FLOOR=true` and `LIVING_CONF_FLOOR_PCTL=90` are set in the live
+> `.env`, so the floor genuinely in force is 0.41/0.38 — never 0.60. There is no live hazard.**
+>
+> **And the reason I got it wrong is worse than the conclusion.** I wrote that the flag "appears in no
+> `.env`" — but **there is no `./.env` on this disk at all.** My check was
+> `grep … .env 2>/dev/null`, and **`2>/dev/null` silenced the "No such file or directory" error**,
+> leaving an empty result I read as "the pattern is absent." *File missing* and *setting absent* became
+> indistinguishable **because I suppressed the one signal that separates them.**
+>
+> **The substantive claim survived by luck:** `bot/.env` does exist (54 lines) and does not contain the
+> flag either, so "not on my disk" was true. But the inference I drew from it was wrong. The correct
+> statement was never "the flag is probably unset" — it was **"this disk does not carry the live
+> environment, so I cannot determine this from here."** The server put it in one line: *"Your disk has
+> no `.env`, hence the default."*
+>
+> **I did name the ambiguity** — the original text said the flag might be set outside the `.env` I can
+> read — **and then overrode it with "either way the hazard is live," which is the part that was not
+> entitled.** Naming an uncertainty and then concluding past it is worse than not naming it.
 
-But the live log shows a **0.41** floor in force. **Those two facts cannot both describe the same
-environment**, so one of these is true and I cannot tell which from here:
+**What survives, correctly scoped:** `living_conf_floor.enabled()` reads
+`os.getenv("LIVING_CONF_FLOOR", "false")`, so **the default is off, and off returns the legacy 0.60**
+against a confidence distribution whose **p90 is 0.395**. That is a **latent** hazard, guarded by one
+environment variable: lose it to a fresh shell, a new deploy, or a container without it, and
+**~99.4% of decisions fall below the floor and the LLM path goes to zero admits.**
 
-1. the desktop sets the flag **outside** the `.env` I can read, or
-2. the `.env` on my disk is **stale** relative to the desktop.
-
-**Either way the hazard is the same and it is live:** the flag is the only thing standing between the
-bot and a floor of 0.60, against a confidence distribution whose **p90 is 0.395**. If that variable is
-ever lost — a fresh shell, a new deploy, a container without it — `base_floor()` silently returns 0.60,
-**roughly 99.4% of decisions fall below it, and the LLM path goes to zero admits.**
-
-**That is not hypothetical. It is precisely the outage the code comment already documents: zero trades
-2026-07-29 → 2026-09-12.** Six weeks.
+**The consequence is not hypothetical even though the trigger now is:** losing that variable reproduces
+precisely the outage the code comment already documents — **zero trades 2026-07-29 → 2026-09-12**, six
+weeks. **What is hypothetical is the trigger**, and §4's correction is that the flag is in fact set.
 
 **A default that silently reinstates a known six-week outage is the wrong default.** Two fixes, and I
 prefer the second:
