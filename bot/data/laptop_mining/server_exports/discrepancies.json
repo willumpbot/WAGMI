@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-14T13:18:10+00:00",
- "now": "2026-10-14T13:18:05+00:00",
+ "generated": "2026-10-14T14:28:40+00:00",
+ "now": "2026-10-14T14:28:39+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -169,9 +169,9 @@
    "check": "D3",
    "id": "exp_move_BTC",
    "severity": "warn",
-   "what": "exp_move for BTC disagrees by 27% across live outputs",
+   "what": "exp_move for BTC disagrees by 29% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 1.62,
+    "state.vol.next_day_move_pct": 1.47,
     "scan.exp_move": 1.5,
     "chief.expected_move_pct": 1.9
    }
