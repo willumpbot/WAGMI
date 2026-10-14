@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-14T05:13:28+00:00",
- "now": "2026-10-14T05:13:22+00:00",
+ "generated": "2026-10-14T06:26:26+00:00",
+ "now": "2026-10-14T06:26:23+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 3,
+   "flagged": 4,
    "high": 3,
    "not_automated": 0
   },
@@ -55,8 +55,8 @@
    "not_automated": 1
   },
   "D11": {
-   "flagged": 1,
-   "high": 1,
+   "flagged": 0,
+   "high": 0,
    "not_automated": 3
   },
   "D12": {
@@ -164,6 +164,17 @@
      "impl_hash": "af42d2e18c676c6096433286e59c512f1c11c2669aaab17f70ef39d7d135ff15"
     }
    ]
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_NEAR",
+   "severity": "warn",
+   "what": "exp_move for NEAR disagrees by 11% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 4.51,
+    "scan.exp_move": 4.56,
+    "chief.expected_move_pct": 5.0
+   }
   },
   {
    "check": "D5",
@@ -303,14 +314,6 @@
    "id": "prereg_ideas:n",
    "severity": "warn",
    "what": "PREREG_IDEAS: n is 4 per [L:TRACKERS] but 1 per server stats"
-  },
-  {
-   "check": "D11",
-   "id": "stream_market_depth:depth bands are cumulative",
-   "severity": "high",
-   "what": "stream stream_market_depth: 1/190 recent rows break 'depth bands are cumulative'",
-   "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
-   "example": "{\"ts\": \"2026-10-14T01:37:01Z\", \"symbol\": \"WIF\", \"l2\": {\"mid\": 0.207315, \"spread\": 1e-05, \"spread_bps\": 0.4824, \"bid_depth_0_1pct\": 43226.0, \"ask_depth_0_1pct\": 110904.0, \"imbalance_0_1pct\": -0.4391, \"bid_depth_0_5pct\": 978030.0, \"ask_depth_0_5pct\": 868895.0, \"imbalance_0_5pct\": 0.0591, \"bid_depth_1p"
   }
  ],
  "not_automated": [
