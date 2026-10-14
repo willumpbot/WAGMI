@@ -408,7 +408,7 @@ def build_terminal():
             "journal": _load(HM / "journal.json", {}) or {},
             "scan": _load(HM / "scan.json", {}) or {}, "plans": _load(HM / "plans.json", {}) or {},
             "tgTrack": _load(HM / "tg" / "track.json", {}) or {},
-            "away": _away_data(), "tradeHist": _trade_history(),
+            "away": _away_data(), "tradeHist": _trade_history(), "watch": _load(HM / "watch.json", {}),
             "aiPlans": _load(HM / "ai_plans.json", {}) or {},
             "history": _load(HM / "history.json", {}) or {},
             "uptime": _last_uptime(),

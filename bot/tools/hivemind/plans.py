@@ -363,8 +363,19 @@ def resolve(write=True):
     reviews = _reviews()
     plans = []
     last_px = {}
+    try:   # plans the bot is STILL holding live (owner chose to hold past the time limit, 10-14 ETH long)
+        held = {k for k, v in (_exec_results({}) or {}).items() if (v or {}).get("status") == "open"}
+    except Exception:
+        held = set()
     for pl in (r for r in rows if r.get("kind") == "plan"):
         old = (prev.get(pl["id"]) or {}).get("result") or {}
+        if pl["id"] in held:
+            # the grade follows the real position: no time-out while it is still open; stop/target still end it
+            pl_g = dict(pl, max_hold_h=float(pl.get("max_hold_h") or 48) + 24 * 365)
+            if old.get("status") == "timed out":
+                old = {}
+        else:
+            pl_g = pl
         if old.get("status") in ("won", "lost", "timed out", "expired"):
             res = old
         elif pl["id"] in cancelled and old.get("status") != "open":
@@ -372,7 +383,7 @@ def resolve(write=True):
         else:
             try:
                 bars = hl.candles(pl["coin"], "5m", pl["ts"] * 1000 - 300000, ttl=50)
-                res = _walk(pl, bars or [], now)
+                res = _walk(pl_g, bars or [], now)
                 if bars:
                     last_px[pl["id"]] = float(bars[-1]["c"])
             except Exception as e:
