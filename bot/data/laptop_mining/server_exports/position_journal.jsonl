@@ -3109,3 +3109,4 @@
 {"position_id": "7d1d2f48149844ed9ed880de83b9d3bc", "phase": "CLOSING", "ts": "2026-10-12T06:20:20.378389+00:00", "symbol": "NEAR", "meta": {"action": "SL", "price": 5.8627130305}}
 {"position_id": "7d1d2f48149844ed9ed880de83b9d3bc", "phase": "CLOSED_BOOKED", "ts": "2026-10-12T06:20:20.741936+00:00", "symbol": "NEAR"}
 {"position_id": "fc49c5465c7547da9fe65b85a4c28282", "phase": "OPEN", "ts": "2026-10-12T21:46:49.387874+00:00", "symbol": "ETH", "meta": {"side": "LONG", "entry": 2489.1, "qty": 0.0962}}
+{"position_id": "6d9348402ef144f3bba38180f9aedf99", "phase": "OPEN", "ts": "2026-10-14T00:35:59.927280+00:00", "symbol": "HYPE", "meta": {"side": "SHORT", "entry": 82.3233, "qty": 2.4}}
