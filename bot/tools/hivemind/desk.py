@@ -302,6 +302,18 @@ def _trade_history():
                 if sm:
                     out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts"),
                                             why_untraded=X.get("reason") or X.get("status") or ""))
+            # append-only resolved log (laptop 140/142): one row per plan, written once, when its sim finishes
+            res_p = HM / "owner_plan_sims_resolved.jsonl"
+            try:
+                done = {json.loads(l).get("plan_id") for l in res_p.read_text(encoding="utf-8").splitlines() if l.strip()}
+            except (OSError, ValueError):
+                done = set()
+            new_rows = [dict(sm, resolved_logged_at=time.time()) for sm in out["sims"]
+                        if sm.get("status") not in (None, "open") and sm.get("plan_id") not in done]
+            if new_rows:
+                with open(res_p, "a", encoding="utf-8") as f:
+                    for r in new_rows:
+                        f.write(json.dumps(r, default=str) + chr(10))
             snap = HM / "owner_plan_sims.json"
             tmp = snap.with_suffix(".tmp")
             tmp.write_text(json.dumps({"updated": time.time(), "sims": out["sims"]}, default=str), encoding="utf-8")

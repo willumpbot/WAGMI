@@ -411,6 +411,13 @@ def assemble():
                 n_f = (cs_.get("bull_families") or 0) + (cs_.get("bear_families") or 0)
                 # LAPTOP_REPLY_2.md: the squeeze model was fitted on 6 families; rescale our count to that range
                 dis6 = (cs_.get("dissent_families") or 0) / n_f * 6.0 if n_f else None
+                try:   # laptop M3 (reply 144): the LIVE stage-2 dissent input, per coin per cycle, append-only
+                    with open(DATA / "hivemind" / "dissent_log.jsonl", "a", encoding="utf-8") as _f:
+                        _f.write(json.dumps({"ts": time.time(), "sym": sym, "dis6": dis6,
+                                             "dissent_families": cs_.get("dissent_families"), "n_families": n_f,
+                                             "funding_hourly": (st.get("market") or {}).get("funding_hourly")}) + chr(10))
+                except Exception:
+                    pass
                 try:   # stage-2 vol forecast needs the dissent count, so it is refined here
                     v2 = voice_vol(sym, dis6, (st.get("market") or {}).get("funding_hourly"))
                     if v2:

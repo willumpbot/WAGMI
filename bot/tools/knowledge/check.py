@@ -529,7 +529,7 @@ def _last_rows(path, n):
     return rows
 
 
-PRODUCTS = {"hivemind/plans.json": 1.0, "hivemind/scan.json": 1.0}   # derived files the 15-min cycle rebuilds
+PRODUCTS = {"hivemind/plans.json": 1.5, "hivemind/scan.json": 1.5, "hivemind/owner_plan_sims.json": 1.5}   # vs NOW, never vs another stamp; 15-min cycle, a skipped run can take ~45 min (laptop 144)
 
 
 def check_d9_substrate_death(ctx):
