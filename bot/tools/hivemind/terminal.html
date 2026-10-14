@@ -991,14 +991,29 @@ function botPos(s){
   return {...b, now, open, mv, stopPnl, total: (b.realized_pnl||0) + (open||0)};
 }
 function tradeHist(){
+  // ONE "recently closed" list, newest first: the bot's trades, your plans the bot ran, and your plans that played out
+  // on live prices (coins the bot can't trade, or plans it skipped). Owner 10-14: "couldn't see what we've been doing".
   const T = DATA.tradeHist || {}, d = t => new Date(t*1000).toISOString().slice(5,16).replace("T"," ");
-  const P = (T.plans||[]).map(x => { const SM = SIMDONE(x.plan_id); return SM ? {...x, pnl:SM.total_usd, r:SM.r, exit:SM.mark,
-    ts:SM.exit_ts||x.ts, legs:(SM.partials||[]).length+1, reason:SIMWHY(SM)} : x; }).slice().reverse(), B = (T.bot||[]).slice().reverse().slice(0,25);
-  const why = r => ({SL:"stop hit",TP1:"first target",TP2:"second target",LLM_EXIT_HIGH:"bot closed early",LLM_EXIT_PARTIAL:"bot took part off"}[r] || (r||"").toLowerCase().replace(/_/g," "));
-  let h = "";
-  if (P.length) h += `<div class="mut" style="font-size:11px;margin:2px 0">Your plans the bot ran (kept out of the bot's own record)</div><table class="pos num"><tr><th>Closed</th><th>Coin</th><th>Entry</th><th>Last exit</th><th>Result</th><th>How it ended</th></tr>${P.map(x=>`<tr><td class="mut">${d(x.ts)}</td><td><b>${x.sym}</b> <span class="${x.side==="SHORT"?"dn":"up"}">${x.side}</span></td><td>${fmt(x.entry)}</td><td>${fmt(x.exit)}</td><td class="${x.pnl>=0?"up":"dn"}">${x.pnl>=0?"+":""}$${x.pnl.toFixed(2)} (${x.r>=0?"+":""}${x.r.toFixed(2)}R)</td><td class="mut">${x.legs>1?(x.legs-1)+" partial take-profit"+(x.legs>2?"s":"")+", then ":""}${why(x.reason)}</td></tr>`).join("")}</table>`;
-  h += `<div class="mut" style="font-size:11px;margin:8px 0 2px">The bot's own trades</div>` + (B.length ? `<table class="pos num"><tr><th>Closed</th><th>Coin</th><th>Entry</th><th>Exit</th><th>Net</th><th>How it ended</th></tr>${B.map(x=>`<tr><td class="mut">${d(x.ts)}</td><td><b>${x.sym}</b> <span class="${x.side==="SHORT"?"dn":"up"}">${x.side}</span></td><td>${fmt(x.entry)}</td><td>${fmt(x.exit)}</td><td class="${x.pnl>=0?"up":"dn"}">${x.pnl>=0?"+":""}$${x.pnl.toFixed(2)}</td><td class="mut">${why(x.reason)}</td></tr>`).join("")}</table>` : `<span class="mut">none yet</span>`);
-  $("tradehist").innerHTML = h;
+  const why = r => ({SL:"stop hit",TP1:"first target",TP2:"second target",LLM_EXIT_HIGH:"bot closed early",LLM_EXIT_PARTIAL:"bot took part off",
+    TRAILING_STOP:"trailing stop",OWNER_PLAN_MAX_HOLD:"your time limit"}[r] || (r||"").toLowerCase().replace(/_/g," "));
+  const usd = v => v==null ? "—" : `${v>=0?"+":"-"}$${Math.abs(+v).toFixed(2)}`;
+  const rr = r => r==null ? "" : ` <span class="mut">(${r>=0?"+":""}${(+r).toFixed(2)}R)</span>`;
+  const rows = [];
+  const ranIds = new Set();
+  for (const x of (T.plans||[])) { const SM = SIMDONE(x.plan_id); if (x.plan_id) ranIds.add(x.plan_id);
+    rows.push(SM ? {ts:SM.exit_ts||x.ts, who:"You · bot ran it", coin:x.sym, side:x.side, entry:x.entry, exit:SM.mark, pnl:SM.total_usd, r:SM.r,
+                    how:`${(SM.partials||[]).length?(SM.partials.length)+" partial"+(SM.partials.length>1?"s":"")+", then ":""}${SIMWHY(SM)} (Profits only)`}
+                 : {ts:x.ts, who:"You · bot ran it", coin:x.sym, side:x.side, entry:x.entry, exit:x.exit, pnl:x.pnl, r:x.r, how:why(x.reason)}); }
+  for (const m of (T.sims||[])) if (m.status !== "open" && m.bot_traded === false && !ranIds.has(m.plan_id))
+    rows.push({ts:m.exit_ts||m.as_of, who:"You · simulated", coin:m.coin, side:m.side, entry:m.entry, exit:m.mark, pnl:m.total_usd, r:m.r,
+               how:m.status==="target"?"hit your target":m.status==="stop"?"hit your stop":"your time limit"});
+  for (const x of (T.bot||[])) rows.push({ts:x.ts, who:"Bot", coin:x.sym, side:x.side, entry:x.entry, exit:x.exit, pnl:x.pnl, r:null, how:why(x.reason)});
+  rows.sort((a,b) => (b.ts||0) - (a.ts||0));
+  const show = rows.slice(0, 30);
+  $("tradehist").innerHTML = show.length ? `<table class="pos num"><tr><th>Closed</th><th>Who</th><th>Coin</th><th>Entry</th><th>Exit</th><th>Result</th><th>How it ended</th></tr>${show.map(x =>
+    `<tr><td class="mut">${d(x.ts)}</td><td>${x.who}</td><td><b>${x.coin}</b> <span class="${x.side==="SHORT"?"dn":"up"}">${x.side}</span></td><td>${fmt(x.entry)}</td><td>${x.exit!=null?fmt(x.exit):"—"}</td><td class="${(x.pnl||0)>=0?"up":"dn"}">${usd(x.pnl)}${rr(x.r)}</td><td class="mut">${x.how}</td></tr>`).join("")}</table>
+    <div class="mut" style="font-size:11px;margin-top:6px">Everything that closed, newest first: the bot's trades, your plans the bot ran, and your plans that played out on live prices. Paper money.</div>`
+    : `<span class="mut">Nothing closed yet.</span>`;
 }
 // Owner's record for his BTC short (10-13): the Profits-only result, not the bot's early exit.
 const SIMDONE = id => (((DATA.tradeHist||{}).sims)||[]).find(m => m.plan_id === id && m.status !== "open");
