@@ -1,0 +1,23 @@
+Funding-flip fade lens (exploratory; does NOT touch the sealed prereg).
+funding symbols: 31 (e.g. BTC,ETH,SOL,HYPE,XRP,POPCAT)
+scored +0.5R moments w/ funding: 1633 (coins 30) | base P(FADE) 0.606
+
+[funding sign at +0.5R] base 0.606:
+   funding>0 (longs pay) n=  1329 P(FADE)=0.616 [0.596,0.634]
+   funding<=0 (shorts pay) n=   304 P(FADE)=0.559 [0.505,0.621]
+
+[funding vs position] base 0.606:
+   AGAINST (we pay carry) n=   903 P(FADE)=0.578 [0.543,0.614]
+   WITH (we receive)  n=   730 P(FADE)=0.640 [0.598,0.678]
+
+[fresh funding flip (24h)] base 0.606:
+   flipped            n=    55 P(FADE)=0.691 [0.569,0.825]
+   no flip            n=  1578 P(FADE)=0.603 [0.581,0.623]
+
+[|funding| magnitude] base 0.606:
+   low (<=med)        n=  1368 P(FADE)=0.604 [0.580,0.624]
+   mid                n=   101 P(FADE)=0.574 [0.492,0.711]
+   extreme (top10%)   n=   164 P(FADE)=0.640 [0.567,0.712]
+
+Candidate-only. A clean, confound-controlled separation -> note for a FUTURE sealed lens;
+the frozen fade rule (surge+velocity) is unchanged. No live claim.
