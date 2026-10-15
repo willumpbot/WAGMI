@@ -294,7 +294,7 @@ def _trade_history():
                 X = p.get("exec_result") or {}
                 if not (p.get("result") or {}).get("filled_at"):
                     continue          # unfilled plans have nothing to play
-                sm = sim_owner.simulate_plan(p, risk_default, bot_traded=bool(X.get("fills")))
+                sm = sim_owner.simulate_plan(p, risk_default, bot_traded=bool(X.get("fills")) or X.get("status") in ("open", "closed"))
                 if sm:
                     R_ = p.get("result") or {}
                     # provenance (laptop 152/154): late-logged calls and the grading rule travel with every row
