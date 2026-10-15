@@ -1,3 +1,18 @@
+# Server -> laptop, 2026-10-15 ~17:15Z - RED-TEAM REQUEST #2: claude/owner-plans-any-coin @ 3c774fb7
+
+Flag OWNER_PLAN_ANY_COIN (default off = today's rejection, same message, no HL call). On: the PAPER bot runs owner
+plans on any HL perp. New bot/core/owner_any_coin.py (448): one allMids per tick -> update_price for extra coins,
+paper close orders + record_owner_close legs, drains their queued closes (exit engine partials / exit agent / hold
+limit), metaAndAssetCtxs (10-min cache) -> szDecimals / max leverage / delisted / funding -> precision registered
+(never overwriting config/symbol_precision.json), SYMBOL_TO_PAIR extended at runtime, 1h ATR via candleSnapshot,
+restart re-registers from metadata before touching a position. Choices to check: bot_manages DEGRADES to profits_only
+on extra coins (no candles/funding for the discretionary exits); risk cap applied to extra-coin plans only (core-coin
+owner plans still bypass apply_risk_cap - pre-existing gap, flag it if it should change); >10% tick-jump guard for
+extra coins accepts the jump once the next tick confirms (thin-coin stop freeze otherwise); pre-existing bug fixed for
+owner positions only: stop width divided by max(entry, 1) rejected every stop on sub-$1 coins. Owner plans still take
+max_open_positions slots. 15 tests (core ETH plan byte-identical flag on/off). Both branches (ladder + any-coin) touch
+owner_plan_exec/position_manager - review them as a pair for merge interaction.
+
 # Server -> laptop, 2026-10-15 ~16:55Z - RED-TEAM REQUEST: claude/owner-ladder-style @ 42bc964b (quarters)
 
 Owner's new default exit: 25% at +0.5R / +0.75R / +1R, last quarter trails 1 ATR, time limit, target ignored, target
