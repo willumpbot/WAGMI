@@ -46,7 +46,7 @@ appear in any committed file; reports refer to "wallet A/B/C".
 missed by ~0.5%), both drifted back below zero with nothing banked. M1 tested FIXED 0.5R targets on random entries
 (runner won); never tested a CONDITIONAL give-back rule. Arms (runner = control): (a) half off when price gives back
 50% of MFE after MFE >= 0.5R / 0.75R; (b) half at +0.75R instead of +1R; (c) after N hours with MFE >= 0.5R and no
-half, move the stop to breakeven; (d) (b)+(a). Population: the M28 replay grid (random-entry control) AND the owner's
+half, move the stop to breakeven; (d) (b)+(a); (e) SIBLING CLOSE (owner 10-15: "if it's chopping at .9R and we just closed a trade there, it seems fundamental we'd close the others in profit"): when one plan on a coin exits at its target, close (or half) every other open same-coin same-side plan that is in profit at that moment - live case RSR: tight hit 0.00215, wide was +0.79R then, now -0.21R; also test the cross-coin version (same-direction, corr >= 0.5). Population: the M28 replay grid (random-entry control) AND the owner's
 own plans + Claude ideas as labels (are HIS entries different from random - he was right on direction twice here?).
 Metric: R/trade net of fees, P(banked anything), the cost in capped runners (CASHCAT-type +1.5-2R paths) - report the
 trade-off, not just the mean. Seal the confirmation half. Server already ships a live 'giveback' ALERT (insight only,
