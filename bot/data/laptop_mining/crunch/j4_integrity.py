@@ -259,7 +259,7 @@ CLOSE_DRIVEN = ("confidence_state.json",)
 # fire -- it alarms only when a TRADE_OPENED is older than UNMATCHED_OPEN_GRACE_H and its
 # position_id never appeared in the file. That is the server's own suggestion, and the ids line up:
 # stop_shadow.json is keyed by position_id, exactly the field TRADE_OPENED carries.
-EVENT_DRIVEN = ("stop_shadow.json",)
+EVENT_DRIVEN = ("stop_shadow.json", "owner_watchlist.json")  # event-driven files: rewritten only on a change, never stale by clock (server 10-15 06:45Z)
 UNMATCHED_OPEN_GRACE_H = 1.0
 
 
