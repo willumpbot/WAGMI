@@ -1,0 +1,43 @@
+Project X part 3: fade-vs-run atlas. Circumstances strictly at/<= the +0.5R bar.
+scored (+0.5R reachers that RAN or FADED): 22256 (coins 176) | base P(FADE) = 0.642 (RUN 0.358)
+
+[velocity (bars to +0.5R)]  P(FADE) by bucket (base 0.642); CI clustered by coin:
+   Q1 (low)         n=  5732  P(FADE)=0.611 [0.599,0.622] <== lower FADE (runs)
+   Q2               n=  5675  P(FADE)=0.625 [0.613,0.637] <== lower FADE (runs)
+   Q3               n=  5669  P(FADE)=0.665 [0.652,0.678] <== higher FADE
+   Q4 (high)        n=  5180  P(FADE)=0.669 [0.658,0.680] <== higher FADE
+
+[vol tier (ATR at entry)]  P(FADE) by bucket (base 0.642); CI clustered by coin:
+   Q1 (low)         n=  5565  P(FADE)=0.598 [0.584,0.611] <== lower FADE (runs)
+   Q2               n=  5563  P(FADE)=0.648 [0.635,0.661]
+   Q3               n=  5564  P(FADE)=0.659 [0.645,0.672] <== higher FADE
+   Q4 (high)        n=  5564  P(FADE)=0.662 [0.648,0.676] <== higher FADE
+
+[max bar-range into +0.5R]  P(FADE) by bucket (base 0.642); CI clustered by coin:
+   Q1 (low)         n=  5564  P(FADE)=0.674 [0.662,0.686] <== higher FADE
+   Q2               n=  5564  P(FADE)=0.682 [0.668,0.696] <== higher FADE
+   Q3               n=  5564  P(FADE)=0.630 [0.617,0.643]
+   Q4 (high)        n=  5564  P(FADE)=0.582 [0.568,0.595] <== lower FADE (runs)
+
+[volume surge at +0.5R bar]  P(FADE) by bucket (base 0.642); CI clustered by coin:
+   Q1 (low)         n=  5564  P(FADE)=0.696 [0.685,0.707] <== higher FADE
+   Q2               n=  5564  P(FADE)=0.659 [0.646,0.671] <== higher FADE
+   Q3               n=  5564  P(FADE)=0.639 [0.626,0.651]
+   Q4 (high)        n=  5564  P(FADE)=0.573 [0.560,0.587] <== lower FADE (runs)
+
+[position vs 20d trend]  P(FADE) by bucket (base 0.642); CI clustered by coin:
+   AGAINST trend    n= 10609  P(FADE)=0.648 [0.640,0.657]
+   WITH trend       n= 11647  P(FADE)=0.636 [0.626,0.645]
+
+[BTC co-move (24h)]  P(FADE) by bucket (base 0.642); CI clustered by coin:
+   BTC AGAINST      n=  6785  P(FADE)=0.682 [0.669,0.695] <== higher FADE
+   BTC WITH         n= 15471  P(FADE)=0.624 [0.616,0.631] <== lower FADE (runs)
+
+[time-of-day (UTC) of +0.5R]  P(FADE) by bucket (base 0.642); CI clustered by coin:
+   Asia 0-7h        n= 10676  P(FADE)=0.617 [0.607,0.625] <== lower FADE (runs)
+   EU 8-15h         n=  8198  P(FADE)=0.645 [0.634,0.655]
+   US 16-23h        n=  3382  P(FADE)=0.714 [0.698,0.729] <== higher FADE
+
+A bucket whose CI is clear of the base rate is a PRE-PEAK tell of fade vs run -> candidate
+conditional signal (ladder harder when fade-prone). Exploratory; survivors -> sealed study.
+wrote m32c_result.json
