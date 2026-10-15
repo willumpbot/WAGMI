@@ -1,0 +1,21 @@
+M30 (f) protected-runner-clock (Amendment 1): paired, double-difference, T-sweep.
+SNAPSHOT: candles_1h rows=892231 max_t=1792072800000
+moments: 51930 (coins 176)
+=== (f) PRE-REGISTERED MDE TABLE (protected-runner set; MDE=2.8*SE, two-sided 5% / 80%) ===
+  T=12h | protected n= 16349 | binding n=  7644 | common n=  7507 | SD=0.0082 | MDE=0.0228 R
+  T=18h | protected n= 16349 | binding n=  5435 | common n=  7507 | SD=0.0053 | MDE=0.0149 R
+  T=24h | protected n= 16349 | binding n=  3383 | common n=  7507 | SD=0.0033 | MDE=0.0092 R
+  T=30h | protected n= 16349 | binding n=  1953 | common n=  7507 | SD=0.0015 | MDE=0.0042 R
+=== (f) POSITIVE CONTROL + PLACEBO at T=24 ===
+  injected post-cap decay delta=0.0092 R on remainder -> expected +0.0046 R; recovered +0.0046 R (PASS)
+  placebo (zero-injection, fresh coin-resampled null): mean +0.0000 R [-0.0002,0.0002] (PASS)
+=== (f) THE READ: DOUBLE DIFFERENCE D_real - D_null (headline), widest coin/day-block CI ===
+  T=12h | D_real -0.0020 | D_null -0.0006 | DOUBLE-DIFF -0.0015 R [-0.0196,+0.0134] | NULL
+        big-runner-so-far(MFE@cap>=1.5R) cell: n=3095 (coins=176) double-diff -0.0196 [-0.0842,+0.0368]
+  T=18h | D_real +0.0013 | D_null -0.0003 | DOUBLE-DIFF +0.0016 R [-0.0093,+0.0120] | NULL
+        big-runner-so-far(MFE@cap>=1.5R) cell: n=2650 (coins=176) double-diff -0.0072 [-0.0534,+0.0364]
+  T=24h | D_real -0.0009 | D_null -0.0001 | DOUBLE-DIFF -0.0008 R [-0.0074,+0.0059] | NULL <<< PRIMARY
+        big-runner-so-far(MFE@cap>=1.5R) cell: n=1814 (coins=176) double-diff -0.0088 [-0.0517,+0.0305]
+  T=30h | D_real -0.0010 | D_null -0.0001 | DOUBLE-DIFF -0.0009 R [-0.0039,+0.0018] | NULL
+        big-runner-so-far(MFE@cap>=1.5R) cell: n=1197 (coins=176) double-diff -0.0150 [-0.0440,+0.0141]
+wrote m30f_result.json
