@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-15T08:12:01+00:00",
- "now": "2026-10-15T08:12:00+00:00",
+ "generated": "2026-10-15T09:13:29+00:00",
+ "now": "2026-10-15T09:13:29+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 6,
+   "flagged": 4,
    "high": 3,
    "not_automated": 0
   },
@@ -55,8 +55,8 @@
    "not_automated": 1
   },
   "D11": {
-   "flagged": 0,
-   "high": 0,
+   "flagged": 1,
+   "high": 1,
    "not_automated": 3
   },
   "D12": {
@@ -169,33 +169,11 @@
    "check": "D3",
    "id": "exp_move_ETH",
    "severity": "warn",
-   "what": "exp_move for ETH disagrees by 14% across live outputs",
+   "what": "exp_move for ETH disagrees by 16% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 2.02,
+    "state.vol.next_day_move_pct": 1.98,
     "scan.exp_move": 2.09,
     "chief.expected_move_pct": 2.3
-   }
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_SOL",
-   "severity": "warn",
-   "what": "exp_move for SOL disagrees by 12% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 2.33,
-    "scan.exp_move": 2.39,
-    "chief.expected_move_pct": 2.6
-   }
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_XRP",
-   "severity": "warn",
-   "what": "exp_move for XRP disagrees by 13% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 2.22,
-    "scan.exp_move": 2.32,
-    "chief.expected_move_pct": 2.5
    }
   },
   {
@@ -336,6 +314,14 @@
    "id": "prereg_ideas:n",
    "severity": "warn",
    "what": "PREREG_IDEAS: n is 4 per [L:TRACKERS] but 1 per server stats"
+  },
+  {
+   "check": "D11",
+   "id": "stream_market_depth:depth bands are cumulative",
+   "severity": "high",
+   "what": "stream stream_market_depth: 1/176 recent rows break 'depth bands are cumulative'",
+   "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
+   "example": "{\"ts\": \"2026-10-15T08:37:02Z\", \"symbol\": \"ETH\", \"l2\": {\"mid\": 2373.75, \"spread\": 0.1, \"spread_bps\": 0.4213, \"bid_depth_0_1pct\": 3017.7462, \"ask_depth_0_1pct\": 5110.301, \"imbalance_0_1pct\": -0.2574, \"bid_depth_0_5pct\": 16925.2327, \"ask_depth_0_5pct\": 18358.5159, \"imbalance_0_5pct\": -0.0406, \"bid_dept"
   }
  ],
  "not_automated": [
