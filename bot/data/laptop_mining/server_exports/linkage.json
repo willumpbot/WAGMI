@@ -1,5 +1,5 @@
 {
- "updated": 1792091591.6943176,
+ "updated": 1792095310.026002,
  "filled_plans": 16,
  "gaps": [
   {
@@ -9,7 +9,7 @@
    "missing": "dive result",
    "owner": "laptop",
    "status": "open",
-   "filled_h_ago": 3.6
+   "filled_h_ago": 4.6
   },
   {
    "plan_id": "4d8c000ca5",
@@ -18,10 +18,10 @@
    "missing": "dive result",
    "owner": "laptop",
    "status": "open",
-   "filled_h_ago": 3.6
+   "filled_h_ago": 4.7
   }
  ],
  "stale": [],
- "laptop_export_age_min": 55.6,
+ "laptop_export_age_min": 58.3,
  "ok": false
 }
