@@ -1,42 +1,37 @@
-# Project X part 5 - "how much of my past loss was EXITS vs ENTRIES?" ANSWER (majors, self-sourced): on your BIG coins you're about BREAKEVEN; the loss is in the SMALL-CAPS. Where you do lose on majors, it's ~50/50 entry vs exit by $ - but the exit give-backs are FEWER and ~3x BIGGER each, which is exactly what the ladder + fade-tell target.
+# Project X part 5 (NOW 89% COVERED via data.binance.vision) - "how much of my loss was exits vs entries?" UPDATED ANSWER: once the thin-book small-caps are in, GIVING BACK WINNERS is the bigger dollar loss (-$831 over 38 trips) vs never-went-my-way (-$483 over 60). The majors alone are ~even; the small-caps add the big exit-give-back - the SUI/ENA spike-then-reverse shape the ladder + fade-lean target.
 
-_2026-10-15. wallet_exit_vs_entry.py. Reconstructed 261 round-trips from hl_fills (wallet A-I, gitignored;
-net closedPnl -$726, fees $1,211 - reconciles to M29's ballpark). HL + panels candles don't reach the
-2025-09..2026-02 fill era, so I SELF-SOURCED Coinbase 1h candles for the majors (BTC/SOL/ETH/XRP; 159 of
-261 trips = 69%). MFE = favorable % the entry offered over the holding window; give-back = MFE - realised.
-Coinbase SPOT vs HL PERP has a small basis - MFE% is a close proxy, stated._
+_2026-10-15. wallet_exit_vs_entry.py. 261 round-trips from hl_fills (wallet A-I, gitignored). Candle paths
+SELF-SOURCED: Coinbase 1h for its listed coins (BTC/SOL/ETH/XRP/AVAX/PUMP/PENGU/DOT/LTC) + the Binance
+public bulk archive data.binance.vision for the small-caps (HYPE/BNB/ASTER/XPL; PC reply 7c3c30a9). 233
+of 261 trips covered (89%). GAP: JUP (69 fills, ~18 trips) is not on the Binance futures archive (404)._
 
-## The split (majors, closedPnl $)
+## The split (covered trips, closedPnl $)
 | bucket | trips | $ | per trip |
 |---|---|---|---|
-| winners | 67 | +$1,252 | +$18.7 |
-| ENTRY-driven losers (never went his way, MFE<0.5%) | 50 | -$373 | -$7.5 |
-| EXIT-driven losers (went green >=1% then closed red) | 17 | -$332 | -$19.5 |
-| **majors net** | 159 | **+$291** | |
-| non-major small-caps (ASTER/HYPE/BNB/JUP/PUMP; NO candle source) | ~82 | **~-$1,017** (residual) | |
+| winners | 104 | +$1,569 | +$15.1 |
+| ENTRY-driven losers (never went his way, MFE<0.5%) | 60 | -$483 | -$8.0 |
+| **EXIT-driven losers (went green >=1% then closed red)** | 38 | **-$831** | **-$21.9** |
+mean MFE available 1.73%, mean realised -0.20%, capture -11%, mean give-back 1.93%/trip.
 
-Mean MFE available 0.97%/trip, mean realised -0.18%, capture -19% (he nets none of the available move -
-fees + the entry misses eat it). Mean give-back 1.16%/trip left on the table.
+## The update vs the majors-only read
+- Majors alone were ~even (entry -$420 vs exit -$338). Adding the thin-book small-caps FLIPS it: the
+  EXIT give-back (-$831) is now the biggest dollar loss - and it is ENTIRELY the small-caps. They spike
+  (go green >=1%) then V-reverse and close red - the SUI/ENA thin-book pattern, which is exit-shaped.
+- So the bleed is not "bad entries" - it is GIVING BACK WINNERS on thin coins. That is exactly the slice
+  the quarters ladder (SUI saved ~0.8R) and the fade-lean are built for.
 
-## What it means
-1. **Your majors are ~breakeven (+$291).** The real bleed is the SMALL-CAPS (~-$1,017 residual) - the
-   thin-book coins where squeezes stop you out (SUI, ENA pattern). I can't see their price paths (not on
-   Coinbase); that decomposition needs their candles (PC or another source).
-2. **On the majors, entry and exit cost about the SAME in $** (-$373 vs -$332). By COUNT entry is the
-   bigger problem (50 vs 17 losers never went your way = direction/entry), but each exit give-back costs
-   ~3x more (-$19.5 vs -$7.5): the green-then-red trades are the expensive ones.
-3. **The exit give-backs (17 trips, -$332) are exactly what the ladder + fade-tell address** - the
-   costliest-per-trade failure mode. So the exit work is aimed at the right slice - but it is NOT the
-   majority of the loss; entry/direction is just as much, and the small-caps dwarf both.
+## Honest caveat (don't over-read the small-cap exit figure)
+Small-cap MFE comes from Binance perp; on a THIN coin the spike shown there may not have been exitable on
+HL's thinner book. So part of the "-$831 exit give-back" is really "shouldn't have traded a spiky thin
+coin" - the line between a bad EXIT and a bad INSTRUMENT choice blurs for thin-book small-caps. Either
+framing points to the same fix: ladder/trim the thin-coin spikes, or trade them smaller/not at all. JUP
+(~-? , 69 fills) still uncovered -> the one remaining gap; covered net is -$130 of the -$726 total, so
+JUP + the uncovered tail hold ~-$596 (likely a big chunk - flag to re-pull if JUP lists elsewhere).
 
 ## Rules for the owner (one number each)
-1. On the big coins you trade, you're basically breakeven - your losses are in the small-caps. (majors
-   +$291 vs small-caps ~-$1,017)
-2. When you lose on a big coin it's half "wrong from the start" and half "gave back a winner" - about
-   even in dollars. (-$373 entry vs -$332 exit)
-3. The gave-back-a-winner trades are rarer but hurt ~3x more each - that's the slice the ladder and the
-   fade-lean are built for. (-$19.5 vs -$7.5 per trip)
-
-## Limits / next
-Majors only (69% of trips); Coinbase spot basis; small-caps undecomposed (need their 1h candles -
-ask PC, or GeckoTerminal pools per M29). closedPnl reconciles to M29's ballpark, not re-reconciled here.
+1. Your biggest dollar loss is GIVING BACK WINNERS, not bad entries - especially on thin small-caps that
+   spike then reverse. (exit give-backs -$831 vs entry misses -$483)
+2. That is exactly what your new ladder is for - it banked +0.5R/+0.75R on SUI and turned a -1R into
+   -0.21R. Use it (or trim) on thin-coin spikes. (SUI ladder saved ~0.8R)
+3. On the big liquid coins you're about even - the thin small-caps are where the money goes. Trade them
+   smaller, or not at all. (majors ~even; small-caps hold the loss)
