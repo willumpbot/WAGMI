@@ -999,7 +999,7 @@ function tradeHist(){
   // on live prices (coins the bot can't trade, or plans it skipped). Owner 10-14: "couldn't see what we've been doing".
   const T = DATA.tradeHist || {}, d = t => new Date(t*1000).toISOString().slice(5,16).replace("T"," ");
   const why = r => ({SL:"stop hit",TP1:"first target",TP2:"second target",LLM_EXIT_HIGH:"bot closed early",LLM_EXIT_PARTIAL:"bot took part off",
-    TRAILING_STOP:"trailing stop",OWNER_PLAN_MAX_HOLD:"your time limit"}[r] || (r||"").toLowerCase().replace(/_/g," "));
+    TRAILING_STOP:"trailing stop",OWNER_PLAN_MAX_HOLD:"your time limit",OWNER_RUNNER_HALF:"half at +1R",OWNER_RUNNER_TRAIL:"your 1-ATR trail"}[r] || (r||"").toLowerCase().replace(/_/g," "));
   const usd = v => v==null ? "—" : `${v>=0?"+":"-"}$${Math.abs(+v).toFixed(2)}`;
   const rr = r => r==null ? "" : ` <span class="mut">(${r>=0?"+":""}${(+r).toFixed(2)}R)</span>`;
   const rows = [];
@@ -1027,7 +1027,7 @@ function tradesTab(){
   const d = t => t ? new Date(t*1000).toISOString().slice(5,16).replace("T"," ") : "–";
   const P = (typeof PLANS !== "undefined" && PLANS.length) ? PLANS : ((DATA.plans||{}).plans || []);
   const used = new Set(P.map(p => p.source_idea_id).filter(Boolean));
-  const why = r => ({SL:"stop hit",TP1:"first target",TP2:"second target",LLM_EXIT_HIGH:"bot closed early",LLM_EXIT_PARTIAL:"bot took part off",TRAILING_STOP:"trailing stop",HOLD_LIMIT:"time limit"}[r] || (r||"").toLowerCase().replace(/_/g," "));
+  const why = r => ({SL:"stop hit",TP1:"first target",TP2:"second target",LLM_EXIT_HIGH:"bot closed early",LLM_EXIT_PARTIAL:"bot took part off",TRAILING_STOP:"trailing stop",HOLD_LIMIT:"time limit",OWNER_PLAN_MAX_HOLD:"your time limit",OWNER_RUNNER_HALF:"half at +1R",OWNER_RUNNER_TRAIL:"your 1-ATR trail"}[r] || (r||"").toLowerCase().replace(/_/g," "));
   const rr = r => r==null ? "" : `${r>=0?"+":""}${(+r).toFixed(2)}R`;
   const usd = v => v==null ? "" : `${v>=0?"+":""}$${(+v).toFixed(2)}`;
   const cls = v => v==null ? "mut" : v>=0 ? "up" : "dn";
