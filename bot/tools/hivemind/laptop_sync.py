@@ -269,8 +269,11 @@ def run(force=False):
     _git("fetch", "-q", "origin", "laptop-mining-2026-10")   # so the Brief sees the laptop's latest files
     # pull the laptop's per-trade dives in (dive_results.jsonl feeds case files + linkage; DIVES/ holds the docs) -
     # until 10-15 this was a manual step and 10 dives sat unseen on the laptop branch
-    _git("checkout", "origin/laptop-mining-2026-10", "--", "bot/data/laptop_mining/dive_results.jsonl",
-         "bot/data/laptop_mining/DIVES")
+    # pathspecs are relative to _git's cwd (bot/), not the repo root - the 'bot/...' form failed silently on 10-15
+    _pull = _git("checkout", "origin/laptop-mining-2026-10", "--", "data/laptop_mining/dive_results.jsonl",
+                 "data/laptop_mining/DIVES")
+    if _pull.returncode:
+        (EXP / "_pull_error.txt").write_text(_pull.stderr[-500:], encoding="utf-8")
     EXP.mkdir(parents=True, exist_ok=True)
     manifest = {"exported_at": time.time(), "files": {}}
     for name, src in FILES.items():
