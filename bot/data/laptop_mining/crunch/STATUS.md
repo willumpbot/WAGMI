@@ -4,17 +4,17 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-14 16:20, took 641s._
+_Last run 2026-10-14 21:21, took 687s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | ok | 53772 | 0 | 173 source files skipped as unchanged |
-| `j6_archive` | ok | 0 | 0 |  |
-| `j7_bulk` | ok | 0 | 2 | 0 shards new, 43 unchanged |
-| `j5_backfill` | ok | 712 | 629 | 178 coins ok, 0 failed, 5743 5m rows over the top 60 |
+| `j1_panels` | ok | 56914 | 2 | 173 source files skipped as unchanged |
+| `j6_archive` | ok | 22352 | 1 |  |
+| `j7_bulk` | ok | 6755 | 10 | 11 shards new, 43 unchanged |
+| `j5_backfill` | ok | 1819 | 666 | 178 coins ok, 0 failed, 7762 5m rows over the top 60 |
 | `j2_trackers` | ok | 3 | 0 |  |
-| `j4_integrity` | ok | 61 | 6 |  |
-| `j3_replications` | ok | 73 | 2 | 73 obs, 4 source-missing, 5 oos day-blocks, no verdicts |
+| `j4_integrity` | ok | 63 | 6 |  |
+| `j3_replications` | ok | 78 | 2 | 78 obs, 4 source-missing, 6 oos day-blocks, no verdicts |
 
 All jobs succeeded.
 
