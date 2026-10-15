@@ -30,7 +30,7 @@ def main():
     try:
         lock = HERE.parents[1] / "data" / "hivemind" / ".laptop_sync.lock"
         due = (not laptop_sync.STAMP.exists()
-               or time.time() - float(laptop_sync.STAMP.read_text() or 0) >= laptop_sync.EVERY_S - 600)
+               or time.time() - float(laptop_sync.STAMP.read_text() or 0) >= laptop_sync.EVERY_S - 1500)
         if due and not (lock.exists() and time.time() - lock.stat().st_mtime < 45 * 60):
             lock.write_text(str(time.time()))
             try:
