@@ -367,6 +367,17 @@ def _log_voices(sym, st):
 
 # ── assemble ──────────────────────────────────────────────────────────
 
+def owner_extra_coins():
+    """Coins the owner holds (filled owner plans, bot-run or simulated, still open) or watches, beyond the bot's 6.
+    Owner 10-15: being in a trade must never LIMIT what the hivemind knows about it - every held coin gets the full
+    voice set. Written to state/<coin>.json only (not _all.json, so the bot board and the chief are unchanged)."""
+    out = set(_load(DATA / "hivemind" / "owner_watchlist.json", []) or [])
+    for p in (_load(DATA / "hivemind" / "plans.json", {}) or {}).get("plans", []):
+        if (p.get("result") or {}).get("status") in ("open", "waiting"):
+            out.add(p.get("coin"))
+    return sorted(c for c in out if c and c not in SYMS)
+
+
 def assemble():
     OUT.mkdir(parents=True, exist_ok=True)
     import copilot as cp
@@ -379,8 +390,12 @@ def assemble():
         except Exception as e:
             shared[name] = {"error": f"{type(e).__name__}: {e}"[:200]}
     allstate = {"updated": _now_iso(), "shared": shared, "coins": {}}
-    for sym in SYMS:
-        st = {"symbol": sym, "updated": _now_iso()}
+    try:
+        extras = owner_extra_coins()
+    except Exception:
+        extras = []
+    for sym in SYMS + extras:
+        st = {"symbol": sym, "updated": _now_iso(), "owner_extra": sym not in SYMS}
         for name, fn in (("market", lambda: voice_market(client, sym)), ("context", lambda: voice_context(sym)), ("agents", lambda: voice_agents(sym, scorecard)),
                          ("bot", lambda: voice_bot(sym)), ("owner", lambda: voice_owner(sym)),
                          ("chart", lambda: voice_chart(sym)), ("positioning", lambda: voice_positioning(sym)), ("vol", lambda: voice_vol(sym)), ("tf4h", lambda: __import__("tf4h").live(sym))):
@@ -432,7 +447,8 @@ def assemble():
             st["voices"] = []
             st["voices_error"] = f"{type(e).__name__}: {e}"[:200]
         (OUT / f"{sym}.json").write_text(json.dumps(st, indent=1, default=str), encoding="utf-8")
-        allstate["coins"][sym] = st
+        if sym in SYMS:
+            allstate["coins"][sym] = st
     tmp = OUT / "_all.json.tmp"
     tmp.write_text(json.dumps(allstate, default=str), encoding="utf-8")
     os.replace(tmp, OUT / "_all.json")

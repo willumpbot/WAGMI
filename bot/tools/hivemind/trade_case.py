@@ -102,6 +102,25 @@ def run(deep_reads=2):
                 live["to_trail_atr"] = round(abs(px - float(R["trail"])) / unit, 2)
         exp_ts = f_ts + float(p.get("max_hold_h") or 48) * 3600
         live["hours_left"] = round((exp_ts - now) / 3600, 1) if R.get("status") == "open" else None
+        hv = _load(HM / "state" / f"{coin}.json", {})
+        if hv:
+            cons = hv.get("consensus") or {}
+            vlist = hv.get("voices") or []
+            live["hivemind"] = {
+                "updated": hv.get("updated"),
+                "consensus": {k: cons.get(k) for k in ("bull", "bear", "neutral", "bull_families", "bear_families",
+                                                      "dissent_families", "move_size", "move_size_hint")},
+                "with_you": sum(1 for v in vlist if (v.get("lean") or "").upper() == side),
+                "against_you": sum(1 for v in vlist if (v.get("lean") or "").upper() in ("LONG", "SHORT")
+                                   and (v.get("lean") or "").upper() != side),
+                "voices": [{k: v.get(k) for k in ("name", "family", "lean", "strength", "grade", "why") if k in v}
+                           for v in vlist][:24],
+                "contradictions": (hv.get("contradictions") or [])[:6],
+                "liquidation_magnets": ((hv.get("deep") or {}).get("liquidation_magnets")),
+                "this_coin_history": {k: (hv.get("history") or {}).get(k) for k in ("state_words", "next_5d_this_coin")},
+                "risk_notes": ((hv.get("risk") or {}).get("notes") or [])[:4],
+                "expected_move_pct": (hv.get("vol") or {}).get("next_day_move_pct"),
+            }
         case["live"] = live
         if R.get("status") != "open" and "closed" not in case:
             after = None
