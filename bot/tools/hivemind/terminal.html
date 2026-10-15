@@ -1126,6 +1126,20 @@ function renderBotPos(){
   for (const s of SYMS) { const b = botPos(s); if (!b) continue;
     rows.push(posRow({coin:s, side:b.side, lev:b.leverage, qty:b.qty, entry:b.entry, mark:b.now, stop:b.sl, target:b.tp2||b.tp1, total:b.total,
       note:(b.realized_pnl?`banked $${(+b.realized_pnl).toFixed(2)} · `:"") + `opened ${t(b.open_time)}`})); }
+  { // Claude's OWN open ideas (owner 10-15: "claude did open SUI on its own and it's been open and winning") - shown,
+    // labelled as Claude's, at the $10 default risk; ideas the owner already adopted appear above as his plans.
+    const P_ = (typeof PLANS !== "undefined" && PLANS.length) ? PLANS : ((DATA.plans||{}).plans || []);
+    const used = new Set(P_.map(q => q.source_idea_id).filter(Boolean));
+    for (const i of ((DATA.aiPlans||{}).ideas||[])) {
+      const R = i.result || {};
+      if (R.status !== "open" || used.has(i.id)) continue;
+      const risk1 = Math.abs(i.entry - i.stop); if (!risk1) continue;
+      const qty = +(10 / risk1).toPrecision(4), mk = px(i.coin) || (window.MIDS && +window.MIDS[i.coin]) || null, sg = i.side==="SHORT" ? -1 : 1;
+      rows.push(posRow({coin:i.coin, side:i.side, lev:i.leverage||1, qty, entry:i.entry, mark:mk, stop:i.stop, target:i.target,
+        total: mk!=null ? sg*(mk-i.entry)*qty : null,
+        note:`Claude's own idea (paper, $10 risk) · best ${R.best_r!=null?(R.best_r>=0?"+":"")+R.best_r+"R":"–"} · opened ${t(R.filled_at*1000)}`}));
+    }
+  }
   $("pos_badge").innerHTML = rows.length ? `<span class="pill nt">${rows.length}</span>` : "";
   $("botnote").textContent = rows.length ? "live price · refreshes every 15 min" : "";
   $("botpos").innerHTML = rows.length ? `<table class="pos num"><tr><th style="text-align:left">Coin</th><th>Size</th><th>Position Value</th><th>Entry Price</th><th>Mark Price</th><th>PNL (ROE %)</th><th>TP / SL</th><th></th></tr>${rows.join("")}</table>`
