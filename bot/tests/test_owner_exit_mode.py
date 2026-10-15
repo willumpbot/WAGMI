@@ -391,11 +391,15 @@ def test_plans_create_stores_exit_mode(tmp_path, monkeypatch):
     monkeypatch.setattr(plans, "HM", tmp_path)
     monkeypatch.setattr(plans, "PLANS", tmp_path / "owner_plans.jsonl")
     monkeypatch.setattr(plans, "_context", lambda coin: {})
+    monkeypatch.setattr(plans, "OUT", tmp_path / "plans.json")
     base = {"coin": "ETH", "side": "LONG", "entry": 3000, "stop": 2950, "target": 3150}
+    # distinct targets: an identical re-add of a live plan returns the existing one (duplicate guard)
     assert plans.create(dict(base))["exit_mode"] == "profits_only"
-    assert plans.create(dict(base, exit_mode="hands_off"))["exit_mode"] == "hands_off"
-    assert plans.create(dict(base, exit_mode="bot_manages"))["exit_mode"] == "bot_manages"
-    assert plans.create(dict(base, exit_mode="yolo"))["exit_mode"] == "profits_only"
+    assert plans.create(dict(base, target=3151, exit_mode="hands_off"))["exit_mode"] == "hands_off"
+    assert plans.create(dict(base, target=3152, exit_mode="bot_manages"))["exit_mode"] == "bot_manages"
+    assert plans.create(dict(base, target=3153, exit_mode="yolo"))["exit_mode"] == "profits_only"
+    dup = plans.create(dict(base, exit_mode="hands_off"))
+    assert dup.get("duplicate") and dup["exit_mode"] == "profits_only"
 
 
 @pytest.mark.parametrize("flag,allowed", [("true", False), ("false", True)])
