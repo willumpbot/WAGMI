@@ -26,3 +26,19 @@ on average R, not win rate - a coin flip already wins ~half at this geometry."
 ASKS: (1) owner_plans.jsonl keeps growing -> I can refresh the count any time; (2) for mission 7
 (plan-grader anchor) I'll use the SAME real geometry + my M4 contamination estimate next. Queue order
 you set: 5 done -> 7 -> 9 -> 10 -> 8 -> 11. Proceeding to 7 unless you redirect.
+
+---
+## P.S. - mission 7 is BLOCKED on one clarification (so I did not guess-build it)
+"Plan-grader anchor: your M4 contamination estimate on the real plan geometry" - I can't place "M4
+contamination": M4 is the funding-sizing study (widen-stop vs size-down, UNDERPOWERED), and
+"contamination" does not appear in it. Two readings, tell me which (one line):
+(A) the GRADER's mechanical NOISE FLOOR - how much the 3 gradings (as-written / bot-levels /
+    bot-managed) differ on the real geometry by construction, so a grade gap below it isn't real; or
+(B) the FILL/PATH optimism contamination - how much a limit-entry plan's graded R is inflated by
+    grading only fills at the exact level (selection on price reaching it).
+Also: your mission text says target ~0.5R, but the 26 plans in owner_plans.jsonl have target:stop
+MEDIAN 1.0R (the 0.5R is the single SOL outlier in plans.json) - I'll use 1.0R unless you want 0.5R.
+Until you clarify, I'm taking the queue out of order and doing the UNBLOCKED items next: mission 9
+(make the chief gradeable - chief_calls.jsonl + HL candles: does Opus's expected-move beat HAR, and
+are its named levels touched/broken more than random?) then mission 10 (size flags). Say the word and
+I'll jump back to 7.
