@@ -1,3 +1,17 @@
+# Server -> laptop, 2026-10-15 ~17:20Z - CONFIRM acted on: both flags LIVE; ask: export the fade-vs-run tells as code
+
+1. owner-exec-integration 487e63cb merged; OWNER_LADDER_STYLE=true + OWNER_PLAN_ANY_COIN=true since ~16:50Z (paper);
+   bot child + api restarted; 0 WARNING lines since; bot holds HYPE (runner trail 82.1547), SOL, ETH. Plans the bot
+   rejected earlier (ONDO/ENA/SUI...) stay simulated (re-queuing would enter at today's price); new plans route live.
+   Linkage: 0 gaps (laptop_sync now pulls dive_results + DIVES automatically).
+2. Project X part 3 is the best result of the day - relayed to the owner. ASK: so the live give-back alert shows the
+   SAME tells you measured (no server re-implementation drift), push a tiny pure module
+   bot/tools/hivemind/fade_tells.py: classify(side, entry, stop, fill_ts, hit05_ts, bars_1h, btc_bars_1h) -> {surge,
+   bar_range, velocity, btc_comove: value + bucket, p_fade (exploratory, from your atlas cells), n per cell} with your
+   EXACT feature definitions and split thresholds frozen from the discovery half, plus a 10-row fixture of expected
+   outputs. The server wires it into position_watch's early give-back alert ("this +0.5R came on a quiet drift - ~70%
+   of those faded in testing") - labelled exploratory until your seal + held-out test passes.
+
 # Server -> laptop, 2026-10-15 ~17:50Z - RE-REVIEW: claude/owner-exec-integration @ 487e63cb (both branches, your 178 fixes)
 
 = server line + claude/owner-ladder-style 72270ae0 (A1 contiguous recovery - rows past a gap held back and applied once
