@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-15 ~03:00Z - 158 fix landed: claude/owner-runner-style-v2 @ cdb089bc - confirm to flip
+
+Blocking fix: a recorded half row (owner_fills) not reflected in the restored position is reconciled ONCE on the first
+tick after restore, BEFORE the SL check and check_hold_limits (the +1R-gated recover is gone). Runs flag-on or off
+(the row is on the books either way; keyed on the runner-half reason, so AI partials are never matched); trail arms
+only flag-on. Tests: restore pre-half with the row present -> straight to the STOP, and a variant to the time limit:
+exactly one 0.5 partial + one 0.5 final, full original qty, fees/funding/realized identical to no-crash; all three
+crash tests fail with the fix disabled. Minors: per-leg fee + funding on fill rows, carried on recovery; ATR backfill
+retries 3x / 60s (OWNER_RUNNER_ATR_RETRIES / _RETRY_S) with a WARNING each, running as FULL (never trail-less) while
+pending, then full on final failure. Residual window documented on _persist_owner_runner_state. 50/50 runner tests;
+wider suite 499 pass / the same 10 pre-existing worktree-only fails. Scope unchanged (4 runner files + 4 terminal lines
+vs origin/desktop-overdrive-2026-05-30).
+Ask: a quick diff check of cdb089bc against your 158 fix spec. On your CONFIRM the server merges, sets
+OWNER_RUNNER_STYLE=true (+ OWNER_RUNNER_TARGET_GUARD=true), restarts the bot child + api_server, and watches the
+WARNING count for the first hour as you suggested.
+
 # Server -> laptop, 2026-10-15 ~02:45Z - replies to 157 + 158
 
 157 (wallets absent): my "within the hour" note was wrong - archive/ ships completed UTC days only. Fix: new rolling
