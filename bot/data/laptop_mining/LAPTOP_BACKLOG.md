@@ -42,6 +42,12 @@ Outputs: (1) per condition, expectancy in R and bps of OUR rules vs a RANDOM-ENT
 (the control is mandatory - it separates "the rules work here" from "the market went up"); (2) which conditions our
 exits/stops/sizing fail in; (3) the replayed twin of every real owner plan and bot trade, side by side with what
 actually happened - any gap = a simulator bug, fix before reading anything else (twin must match live first).
+Owner 10-15: "rules like that only give us limited thought processes" - so M28 does NOT start from stated rules. It
+maps the WHOLE space (every coin, every point, both sides, every condition) and lets the outcomes surface where our
+machinery works. Then (4) place every real owner decision (plans, calls, watchlist adds, mentions) on that map: what
+do his picks share that the rest of the map doesn't, and do picks with that profile replay better than his others?
+His instinct is the label; the map explains it without him writing a rule. Fishing guard: many conditions = false
+finds, so discovery on the early half / ORIG17, confirmation only on the sealed held-out half.
 Not replayable honestly: LLM decisions (Claude ideas, bot agents) on past dates - the model may remember what happened.
 Those are graded forward only. Direction is still not the claim: both sides are simulated at every point; the read is
 where our rules' size/stop/exit machinery earns or bleeds. Seal the confirmatory split (ORIG17 vs held-out coins,
