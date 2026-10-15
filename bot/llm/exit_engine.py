@@ -111,6 +111,10 @@ class ExitEngine:
                 if decision.exit_action == "partial":
                     if _om == EXIT_HANDS_OFF:
                         return False, "owner plan exit_mode=hands_off: no partials"
+                    from core.owner_plan_exec import runner_live
+                    if runner_live(position):
+                        return False, ("owner plan exit_style=runner: the owner's half at +1R is the only "
+                                       "partial (taken by the position manager)")
                     # "Profits only" means partials bank PROFIT: a partial while the position is at a loss is a
                     # loss-cut the owner did not ask for (ETH 10-13 01:46Z: -0.16R partial under profits_only).
                     # OWNER_PROFITS_ONLY_REQUIRE_PROFIT=true blocks it; off (default) = unchanged + shadow log.
