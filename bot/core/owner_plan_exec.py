@@ -70,6 +70,7 @@ def is_owner_event(event: Any) -> bool:
 #   hands_off              — as profits_only, and no bot partials either: pure stop/target. Exception: with
 #                            OWNER_RUNNER_STYLE on, the owner's OWN exit_style=runner rule (half at +1R, 1-ATR
 #                            trail, plan time limit) applies here too - it is his declared rule, not bot judgment.
+#                            Same for OWNER_LADDER_STYLE on + exit_style=ladder (quarters at +0.5/+0.75/+1R, trail).
 #                            Every owner_fills.jsonl row says which rule closed it ("managed_by").
 #   bot_manages            — the bot's normal exit machinery, no restrictions (pre-2026-10-12 behaviour).
 # Bot-opened positions always resolve to bot_manages, so every guard is inert for them.
@@ -123,10 +124,11 @@ def owner_partial_allowance(pos: Any) -> float:
         return qty
     if mode == EXIT_HANDS_OFF:
         return 0.0
-    if runner_live(pos):
+    if runner_live(pos) or ladder_live(pos):
         # exit_style=runner with OWNER_RUNNER_STYLE on: the owner's +1R half IS the 50% partial
         # (taken deterministically by position_manager._owner_runner_step), so the bot's own
         # partials (TP1 leg / AI partials) get nothing - no double count against the 50% cap.
+        # exit_style=ladder with OWNER_LADDER_STYLE on: same - the owner's three quarters are the only partials.
         return 0.0
     orig = float(getattr(pos, "original_qty", 0) or 0) or qty
     already = max(0.0, orig - qty)
@@ -141,17 +143,29 @@ def owner_partial_allowance(pos: Any) -> float:
 #                      trails 1 x atr_at_fill behind the best price since +1R (only ever moves the
 #                      profitable way); the plan's own time limit closes what is left. The plan target
 #                      closes NOTHING in this style (exit_style.play ignores it). Before +1R: the owner's stop.
+#   ladder           — a QUARTER of the original qty at +0.5R, +0.75R and +1R (1R from the ACTUAL fill, as runner);
+#                      after the third quarter the last 25% trails 1 x atr_at_fill behind the best price since,
+#                      starting from the owner's stop, only ever the profitable way; the plan's time limit closes
+#                      what is left; the target closes nothing. Before the first quarter: the owner's stop.
 #   full             — stop / target / time limit (the pre-2026-10-15 behaviour).
 # Applied only to owner positions in a restricted exit mode (profits_only / hands_off): those are the
 # modes where the bot's own TP1 / trailing machinery is switched off. bot_manages keeps the bot's machinery.
 # OWNER_RUNNER_STYLE=false (default): behaviour is byte-identical to before; position_manager only logs
 # "[OWNER-RUNNER-SHADOW] would ..." lines (and owner_exit_decisions.jsonl rows) when the style would act.
-EXIT_STYLES = ("runner", "full")
+# OWNER_LADDER_STYLE=false (default): a ladder position runs the 'full' machinery (stop / target / time, exactly as
+# a full-style position) and position_manager only logs "[OWNER-LADDER-SHADOW] would ..." rows. Independent of
+# OWNER_RUNNER_STYLE: each flag only ever acts on its own style.
+EXIT_STYLES = ("runner", "full", "ladder")
 DEFAULT_EXIT_STYLE = "runner"
+TRAIL_EXIT_STYLES = ("runner", "ladder")   # need a trail width + a target beyond +1R (else they run 'full')
+# ladder steps: (k, R multiple, fraction of the ORIGINAL qty); the last 25% trails after step 3
+LADDER_STEPS = ((1, 0.5, 0.25), (2, 0.75, 0.25), (3, 1.0, 0.25))
+LADDER_ACTIONS = {k: f"OWNER_LADDER_Q{k}" for k, _, _ in LADDER_STEPS}
+LADDER_TRAIL_ACTION = "OWNER_LADDER_TRAIL"
 
 
 def normalize_exit_style(value: Any) -> str:
-    """Mirrors tools/hivemind/exit_style.norm: anything but 'full' is 'runner'."""
+    """Mirrors tools/hivemind/exit_style.norm: 'full' / 'ladder' as given, anything else is 'runner'."""
     v = str(value or "").strip().lower()
     return v if v in EXIT_STYLES else DEFAULT_EXIT_STYLE
 
@@ -160,8 +174,12 @@ def runner_style_enabled() -> bool:
     return os.getenv("OWNER_RUNNER_STYLE", "false").strip().lower() in ("1", "true", "yes", "on")
 
 
+def ladder_style_enabled() -> bool:
+    return os.getenv("OWNER_LADDER_STYLE", "false").strip().lower() in ("1", "true", "yes", "on")
+
+
 def owner_exit_style(pos: Any) -> Optional[str]:
-    """runner / full for an owner position, None for every bot position."""
+    """runner / ladder / full for an owner position, None for every bot position."""
     if not is_owner_position(pos):
         return None
     er = getattr(pos, "entry_reasons", None) or {}
@@ -188,6 +206,23 @@ def runner_live(pos: Any) -> bool:
     return runner_applies(pos) and isinstance(er, dict) and bool(er.get("runner_checked"))
 
 
+def ladder_applies(pos: Any) -> bool:
+    """True when the owner's ladder (quarters) rule governs this position's exit (flag aside)."""
+    return owner_exit_style(pos) == "ladder" and owner_exit_mode(pos) in RESTRICTED_EXIT_MODES
+
+
+def ladder_live(pos: Any) -> bool:
+    """True when the ladder rule is ACTUALLY applied (OWNER_LADDER_STYLE on). Same once-per-position readiness
+    check as the runner (ensure_runner_ready): no usable atr_at_fill -> point-in-time backfill (retried), else
+    exit_style=full; target at/inside +1R of the fill -> full (OWNER_RUNNER_TARGET_GUARD). Not live while a failed
+    backfill waits for its retry (the full stop/target machinery manages it meanwhile)."""
+    if not (ladder_style_enabled() and ladder_applies(pos)):
+        return False
+    ensure_runner_ready(pos)
+    er = getattr(pos, "entry_reasons", None)
+    return ladder_applies(pos) and isinstance(er, dict) and bool(er.get("runner_checked"))
+
+
 def _env_num(name: str, default: float) -> float:
     try:
         return float(os.getenv(name, "") or default)
@@ -209,10 +244,12 @@ def _valid_atr(v: Any) -> Optional[float]:
     return f if f > 0 else None
 
 
-def runner_style_check(side: str, fill: float, stop: float, target: Any, atr: Any) -> Optional[str]:
-    """Why a runner plan must run as 'full' instead (None = runner is fine). Geometry from the ACTUAL fill."""
+def runner_style_check(side: str, fill: float, stop: float, target: Any, atr: Any,
+                       style: str = "runner") -> Optional[str]:
+    """Why a runner (or ladder) plan must run as 'full' instead (None = the style is fine). Geometry from the ACTUAL
+    fill. Same two rules for both: a trail width must exist, and the target must sit beyond +1R."""
     if _valid_atr(atr) is None:
-        return "no atr_at_fill (14d daily ATR at the fill unavailable): a runner needs a trail width"
+        return f"no atr_at_fill (14d daily ATR at the fill unavailable): a {style} needs a trail width"
     try:
         risk = abs(float(fill) - float(stop))
         reward = abs(float(target) - float(fill)) if target not in (None, "") else None
@@ -220,7 +257,9 @@ def runner_style_check(side: str, fill: float, stop: float, target: Any, atr: An
         risk, reward = 0.0, None
     if runner_target_guard_enabled() and reward is not None and risk > 0 and reward <= risk:
         return (f"target {float(target):g} is at or inside +1R from the fill {float(fill):g} (reward {reward:g} <= "
-                f"risk {risk:g}): runner would bank nothing at the target (OWNER_RUNNER_TARGET_GUARD)")
+                f"risk {risk:g}): " + ("runner would bank nothing at the target" if style == "runner" else
+                                        f"{style} ignores the target and only completes at +1R")
+                + " (OWNER_RUNNER_TARGET_GUARD)")
     return None
 
 
@@ -241,7 +280,8 @@ def _log_style_decision(pos: Any, action: str, details: str) -> None:
 
 
 def ensure_runner_ready(pos: Any) -> None:
-    """Once per position, with OWNER_RUNNER_STYLE on: make sure a runner can actually run.
+    """Once per position, with OWNER_RUNNER_STYLE (runner) / OWNER_LADDER_STYLE (ladder) on: make sure the style
+    can actually run (both need a trail width and a target beyond +1R; the stamp key is 'runner_checked' for both).
 
     Positions opened before the runner build carry no atr_at_fill / exit_style. Backfill atr_at_fill point-in-time
     from the fill timestamp (exit_style.atr_at on completed daily bars, same as the graders); if that fails, or the
@@ -250,8 +290,10 @@ def ensure_runner_ready(pos: Any) -> None:
     """
     try:
         er = getattr(pos, "entry_reasons", None)
-        if not isinstance(er, dict) or er.get("runner_checked") or owner_exit_style(pos) != "runner":
+        style = owner_exit_style(pos)
+        if not isinstance(er, dict) or er.get("runner_checked") or style not in TRAIL_EXIT_STYLES:
             return
+        tag = f"[OWNER-{style.upper()}]"
         sym = getattr(pos, "symbol", "")
         atr = _valid_atr(er.get("atr_at_fill"))
         if atr is None:
@@ -266,7 +308,7 @@ def ensure_runner_ready(pos: Any) -> None:
                 er["atr_at_fill"] = atr
                 er["atr_at_fill_source"] = f"backfill_{src}"
                 er["atr_backfilled_at"] = now
-                logger.info(f"[OWNER-RUNNER] {sym} atr_at_fill backfilled point-in-time = {atr:g} ({src})")
+                logger.info(f"{tag} {sym} atr_at_fill backfilled point-in-time = {atr:g} ({src})")
             else:
                 # one transient HL blip must not permanently degrade a runner: retry a few times, spaced
                 n = int(er.get("atr_backfill_attempts") or 0) + 1
@@ -274,21 +316,21 @@ def ensure_runner_ready(pos: Any) -> None:
                 tries = int(_env_num("OWNER_RUNNER_ATR_RETRIES", 3))
                 if n < tries:
                     er["atr_backfill_next"] = now + _env_num("OWNER_RUNNER_ATR_RETRY_S", 60.0)
-                    logger.warning(f"[OWNER-RUNNER] {sym} plan {er.get('owner_plan_id')}: atr_at_fill backfill "
+                    logger.warning(f"{tag} {sym} plan {er.get('owner_plan_id')}: atr_at_fill backfill "
                                    f"failed ({src}), attempt {n}/{tries} - retrying; full machinery until then")
                     return
         fill = float(getattr(pos, "entry", 0) or 0)
         stop = float(getattr(pos, "original_sl", 0) or getattr(pos, "sl", 0) or 0)
         target = er.get("plan_target") if er.get("plan_target") not in (None, "") else getattr(pos, "tp2", None)
-        why = runner_style_check(getattr(pos, "side", ""), fill, stop, target, atr)
+        why = runner_style_check(getattr(pos, "side", ""), fill, stop, target, atr, style=style)
         er["runner_checked"] = time.time()
         if why:
             er["exit_style"] = "full"
             er["exit_style_reason"] = why
-            logger.warning(f"[OWNER-RUNNER] {sym} plan {er.get('owner_plan_id')}: runs exit_style=full - {why}")
+            logger.warning(f"{tag} {sym} plan {er.get('owner_plan_id')}: runs exit_style=full - {why}")
             _log_style_decision(pos, "style_full", why)
         else:
-            er["exit_style"] = "runner"
+            er["exit_style"] = style
     except Exception:
         logger.warning("[OWNER-RUNNER] ensure_runner_ready failed", exc_info=True)
 
@@ -297,7 +339,34 @@ def managed_by(action: str) -> str:
     """Which rule produced an owner fill row (owner_fills.jsonl 'managed_by')."""
     a = str(action or "").upper()
     return {"OWNER_RUNNER_HALF": "runner_half", "OWNER_RUNNER_TRAIL": "runner_trail", "SL": "stop",
-            "TP2": "target", "TP1": "tp1_leg", "OWNER_PLAN_MAX_HOLD": "time"}.get(a, f"bot:{a.lower()}" if a else "")
+            "TP2": "target", "TP1": "tp1_leg", "OWNER_PLAN_MAX_HOLD": "time",
+            "OWNER_LADDER_Q1": "ladder_q1", "OWNER_LADDER_Q2": "ladder_q2", "OWNER_LADDER_Q3": "ladder_q3",
+            "OWNER_LADDER_TRAIL": "ladder_trail"}.get(a, f"bot:{a.lower()}" if a else "")
+
+
+def recorded_ladder_steps(plan_id: str, position_id: str = "") -> Dict[int, Dict[str, Any]]:
+    """{step k: the OWNER_LADDER_Q<k> partial row already in owner_fills.jsonl} for this plan/position (same plan /
+    position matching as recorded_runner_half). Empty when none / unreadable."""
+    out: Dict[int, Dict[str, Any]] = {}
+    if not plan_id:
+        return out
+    try:
+        with open(fills_path(), encoding="utf-8") as fh:
+            for line in fh:
+                if "OWNER_LADDER_Q" not in line:
+                    continue
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                reason = str(r.get("reason") or "")
+                k = {v: k for k, v in LADDER_ACTIONS.items()}.get(reason)
+                if (k and r.get("kind") == "partial" and str(r.get("plan_id") or "") == str(plan_id)
+                        and (not position_id or not r.get("position_id") or r.get("position_id") == position_id)):
+                    out.setdefault(k, r)   # the FIRST row per step is the real one (a step can only fire once)
+    except OSError:
+        return {}
+    return out
 
 
 def recorded_runner_half(plan_id: str, position_id: str = "") -> Optional[Dict[str, Any]]:
@@ -325,12 +394,23 @@ def recorded_runner_half(plan_id: str, position_id: str = "") -> Optional[Dict[s
 
 def log_owner_runner_shadow(pos: Any, action: str, details: str, key: Optional[str] = None) -> None:
     """[OWNER-RUNNER-SHADOW] line + owner_exit_decisions.jsonl row, at most once per (position, key). Never raises."""
+    _log_style_shadow(pos, action, details, key, "runner")
+
+
+def log_owner_ladder_shadow(pos: Any, action: str, details: str, key: Optional[str] = None) -> None:
+    """[OWNER-LADDER-SHADOW] line + owner_exit_decisions.jsonl row (source owner_ladder_shadow), at most once per
+    (position, key). Never raises."""
+    _log_style_shadow(pos, action, details, key, "ladder")
+
+
+def _log_style_shadow(pos: Any, action: str, details: str, key: Optional[str], style: str) -> None:
     try:
-        seen = getattr(pos, "_owner_runner_shadow_logged", None)
+        attr = f"_owner_{style}_shadow_logged"
+        seen = getattr(pos, attr, None)
         if seen is None:
             seen = set()
             try:
-                setattr(pos, "_owner_runner_shadow_logged", seen)
+                setattr(pos, attr, seen)
             except Exception:
                 pass
         k = key or action
@@ -340,9 +420,9 @@ def log_owner_runner_shadow(pos: Any, action: str, details: str, key: Optional[s
         er = getattr(pos, "entry_reasons", None) or {}
         row = {
             "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "symbol": getattr(pos, "symbol", ""),
-            "exit_action": action, "applied": False, "source": "owner_runner_shadow",
+            "exit_action": action, "applied": False, "source": f"owner_{style}_shadow",
             "exit_mode": owner_exit_mode(pos), "exit_style": owner_exit_style(pos),
-            "details": f"[OWNER-RUNNER-SHADOW] {details} (OWNER_RUNNER_STYLE off, not applied)",
+            "details": f"[OWNER-{style.upper()}-SHADOW] {details} (OWNER_{style.upper()}_STYLE off, not applied)",
             "owner_plan_id": er.get("owner_plan_id") if isinstance(er, dict) else None,
             "position_side": getattr(pos, "side", ""), "position_sl": getattr(pos, "sl", None),
             "position_id": getattr(pos, "position_id", ""),
@@ -351,9 +431,9 @@ def log_owner_runner_shadow(pos: Any, action: str, details: str, key: Optional[s
         p.parent.mkdir(parents=True, exist_ok=True)
         with open(p, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(row, default=str) + "\n")
-        logger.info(f"[OWNER-RUNNER-SHADOW] {row['symbol']} {details}")
+        logger.info(f"[OWNER-{style.upper()}-SHADOW] {row['symbol']} {details}")
     except Exception:
-        logger.debug("[OWNER-PLAN] runner shadow log failed", exc_info=True)
+        logger.debug("[OWNER-PLAN] %s shadow log failed", style, exc_info=True)
 
 
 def log_owner_exit_block(pos: Any, source: str, action: str, reason: str, once: bool = False) -> None:
@@ -787,11 +867,11 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
         # 14-day daily ATR known AT THE FILL (the runner's trail width). Stored whatever the flag, so the
         # shadow log and the trade case files see the same number the live rule would use.
         _atr_d, _atr_src = atr_at_fill(bot, coin, time.time())
-        # A runner needs a trail width and a target beyond +1R of the FILL; otherwise run this plan as 'full'
-        # (stop / target / time limit), loudly, with the reason on the fill row.
+        # A runner / ladder needs a trail width and a target beyond +1R of the FILL; otherwise run this plan as
+        # 'full' (stop / target / time limit), loudly, with the reason on the fill row.
         _style_reason = None
-        if exit_style == "runner":
-            _style_reason = runner_style_check(side, fill, stop, target, _atr_d)
+        if exit_style in TRAIL_EXIT_STYLES:
+            _style_reason = runner_style_check(side, fill, stop, target, _atr_d, style=exit_style)
             if _style_reason:
                 if _valid_atr(_atr_d) is None:
                     logger.warning(f"[OWNER-PLAN] {coin} plan {pl.get('id')}: daily ATR fetch failed at open "
