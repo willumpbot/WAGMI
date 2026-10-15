@@ -279,6 +279,32 @@ def close(pid, px, ts=None, reason="", retro=False):
                             "reason": str(reason)[:200], "retro": bool(retro), "logged_at": time.time()}) + chr(10))
 
 
+def decide(pid, action, note="", px=None, context=None):
+    """The owner's call on a give-back alert (owner 10-15: "ping me 'pulling back from peak' ... I'll probably trim,
+    unless my thesis and chart still look good"). action: trim (half off now) | close (all off now) | hold.
+    Every call - holds included - is logged with the context he saw, so his in-the-moment judgement can be graded
+    against what the rules would have done (laptop M31). trim/close also change the plan's graded result."""
+    action = str(action).lower()
+    if action not in ("trim", "close", "hold"):
+        raise ValueError("action must be trim, close or hold")
+    now = time.time()
+    if px is None:
+        import hl
+        pl = next((r for r in _rows() if r.get("kind") == "plan" and r.get("id") == pid), None)
+        if not pl:
+            raise ValueError("unknown plan")
+        px = float(hl.post({"type": "allMids"}, ttl=10)[pl["coin"]])
+    row = {"kind": "decision", "id": str(pid)[:20], "ts": now, "action": action, "px": float(px),
+           "note": str(note or "")[:300], "context": context or {}}
+    with open(PLANS, "a", encoding="utf-8") as f:
+        f.write(json.dumps(row) + chr(10))
+        if action == "trim":
+            f.write(json.dumps({"kind": "trim", "id": row["id"], "ts": now, "px": float(px), "frac": 0.5}) + chr(10))
+    if action == "close":
+        close(pid, px, ts=now, reason="owner close on a give-back alert" + (": " + row["note"] if row["note"] else ""))
+    return row
+
+
 def cancel(pid):
     with open(PLANS, "a", encoding="utf-8") as f:
         f.write(json.dumps({"kind": "cancel", "id": str(pid)[:20], "ts": time.time()}) + "\n")
@@ -408,6 +434,10 @@ def resolve(write=True):
         prev = {}
     dups = _dup_of(rows, {k: (v.get("result") or {}).get("closed_at") for k, v in prev.items()})
     closes = {r["id"]: r for r in rows if r.get("kind") == "close"}
+    trims = {}
+    for r in rows:
+        if r.get("kind") == "trim":
+            trims.setdefault(r["id"], []).append(r)
     now = time.time()
     reviews = _reviews()
     plans = []
@@ -504,6 +534,23 @@ def resolve(write=True):
                     res["alt_live_r"] = alt.get("live_r") if alt["status"] == "open" else None
         except Exception as _e:
             res = dict(res, style_error=str(_e)[:120])
+        tr_ = trims.get(pl["id"]) or []
+        if tr_ and res.get("filled_at") and not res.get("manual_close"):
+            # owner trims: those fractions closed at his price; the rest keeps following the plan's rules
+            e_t, st_t = float(pl["entry"]), float(pl["stop"])
+            sg_t, rk_t = (1 if pl["side"] == "LONG" else -1), abs(float(pl["entry"]) - float(pl["stop"]))
+            done_f, done_r, left_f = 0.0, 0.0, 1.0
+            for t_ in tr_:
+                f_ = left_f * float(t_.get("frac") or 0.5)
+                done_r += f_ * sg_t * (float(t_["px"]) - e_t) / rk_t
+                done_f += f_
+                left_f -= f_
+            base_r = res.get("r") if res.get("status") != "open" else res.get("live_r")
+            res["rule_r"] = base_r
+            res["owner_trims"] = tr_
+            if base_r is not None:
+                key_ = "r" if res.get("status") != "open" else "live_r"
+                res[key_] = round(done_r + left_f * float(base_r), 3)
         rv = (reviews.get(pl["id"]) or {}).get("review")
         bot_res = (prev.get(pl["id"]) or {}).get("bot_result") or {}
         if rv and rv.get("bot_stop") and rv.get("bot_target") and res.get("status") not in ("waiting", "expired", "cancelled") and bot_res.get("status") not in ("won", "lost", "timed out"):

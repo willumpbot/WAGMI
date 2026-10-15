@@ -40,6 +40,15 @@ trade on the M28 map, (c) join with archive/pool_trades + call_snapshots: was he
 wallets, (d) the 3 habits that cost him most in R, each with n and CI. Addresses never leave the laptop and never
 appear in any committed file; reports refer to "wallet A/B/C".
 
+## M31 - OWNER JUDGEMENT AT THE PEAK (forward; owner 10-15: "ping me 'pulling back from peak' ... I'm probably going to
+## trim most of the time, however if my thesis looks good, chart looks good, it may be different")
+Not another exit dial: this grades the OWNER. owner_plans.jsonl now carries kind "decision" rows {id, ts, action trim|
+close|hold, px, note, context.alert (the alert text he saw: peak R, now R, voices with/against, 4h structure, funding,
+stop distance)} and kind "trim" rows (half off at px). The early give-back alert fires once a filled plan that reached
+>= +0.5R comes off its peak by >= max(0.15R, 25% of peak). For each decision: his realised R vs (a) the rules (plans
+result.rule_r) and (b) the M30 null; by action and by his stated reason (thesis/chart good -> hold vs trim). Read at a
+sealed n (~25 decisions); until then descriptives only. Holds are as important as trims.
+
 ## M30 - JUMPS THE QUEUE (owner 10-15 morning: "we should've understood in real time ... looking for profit in these
 ## sequences is taking what's given to us. we were RIGHT")
 **"Take what's given" before +1R.** Two live cases: VVV 64b67ddedb peaked +0.52R, RSR c0bf3a3124 peaked +0.92R (+1R

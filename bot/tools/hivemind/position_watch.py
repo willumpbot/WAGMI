@@ -124,11 +124,35 @@ def run():
         if R.get("status") != "open" or R.get("legs"):
             continue                       # closed, or half already banked at +1R
         best, live = R.get("best_r"), R.get("live_r")
-        if best is None or live is None or best < 0.5 or live > best / 2:
+        # EARLY (owner 10-15: "I want the alert before it pulls through .5R - I can't pull a position that's close to
+        # breakeven"): fire as soon as a trade that reached >= +0.5R has come off its peak by >= 0.15R (or a quarter of
+        # the peak), while it is still worth acting on; keep firing as it slides (one alert per plan per day).
+        if best is None or live is None or best < 0.5 or live > best - max(0.15, 0.25 * best):
             continue
+        # the context he asked for at decision time (owner 10-15: "if my thesis looks good, chart looks good ... it may
+        # be different"): voices with/against his side, 4h structure, funding, distance to stop
+        ctx, sgc = [], (1 if pl["side"] == "LONG" else -1)
+        st = _load(HM / "state" / f"{pl['coin']}.json", {}) or {}
+        vl = st.get("voices") or []
+        if vl:
+            ctx.append(f"voices {sum(1 for v in vl if (v.get('reading') or 0) * sgc > 0)} with you / "
+                       f"{sum(1 for v in vl if (v.get('reading') or 0) * sgc < 0)} against")
+        s4 = (st.get("tf4h") or {}).get("structure_4h")
+        if s4:
+            ctx.append(f"4h structure {s4}")
+        fh = ((st.get("market") or {}).get("funding_hourly")) or (scan.get(pl["coin"]) or {}).get("funding_h")
+        if fh is not None:
+            ctx.append(f"funding {fh * 100:.4f}%/h ({'longs pay' if fh > 0 else 'shorts pay'})")
+        try:
+            px_ = float(mids.get(pl["coin"]) or 0)
+            if px_:
+                ctx.append(f"stop {abs(px_ - float(pl['stop'])) / px_ * 100:.1f}% away")
+        except (TypeError, ValueError):
+            pass
+        who = "Claude idea (not taken) " if pl.get("_idea") else ""
         alerts.append((f"giveback:{pl['id']}", "giveback",
-                       f"{'Claude idea (not taken) ' if pl.get('_idea') else ''}{pl['coin']} {pl['side']}: was up +{best:.2f}R, now {live:+.2f}R - nothing banked yet. "
-                       f"Taking some by hand is your call; the plan's rules will not."))
+                       f"{who}{pl['coin']} {pl['side']}: pulling back from peak - was up +{best:.2f}R, now {live:+.2f}R, "
+                       f"nothing banked yet." + (" " + "; ".join(ctx) + "." if ctx else "")))
     try:   # standing laptop dive for every NEW watchlist coin (LAPTOP_BACKLOG S1)
         dq = BOT / "data" / "laptop_mining" / "server_exports" / "dive_requests.jsonl"
         asked = {json.loads(l).get("coin") for l in dq.read_text(encoding="utf-8").splitlines() if l.strip()

@@ -1050,6 +1050,17 @@ const SIMWHY = m => m.status==="target" ? "hit target" : m.status==="stop" ? "hi
 let TR_F = "all";
 // Plain-language reason the paper bot did not run a plan (owner 10-15: "bot: rejected - bot only manages ... LIT is not
 // one" was confusing). Not running it is not a judgement on the plan: it is still tracked on real prices.
+document.addEventListener("click", async ev => {
+  const b = ev.target.closest(".gbk button"); if (!b) return;
+  const box = b.closest(".gbk"), note = (box.querySelector("input")||{}).value || "";
+  b.disabled = true;
+  try {
+    const r = await fetch(API + "/v1/owner_plan/decide", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken},
+      body: JSON.stringify({id: box.dataset.id, action: b.dataset.a, note, alert: box.dataset.alert})});
+    const j = await r.json();
+    box.innerHTML = j.ok ? `<b class="up">logged: ${b.dataset.a}${note?" - "+esc(note):""}</b> <span class="mut">(graded against the rules)</span>` : `<b class="dn">${esc(j.error||"failed")}</b>`;
+  } catch(e) { box.innerHTML = `<b class="dn">couldn't reach the server</b>`; }
+});
 function botWhy(X, coin){
   const r = X.reason || "";
   if (/only manages/.test(r)) return `tracked on real prices (the paper bot only trades BTC, ETH, HYPE, NEAR, SOL and XRP, so it didn't place ${esc(coin)})`;
@@ -1241,7 +1252,7 @@ function brief(){
   const CQ = DATA.content || {};
   const side = (todo.startsWith("Nothing to do") && CQ.n > 0) ? `<div style="font-size:13px;margin-top:6px">If you feel like it: <b>${CQ.n} Hello Kitty clips</b> are ready in Telegram to post.</div>` : "";
   const W = (DATA.watch || {}).alerts || [];
-  const watchBox = W.length ? `<div class="box" style="border:2px solid var(--warn,#c80);margin-bottom:10px;padding:10px 14px"><div class="mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase">Needs your eyes · position watch</div>${W.map(a => `<div style="font-size:13.5px;margin-top:4px">• ${esc(a.msg)}</div>`).join("")}</div>` : "";
+  const watchBox = W.length ? `<div class="box" style="border:2px solid var(--warn,#c80);margin-bottom:10px;padding:10px 14px"><div class="mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase">Needs your eyes · position watch</div>${W.map(a => `<div style="font-size:13.5px;margin-top:4px">• ${esc(a.msg)}${(a.kind==="giveback" && !/Claude idea/.test(a.msg)) ? ` <span class="gbk" data-id="${esc(a.key.split(":")[1])}" data-alert="${esc(a.msg)}"><button data-a="trim">Trim half</button> <button data-a="close">Close</button> <button data-a="hold">Hold</button> <input placeholder="why (optional)" style="width:160px;font-size:12px"></span>` : ""}</div>`).join("")}</div>` : "";
   $("brief").innerHTML = watchBox + `<div class="box" style="border:2px solid var(--accent);margin-bottom:10px;padding:12px 14px"><div class="mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase">Do this now</div><div style="font-size:18px;font-weight:700;margin-top:2px">${todo}</div>${why?`<div class="mut" style="font-size:12.5px;margin-top:4px">${why}</div>`:""}${side}${undecided.length && !D.length && up.can_trade !== false ? ` <button onclick="showTab('t_plans')" style="margin-top:8px;background:var(--accent);border:0;border-radius:6px;color:var(--bg);font-weight:700;padding:5px 12px;cursor:pointer">Open Claude's ideas</button>` : ""}</div>
     <details><summary class="mut" style="cursor:pointer;font-size:12px;margin-bottom:6px">Everything else (only if you want it)</summary>
     <div class="two"><div>${sec("🤖","The bot", b1)}${sec("📝","Your plans", b2)}${sec("💡","Claude's trade ideas", b3)}${sec("📣","Syndicate", b4)}</div>

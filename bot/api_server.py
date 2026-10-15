@@ -266,6 +266,20 @@ def owner_plan_cancel(payload: dict, x_owner_token: Optional[str] = Header(defau
     return {"ok": True}
 
 
+@app.post("/v1/owner_plan/decide")
+def owner_plan_decide(payload: dict, x_owner_token: Optional[str] = Header(default=None)):
+    """Owner's call on a give-back alert: trim (half off) / close / hold, with an optional note. Logged and graded."""
+    if not _owner_token_ok(x_owner_token):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    try:
+        row = _plans_mod().decide(payload.get("id", ""), payload.get("action", ""), payload.get("note", ""),
+                                  context={"alert": str(payload.get("alert", ""))[:400]})
+    except ValueError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+    _PLANS_CACHE[1] = None
+    return {"ok": True, "decision": row}
+
+
 @app.get("/v1/owner_plans")
 def owner_plans(x_owner_token: Optional[str] = Header(default=None)):
     if not _owner_token_ok(x_owner_token):
