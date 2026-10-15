@@ -1134,7 +1134,7 @@ function renderBotPos(){
       const R = i.result || {};
       if (R.status !== "open" || used.has(i.id)) continue;
       const risk1 = Math.abs(i.entry - i.stop); if (!risk1) continue;
-      const qty = +(10 / risk1).toPrecision(4), mk = px(i.coin) || (window.MIDS && +window.MIDS[i.coin]) || null, sg = i.side==="SHORT" ? -1 : 1;
+      const qty = +(10 / risk1).toPrecision(4), mk = px(i.coin) || (window.MIDS && +window.MIDS[i.coin]) || (R.live_r!=null ? i.entry + (i.side==="SHORT"?-1:1)*R.live_r*risk1 : null), sg = i.side==="SHORT" ? -1 : 1;
       rows.push(posRow({coin:i.coin, side:i.side, lev:i.leverage||1, qty, entry:i.entry, mark:mk, stop:i.stop, target:i.target,
         total: mk!=null ? sg*(mk-i.entry)*qty : null,
         note:`Claude's own idea (paper, $10 risk) · best ${R.best_r!=null?(R.best_r>=0?"+":"")+R.best_r+"R":"–"} · opened ${t(R.filled_at*1000)}`}));
@@ -1358,7 +1358,7 @@ async function poll(){
     const mids = await r.json(); window.MIDS = mids; $("livedot").style.background = "var(--good)"; checkAlerts(mids);
     for (const x of (SCAN.coins||[])) { const el = $("sp_"+x.coin); if (el && mids[x.coin]) el.textContent = fmt(+mids[x.coin]); }
     for (const q of PLANS) { const el = $("pr_"+q.id); if (el) el.innerHTML = rBar(q); }
-    if (!(poll.n = (poll.n||0) + 1) % 5) renderBotPos();
+    if ((poll.n = (poll.n||0) + 1) % 5 === 1) renderBotPos();   // 1st poll (live prices now loaded), then every 5th
     for (const s of SYMS) { if (!mids[s]) continue; const v = +mids[s], prev = live[s]; live[s] = v;
       const el = $("px_"+s); if (el) { el.textContent = fmt(v); if (prev && v!==prev) { el.classList.remove("flash-up","flash-dn"); void el.offsetWidth; el.classList.add(v>prev?"flash-up":"flash-dn"); } }
       const ch = $("ch_"+s); if (ch) { const c = dayChg(s); ch.textContent = pct(c,2); ch.className = "num " + (c>=0?"up":"dn"); } }
