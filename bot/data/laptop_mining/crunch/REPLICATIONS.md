@@ -10,7 +10,7 @@ metric's MDE has fallen below the in-sample effect it is replicating. Both numbe
 printed below, every run. A replication read before it could have come out the other
 way is not a replication._
 
-_Updated 2026-10-15 05:20. 6 out-of-sample day-block(s) evaluated since 2026-10-09._
+_Updated 2026-10-15 06:20. 6 out-of-sample day-block(s) evaluated since 2026-10-09._
 
 ## What accrued
 

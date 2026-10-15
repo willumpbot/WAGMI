@@ -20,19 +20,19 @@
   "u": "bytes"
  },
  "_manifest.json": {
-  "v": 3580,
+  "v": 3582,
   "u": "bytes"
  },
  "accumulation_log.jsonl": {
-  "v": 504,
+  "v": 505,
   "u": "rows"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 3477,
+  "v": 3495,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 27450,
+  "v": 29463,
   "u": "bytes"
  },
  "archive": {
@@ -68,7 +68,7 @@
   "u": "rows"
  },
  "candles_5m": {
-  "v": 39156,
+  "v": 39222,
   "u": "rows+bytes"
  },
  "cases_index.json": {
@@ -112,7 +112,7 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 81346,
+  "v": 82058,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
@@ -120,7 +120,7 @@
   "u": "bytes"
  },
  "dissent_log.jsonl": {
-  "v": 968,
+  "v": 1016,
   "u": "rows"
  },
  "dive_requests.jsonl": {
@@ -152,15 +152,15 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 52143,
+  "v": 52185,
   "u": "rows"
  },
  "geometry_shadow.json": {
-  "v": 637,
+  "v": 636,
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 874,
+  "v": 885,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -188,7 +188,7 @@
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 6583,
+  "v": 6584,
   "u": "bytes"
  },
  "owner_plan_sims_resolved.jsonl": {
@@ -204,7 +204,7 @@
   "u": "bytes"
  },
  "plans.json": {
-  "v": 48731,
+  "v": 48735,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -216,11 +216,11 @@
   "u": "bytes"
  },
  "promoted_log.jsonl": {
-  "v": 31,
+  "v": 35,
   "u": "rows"
  },
  "scan_grades.json": {
-  "v": 34927,
+  "v": 35006,
   "u": "bytes"
  },
  "scan_log.jsonl": {
@@ -280,7 +280,7 @@
   "u": "rows"
  },
  "today": {
-  "v": 34257,
+  "v": 37968,
   "u": "rows+bytes"
  },
  "trade_ledger.csv": {
@@ -296,11 +296,11 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 420,
+  "v": 424,
   "u": "rows"
  },
  "veto_tracker.json": {
-  "v": 841749,
+  "v": 841732,
   "u": "bytes"
  },
  "voice_grades.json": {
@@ -308,7 +308,7 @@
   "u": "bytes"
  },
  "wallet_snapshots.jsonl": {
-  "v": 9,
+  "v": 10,
   "u": "rows"
  },
  "watch_log.jsonl": {
