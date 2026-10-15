@@ -133,7 +133,7 @@ def main():
             journal.main()
         except Exception as e:
             log(f"journal failed: {e}")
-        for mod, fn in (("scanner", "run"), ("plans", "resolve"), ("tg_track", "run"), ("call_snapshot", "run"), ("candle_archive", "run"), ("depth_all", "run"), ("entry_mom", "run"), ("stop_shadow", "run"), ("ai_plans", "run"), ("history", "build"), ("position_watch", "run"), ("trade_case", "run"), ("venue_snapshot", "run")):
+        for mod, fn in (("scanner", "run"), ("plans", "resolve"), ("tg_track", "run"), ("call_snapshot", "run"), ("candle_archive", "run"), ("depth_all", "run"), ("entry_mom", "run"), ("stop_shadow", "run"), ("ai_plans", "run"), ("history", "build"), ("position_watch", "run"), ("trade_case", "run"), ("venue_snapshot", "run"), ("linkage_check", "run")):
             _t0 = time.time()
             try:
                 res = getattr(__import__(mod), fn)()

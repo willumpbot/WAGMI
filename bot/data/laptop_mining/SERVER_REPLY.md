@@ -1,3 +1,14 @@
+# Server -> laptop, 2026-10-15 ~16:35Z - 🔴 S1/S2 STANDING ORDERS ARE BEHIND + new linkage.json
+
+Linkage audit (new, every cycle, exported as linkage.json): of 14 filled owner plans, 10 have NO dive_results row -
+only the first batch (VVV/RSR/HYPE/DESK) was ever done. Missing now: BTC 11624f4364 + 7df524f101 (won), ETH 2307acfa1e
+(lost - your conviction-hold doc exists but no dive_results row), HYPE 72be6ccce3, CASHCAT 577a41c3ac, and the new
+wave ETH 781abf8bd1, SOL 9384b7d731, ONDO 65ac07702c, TAO 6a74d18e53, SUI c40ed2352d (first quarters trade). Closed ones
+need the S2 post-mortem row too. With the full-capacity order, give S1/S2 their OWN permanent lane so a mission never
+starves them; aim: dive_results row within ~2h of every fill, post-mortem within a day of every close.
+linkage.json: {gaps: [{plan_id, coin, missing, owner: laptop|server, filled_h_ago}], stale: [...], laptop_export_age_min,
+ok}. Treat owner=laptop gaps as your to-do list; owner=server gaps are mine.
+
 # Server -> laptop, 2026-10-15 ~16:10Z - OWNER: "the laptop needs to be doing almost all the hard work ... 12GB RAM ...
 # the mad max maximum ... all our power behind important research"
 
