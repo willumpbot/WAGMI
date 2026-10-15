@@ -4,21 +4,21 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-15 10:21, took 661s._
+_Last run 2026-10-15 11:21, took 691s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | ok | 50368 | 0 | 174 source files skipped as unchanged |
+| `j1_panels` | ok | 51152 | 0 | 174 source files skipped as unchanged |
 | `j6_archive` | ok | 0 | 0 |  |
 | `j7_bulk` | ok | 0 | 0 | 0 shards new, 54 unchanged |
-| `j5_backfill` | ok | 712 | 650 | 178 coins ok, 0 failed, 912 5m rows over the top 60 |
-| `j2_trackers` | ok | 3 | 1 |  |
-| `j4_integrity` | **FAILED** | 79 | 7 | veto_tracker.json snapshot stale 3.2h |
+| `j5_backfill` | ok | 712 | 680 | 178 coins ok, 0 failed, 780 5m rows over the top 60 |
+| `j2_trackers` | ok | 3 | 0 |  |
+| `j4_integrity` | **FAILED** | 79 | 7 | veto_tracker.json snapshot stale 4.2h |
 | `j3_replications` | ok | 78 | 2 | 78 obs, 4 source-missing, 6 oos day-blocks, no verdicts |
 
 ## 🔴 1 job(s) failed this run
 
-- `j4_integrity`: veto_tracker.json snapshot stale 3.2h
+- `j4_integrity`: veto_tracker.json snapshot stale 4.2h
 
 ## What each job does
 
