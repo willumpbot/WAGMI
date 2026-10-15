@@ -10,7 +10,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FILLS = os.path.join(HERE, "..", "hivemind", "owner_wallets", "hl_fills.jsonl")
-CB = {"BTC": "BTC-USD", "SOL": "SOL-USD", "ETH": "ETH-USD", "XRP": "XRP-USD", "DOGE": "DOGE-USD", "LINK": "LINK-USD", "AVAX": "AVAX-USD"}
+CB = {"BTC": "BTC-USD", "SOL": "SOL-USD", "ETH": "ETH-USD", "XRP": "XRP-USD", "DOGE": "DOGE-USD", "AVAX": "AVAX-USD", "PUMP": "PUMP-USD", "PENGU": "PENGU-USD", "DOT": "DOT-USD", "LTC": "LTC-USD"}
 CACHE = os.path.join(HERE, "..", "hivemind", "owner_wallets", "cb_1h_cache.json")
 
 
