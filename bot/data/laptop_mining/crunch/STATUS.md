@@ -4,19 +4,22 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-15 00:21, took 687s._
+_Last run 2026-10-15 01:21, took 664s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | ok | 0 | 0 | 181 source files skipped as unchanged |
+| `j1_panels` | ok | 42962 | 0 | 174 source files skipped as unchanged |
 | `j6_archive` | ok | 0 | 0 |  |
 | `j7_bulk` | ok | 0 | 0 | 0 shards new, 54 unchanged |
-| `j5_backfill` | ok | 712 | 679 | 178 coins ok, 0 failed, 782 5m rows over the top 60 |
+| `j5_backfill` | **FAILED** | 706 | 655 | 177 coins ok, 1 failed, 778 5m rows over the top 60 / LINEA:API failed after 4 tries: HTTP Error 429 |
 | `j2_trackers` | ok | 3 | 0 |  |
-| `j4_integrity` | ok | 78 | 5 |  |
+| `j4_integrity` | **FAILED** | 78 | 5 | owner_watchlist.json snapshot stale 3.2h |
 | `j3_replications` | ok | 78 | 2 | 78 obs, 4 source-missing, 6 oos day-blocks, no verdicts |
 
-All jobs succeeded.
+## 🔴 2 job(s) failed this run
+
+- `j5_backfill`: 177 coins ok, 1 failed, 778 5m rows over the top 60 | LINEA:API failed after 4 tries: HTTP Error 429
+- `j4_integrity`: owner_watchlist.json snapshot stale 3.2h
 
 ## What each job does
 
