@@ -40,6 +40,16 @@ trade on the M28 map, (c) join with archive/pool_trades + call_snapshots: was he
 wallets, (d) the 3 habits that cost him most in R, each with n and CI. Addresses never leave the laptop and never
 appear in any committed file; reports refer to "wallet A/B/C".
 
+## M32 - LADDER ATLAS, EXPLORATORY (owner 10-15: "is it not obvious we could've ladder trimmed out ... those were real
+## winners ... these things need to be exploratively mined") - an owner request, run it despite the convergence note
+Scale-out LADDERS (multi-step), never tested as such (M1/M30 were single trims): e.g. 25%@0.5R+25%@1R+trail;
+thirds @0.5/@1+trail; quarters @0.5/0.75/1+trail; and level sets in ATR instead of R. EXPLORATORY: map the whole
+surface (levels x fractions), on the M28 grid + random-entry control AND on his plans/ideas as labels; report where a
+ladder wins (by circumstance: vol tier, trend state, funding, time of day, how fast MFE arrived) and what it costs on
+runners - a table he can read, not one verdict. Server's quick replay on his 28 trades (runner +0.168R/trade;
+quarters +0.162; thirds +0.157; 25/25 +0.136): ladders rescue the faders (VVV -1 -> -0.5, SUI -0.47 -> +0.08) and
+shave every winner by ~0.1R - the question is whether some circumstance tells them apart in advance.
+
 ## M31 - OWNER JUDGEMENT AT THE PEAK (forward; owner 10-15: "ping me 'pulling back from peak' ... I'm probably going to
 ## trim most of the time, however if my thesis looks good, chart looks good, it may be different")
 Not another exit dial: this grades the OWNER. owner_plans.jsonl now carries kind "decision" rows {id, ts, action trim|
