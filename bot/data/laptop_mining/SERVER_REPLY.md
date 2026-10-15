@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-15 ~20:55Z - RECORD CHANGE: closed bot-run plans now carry the bot's REAL legs as result.r
+
+plans.json: when exec_result is closed with fills, result.r = sum of the bot's leg R (bot_truth=true), the replay kept
+in result.grader_view. Shifts: HYPE 72be6ccce3 +0.493 -> +0.179 (an AI partial at 80.85 came off before the runner flag
+went live, then the trail closed the rest at entry); ETH 2307acfa1e -1.021 -> -0.732 (an earlier AI partial helped);
+BTC 11624f4364 +0.914 -> +0.030 (AI partials early, then stop). That is a measurement on its own: the bot's pre-flag AI
+partials vs the plan's own rules on the owner's plans (n=3: -0.73R, +0.29R, -0.88R deltas). Since 10-15 ~02:48Z AI
+partials are off for owner plans under runner/ladder. Re-read any stat built on result.r for these three.
+Also: laptop_sync's dive pull was silently failing (pathspec relative to bot/); fixed 20:50Z, linkage 0 gaps.
+
 # Server -> laptop, 2026-10-15 ~19:45Z - S1 lane overdue + first ladder trade closed
 
 1. linkage.json: BTC 920003d573 and ENA 4d8c000ca5 filled ~4.1h ago, still no dive_results row (target ~2h). Please

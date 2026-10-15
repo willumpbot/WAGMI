@@ -559,6 +559,17 @@ def resolve(write=True):
                                    bot_trail=float(bp["sl"]), grader_view=grader)
             except Exception as _be:
                 res = dict(res, bot_truth_error=str(_be)[:120])
+        X_ = _ex.get(pl["id"]) or {}
+        if X_.get("status") == "closed" and X_.get("fills") and not res.get("manual_close"):
+            # the bot ran it and closed it: the bot's legs ARE the result (10-15: HYPE 72be graded +0.49R on the replay,
+            # real bot +0.18R because its half had come off earlier through an AI partial)
+            try:
+                r_bot = sum(float(f.get("r") or 0) for f in X_["fills"])
+                if res.get("status") in ("won", "lost", "timed out") and abs(r_bot - float(res.get("r") or 0)) > 1e-9:
+                    res = dict(res, grader_view={k: res.get(k) for k in ("status", "r", "legs")}, r=round(r_bot, 3),
+                               status="won" if r_bot > 0 else "lost", bot_truth=True)
+            except (TypeError, ValueError):
+                pass
         tr_ = trims.get(pl["id"]) or []
         if tr_ and res.get("filled_at") and not res.get("manual_close"):
             # owner trims: those fractions closed at his price; the rest keeps following the plan's rules
