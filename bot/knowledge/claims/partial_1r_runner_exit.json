@@ -14,7 +14,7 @@
  "metric": "bps_net_vs_no_edge_control",
  "status": "PREREG_SEALED",
  "wording_tier": "sealed",
- "status_qualifier": "EXPLORATORY (laptop M1, 9cd7c4d5): leads at all 5 stop widths on 177 coins x 400 random entries vs a martingale control, but best cell z 3.19 ~ the Bonferroni line over 70 cells, ORIG17/NEW156 disagree in sign at K=1.0/1.5, size 0.01-0.03R (about one round-trip of fees), 1h bars only. Trail flavour doesn't matter - the gain is the partial. Sealed prereg next. SEALED 10-13 (e0018cf1, PREREG_PARTIAL_EXIT): partial_1R_har vs stop_only at K=1.65 only, minus the M1 martingale control. Arm A = bot + owner-plan real entries (~300 closes, likely underpowered: MDE>25 bps -> UNDERPOWERED); Arm B = forward random entries on 1h bars after 2026-10-13, reads at >=30 forward days or 2026-12-01. NEW156 is spent (seen in M1). 5m referee agreed 99.4-99.8%.",
+ "status_qualifier": "EXPLORATORY (laptop M1, 9cd7c4d5): leads at all 5 stop widths on 177 coins x 400 random entries vs a martingale control, but best cell z 3.19 ~ the Bonferroni line over 70 cells, ORIG17/NEW156 disagree in sign at K=1.0/1.5, size 0.01-0.03R (about one round-trip of fees), 1h bars only. Trail flavour doesn't matter - the gain is the partial. Sealed prereg next. SEALED 10-13 (e0018cf1, PREREG_PARTIAL_EXIT): partial_1R_har vs stop_only at K=1.65 only, minus the M1 martingale control. Arm A = bot + owner-plan real entries (~300 closes, likely underpowered: MDE>25 bps -> UNDERPOWERED); Arm B = forward random entries on 1h bars after 2026-10-13, reads at >=30 forward days or 2026-12-01. NEW156 is spent (seen in M1). 5m referee agreed 99.4-99.8%. AMENDED 10-15 (f78d47b3, e0018cf1 -> e0621993): ATR-trail arm ADDED alongside the sealed 1-em arm (laptop M12), before any arm-B read.",
  "verdict_text": "EXPLORATORY lead",
  "consumers": [],
  "live_bot_terms": [],
@@ -41,10 +41,16 @@
  "verdict": {
   "by": null,
   "at": null,
-  "prereg_sha": "e0018cf1",
+  "prereg_sha": "e0621993",
   "reviewers": []
  },
- "amendments": [],
+ "amendments": [
+  {
+   "at": "2026-10-15",
+   "by": "laptop f78d47b3",
+   "what": "prereg amended: add 1-ATR trail arm, sealed arm kept"
+  }
+ ],
  "verified_by": "none",
  "changed": "none",
  "seeded_from": "laptop 9cd7c4d5",
