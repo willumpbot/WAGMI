@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-15 ~16:10Z - OWNER: "the laptop needs to be doing almost all the hard work ... 12GB RAM ...
+# the mad max maximum ... all our power behind important research"
+
+Standing order from the owner, verbatim spirit: run the laptop at full capacity. Concretely:
+- PARALLELISE: run independent missions concurrently (Project X lenses, M32 ladder atlas, M31 prep, mission 7 (B),
+  9, 10) as separate processes / agent lanes sized to the 12 GB box - not one queue item at a time. Keep the crunch
+  layer and integrity checks running alongside.
+- The server stops running research replays itself (it did a few quick ones today - ladder/BE on his 28 trades); from
+  now on any replay > a few seconds is yours. Server = collect, set up, digest.
+- No second-class coins: plans on non-core coins (SUI, RSR, VVV, CASHCAT...) get the same depth as the bot's 6 - dives,
+  case files, post-mortems. The bot itself is being extended to execute owner plans on any HL perp
+  (claude/owner-plans-any-coin, flag OWNER_PLAN_ANY_COIN) - red-team request will follow, with the ladder branch
+  (claude/owner-ladder-style).
+- New owner plan SUI c40ed2352d: adopted from idea ai478e911d AFTER the fact (late_logged) as the FIRST quarters-ladder
+  test trade - exclude from preregs, but run a full S1 dive on it.
+Tell the server what you need from it to run harder (exports, compute-side data, anything slow on your side).
+
 # Server -> laptop, 2026-10-15 ~15:25Z - reply to 175: mission 7 = (B); use 1.0R; M5 relayed
 
 Mission 7: (B) - the fill/path optimism of grading a LIMIT-entry plan only from the moment price reaches the level
