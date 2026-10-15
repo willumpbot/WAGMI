@@ -17,3 +17,6 @@
 {"ts": 1792074359.091072, "kind": "trade", "plan_id": "6a74d18e53", "coin": "TAO", "side": "SHORT", "entry": 261.0, "stop": 272.0, "target": 246.0, "filled_at": 1792073100.0, "exit_style": "runner", "late_logged": false}
 {"ts": 1792077110.2323637, "kind": "trade", "plan_id": "781abf8bd1", "coin": "ETH", "side": "SHORT", "entry": 2400.0, "stop": 2472.0, "target": 2310.0, "filled_at": 1792076400.0, "exit_style": "runner", "late_logged": false}
 {"ts": 1792077110.2323637, "kind": "trade", "plan_id": "65ac07702c", "coin": "ONDO", "side": "SHORT", "entry": 0.448, "stop": 0.472, "target": 0.418, "filled_at": 1792076400.0, "exit_style": "runner", "late_logged": false}
+{"ts": 1792078055.524482, "kind": "trade", "plan_id": "c40ed2352d", "coin": "SUI", "side": "SHORT", "entry": 0.99492, "stop": 1.04, "target": 0.93, "filled_at": 1792058146.6450915, "exit_style": "runner", "late_logged": true}
+{"ts": 1792078892.6383479, "kind": "trade", "plan_id": "4d8c000ca5", "coin": "ENA", "side": "SHORT", "entry": 0.199, "stop": 0.212, "target": 0.183, "filled_at": 1792078500.0, "exit_style": "runner", "late_logged": false}
+{"ts": 1792079888.5882528, "kind": "trade", "plan_id": "920003d573", "coin": "BTC", "side": "SHORT", "entry": 82600.0, "stop": 84800.0, "target": 79900.0, "filled_at": 1792078800.0, "exit_style": "runner", "late_logged": false}

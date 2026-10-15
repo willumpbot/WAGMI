@@ -1,0 +1,13 @@
+M32C confirm-prep: clean (b05-excl) separations on the discovery population.
+total scored 21218 | discovery 15424 | confirmation(corrob) 5794
+frozen thresholds on DISCOVERY: S* (clean surge median) = 0.6907 | Vel* (median bars) = 9.0
+
+=== DISCOVERY separations (clean, b05-excluded; wider coin/day CI; eqw; sign-frac) ===
+  surge_only    sep +0.0445 [+0.0180,+0.0697] | eqw +0.0443 sign 0.66 | n_fp=7712 n_rl=7712 coins=174 | BELOW 0.05 floor (lower bound) eqw<0.05
+  composite_AND sep +0.0695 [+0.0312,+0.1106] | eqw +0.0689 sign 0.76 | n_fp=4038 n_rl=11386 coins=174 | BELOW 0.05 floor (lower bound) eqw>%0.05 OK
+
+=== CORROBORATIVE confirmation subpop (DESCRIPTIVE - atlas saw it, barred from go/no-go) ===
+  surge_only    sep +0.0307 [-0.0111,+0.0684] | eqw +0.0329 sign 0.57
+  composite_AND sep +0.0653 [+0.0119,+0.1175] | eqw +0.0698 sign 0.66
+
+wrote m32c_confirm_result.json -> decides the frozen classifier + whether it clears the floor.
