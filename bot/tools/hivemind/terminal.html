@@ -593,6 +593,23 @@ function calc(){
     if (sr && sr.flags.includes("funding_hot")) w.push(`Longs are paying a lot of funding on ${sel} right now. On days like this a normal stop tended to get hit a bit more often in testing (about +2 points). Consider a slightly smaller size.`);
     if (sr && side==="LONG" && (sr.vol_rank||0) > 15 && sr.hi20 && sr.px > sr.hi20) { const up = (sr.px/sr.hi20-1)*100;
       w.push(`${sel} is a small cap ${up.toFixed(1)}% above its 20-day high. Tested on 164 coins: breakouts like this tended to fall back vs other small caps over the next few days${up>=8?" (this far above: about -15% in 3 days)":""}. Buying here is chasing.`); } }
+  { // Concurrent risk (laptop M18, warn-only): same-direction positions on coins that move together stop together -
+    // pairs ~1.6-1.7x more than independent ones, three of them ~3.3x. Correlation from the scanner's daily closes.
+    const P_ = (typeof PLANS !== "undefined" && PLANS.length) ? PLANS : ((DATA.plans||{}).plans || []);
+    const sc = ((typeof SCAN !== "undefined" && SCAN.coins) || []);
+    const spark = c => (sc.find(r => r.coin === c) || {}).spark;
+    const rets = a => a && a.length > 8 ? a.slice(1).map((v,i) => Math.log(v / a[i])) : null;
+    const corr = (x, y) => { if (!x || !y) return null; const n = Math.min(x.length, y.length); if (n < 8) return null;
+      x = x.slice(-n); y = y.slice(-n); const mx = x.reduce((a,b)=>a+b,0)/n, my = y.reduce((a,b)=>a+b,0)/n;
+      let sxy=0, sxx=0, syy=0; for (let i=0;i<n;i++){ sxy+=(x[i]-mx)*(y[i]-my); sxx+=(x[i]-mx)**2; syy+=(y[i]-my)**2; }
+      return sxx && syy ? sxy/Math.sqrt(sxx*syy) : null; };
+    const mine = rets(spark(sel));
+    const same = P_.filter(q => (q.result||{}).status === "open" && q.side === side && q.coin !== sel)
+                   .map(q => ({coin: q.coin, c: corr(mine, rets(spark(q.coin)))}))
+                   .filter(q => q.c == null || q.c >= 0.5);
+    const coins = [...new Set(same.map(q => q.coin))];
+    if (coins.length) w.push(`You already hold ${side.toLowerCase()} ${coins.join(", ")}, which ${coins.length>1?"move":"moves"} with ${sel}${same.some(q=>q.c!=null)?` (correlation ${same.filter(q=>q.c!=null).map(q=>q.c.toFixed(2)).join(", ")})`:""}. Tested: two such positions stop out together about 1.7x as often as unrelated ones, three about 3.3x. They tend to lose together, so treat the combined risk as one bet and size each one smaller.`);
+  }
   if (carryUsd!=null && carryUsd > fee && carryUsd > 0.1*riskUsd) w.push(`Funding over a ${holdH}h hold costs about $${carryUsd.toFixed(2)}, more than your trading fees (${(carryUsd/riskUsd*100).toFixed(0)}% of your risk). Tested: at funding this high the cost is predictable and real - a shorter hold or smaller size cuts it.`);
   if (dist*100 < a) w.push(`Stop is closer than a normal day's move (±${a.toFixed(1)}%): stops this tight got hit a lot in testing. Try about ${(2*a).toFixed(1)}%.`);
   $("c_warn").textContent = w.join(" ");
