@@ -17,3 +17,11 @@ discovery/confirmation split for the M28 map is fixed NOW, before m28 code exist
   remember outcomes) - forward-graded only.
 - Owner decisions (plans, calls, watchlist adds, mentions) are LABELS on the map, never selection
   criteria for the split.
+
+---
+# FREEZE AMENDMENT (cold pass, 2026-10-15, after M28_DISCOVERY_RESULT.md): NOTHING IS FROZEN.
+No discovery contrast met the survivor rule (top |z| 2.57 vs null max 1.44, sign flips under
+eqw-by-coin). m28_map_confirmation_SEALED.npz REMAINS SEALED indefinitely; it may only ever be opened
+for a future design whose own seal references this amendment. The fund_pctl short-lean tease
+(eqw-week -0.26 R, z~1.4) is recorded as noise-compatible. L2: n~5 filled label clusters vs MDE
+0.6-0.9 R - descriptive only, no number carded; the forward label corpus (target n~240) is the L2 path.
