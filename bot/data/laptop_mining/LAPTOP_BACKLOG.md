@@ -29,6 +29,17 @@ S4. **Angle discovery** (owner 10-15: "there are no projects that can be left be
     mined (stream x question x horizon). Top 10 by (data available now x decision value) go straight into this backlog.
     The server ran the first pass on 10-15 (ANGLE_MAP_2026-10-15.md).
 
+## M29 - OWNER'S OWN WALLETS (runs on the LAPTOP; owner 10-15: "the laptop can handle HEAVY LOADS")
+You hold the addresses (owner relayed them to you). Starter code: tools/hivemind/owner_wallets.py (public Solana RPC +
+HL userFillsByTime/userFunding; Axiom perps run on Hyperliquid, so the Axiom wallet should have an HL address - find
+it). Run it on the laptop with addresses in a local, never-committed wallets.json; replace the public RPC with
+anything faster you have. Build: every swap/fill -> round trips (entry, exit, hold, PnL in SOL and USD at the time,
+fees). Most of these wallets lose money - that is the point: they are the owner's labels. Then (a) S2-style
+post-mortems by pattern (entry timing vs the pool's run, hold length, exit vs peak, size vs liquidity), (b) place every
+trade on the M28 map, (c) join with archive/pool_trades + call_snapshots: was he before/after callers and smart
+wallets, (d) the 3 habits that cost him most in R, each with n and CI. Addresses never leave the laptop and never
+appear in any committed file; reports refer to "wallet A/B/C".
+
 ## M28 - JUMPS THE QUEUE (owner 10-15: "run our own trading decisions on already-mined conditions ... it should be
 ## identical to live trading")
 **Policy replay = a paper twin of how WE trade, run over every moment we have data for.**
