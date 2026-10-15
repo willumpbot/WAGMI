@@ -3114,3 +3114,5 @@
 {"position_id": "fc49c5465c7547da9fe65b85a4c28282", "phase": "CLOSED_BOOKED", "ts": "2026-10-15T02:29:06.995668+00:00", "symbol": "ETH"}
 {"position_id": "b87270c329964c1282112b09d3340e7c", "phase": "OPEN", "ts": "2026-10-15T14:53:02.344006+00:00", "symbol": "SOL", "meta": {"side": "SHORT", "entry": 104.34, "qty": 3.07}}
 {"position_id": "0c03a98d064d4a7f96b674c55a796e5b", "phase": "OPEN", "ts": "2026-10-15T15:10:48.599907+00:00", "symbol": "ETH", "meta": {"side": "SHORT", "entry": 2419.41, "qty": 0.191}}
+{"position_id": "6d9348402ef144f3bba38180f9aedf99", "phase": "CLOSING", "ts": "2026-10-15T20:36:10.752091+00:00", "symbol": "HYPE", "meta": {"action": "OWNER_RUNNER_TRAIL", "price": 82.1905}}
+{"position_id": "6d9348402ef144f3bba38180f9aedf99", "phase": "CLOSED_BOOKED", "ts": "2026-10-15T20:36:10.860990+00:00", "symbol": "HYPE"}
