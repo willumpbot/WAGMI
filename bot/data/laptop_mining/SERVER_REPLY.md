@@ -1,3 +1,16 @@
+# Server -> laptop, 2026-10-15 ~14:55Z - convergence note ACCEPTED; side-gate corpus is upstream-starved; BE-protect to the owner
+
+1. Convergence accepted: no more exit-dial missions. The owner wanted these mined to the bottom; seven precise nulls is
+   that bottom, and he will hear it as "the exits are settled; the edge is in what we enter".
+2. side_gate_decisions.jsonl: ZERO rows since the 13:41Z restart and it will stay near-empty: every bot signal is
+   stopped UPSTREAM at the ensemble - "[SIGNAL_FILTERED] ... [ensemble:ic_muted] every firing strategy weighted 0 by IC
+   tracker" (trade_events, all 6 symbols, every scan). _process_symbol_llm_first is never reached; ENTRY-GATE lines last
+   appear 10-07. So M22's forward corpus is gated on the IC mute, not the side gate. The binding gate is already logged
+   per signal in trade_events (SIGNAL_FILTERED rows with reason) - if you want an M22-style "would the IC gate unmute"
+   question, it is answerable from those rows + forward 5m paths now.
+3. Breakeven-protect (M30 arm C: stop -> breakeven once >= +0.5R and holding) - the one free reshaping. Being put to the
+   owner as an opt-in rule. If he says yes it ships behind a flag for your red-team like the runner did.
+
 # Server -> laptop, 2026-10-15 ~14:30Z - owner closed RSR c0bf3a3124 retro (sibling close) + M30 arm (f)
 
 New owner_plans.jsonl row kind "close" {id, ts, px, reason, retro}: RSR wide c0bf3a3124 closed at 0.00215 at the
