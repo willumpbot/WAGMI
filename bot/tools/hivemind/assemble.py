@@ -375,7 +375,28 @@ def owner_extra_coins():
     for p in (_load(DATA / "hivemind" / "plans.json", {}) or {}).get("plans", []):
         if (p.get("result") or {}).get("status") in ("open", "waiting"):
             out.add(p.get("coin"))
-    return sorted(c for c in out if c and c not in SYMS)
+    return sorted(c for c in out if c and c not in SYMS) + [c for c in promoted_movers() if c not in out and c not in SYMS]
+
+
+def promoted_movers(k=2):
+    """Discovery with a hard cap (owner 10-15: "hyperfocused at limited tokens, but very open to new opportunities"):
+    the scanner's top k coins that are BOTH unusually active (24h volume >= 2.5x normal) AND moving (|24h change| >=
+    1 expected daily move) get the full voice set this cycle. No sticky state: a coin drops out when it calms down.
+    Data voices only - no LLM call is spent on them. Logged to promoted_log.jsonl for later grading (did the promoted
+    coins keep moving more than the rest of the scanner?)."""
+    rows = (_load(DATA / "hivemind" / "scan.json", {}) or {}).get("coins", [])
+    hot = [r for r in rows if (r.get("vol_ratio") or 0) >= 2.5 and r.get("exp_move")
+           and abs(r.get("chg_24h") or 0) >= r["exp_move"] and r.get("coin") not in SYMS]
+    hot.sort(key=lambda r: -(r.get("vol_ratio") or 0))
+    pick = [r["coin"] for r in hot[:k]]
+    if pick:
+        try:
+            with open(DATA / "hivemind" / "promoted_log.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"ts": time.time(), "coins": [{k_: r.get(k_) for k_ in ("coin", "px", "chg_24h",
+                        "vol_ratio", "exp_move")} for r in hot[:k]], "n_hot": len(hot)}) + chr(10))
+        except OSError:
+            pass
+    return pick
 
 
 def assemble():

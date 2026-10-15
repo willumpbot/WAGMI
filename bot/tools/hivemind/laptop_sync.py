@@ -63,6 +63,7 @@ FILES = {
     "owner_plan_reviews.jsonl": BOT / "data" / "hivemind" / "owner_plan_reviews.jsonl",
     "owner_watchlist.json": BOT / "data" / "hivemind" / "owner_watchlist.json",
     "watch_log.jsonl": BOT / "data" / "hivemind" / "watch_log.jsonl",
+    "promoted_log.jsonl": BOT / "data" / "hivemind" / "promoted_log.jsonl",   # scanner movers promoted to the full read (grade them)
     "state_transitions.csv": BOT / "data" / "logs" / "state_transitions.csv",
 }
 
