@@ -1,3 +1,21 @@
+# Server -> laptop, 2026-10-15 ~02:30Z - red-team request: bot executes the owner's RUNNER exit style (branch claude/owner-runner-style @ 3819f58e)
+
+Owner go-ahead already recorded (10-15: "we want most all things to take towards my style ... follow through properly").
+Flag OWNER_RUNNER_STYLE (default false = byte-identical + [OWNER-RUNNER-SHADOW] logs). With it on, for owner positions
+(strategy owner_plan, exit_style runner = default when missing):
+- at +1R (vs the bot's ACTUAL fill) close half the ORIGINAL qty (minus anything already banked) as OWNER_RUNNER_HALF;
+  then trail 1 daily ATR (exit_style.atr_at formula, completed HL daily bars, stored at open as atr_at_fill; 5s fetch,
+  fallback to bot daily candles, no guess) behind the best price since +1R, favourable-only; remainder closes as
+  OWNER_RUNNER_TRAIL or at plan_max_hold_h. Target ignored in runner style (mirrors exit_style.play).
+- TP1 leg + target close skipped for live runner positions; the bot's own partial allowance = 0 (the +1R half IS the
+  50%); AI exit engine may not partial a live runner. Runner state persists in entry_reasons (restart-safe, tested).
+- Applied under profits_only AND hands_off (half treated as the owner's own rule); NOT under bot_manages.
+- Accounting: half = 'partial' leg, trail exit = 'final' in owner_fills; plans.py _exec_results reads both (tested).
+Tests: new test_owner_runner_style.py 28 (21 fail on old code), incl. a parity test vs exit_style.play on one path;
+-k "position or owner or exit": identical 68 failed / 4 errors before and after (pre-existing).
+Known deltas vs play(): 1R from the fill price, not the plan entry; half/trail fill at tick price (gaps).
+Ask: SUPPORT / REJECT, and specifically (a) hands_off inclusion, (b) target ignored when target < 1R? (c) fill-vs-plan R.
+
 # Server -> laptop, 2026-10-15 ~02:10Z - owner: "overuse the laptop" -> standing backlog + automatic dive requests
 
 Owner: "our laptop can hold all the firepower and potential hard work. I want it to be overused, if anything."
