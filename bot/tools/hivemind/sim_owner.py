@@ -82,7 +82,8 @@ def simulate(plan_id, plan):
 
 def simulate_plan(plan, risk_default=10.0, bot_traded=False):
     """Any owner plan, played out on HL 5m bars from the grader's fill time under the owner's exit style
-    (exit_style.py: default 'runner' = half at +1R, rest trails 1 daily ATR, plan time limit). Sized at the plan's
+    (exit_style.py: default 'runner' = half at +1R, rest trails 1 daily ATR, plan time limit; 'ladder' = quarters at
+    +0.5R / +0.75R / +1R, last quarter trails; 'full' = stop / target / time). Sized at the plan's
     risk_usd (else risk_default). Works on any HL perp."""
     import exit_style
     R = plan.get("result") or {}
@@ -99,7 +100,7 @@ def simulate_plan(plan, risk_default=10.0, bot_traded=False):
     if R.get("manual_close"):   # owner closed it (plans.close): the record follows his close, not a replay
         r_ = float(R.get("r_gross") or 0)
         return {"mode": "owner close", "status": "closed by owner", "lev": float(plan.get("leverage") or 1),
-                "entry": entry, "stop": stop, "target": target, "partials": [l for l in R.get("legs", []) if l["why"] == "half at +1R"],
+                "entry": entry, "stop": stop, "target": target, "partials": [l for l in R.get("legs", []) if exit_style.is_partial_leg(l)],
                 "banked_usd": None, "open_qty": 0.0, "mark": R.get("exit"), "open_pnl_usd": 0.0,
                 "total_usd": round(r_ * risk, 2), "r": round(r_, 3), "risk_usd": risk, "exit_ts": R.get("closed_at"),
                 "expires_ts": t_open + float(plan.get("max_hold_h") or 48) * 3600, "as_of": time.time(),
@@ -134,10 +135,11 @@ def simulate_plan(plan, risk_default=10.0, bot_traded=False):
         r_now = pr["r"]
     total = None if r_now is None else round(r_now * risk, 2)
     banked_usd = round(sum(l["frac"] * (1 if side == "LONG" else -1) * (l["px"] - entry) / abs(entry - stop)
-                           for l in pr["legs"] if l["why"] == "half at +1R") * risk, 2)
+                           for l in pr["legs"] if exit_style.is_partial_leg(l)) * risk, 2)
     return {"mode": sty, "status": {"won": "target", "lost": "stop"}.get(pr["status"], pr["status"]) if pr["status"] != "open" else "open",
             "lev": float(plan.get("leverage") or 1), "entry": entry, "stop": stop, "target": target,
-            "partials": [l for l in pr["legs"] if l["why"] == "half at +1R"], "banked_usd": banked_usd,
+            "partials": [l for l in pr["legs"] if exit_style.is_partial_leg(l)], "banked_usd": banked_usd,
+            "banked_frac": exit_style.banked_frac(pr["legs"]),
             "open_qty": round(q0 * pr.get("frac_left", 0 if pr["status"] != "open" else 1.0), 6), "mark": mark,
             "open_pnl_usd": None if total is None else round(total - banked_usd, 2), "total_usd": total,
             "r": None if r_now is None else round(r_now, 3), "risk_usd": risk, "exit_ts": pr["exit_ts"],

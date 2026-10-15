@@ -84,8 +84,9 @@ def create(p):
            # profits_only (default) = partial profits only, stop never moved, no early close;
            # hands_off = stop/target only; bot_manages = the bot's full exit machinery.
            "exit_mode": _exit_mode(p.get("exit_mode")),
-           # how the position is exited (exit_style.py): runner (default) = half at +1R, rest trails 1 ATR; full = all at target
-           "exit_style": ("full" if str(p.get("exit_style") or "").lower() == "full" else "runner")}
+           # how the position is exited (exit_style.py): runner (default) = half at +1R, rest trails 1 ATR; full = all at
+           # target; ladder = quarters at +0.5R / +0.75R / +1R, last quarter trails 1 ATR
+           "exit_style": _xs_norm(p.get("exit_style"))}
     HM.mkdir(parents=True, exist_ok=True)
     try:   # re-adding a plan that is still live returns the existing one (no second position)
         prior = _rows()
@@ -516,8 +517,9 @@ def resolve(write=True):
                     fill_px = float((_ex.get(pl["id"]) or {}).get("fill_price") or 0) or e_   # bot's real fill if it traded
                     used = _xs.guarded(sty, pl["side"], fill_px, st_, tg_)   # same target guard as the live bot
                     pr = _xs.play(pl["side"], e_, st_, tg_, _bars, f_ts, pl_g.get("max_hold_h"), used, _atr, now)
-                    alt = _xs.play(pl["side"], e_, st_, tg_, _bars, f_ts, pl_g.get("max_hold_h"),
-                                   "full" if used == "runner" else "runner", _atr, now)   # the other style, for comparison
+                    # the other style, for comparison: runner <-> full; ladder is compared with runner
+                    alt_sty = {"runner": "full", "ladder": "runner"}.get(used, "runner")
+                    alt = _xs.play(pl["side"], e_, st_, tg_, _bars, f_ts, pl_g.get("max_hold_h"), alt_sty, _atr, now)
                     risk_ = abs(e_ - st_)
                     fee_r = round(FEE_RT * e_ / risk_, 3) if risk_ else 0.0
                     keep = {k: res.get(k) for k in ("best_r", "worst_r") if k in res}
@@ -529,7 +531,7 @@ def resolve(write=True):
                                    r=round(pr["r"] - fee_r, 3), fee_r=fee_r, exit=pr["legs"][-1]["px"], style=sty,
                                    legs=pr["legs"], hold_h=round((pr["exit_ts"] - f_ts) / 3600, 1))
                     res["style_used"] = used
-                    res["alt_style"] = "full" if used == "runner" else "runner"
+                    res["alt_style"] = alt_sty
                     res["alt_r"] = alt.get("r") if alt["status"] != "open" else None
                     res["alt_live_r"] = alt.get("live_r") if alt["status"] == "open" else None
         except Exception as _e:

@@ -108,6 +108,9 @@ def run(deep_reads=2):
         unit = atr or (e * (sc.get("exp_move") or 0) / 100) or None
         legs = R.get("legs") or []
         live = {"at": now, "status": R.get("status"), "px": px, "flags": sc.get("flags") or [],
+                # banked_frac: share of the original size already banked by partial legs (runner half 0.5;
+                # ladder quarters 0.25 / 0.5 / 0.75). half_banked kept for older readers (runner's half only).
+                "banked_frac": exit_style.banked_frac(legs),
                 "half_banked": any(l.get("why") == "half at +1R" for l in legs), "trail": R.get("trail"),
                 "style_r": R.get("r") if R.get("status") != "open" else R.get("live_r"),
                 "alt_style": R.get("alt_style"), "alt_r": R.get("alt_r") if R.get("alt_r") is not None else R.get("alt_live_r"),

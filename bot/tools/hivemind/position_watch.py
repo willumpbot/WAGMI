@@ -122,7 +122,7 @@ def run():
     for pl in _load(HM / "plans.json", {}).get("plans", []) + ideas:
         R = pl.get("result") or {}
         if R.get("status") != "open" or R.get("legs"):
-            continue                       # closed, or half already banked at +1R
+            continue                       # closed, or a leg already banked (runner half / any ladder quarter)
         best, live = R.get("best_r"), R.get("live_r")
         # EARLY (owner 10-15: "I want the alert before it pulls through .5R - I can't pull a position that's close to
         # breakeven"): fire as soon as a trade that reached >= +0.5R has come off its peak by >= 0.15R (or a quarter of

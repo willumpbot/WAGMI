@@ -5,14 +5,35 @@ style "runner" (default): take HALF at +1R; the other half trails 1 daily ATR (1
   behind the best price since; whatever is left closes at the plan's time limit. Before +1R the full position rides
   the owner's stop. Laptop evidence: partial_1R led every stop width (M1, exploratory; sealed test e0621993 reads by
   2026-12-01); a 1-ATR trail beats a tight one (M12); close winners on the clock, not on noise (M10).
+style "ladder" (owner 10-15, "quarters"): a QUARTER of the position at +0.5R, a quarter at +0.75R, a quarter at +1R;
+  after the third quarter the last 25% trails 1 daily ATR (same atr_at_fill) behind the best price since, starting
+  from the plan stop and only ever moving the profitable way. Before any quarter the full position rides the plan
+  stop; the plan's time limit closes whatever is left; the target is ignored (as in runner). A bar that reaches
+  several levels banks each of them at its level.
 style "full": the whole position closes at the stop, the target or the time limit (the old all-or-nothing).
 
 R is per unit of the ORIGINAL risk (|entry - stop| x full size), before fees.
 """
 import time
 
-STYLES = ("runner", "full")
+STYLES = ("runner", "full", "ladder")
 DEFAULT = "runner"
+# styles that ignore the target and need a trail width (both subject to the target guard below)
+TRAIL_STYLES = ("runner", "ladder")
+# ladder: (R multiple, fraction of the ORIGINAL size, leg label); the last 25% trails after the third quarter
+LADDER = ((0.5, 0.25, "quarter at +0.5R"), (0.75, 0.25, "quarter at +0.75R"), (1.0, 0.25, "quarter at +1R"))
+# every leg label that banks PART of the position while the rest stays open
+PARTIAL_WHYS = ("half at +1R",) + tuple(w for _, _, w in LADDER)
+
+
+def is_partial_leg(leg):
+    """True for a leg that banked part of the position (runner's half, a ladder quarter)."""
+    return (leg or {}).get("why") in PARTIAL_WHYS
+
+
+def banked_frac(legs):
+    """Fraction of the original size banked by partial legs (runner 0.5; ladder 0.25 / 0.5 / 0.75)."""
+    return round(sum(float(l.get("frac") or 0) for l in (legs or []) if is_partial_leg(l)), 6)
 
 
 def norm(v):
@@ -24,10 +45,10 @@ def guarded(style, side, entry, stop, target):
     """The bot's target guard (OWNER_RUNNER_TARGET_GUARD, default on, live since 10-15): when the target sits at or
     inside +1R, 'runner' would ignore it and wait for a +1R that may never print, so the plan runs 'full' (all at
     target). Graders must apply it too, or live and graded diverge (RSR b33a49b78e, 10-15: target 0.00215 vs +1R
-    0.00216)."""
+    0.00216). Same rule for 'ladder' (its third quarter and its trail start at +1R)."""
     import os
     style = norm(style)
-    if style != "runner" or os.getenv("OWNER_RUNNER_TARGET_GUARD", "true").strip().lower() in ("0", "false", "no", "off"):
+    if style not in TRAIL_STYLES or os.getenv("OWNER_RUNNER_TARGET_GUARD", "true").strip().lower() in ("0", "false", "no", "off"):
         return style
     return "full" if abs(target - entry) <= abs(entry - stop) else style
 
@@ -56,7 +77,8 @@ def play(side, entry, stop, target, bars, fill_ts, max_hold_h, style="runner", a
     one_r = entry + sg * risk
     style = norm(style)
     legs, frac_left, banked, best, trail_stop = [], 1.0, 0.0, entry, stop
-    runner_on = False
+    runner_on = False   # trail armed: runner after the +1R half, ladder after the third quarter
+    steps = 0           # ladder quarters taken
     trail_w = atr if atr else None
     for b in bars:
         t, h, l, c = int(b["t"]) / 1000, float(b["h"]), float(b["l"]), float(b["c"])
@@ -74,6 +96,20 @@ def play(side, entry, stop, target, bars, fill_ts, max_hold_h, style="runner", a
                 r = sg * (target - entry) / risk
                 legs.append({"at": t, "px": target, "frac": 1.0, "why": "target"})
                 return {"status": "won", "r": round(r, 3), "legs": legs, "exit_ts": t, "best_px": best, "trail": None}
+        elif style == "ladder":
+            while steps < len(LADDER):
+                k_r, k_f, k_why = LADDER[steps]
+                lvl = entry + sg * k_r * risk
+                if not ((sg > 0 and h >= lvl) or (sg < 0 and l <= lvl)):
+                    break
+                legs.append({"at": t, "px": lvl, "frac": k_f, "why": k_why})
+                banked += k_f * k_r
+                frac_left = round(frac_left - k_f, 10)
+                steps += 1
+                if steps == len(LADDER):     # third quarter: the last 25% trails, starting from the plan stop
+                    runner_on = True
+                    best = lvl
+                    trail_stop = stop
         elif not runner_on and ((sg > 0 and h >= one_r) or (sg < 0 and l <= one_r)):
             legs.append({"at": t, "px": one_r, "frac": 0.5, "why": "half at +1R"})
             banked += 0.5 * 1.0
