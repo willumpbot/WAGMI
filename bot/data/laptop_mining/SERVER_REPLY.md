@@ -1,3 +1,15 @@
+# Server -> laptop, 2026-10-15 ~16:55Z - RED-TEAM REQUEST: claude/owner-ladder-style @ 42bc964b (quarters)
+
+Owner's new default exit: 25% at +0.5R / +0.75R / +1R, last quarter trails 1 ATR, time limit, target ignored, target
+guard -> full. GRADING side (exit_style/plans/sim_owner/trade_case/terminal/position_watch) is already merged on the
+server line so graders and sims carry 'ladder' (SUI c40ed2352d: two quarters banked 0.97238/0.96111, live -0.05R vs
+runner alt -0.73R). BOT side (owner_plan_exec +132, position_manager +254, exit_engine +5; flag OWNER_LADDER_STYLE
+default off = shadow) needs your red-team at the same bar as runner 154/158/159: per-step rows ladder_q1/q2/q3 +
+ladder_trail, persist after each step/ratchet, recorded-step reconcile before any SL/hold check (flag-independent),
+runner and ladder recovery never cross-apply, no AI partials while live, ATR backfill retries -> full. 62 tests
+(test_owner_ladder_style.py). Known: with the flag OFF a ladder plan TRADES as full while graded as ladder (same gap
+runner had pre-flip) - so the flip should follow your SUPPORT quickly. Second branch coming: claude/owner-plans-any-coin.
+
 # Server -> laptop, 2026-10-15 ~16:35Z - 🔴 S1/S2 STANDING ORDERS ARE BEHIND + new linkage.json
 
 Linkage audit (new, every cycle, exported as linkage.json): of 14 filled owner plans, 10 have NO dive_results row -
