@@ -54,6 +54,10 @@ from strategies.mean_reversion import MeanReversionStrategy
 from strategies.ensemble import EnsembleStrategy
 from execution.position_manager import PositionManager
 from core import owner_plan_exec as _owner_plan_exec
+try:  # M22 side-gate decision log -- LOGGING ONLY, never read by a decision
+    from core import side_gate_log as _side_gate_log
+except Exception:  # pragma: no cover
+    _side_gate_log = None
 from execution.leverage import LeverageManager
 from execution.risk import RiskManager, CircuitBreaker
 from execution.trade_logger import TradeLogger
@@ -5944,12 +5948,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 float(current_price) if current_price else None,
             )
 
+            if _side_gate_log is not None:
+                _side_gate_log.start_scope()
+            _sgl_err = None
             try:
                 self._process_symbol_llm_first(
                     symbol, sym_cfg, signal_result, data, open_pos,
                     current_price, trace_id,
                 )
             except Exception as e:
+                _sgl_err = e
                 logger.error(
                     f"[{trace_id}][{symbol}] LLM-FIRST pipeline error: {e} "
                     f"— falling back to mechanical path"
@@ -5957,6 +5965,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 # Fall through to mechanical path on failure
             else:
                 return  # LLM-first handled it (or skipped it)
+            finally:
+                # M22 side-gate log: write this evaluation's row if no terminal
+                # point did (LLM skip / downstream reject / error). Never raises.
+                if _side_gate_log is not None:
+                    _side_gate_log.end_scope(_sgl_err)
 
         # WAVE2B L1 (R5): degraded-brain guard. If llm_first was CONFIGURED but
         # its prerequisites lapsed at startup (llm_first_degraded=true), the
@@ -8728,6 +8741,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         self._note_llm_pipeline_health(_pipeline_failed, symbol, trace_id)
         _exploration_entry = False
         _probe_blocked_go = False   # set when BLOCKED_GO_PROBE re-opens a blocked entry
+        # M22 side-gate decision log (LOGGING ONLY; never raises, never read back).
+        _sgl = (_side_gate_log.new_record(trace_id, symbol, raw_signal.side, entry_decision)
+                if _side_gate_log is not None else None)
         if entry_decision.action == "skip" and _pipeline_failed:
             # Owner call 2026-07-02 (live HYPE-SHORT example; audit #7 conversion half):
             # a pipeline FAILURE is not a considered skip — the brain rendered no
@@ -8982,6 +8998,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     f"num_agree={_es_num_agree} ev={_es_ev} regime={(raw_signal.metadata or {}).get('regime_1h')} "
                     f"mode={_es_mode} block={_es_block} reasons={_es_reasons or '[]'}"
                 )
+                if _sgl is not None:
+                    _side_gate_log.note_gate(
+                        _sgl, action=entry_decision.action, mode=_es_mode,
+                        block=_es_block, reasons=_es_reasons,
+                        num_agree=_es_num_agree, ev_per_dollar=_es_ev,
+                        loss_streak=_es_loss_streak, is_exploration=_exploration_entry,
+                        side=raw_signal.side,
+                        regime=(raw_signal.metadata or {}).get("regime_1h"),
+                        sym_d24h=_es_d24h)
                 # FORWARD-EVIDENCE PROBE (2026-09-12): a blocked entry is the bot's
                 # own ledger saying "this class loses money at full size" — worth
                 # respecting. It is also how the bot went 45 days (2026-07-29 ->
@@ -9010,6 +9035,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             f"rate={_probe_rate:.2f} roll={_probe_roll:.3f} "
                             f"breaker={_probe_cb} fire={_probe_fire}"
                         )
+                        if _sgl is not None:
+                            _side_gate_log.note_probe(
+                                _sgl, enabled_=_probe_on, rate=_probe_rate,
+                                roll=_probe_roll, breaker=_probe_cb, fire=_probe_fire,
+                                size_mult=(_entry_sel.blocked_go_probe_size_mult()
+                                           if _probe_fire else None))
                         if _probe_fire:
                             _exploration_entry = True
                             _probe_blocked_go = True
@@ -9031,6 +9062,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         f"[{trace_id}][{symbol}] [ENTRY-GATE] {symbol} BLOCKED: "
                         f"{_es_reasons}"
                     )
+                    if _sgl is not None:
+                        _side_gate_log.finish(_sgl, "blocked")
                     if self.counterfactual:
                         try:
                             self.counterfactual.record_veto(
@@ -9065,6 +9098,18 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             except Exception as _es_e:
                 # FAIL-OPEN: never break the entry path on a gate error.
                 logger.debug(f"[{trace_id}][{symbol}] entry_selectivity error: {_es_e}")
+
+        # M22: gate not evaluated (ENTRY_SELECTIVITY=off, a non-'go', or a gate
+        # error) -> still snapshot the living gate state for this entry.
+        if _sgl is not None and _sgl.get("gate") is None:
+            _side_gate_log.note_gate(
+                _sgl, action=entry_decision.action, mode="not_evaluated",
+                block=False, reasons=[], num_agree=signal_ctx.get("num_agree"),
+                ev_per_dollar=signal_ctx.get("ev_per_dollar"), loss_streak=None,
+                is_exploration=_exploration_entry, side=raw_signal.side,
+                regime=(raw_signal.metadata or {}).get("regime_1h"), sym_d24h=None)
+        if _sgl is not None:
+            _side_gate_log.set_stage(_sgl, "post_gate")
 
         # ── Step 4: Post-LLM safety caps ──
         leverage = max(1.0, min(
@@ -9371,6 +9416,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         try:
             from trading_config import get_symbol_side_risk_mult as _living_side_mult
             _se_mult = _living_side_mult(symbol, side)
+            _sgl_raw_mult, _sgl_q_pre = _se_mult, qty   # M22 log only
             # LIVING_EDGE_MULT_CAP (laptop 126 #6): the x1.5 upside caused 2 of 3 risk breaches and r05 has no claim
             # behind it since 10-13. Unset = unchanged; "1.0" keeps the protective x0.25 and drops only the boost.
             _cap_raw = os.getenv("LIVING_EDGE_MULT_CAP", "").strip()
@@ -9392,6 +9438,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     f"(live ledger edge, n>=13) qty {_q_pre_edge:.6f} -> {qty:.6f} "
                     f"(notional ${qty * actual_entry:.0f})"
                 )
+            if _sgl is not None:
+                _side_gate_log.note_side_mult(
+                    _sgl, symbol=symbol, side=side, raw=_sgl_raw_mult,
+                    cap=(_cap_raw or None), applied=_se_mult,
+                    qty_pre=_sgl_q_pre, qty_post=qty)
         except Exception as _edge_e:
             logger.debug(f"[{symbol}] living-edge size mult skipped: {_edge_e}")
 
@@ -9416,6 +9467,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         except Exception as _rc_e:
             logger.debug(f"[{symbol}] risk cap skipped: {_rc_e}")
 
+        if _sgl is not None:
+            _side_gate_log.set_stage(_sgl, "execution")
         order_result = self.order_executor.open_position(
             symbol=symbol,
             side=_order_side,
@@ -9474,7 +9527,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             except Exception as e:
                 logger.debug(f"Execution analytics record error: {e}")
 
-        self.pos_mgr.open_position(
+        _sgl_pos = self.pos_mgr.open_position(
             symbol=symbol,
             side=side,
             entry=actual_entry,
@@ -9495,6 +9548,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                    else f"EXPLORATION (LLM skipped): {_thesis[:200]}" if _exploration_entry
                    else f"LLM-FIRST: {_thesis[:200]}"),
         )
+        if _sgl is not None:
+            _side_gate_log.finish(
+                _sgl,
+                (("probe_opened" if _probe_blocked_go else "opened")
+                 if _sgl_pos is not None else "not_opened"),
+                position_id=getattr(_sgl_pos, "position_id", None))
 
         # Log trade
         log_trade(

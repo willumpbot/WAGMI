@@ -210,7 +210,8 @@ APPENDS = {n: BOT / "data" / r for n, r in {
     "microcap_flow": "microcap/flow_signal.jsonl", "microcap_liquidity": "microcap/liquidity_snapshots.jsonl",
     "microcap_discovery": "microcap/discovery_log.jsonl", "exit_closes": "logs/exit_closes.jsonl",
     "signal_outcomes": "logs/signal_outcomes.jsonl", "exit_regret": "logs/exit_regret_scores.jsonl",
-    "safety_events": "logs/safety_events.jsonl"}.items()}
+    "safety_events": "logs/safety_events.jsonl",
+    "side_gate_decisions": "logs/side_gate_decisions.jsonl"}.items()}   # M22: live side/selectivity gate per entry
 APPEND_STATE = BOT / "data" / "hivemind" / ".append_offsets.json"
 
 

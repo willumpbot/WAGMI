@@ -572,5 +572,101 @@ def evaluate_entry(*, num_agree, ev_per_dollar, loss_streak, is_exploration,
         return False, [], m
 
 
+def gate_snapshot(*, num_agree, ev_per_dollar, loss_streak, is_exploration,
+                  side=None, regime=None, sym_d24h=None) -> dict:
+    """READ-ONLY per-leg view of the gate for ONE entry, for the side-gate
+    decision log (core/side_gate_log.py, laptop M22). Never used by any decision.
+
+    For every leg it records the leg's mode, the living-value state it read
+    (n / wr / breakeven / drain / N* / T_down) and the entry's inputs, plus:
+      would_fire: the leg's condition is true for this entry, IGNORING every
+                  enable flag (so a frozen-vs-living comparison can be made later)
+      verdict:    what the live gate actually did with that leg:
+                  'off' | 'exempt' | 'pass' | 'block' | 'shadow_block'
+    Mirrors evaluate_entry's conditions exactly; never raises (returns {"error"})."""
+    try:
+        m = mode()
+        _ensure_fresh()
+        with _lock:
+            solo = dict(_cache["solo"] or {})
+            streak = dict(_cache["streak"] or {})
+            long_st = dict(_cache["long"] or {})
+            cache_meta = {"computed_at": _cache["computed_at"],
+                          "ledger_mtime": _cache["ledger_mtime"],
+                          "trades_mtime": _cache["trades_mtime"]}
+        s_up = str(side or "").strip().upper()
+        is_long = s_up in ("LONG", "BUY")
+        is_short = s_up in ("SHORT", "SELL")
+
+        def _verdict(leg_enabled, leg_enforcing, fires):
+            if m == "off" or not leg_enabled:
+                return "off"
+            if is_exploration:
+                return "exempt"
+            if not fires:
+                return "pass"
+            return "block" if (m == "true" and leg_enforcing) else "shadow_block"
+
+        try:
+            na = int(num_agree) if num_agree is not None else None
+        except (ValueError, TypeError):
+            na = None
+        solo_fire = bool(na is not None and na < 2 and solo.get("active"))
+
+        n_star = streak.get("n_star")
+        try:
+            ls = int(loss_streak) if loss_streak is not None else None
+        except (ValueError, TypeError):
+            ls = None
+        streak_on = loss_streak_gate_enabled()
+        streak_fire = bool(n_star is not None and ls is not None and ls >= n_star)
+
+        negev_mode = entry_selectivity_negev_mode()
+        try:
+            ev = float(ev_per_dollar) if ev_per_dollar is not None else None
+        except (ValueError, TypeError):
+            ev = None
+        negev_fire = bool(ev is not None and ev < 0)
+
+        lrv_on = long_regime_veto_enabled()
+        upt = sorted(_uptrend_regimes())
+        reg_l = str(regime or "").strip().lower()
+        long_fire = bool(is_long and long_st.get("drain") and reg_l not in upt)
+
+        tmode = trend_direction_gate_mode()
+        t_down = trend_gate_t_down()
+        try:
+            d24 = float(sym_d24h) if sym_d24h is not None else None
+        except (ValueError, TypeError):
+            d24 = None
+        trend_fire = bool(is_short and d24 is not None and d24 > t_down)
+
+        legs = {
+            "solo": {"mode": m, "num_agree": na, "state": solo,
+                     "would_fire": solo_fire,
+                     "verdict": _verdict(True, True, solo_fire)},
+            "loss_streak": {"enabled": streak_on, "loss_streak": ls, "n_star": n_star,
+                            "state": streak, "would_fire": streak_fire,
+                            "verdict": _verdict(streak_on, True, streak_fire)},
+            "neg_ev": {"mode": negev_mode, "ev_per_dollar": ev, "would_fire": negev_fire,
+                       "verdict": _verdict(negev_mode != "off" and ev is not None,
+                                           negev_mode == "true", negev_fire)},
+            "long_regime_veto": {"enabled": lrv_on, "is_long": is_long, "regime": regime,
+                                 "uptrend_regimes": upt, "state": long_st,
+                                 "would_fire": long_fire,
+                                 "verdict": _verdict(lrv_on, True, long_fire)},
+            "trend_direction": {"mode": tmode, "sym_d24h": d24, "t_down": t_down,
+                                "is_short": is_short, "would_fire": trend_fire,
+                                "verdict": _verdict(tmode != "off" and d24 is not None,
+                                                    tmode == "true", trend_fire)},
+        }
+        return {"mode": m, "is_exploration": bool(is_exploration),
+                "learning_input_floor": learning_input_floor_enabled(),
+                "dust_fee_floor": DUST_FEE_FLOOR, "min_n": _MIN_N,
+                "cache": cache_meta, "legs": legs}
+    except Exception as e:  # observability only -- never affects a decision
+        return {"error": repr(e)[:200]}
+
+
 if __name__ == "__main__":
     print(json.dumps(get_report(), indent=2))
