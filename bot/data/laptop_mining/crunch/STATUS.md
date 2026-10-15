@@ -4,14 +4,14 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-15 06:20, took 652s._
+_Last run 2026-10-15 07:20, took 648s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | ok | 47054 | 0 | 174 source files skipped as unchanged |
+| `j1_panels` | ok | 47838 | 0 | 174 source files skipped as unchanged |
 | `j6_archive` | ok | 0 | 0 |  |
 | `j7_bulk` | ok | 0 | 0 | 0 shards new, 54 unchanged |
-| `j5_backfill` | ok | 714 | 644 | 178 coins ok, 0 failed, 924 5m rows over the top 60 |
+| `j5_backfill` | ok | 712 | 638 | 178 coins ok, 0 failed, 1368 5m rows over the top 60 |
 | `j2_trackers` | ok | 3 | 0 |  |
 | `j4_integrity` | ok | 79 | 6 |  |
 | `j3_replications` | ok | 78 | 2 | 78 obs, 4 source-missing, 6 oos day-blocks, no verdicts |
