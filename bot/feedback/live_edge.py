@@ -364,6 +364,35 @@ def get_side_mult(symbol: str, side: str):
         return None
 
 
+def side_mult_snapshot(symbol: str, side: str) -> dict:
+    """READ-ONLY view of the evidence behind get_side_mult() for the side-gate
+    decision log (core/side_gate_log.py, laptop M22). Reads the cache directly
+    (no [SIDE-FALLBACK-SHADOW] log line); never used by any decision; never raises."""
+    try:
+        base = str(symbol).replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "").upper()
+        nside = _norm_side(side)
+        _ensure_fresh()
+        with _lock:
+            cell = _cache["mult"].get((base, nside))
+            cell_meta = dict(_cache["meta"].get((base, nside)) or {})
+            side_raw = (_cache.get("side_mult") or {}).get(nside)
+            side_meta = dict((_cache.get("side_meta") or {}).get(nside) or {})
+            computed_at = _cache.get("computed_at")
+            ledger_mtime = _cache.get("ledger_mtime")
+        return {"data_driven_side_mult": enabled(),
+                "side_level_edge": side_level_edge_enabled(),
+                "side_fallback_mode": side_fallback_mode(),
+                "learning_input_floor": learning_input_floor_enabled(),
+                "cell_mult": cell, "cell": cell_meta,
+                "source": ("cell" if cell is not None
+                           else "side_fallback" if (side_level_edge_enabled() and side_raw is not None)
+                           else "neutral"),
+                "side_level_mult": side_raw, "side_level": side_meta,
+                "cache": {"computed_at": computed_at, "ledger_mtime": ledger_mtime}}
+    except Exception as e:
+        return {"error": repr(e)[:200]}
+
+
 def get_side_stats(symbol: str, side: str):
     """Raw {n, avg_pnl} live evidence behind get_side_mult(), or None if n<13.
 
