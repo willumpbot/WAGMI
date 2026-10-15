@@ -1,0 +1,78 @@
+{
+ "n_coindays": 388,
+ "n_days": 6,
+ "flags": {
+  "volume_surge": {
+   "n_flag": 71,
+   "flagged_move": 7.453711640629516,
+   "unflagged_move": 5.043554860114713,
+   "excess_over_har": 0.26920093444581533,
+   "lo": -1.5559977744965685,
+   "hi": 2.1120038895529043,
+   "verdict": "UNDERPOWERED"
+  },
+  "funding_hot": {
+   "n_flag": 66,
+   "flagged_move": 7.628155574775477,
+   "unflagged_move": 5.045224065856765,
+   "excess_over_har": 1.1428082907565036,
+   "lo": -0.38754566289916925,
+   "hi": 2.488455274444831,
+   "verdict": "UNDERPOWERED"
+  },
+  "funding_cold": {
+   "n_flag": 176,
+   "flagged_move": 3.961651831630215,
+   "unflagged_move": 6.748913654595009,
+   "excess_over_har": -2.1899722596190165,
+   "lo": -3.3726352027565705,
+   "hi": -0.8084039351591003,
+   "verdict": "worse than HAR"
+  },
+  "vol_expanding": {
+   "n_flag": 57,
+   "flagged_move": 7.007275019647136,
+   "unflagged_move": 5.222373839943121,
+   "excess_over_har": 0.5790412099343897,
+   "lo": -1.1872098562029567,
+   "hi": 3.3057851461563414,
+   "verdict": "UNDERPOWERED"
+  },
+  "on_20d_low": {
+   "n_flag": 38,
+   "flagged_move": 3.8993679141369135,
+   "unflagged_move": 5.656698389725306,
+   "excess_over_har": -0.9660755615355912,
+   "lo": -2.183509830652253,
+   "hi": 0.4072744626999403,
+   "verdict": "UNDERPOWERED"
+  },
+  "above_20d_high": {
+   "n_flag": 33,
+   "flagged_move": 9.60569410942056,
+   "unflagged_move": 5.101500032479383,
+   "excess_over_har": 1.7698652757463569,
+   "lo": -1.935798733854806,
+   "hi": 4.105639300798417,
+   "verdict": "UNDERPOWERED"
+  },
+  "ma50_pullback": {
+   "n_flag": 78,
+   "flagged_move": 3.6134186556963774,
+   "unflagged_move": 5.955399232247555,
+   "excess_over_har": -1.4989737485543477,
+   "lo": -2.2940312084805083,
+   "hi": -0.5360596363735146,
+   "verdict": "worse than HAR"
+  },
+  "momentum_small": {
+   "n_flag": 18,
+   "flagged_move": 8.882262300190817,
+   "unflagged_move": 5.3192964749665546,
+   "excess_over_har": 1.27870417595354,
+   "lo": -1.211069752401925,
+   "hi": 3.1319725942410495,
+   "verdict": "UNDERPOWERED"
+  }
+ }
+}
