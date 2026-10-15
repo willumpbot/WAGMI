@@ -5,3 +5,7 @@
 {"ts": 1792065260.9476492, "day": "2026-10-15", "key": "watch:CASHCAT", "kind": "watchlist", "msg": "CASHCAT (watchlist): on_20d_low"}
 {"ts": 1792068953.1381247, "day": "2026-10-15", "key": "pos:HYPE", "kind": "near_target", "msg": "HYPE SHORT: 0.78% from your target, now +11.04R"}
 {"ts": 1792068953.1381247, "day": "2026-10-15", "key": "sim:49e8784ee1", "kind": "near_target", "msg": "HYPE SHORT: 0.78% from your target, now +0.95R"}
+{"ts": 1792071836.9468412, "day": "2026-10-15", "key": "giveback:64b67ddedb", "kind": "giveback", "msg": "VVV SHORT: was up +0.52R, now -0.31R - nothing banked yet. Taking some by hand is your call; the plan's rules will not."}
+{"ts": 1792071836.9468412, "day": "2026-10-15", "key": "giveback:c0bf3a3124", "kind": "giveback", "msg": "RSR LONG: was up +0.92R, now -0.20R - nothing banked yet. Taking some by hand is your call; the plan's rules will not."}
+{"ts": 1792072478.2625828, "day": "2026-10-15", "key": "giveback:ai78b03d70", "kind": "giveback", "msg": "Claude idea (not taken) VVV SHORT: was up +0.52R, now -0.27R - nothing banked yet. Taking some by hand is your call; the plan's rules will not."}
+{"ts": 1792073457.531806, "day": "2026-10-15", "key": "giveback:ai478e911d", "kind": "giveback", "msg": "Claude idea (not taken) SUI SHORT: was up +0.79R, now +0.20R - nothing banked yet. Taking some by hand is your call; the plan's rules will not."}
