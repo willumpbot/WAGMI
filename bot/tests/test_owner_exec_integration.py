@@ -15,8 +15,8 @@ if str(BOT) not in sys.path:
 
 from core import owner_plan_exec as ope  # noqa: E402
 from execution.position_manager import PositionManager  # noqa: E402
-from tests.test_owner_plan_exec import _plan, _write_rows, _fills  # noqa: E402
-from tests.test_owner_plans_any_coin import AnyBot, _tick, hl, sandbox  # noqa: E402,F401  (fixtures)
+from tests.test_owner_plan_exec import _plan, _write_rows, _fills, _state  # noqa: E402
+from tests.test_owner_plans_any_coin import AnyBot, _tick, hl, sandbox, state_file  # noqa: E402,F401  (fixtures)
 
 ATR_D = 0.08
 
@@ -66,6 +66,66 @@ def test_ladder_plan_on_extra_coin_both_flags(sandbox, hl, both_on):
     assert fin["managed_by"] in ("ladder_trail", "stop") and fin["exit_style"] == "ladder"
     assert sum(f["qty"] for f in rows[1:]) == pytest.approx(orig)
     assert fin["total_r"] > 0 and "SUI" not in pm.positions
+
+
+@pytest.mark.parametrize("lots,kinds,reasons", [
+    (1, ["open", "final"], ["OWNER_LADDER_Q1"]),
+    (2, ["open", "partial", "final"], ["OWNER_LADDER_Q1", "OWNER_LADDER_Q3"]),
+    (3, ["open", "partial", "partial", "final"], ["OWNER_LADDER_Q1", "OWNER_LADDER_Q2", "OWNER_LADDER_Q3"]),
+    (5, ["open", "partial", "partial", "partial", "final"],
+     ["OWNER_LADDER_Q1", "OWNER_LADDER_Q2", "OWNER_LADDER_Q3", None]),
+])
+def test_ladder_on_coarse_lot_extra_coin(sandbox, hl, both_on, monkeypatch, state_file, lots, kinds, reasons):
+    """szDecimals-0 coin (one lot = 1 unit) under the ladder, both flags on. A quarter below one lot snaps up to one
+    lot; a step that would leave less than one lot closes the remainder and ends the ladder (no trail). Restart
+    after the +0.75R tick: nothing re-fires, bookkeeping consistent, closes sum to the original size."""
+    from core import owner_any_coin as oac
+    from execution.auto_recovery import load_position_state
+    monkeypatch.setattr(ope, "atr_at_fill", lambda bot, coin, ts: (0.5, "test"))
+    p = _plan("cl", coin="BIGLOT", etype="market", entry=50.0, stop=48.0, target=60.0, price_at_plan=50.0,
+              risk_usd=2.0 * lots)
+    p.update(exit_style="ladder")
+    _write_rows(sandbox, p)
+    pm = PositionManager()
+    bot = AnyBot(pm, {})
+    _tick(bot, hl, BIGLOT=50)
+    assert pm.positions["BIGLOT"].qty == lots and pm.positions["BIGLOT"].entry_reasons["exit_style"] == "ladder"
+    _tick(bot, hl, BIGLOT=51.1)                                # +0.5R
+    _tick(bot, hl, BIGLOT=51.6)                                # +0.75R
+    n = len(_fills(sandbox))
+    _tick(bot, hl, BIGLOT=51.65)                               # no re-fire
+    assert len(_fills(sandbox)) == n
+
+    # ---- restart: fresh objects, empty any-coin registry, state from disk ----
+    pos0 = pm.positions.get("BIGLOT")
+    oac._reset_for_tests()
+    monkeypatch.setattr(oac, "_post", hl)
+    pm2 = PositionManager()
+    loaded = load_position_state(pm2, str(state_file)) if state_file.exists() else 0
+    bot2 = AnyBot(pm2, {})
+    if pos0 is None:
+        assert loaded == 0
+    else:
+        back = pm2.positions["BIGLOT"]
+        assert back.qty == pos0.qty
+        assert back.entry_reasons["owner_ladder"]["steps_taken"] == pos0.entry_reasons["owner_ladder"]["steps_taken"]
+    _tick(bot2, hl, BIGLOT=51.65)                              # still nothing re-fires after the restore
+    assert len(_fills(sandbox)) == n
+    for px in (52.1, 52.5, 52.6, 51.9):                        # +1R, trail to 52.0 (ATR 0.5), through it
+        _tick(bot2, hl, BIGLOT=px)
+
+    rows = _fills(sandbox)
+    assert [r["kind"] for r in rows] == kinds
+    for r, want in zip(rows[1:], reasons):
+        if want:
+            assert r["reason"] == want and r["managed_by"] == want.replace("OWNER_LADDER_Q", "ladder_q")
+    assert sum(r["qty"] for r in rows[1:]) == pytest.approx(lots), "closes must sum to the original size"
+    assert all(r["qty"] >= 1 for r in rows[1:]), "never a sub-lot leg"
+    assert "BIGLOT" not in pm2.positions and _state(sandbox)["cl"]["status"] == "closed"
+    if lots == 5:
+        assert rows[-1]["managed_by"] in ("ladder_trail", "stop") and rows[-1]["qty"] == 2
+    else:
+        assert rows[-1]["reason"].startswith("OWNER_LADDER_Q")   # the step closed the remainder, no trail
 
 
 def test_same_ladder_plan_on_core_coin_stays_bot_manages(sandbox, hl, both_on):

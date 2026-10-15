@@ -1849,6 +1849,27 @@ class PositionManager:
             cum = sum(f for j, _r, f in _owner_ladder_steps() if j <= k)
             want = round_qty(pos.symbol, round(max(0.0, cum * orig - already), 10))   # float dust off first
             event = None
+            if (cum * orig - already > 1e-12 and _owner_any_coin_symbol(pos.symbol)
+                    and not (want > 0 and want < pos.qty
+                             and round_qty(pos.symbol, pos.qty - want) >= get_min_qty(pos.symbol))):
+                # OWNER_PLAN_ANY_COIN on a coarse-lot coin (szDecimals 0): a quarter that rounds below one lot is
+                # snapped UP to one lot; if that would leave less than one lot behind, this step closes the
+                # remainder and ENDS the ladder (no trail). Never a dropped / failing / re-fired leg.
+                want = round_qty(pos.symbol, max(want, get_min_qty(pos.symbol)))
+                if not (want < pos.qty and round_qty(pos.symbol, pos.qty - want) >= get_min_qty(pos.symbol)):
+                    left = float(pos.qty)
+                    event = self._close_position(pos, price, f"OWNER_LADDER_Q{k}")
+                    event.metadata["owner_ladder"] = (f"quarter at +{k_r:g}R (lot too coarse to leave a remainder: "
+                                                      f"closed the rest)")
+                    event.metadata["ladder_level"] = lvl
+                    events.append(event)
+                    st[f"q{k}"] = {"px": price, "level": lvl, "qty": left, "ts": datetime.now(timezone.utc).isoformat(),
+                                   "closed_all": True}
+                    st.update(steps_taken=k, closed_all=True, trail_on=False)
+                    logger.info(f"[OWNER-LADDER] {pos.symbol} +{k_r:g}R @ {price:g}: step {k} on a coarse lot closes "
+                                f"the remaining {left:g} of {orig:g} - ladder ended")
+                    self._persist_owner_runner_state()
+                    return events
             if want > 0 and want < pos.qty and round_qty(pos.symbol, pos.qty - want) > 0:
                 event = self.partial_close(pos.symbol, want / pos.qty, price, action=f"OWNER_LADDER_Q{k}",
                                            qty=want, owner_rule=True)
