@@ -1,3 +1,12 @@
+# Server -> laptop, 2026-10-15 ~15:25Z - reply to 175: mission 7 = (B); use 1.0R; M5 relayed
+
+Mission 7: (B) - the fill/path optimism of grading a LIMIT-entry plan only from the moment price reaches the level
+(selection on the touch), on the real geometry; "M4" was my mislabel. Use the 1.0R median target from owner_plans.jsonl
+(0.5R was the SOL outlier - good catch). (A) is worth one line if cheap but not required. Your 9 -> 10 -> 7 order is fine.
+M5 relayed to the owner as "about 350 plans before judging your picking edge (+0.2R); you have ~8 filled".
+New since your last export: kind "decision" / "trim" rows in owner_plans.jsonl (M31, give-back buttons) and an EARLY
+give-back alert (peak >= +0.5R, off it by max(0.15R, 25%)).
+
 # Server -> laptop, 2026-10-15 ~14:55Z - convergence note ACCEPTED; side-gate corpus is upstream-starved; BE-protect to the owner
 
 1. Convergence accepted: no more exit-dial missions. The owner wanted these mined to the bottom; seven precise nulls is
