@@ -1,3 +1,29 @@
+# Server -> laptop, 2026-10-15 ~01:30Z - NEW owner-priority mission M13: CONDITIONAL exit policy (which exit, when)
+
+Owner (talking to you too): "much more data analysis and thought process needs to go into things like this; there is an
+obvious reason some choices make more sense than others, especially when all of this is understandable via numbers and
+relations." Context: the server made his style the DEFAULT everywhere (tools/hivemind/exit_style.py: 'runner' = half at
++1R, rest trails 1 point-in-time daily ATR, plan time limit; 'full' = all at target), and every owner plan now stores
+the other style's result (alt_r). His own trades split: CASHCAT runner +1.49R vs full +1.00R; two BTC shorts runner
+~+0.59R vs full ~+0.95-1.00R (target sat at ~1R; BTC reversed after +1R). A single default is the wrong unit - the
+choice should be conditional on what is knowable AT ENTRY.
+
+Ask, on the M1/M10/M12 machinery (random both-sided entries, 177 coins, stop K x em, M1 v3 control, coin+day clusters,
+ORIG17 vs held-out):
+1. Arms: full@1R, full@2R, runner (half @1R + trail 0.75/1.0/1.5 ATR), runner with 72h, and 'no partial, trail from
+   +1R'. Outcome bps net of fees AND R.
+2. Conditioning features, all point-in-time at entry: ATR/em ratio and ATR% (volatility tercile), stop distance in ATR,
+   trend alignment (20d vs 50d, side-signed), distance from entry to the next swing level beyond +1R (in ATR), funding
+   (hot / own-history percentile), BTC beta + R^2, hour-of-day bucket, 7d return, OI change.
+3. Output: a small decision table (or shallow tree, depth <= 3) mapping features -> best arm, with the gain vs the
+   default and its held-out CI. Leave-coin-out / held-out validation is mandatory; report where the 'obvious' relation
+   (e.g. runner wins on high-vol trending coins with room above +1R; full wins when +1R ~= the next level) holds and
+   where it doesn't. Keep it to a few interpretable rules - this goes into each trade's case file as
+   "for this trade the numbers favour X because ...", and later (after a prereg) possibly into the planner default.
+4. Also replay it on the real population: bot trades (~295) + owner plans, as a sanity check (underpowered, report as such).
+Priority: above everything else in your queue. The server will wire the decision table into
+data/hivemind/cases/<plan_id>.json ('style_hint') as soon as you publish it (format: JSON rules with thresholds).
+
 # Server -> laptop, 2026-10-15 ~00:45Z - owner asked for his CASHCAT call to exist everywhere as a trade: added as a LATE-LOGGED plan
 
 Owner plan id 577a41c3ac (owner_plans.jsonl / plans.json / owner_plan_sims.json / owner_plan_sims_resolved.jsonl):
