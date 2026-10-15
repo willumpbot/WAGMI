@@ -14,6 +14,20 @@ sys.path.insert(0, str(HERE))
 LOG = HERE.parents[1] / "data" / "hivemind" / "cycle.log"
 
 
+# Task Scheduler runs this cycle inside a job object and kills every child when the cycle exits (10-15: the wallet
+# miner died ~3 min in, every hour). CREATE_BREAKAWAY_FROM_JOB lets the detached workers outlive the cycle.
+_DETACH = 0x00000008 | 0x08000000 | 0x01000000
+
+
+def _spawn(args, **kw):
+    import subprocess
+    try:
+        return subprocess.Popen(args, creationflags=_DETACH, **kw)
+    except OSError:   # job forbids breakaway: still launch (it may be cut short, as before)
+        log("detached launch: breakaway refused, launching inside the job")
+        return subprocess.Popen(args, creationflags=_DETACH & ~0x01000000, **kw)
+
+
 def log(msg):
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG, "a", encoding="utf-8") as f:
@@ -141,9 +155,8 @@ def main():
             if wallet_miner.due() and not wbusy:
                 wallet_miner.OUT.mkdir(parents=True, exist_ok=True)
                 wlock.write_text(str(time.time()))
-                subprocess.Popen([sys.executable, str(HERE / "wallet_miner.py")], cwd=str(HERE),
-                                 creationflags=0x00000008 | 0x08000000,
-                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                _spawn([sys.executable, str(HERE / "wallet_miner.py")], cwd=str(HERE),
+                                 stdout=subprocess.DEVNULL, stderr=open(wallet_miner.OUT / "miner.err", "a"))
         except Exception as e:
             log(f"wallet_miner launch failed: {e}")
         try:   # laptop export, hourly, in a DETACHED process (10-14: a 584s sync pushed a cycle to 18 of its 25 min)
@@ -154,10 +167,10 @@ def main():
             busy = lock.exists() and time.time() - lock.stat().st_mtime < 45 * 60
             if due and not busy:
                 lock.write_text(str(time.time()))
-                subprocess.Popen([sys.executable, "-c",
+                _spawn([sys.executable, "-c",
                                   "import sys, os; sys.path.insert(0, r'%s'); import laptop_sync; "
                                   "r = laptop_sync.run(); os.remove(r'%s')" % (str(HERE), str(lock))],
-                                 cwd=str(HERE.parents[1]), creationflags=0x00000008 | 0x08000000,
+                                 cwd=str(HERE.parents[1]),
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception as e:
             log(f"laptop_sync launch failed: {e}")
