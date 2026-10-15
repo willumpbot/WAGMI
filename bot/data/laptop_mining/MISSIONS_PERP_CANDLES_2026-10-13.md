@@ -59,3 +59,27 @@ metabrain-only. Confirm or refute from the July decisions.jsonl gate records if 
 - Watch the newly enabled risk clamp (RISK_CAP_HARD_CLAMP=true, LIVING_EDGE_MULT_CAP=1.0 live since 2026-10-13 17:35Z)
   and report every [RISK-CLAMP] / [RISK-CLAMP-BLIND] / RISK-CLAMP-SKIP line.
 - Answer data requests the same wake they arrive.
+
+## ADDED 2026-10-13 ~18:00Z — M9: LEVERAGE & POSITIONING ON THE MAJORS (owner priority, run right after M1)
+
+Owner, verbatim-ish: "there's a lot of opportunity in extensively data mining through leverage and how to position,
+especially in majors ... I probably would've gone closer to the safe max limit, however I don't know ... that's where
+the data and information gap really comes in."
+Today Claude's ideas used 3x or less on SOL/HYPE where the terminal's safe leverage was 5.9x / 4.4x. The owner's
+instinct is to sit nearer the safe max. Settle it with data, on BTC / ETH / SOL / HYPE / XRP / NEAR first, then the
+next ~20 majors by volume:
+- **Calibrate the safe-leverage table itself.** Today: liquidation beyond the coin's own p99 1-day adverse move over a
+  year, / 1.5, capped at HL max. Replay it walk-forward on 5m/1m wicks: at 50 / 80 / 100 / 120% of "safe", how often
+  does an intraday wick (not the daily close) reach the liquidation price before the stop or target? Include HL's
+  tiered maintenance margin and funding accrual over the hold. Is /1.5 too timid, about right, or not enough in
+  high-vol regimes (condition on HAR exp_move decile and funding_hot)?
+- **Liquidation-before-stop.** For stops placed outside one expected daily move (our rule), what is the max leverage
+  at which liquidation is reliably beyond the stop, per coin and per vol decile? That is the real ceiling for a plan.
+- **What leverage actually buys.** With dollar risk fixed by stop distance, leverage only changes margin and
+  liquidation distance. Quantify the margin freed (how many concurrent positions a $5k account can hold) vs the added
+  liquidation/wick risk, so the owner can see the trade-off as one number per coin.
+- **Positioning:** limit-at-a-level vs market entries, scaling in (1/3 at a time) vs all-at-once, distance of entry
+  from liquidation clusters, on majors — in bps net of fees, day-clustered, ORIG/held-out split.
+- Deliverable: a per-coin "leverage you can actually use" table (by vol regime) + plain-language summary for the
+  owner, and a prereg for any rule you'd want Claude's ideas or the planner to follow. No live change without your
+  SUPPORT + owner yes.
