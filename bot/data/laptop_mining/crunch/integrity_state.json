@@ -28,11 +28,11 @@
   "u": "rows"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 3512,
+  "v": 3530,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 29463,
+  "v": 29462,
   "u": "bytes"
  },
  "archive": {
@@ -68,11 +68,11 @@
   "u": "rows"
  },
  "candles_5m": {
-  "v": 39294,
+  "v": 39366,
   "u": "rows+bytes"
  },
  "cases_index.json": {
-  "v": 1890,
+  "v": 1889,
   "u": "bytes"
  },
  "chief.py": {
@@ -88,7 +88,7 @@
   "u": "bytes"
  },
  "conf_floor_decisions.jsonl": {
-  "v": 525,
+  "v": 531,
   "u": "rows"
  },
  "conf_floor_resolutions.jsonl": {
@@ -112,15 +112,15 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 82770,
+  "v": 83482,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
-  "v": 16198,
+  "v": 15886,
   "u": "bytes"
  },
  "dissent_log.jsonl": {
-  "v": 1064,
+  "v": 1112,
   "u": "rows"
  },
  "dive_requests.jsonl": {
@@ -144,7 +144,7 @@
   "u": "rows"
  },
  "expmove_log.jsonl": {
-  "v": 324,
+  "v": 325,
   "u": "rows"
  },
  "floor_decisions_log.jsonl.gz": {
@@ -152,7 +152,7 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 52218,
+  "v": 52258,
   "u": "rows"
  },
  "geometry_shadow.json": {
@@ -160,7 +160,7 @@
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 887,
+  "v": 893,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -168,7 +168,7 @@
   "u": "rows"
  },
  "live_scorecard.json": {
-  "v": 1342,
+  "v": 1343,
   "u": "bytes"
  },
  "llm_exits_resolved.jsonl": {
@@ -188,7 +188,7 @@
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 6582,
+  "v": 6587,
   "u": "bytes"
  },
  "owner_plan_sims_resolved.jsonl": {
@@ -204,7 +204,7 @@
   "u": "bytes"
  },
  "plans.json": {
-  "v": 48732,
+  "v": 48733,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -216,15 +216,15 @@
   "u": "bytes"
  },
  "promoted_log.jsonl": {
-  "v": 39,
+  "v": 43,
   "u": "rows"
  },
  "scan_grades.json": {
-  "v": 35255,
+  "v": 35336,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 752,
+  "v": 755,
   "u": "rows"
  },
  "scanner.py": {
@@ -280,7 +280,7 @@
   "u": "rows"
  },
  "today": {
-  "v": 41686,
+  "v": 45400,
   "u": "rows+bytes"
  },
  "trade_ledger.csv": {
@@ -296,7 +296,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 428,
+  "v": 432,
   "u": "rows"
  },
  "veto_tracker.json": {
@@ -308,11 +308,11 @@
   "u": "bytes"
  },
  "wallet_snapshots.jsonl": {
-  "v": 11,
+  "v": 12,
   "u": "rows"
  },
  "watch_log.jsonl": {
-  "v": 4,
+  "v": 5,
   "u": "rows"
  }
 }
