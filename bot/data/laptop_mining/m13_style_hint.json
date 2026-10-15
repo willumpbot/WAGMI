@@ -1,0 +1,102 @@
+{
+ "default": "runner_1.00atr",
+ "rules": [
+  {
+   "if": [
+    {
+     "feat": "ret7",
+     "op": "<=",
+     "thr": 0.052057
+    }
+   ],
+   "arm": "runner_1.00atr_72h",
+   "n": 13696,
+   "in_sample_value_bps_LABELLED_IN_SAMPLE": 14.66,
+   "oof_agreement": 0.999,
+   "oof_gain_r_equal_coin": [
+    0.014386758172040633,
+    174
+   ],
+   "ships": false,
+   "suppressed_reason": "placebo p=0.527 and negative early->late time split; both leaves carry the same oof gain (+0.0144 R) so the gain is not FROM the rule"
+  },
+  {
+   "if": [
+    {
+     "feat": "ret7",
+     "op": ">",
+     "thr": 0.052057
+    }
+   ],
+   "arm": "full_1R",
+   "n": 5870,
+   "in_sample_value_bps_LABELLED_IN_SAMPLE": -10.86,
+   "oof_agreement": 0.717,
+   "oof_gain_r_equal_coin": [
+    0.01447682444756862,
+    174
+   ],
+   "ships": false,
+   "suppressed_reason": "placebo p=0.527 and negative early->late time split; both leaves carry the same oof gain (+0.0144 R) so the gain is not FROM the rule"
+  }
+ ],
+ "headline": {
+  "day_lookup": {
+   "g1_r": [
+    0.0014118329337544054,
+    -0.00153688304674377,
+    0.004375012550931453
+   ],
+   "inc_r": [
+    0.013180122755827089,
+    0.007123798768955233,
+    0.019359719129184823
+   ],
+   "inc_bps": [
+    7.1326049343543545,
+    3.4676720566983605,
+    10.880246668079746
+   ],
+   "total_r": [
+    0.014591955689581493,
+    0.00928272348127118,
+    0.019935283251681337
+   ],
+   "dev_frac": 1.0
+  },
+  "entry_level": {
+   "g1_r": [
+    0.0014118329337544054,
+    -0.0015763009349093868,
+    0.0043358331633249194
+   ],
+   "inc_r": [
+    0.010439865710153007,
+    0.004480814826977939,
+    0.016301218404357203
+   ],
+   "inc_bps": [
+    5.348992447041186,
+    1.8093471390548637,
+    8.886643728416017
+   ],
+   "total_r": [
+    0.01185169864390741,
+    0.006656684069670426,
+    0.017011481407177176
+   ],
+   "dev_frac": 1.0
+  }
+ },
+ "placebo": {
+  "p": 0.527363184079602,
+  "B": 200,
+  "null_mean_bps": 9.309307781020168,
+  "null_sd_bps": 7.054843272055193,
+  "mde_bps": 19.753561161754536
+ },
+ "underpowered_rule": "CI covers 0 AND bps half-width > 9 -> UNDERPOWERED",
+ "coins": 174,
+ "entries": 19566,
+ "VERDICT": "NO RULE SHIPS. The governing test for conditional structure (day-shift placebo on the tree increment) failed: observed +7.13 bps vs null mean +9.31 bps (sd 7.05), p=0.527, B=200. The null preserves coin identity, so what the tree finds is WHICH-COIN structure, not at-entry timing; the early->late time split is negative (-0.0061 R). MDE on the increment ~19.8 bps: effects smaller than two fees were invisible - UNDERPOWERED for small timing effects, NULL at the tested scale. Separately: NO single arm beats runner_1.00atr unconditionally (best-arm gain +0.0014 R, CI covers 0) - the live default survived a 7-arm challenge. style_hint for every plan = the default."
+}
