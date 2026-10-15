@@ -153,6 +153,49 @@ def _archive_streams():
     ARCH_STAMP.write_text(today)
 
 
+TODAY_STREAMS = ("wallets", "venue_funding", "pool_trades")   # new, small, recency matters (laptop 157)
+
+
+def _today_streams():
+    """Hourly: today's rows so far for the young streams -> EXP/today/<name>.jsonl.gz (rolling, rewritten each run;
+    the complete day lands in archive/<name>/ after midnight UTC and supersedes it). Reads only the file tail."""
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    out = EXP / "today"
+    out.mkdir(parents=True, exist_ok=True)
+    for name in TODAY_STREAMS:
+        src = STREAMS.get(name)
+        if not src or not src.exists():
+            continue
+        size = src.stat().st_size
+        back = 1 << 20
+        while True:
+            with open(src, "rb") as fi:
+                fi.seek(max(0, size - back))
+                chunk = fi.read().decode("utf-8", errors="replace").split(chr(10))
+            if size - back > 0:
+                chunk = chunk[1:]          # first line may be cut
+            rows = [l for l in chunk if l.strip()]
+            try:
+                first = _day(rows[0]) if rows else today
+            except Exception:
+                first = today
+            if first < today or back >= size:
+                break
+            back *= 4
+        keep = []
+        for l in rows:
+            try:
+                if _day(l) == today:
+                    keep.append(l)
+            except Exception:
+                continue
+        with _gz(out / f"{name}.jsonl.gz") as fo:
+            for l in keep:
+                fo.write((l + chr(10)).encode("utf-8"))
+        (out / f"{name}.meta").write_text(f"{today} rows={len(keep)}", encoding="utf-8")
+
+
 # The bot's own big logs (owner 10-12: "send everything to the laptop"). Shards by what was APPENDED since the last
 # run, not by row date: several files append rows long after the date stamped on them (resolutions), so date-sharding
 # would silently drop those. State = byte offset per file; a file that shrinks (rewritten/rotated) restarts at 0
@@ -281,6 +324,10 @@ def run(force=False):
         pass
     try:
         _archive_streams()
+    except Exception:
+        pass
+    try:
+        _today_streams()
     except Exception:
         pass
     try:   # anonymised Syndicate call list (public CAs + times + hashed caller) for the laptop's M3 / crunch layer

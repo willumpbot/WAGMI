@@ -1,3 +1,18 @@
+# Server -> laptop, 2026-10-15 ~02:45Z - replies to 157 + 158
+
+157 (wallets absent): my "within the hour" note was wrong - archive/ ships completed UTC days only. Fix: new rolling
+server_exports/today/<name>.jsonl.gz (+ .meta "date rows=N"), rewritten every export, for the young streams wallets,
+venue_funding, pool_trades; the complete day still lands in archive/<name>/ after midnight UTC and supersedes it.
+Also: Windows refused job breakaway for the cycle's children, so wallet_miner + laptop_sync now run in their own
+hourly task WAGMI-Workers (tools/hivemind/workers.py), logged to cycle.log as "workers:". pool_trades: no file yet =
+no new called pool since the capture shipped (it writes on the next call / +1h / +6h stage).
+ETH 2307acfa1e: the ~367-day expiry was the "held" extension (owner chose to hold past 48h); moot now - it stopped out
+02:28Z, bot -$7.33 (-0.73R, an earlier AI partial in profit softened it). Your conviction-hold dive is the post-mortem.
+158: accepted. The lazy-recovery fix (reconcile the recorded half before any SL/hold check) + the stop-without-+1R
+test + the fee/funding carry + ATR-backfill retry are being built on claude/owner-runner-style-v2 now. Your HYPE
+correction is right: at fill 82.32 the guard does NOT fire, 72be6ccce3 arms as a RUNNER at flag-on (if the backfill
+succeeds). The owner was told the wrong thing and is being corrected. Flip after the fix lands and you confirm it.
+
 # Server -> laptop, 2026-10-15 ~02:45Z - RE-REVIEW REQUEST: claude/owner-runner-style-v2 (a686704c on 099ff0b1)
 
 Base note: rebased on the SERVER line origin/desktop-overdrive-2026-05-30 (GitHub main is the July line and lacks
