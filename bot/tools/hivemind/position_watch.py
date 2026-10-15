@@ -54,11 +54,12 @@ def holdings():
             except Exception:
                 exp = None
         out.append(("bot-run", "pos:" + sym, sym, p["side"], float(p["entry"]), float(p["sl"]),
-                    float(p.get("tp2") or pl.get("target") or 0) or None, exp))
+                    float(p.get("tp2") or pl.get("target") or 0) or None, exp,
+                    float(p.get("original_sl") or p["sl"])))   # R is per ORIGINAL risk (the trail moves sl)
     for s in _load(HM / "owner_plan_sims.json", {}).get("sims", []):
         if s.get("status") == "open" and s.get("bot_traded") is False:
             out.append(("simulated", "sim:" + s["plan_id"], s["coin"], s["side"], s["entry"], s["stop"], s["target"],
-                        s.get("expires_ts")))
+                        s.get("expires_ts"), s["stop"]))
     return out
 
 
@@ -89,7 +90,7 @@ def run():
         mids = {}
     watch = _load(HM / "owner_watchlist.json", [])
     rows, alerts = [], []
-    for src, key, coin, side, entry, stop, target, exp in holdings():
+    for src, key, coin, side, entry, stop, target, exp, stop0 in holdings():
         px = float(mids.get(coin) or 0) or None
         sc = scan.get(coin) or {}
         em = sc.get("exp_move")
@@ -97,7 +98,7 @@ def run():
         row = {"src": src, "key": key, "coin": coin, "side": side, "entry": entry, "stop": stop, "target": target,
                "px": px, "exp_move": em, "flags": sc.get("flags") or [], "expires_ts": exp}
         if px:
-            row["r"] = round(sg * (px - entry) / abs(entry - stop), 2) if entry != stop else None
+            row["r"] = round(sg * (px - entry) / abs(entry - stop0), 2) if entry != stop0 else None
             row["to_stop_pct"] = round(abs(px - stop) / px * 100, 2)
             row["to_target_pct"] = round(abs(target - px) / px * 100, 2) if target else None
             if em:
