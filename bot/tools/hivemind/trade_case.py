@@ -80,6 +80,25 @@ def run(deep_reads=2):
                               "flags_at_case_start": (scan.get(coin) or {}).get("flags"),
                               "late_logged": bool(p.get("late_logged")), "reason": (p.get("reason") or "")[:300],
                               "case_started": now}
+        if not case.get("dive_requested"):   # standing laptop dive per trade (LAPTOP_BACKLOG S1)
+            try:
+                with open(BOT / "data" / "laptop_mining" / "server_exports" / "dive_requests.jsonl", "a", encoding="utf-8") as fh:
+                    fh.write(json.dumps({"ts": now, "kind": "trade", "plan_id": pid, "coin": coin, "side": side,
+                                         "entry": e, "stop": st, "target": tg, "filled_at": f_ts,
+                                         "exit_style": case["opened"]["exit_style"],
+                                         "late_logged": case["opened"]["late_logged"]}) + chr(10))
+                case["dive_requested"] = now
+            except OSError:
+                pass
+        dr = BOT / "data" / "laptop_mining" / "dive_results.jsonl"
+        if dr.exists() and "dive" not in case:
+            try:
+                for l in dr.read_text(encoding="utf-8").splitlines():
+                    o_ = json.loads(l)
+                    if o_.get("plan_id") == pid:
+                        case["dive"] = o_
+            except (OSError, ValueError):
+                pass
         if "deep_read" not in case and reads_left > 0 and R.get("status") == "open":
             case["deep_read"] = dict(_deep_read(coin), at=now)
             reads_left -= 1

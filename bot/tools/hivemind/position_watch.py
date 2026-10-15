@@ -113,6 +113,16 @@ def run():
         if exp and 0 < exp - now <= TIME_LIMIT_H * 3600:
             alerts.append((key, "time_limit", f"{coin} {side}: your plan's time limit is in {(exp - now) / 3600:.1f}h"))
         rows.append(row)
+    try:   # standing laptop dive for every NEW watchlist coin (LAPTOP_BACKLOG S1)
+        dq = BOT / "data" / "laptop_mining" / "server_exports" / "dive_requests.jsonl"
+        asked = {json.loads(l).get("coin") for l in dq.read_text(encoding="utf-8").splitlines() if l.strip()
+                 and json.loads(l).get("kind") == "watchlist"} if dq.exists() else set()
+        with open(dq, "a", encoding="utf-8") as fh:
+            for c in watch:
+                if c not in asked:
+                    fh.write(json.dumps({"ts": now, "kind": "watchlist", "coin": c}) + chr(10))
+    except (OSError, ValueError):
+        pass
     for c in watch:
         f = [x for x in ((scan.get(c) or {}).get("flags") or []) if not (x == "funding_hot" and c in always_hot)]
         if f:
