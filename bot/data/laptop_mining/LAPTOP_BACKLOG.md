@@ -40,6 +40,19 @@ trade on the M28 map, (c) join with archive/pool_trades + call_snapshots: was he
 wallets, (d) the 3 habits that cost him most in R, each with n and CI. Addresses never leave the laptop and never
 appear in any committed file; reports refer to "wallet A/B/C".
 
+## ★ PROJECT X - "LEARNING HOW TO EXIT & WHY" (owner 10-15: "this could be an extremely large project ... we should take
+## swarms at this on the laptop, data mining!") - the laptop's main project now; swarm it (lenses + adversarial verifier)
+Owner context: ladder trimming was his FIRST exit method a year ago ("it was efficient, but fees"); he is moving his
+default to QUARTERS (25% at +0.5/+0.75/+1R, last quarter trails 1 ATR) - being built as claude/owner-ladder-style for
+your red-team, same standard as runner. Convergence note stands for MEAN R; this project is about the WHY and the
+SHAPE: (1) M32 ladder atlas (below) - the full levels x fractions surface; (2) the distribution, not just the mean:
+P(loss), P(-1R), give-back size, drawdown streaks, variance per style - a smoother equity curve at equal mean IS
+worth something to a human trader; (3) WHY trades fade after +0.5R: what was knowable at the peak (velocity of the
+run, volume, funding flip, liquidation clusters crossed, BTC turning, time of day) - an atlas of fade vs run; (4) the
+FEE + SLIPPAGE model per leg on thin coins (quarters on a small cap vs a major); (5) his own history: wallet A/B
+exits (M29) vs these styles - how much of his past loss was exits vs entries; (6) every result as a table the owner
+can read. Exploratory throughout; confirmations sealed.
+
 ## M32 - LADDER ATLAS, EXPLORATORY (owner 10-15: "is it not obvious we could've ladder trimmed out ... those were real
 ## winners ... these things need to be exploratively mined") - an owner request, run it despite the convergence note
 Scale-out LADDERS (multi-step), never tested as such (M1/M30 were single trims): e.g. 25%@0.5R+25%@1R+trail;
