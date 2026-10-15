@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-14T21:42:55+00:00",
- "now": "2026-10-14T21:42:49+00:00",
+ "generated": "2026-10-14T23:56:25+00:00",
+ "now": "2026-10-14T23:56:22+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -169,9 +169,9 @@
    "check": "D3",
    "id": "exp_move_ETH",
    "severity": "warn",
-   "what": "exp_move for ETH disagrees by 11% across live outputs",
+   "what": "exp_move for ETH disagrees by 12% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 1.9,
+    "state.vol.next_day_move_pct": 1.88,
     "scan.exp_move": 1.93,
     "chief.expected_move_pct": 2.1
    }
