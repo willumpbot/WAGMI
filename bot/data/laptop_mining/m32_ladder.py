@@ -55,8 +55,10 @@ def resolve_style(fav, adv, close, sf, tranches):
         n_filled += fills.astype(float)
     if tr_frac > 1e-6:
         total += tr_frac * (trail_only(fav, adv, close, sf) / sf)
-    legs = 1.0 + n_filled + (1.0 if tr_frac > 1e-6 else 0.0)   # entry + filled tranches + remainder close
-    fee_R = FEE_HALF * legs / sf
+    # FEE: bps of NOTIONAL, not per-ticket (SUI dive thin-book lane). Total exit notional = 1.0 for
+    # EVERY style, so fee = entry + exit = 2*FEE_HALF on the full position, constant across styles.
+    # (Trimming 25% x4 costs the same total fee as one 100% exit.) n_filled kept for diagnostics only.
+    fee_R = 2.0 * FEE_HALF / sf
     return total - fee_R, peakR
 
 

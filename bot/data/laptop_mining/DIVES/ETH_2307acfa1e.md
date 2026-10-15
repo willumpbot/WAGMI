@@ -1,50 +1,24 @@
-# DIVE — ETH LONG 2490 / stop 2385 / target 2598 (plan `2307acfa1e`, conviction hold: expiry ~367 DAYS)
+# Case File â€” ETH LONG 2490/2385/2598 (claude_idea, catch-up dive S1)
 
-_2026-10-15. 3 miners + adversarial verifier; every number below survived independent re-derivation
-(two claims were killed and do not appear; both anchors — export mark 2416.85 / last close 2411.10 —
-stated where they differ). Paper position. Engine: runner (half at +1R, 1-ATR trail, floor at stop)._
+**Linkage note:** FILLED owner plan missing its dive_results row. Source = `claude_idea` (AI-generated thesis, NOT owner direction â€” no owner credit). Export `result` field was null; outcome reconstructed from `candles_1h` (ETH, panels.sqlite, mode=ro).
 
-## State (verified)
-- **r = −0.697** at the export mark (engine sim −0.698 at the bar close — pure mark timing, zero
-  divergence). +1R (2595) never printed: MFE +0.45R (high 2537.4), **MAE −0.85R (low 2401 — within 16
-  points of the stop)**. ~51.5h in trade.
-- **The stop is 0.30–0.36 ATR away** (1.08% from last close / 1.32% from mark); +1R is 2.1 ATR (7.6%)
-  above. ATR14 87.94, 59th pctile, **rising**.
-- **The 367-day clock is irrelevant: time is not the binding constraint, the 1.3% stop gap is.** M10's
-  48h findings do NOT apply to this plan (every other plan defaults 48h; this one's time-limit leg is
-  unreachable in practice). Under runner the target (2598) is decorative — exits are the stop or the trail.
+## Thesis plausibility
+LONG 2490, stop 2385 (-4.22%), target 2598 (+4.34%). Symmetric ~1:1 R:R (target = +1.03R). A pullback-buy into the 2500-2535 range ETH held across 10-13/10-14. Reasonable setup; thesis was simply run over by a market-wide leg down.
 
-## The decision number (verifier-rebuilt from scratch, exact match)
-From today's distance, over all 212d of ETH history (n=1,271 4h starts, 1,268 resolved, eqw-by-day
-beside pooled): **84.5% of unlimited-time paths hit the stop before +1R; 15.5% (15.4% eqw) survive to
-+1R.** From the fresher close the odds are slightly worse. For contrast, the ORIGINAL entry race
-(4.22% down vs 4.34% up) was roughly fair at 14–30d horizons (stop-first ~45%, target-first ~50–53%) —
-**the race was lost inside the trade, not at entry.** (A claimed 48h stop-edge was killed in
-verification: dead heat; the implementation sensitivity exceeded the claimed edge.)
+## Reconstructed path
+- Entry filled on the 10-14 12:00 bar (l 2473.6, h 2518.8) â€” the decisive pullback to 2490. (First touch at 10-13 11:00 yields the same outcome; robust to entry-bar choice.)
+- Max favorable excursion: **+0.27R only** (high 2518.8). The trade went underwater almost immediately.
+- Decline leg: 10-14 13:00 â†’ 2450, 14:00 â†’ 2416; then a 12h shelf 2400-2436 (10-14 14:00 â†’ 10-15 01:00) that held **above** stop 2385.
+- **Stop hit 10-15 02:00** on a single flush bar (h2417 / l2314.4 / c2379.1), piercing 2385.
 
-## Carry — the opponent in the branch where the trade survives
-- At the **90d-mean** funding this long pays ~2.45 bps/day ≈ **8.9%/yr ≈ 2.1× the entire net target**
-  over the hold window; at the 7d mean ~1.0× the target.
-- BUT funding just flipped: current print is **negative (7.5th pctile of 368d)** — the long presently
-  EARNS ~6%/yr. 7d mean is 58% below the prior 30d. If the negative regime persists, the long is paid
-  to wait; if funding mean-reverts, carry consumes the thesis. (Convention inferred from cadence + the
-  HL baseline magnitude — flagged, not confirmed from collector source.)
-- Backdrop (weak-evidence windows, stated): whale cohort net short −$455M (5L/11S, 6-day window, ~60
-  wallets); Bybit long-side liq flushes 2.4–3.2× the (7-day) median three days running; book
-  near-balanced with a mild bid tilt (depth_all, 3 day-shards). BTC beta 1.24, R² 0.79 — the 4.22% stop
-  is a ~3.4% BTC down-move.
+## Outcome vs target/stop
+**STOP = -1.0R.** PC "LOST" confirmed. Target 2598 never approached (max 2518.8).
 
-## Forward geometry (engine-verified)
-A +1R print instantly locks ≥ **+0.625R**: the trail arms at best−ATR = 2516.34, already above entry
-(sim fills at the trail level — a real gap fills worse; caveat carried). Trail reaches
-breakeven-on-the-runner at best 2568.66. Below +1R the full position rides the 2385 stop.
+## Quarters ladder vs runner â€” both -1R
+Rungs: +0.5R=2542.5, +0.75R=2568.8, +1R=2595. Price **never reached even +0.5R**.
+- QUARTERS (25%@+0.5/+0.75/+1R + trail): no partial ever triggered â†’ full size stopped â†’ **-1.0R**.
+- RUNNER (50%@+1R + trail): +1R never hit â†’ full size stopped â†’ **-1.0R**.
+Identical. On a trade with no favorable excursion, exit management is inert â€” you cannot bank what the market never gives.
 
----
-**What matters:** the trade lives on top of its stop — 0.3 ATR away after a −0.85R excursion, with
-84.5% of history-shaped paths stopping before +1R from here; the year-long clock changes nothing, and
-carry only matters in the 15% branch (currently a small tailwind, structurally a 2× headwind).
-**What would change the plan:** nothing mechanical — but the owner should know this plan's exit is
-almost certainly the stop or a +1R-then-lock, not the 2598 target, and that a conviction hold at 3×
-with a 1.3% stop gap is a coin-flip-weighted-against geometry, not a patience trade.
-**Confidence:** high on geometry/race/sim (verifier-rebuilt exactly); medium on flow (short windows,
-inferred funding convention — both stated).
+## Biggest risk / lesson
+The stop was a **wick-out**: the flush bar closed back at 2379 and price recovered to 2421 by data end (-0.66R unrealized). A conviction-hold that survived the wick would currently sit *better* than the realized -1R â€” so the conviction-hold doc's instinct wasn't absurd here. But the real lesson cuts the other way: MFE was +0.27R, the trade was underwater from bar one, and intrabar it bottomed at -1.67R (2314). Holding through that exposed the book to a far worse loss than the -1R the mechanical stop realized. Conviction-hold "being right" on this path is survivorship luck on a recovering wick, not edge. Base-rate prior (n=1): AI-idea longs with sub-0.3R MFE in the first bar realize full -1R irrespective of exit style.

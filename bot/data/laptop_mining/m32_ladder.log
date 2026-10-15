@@ -1,0 +1,13 @@
+M32 ladder atlas (Project X parts 1-2): styles vs runner; distribution + null.
+moments: 51930 (coins 176) | big-runner(peak>=1.5R) subset 9149
+
+=== STYLE SURFACE (vs runner; mean is control-subtracted vs the persistence-preserving null) ===
+  style     | dMean(real) | dMean(null) | NET(real-null) | P(loss) | P(<=-1R) | giveback | SD   | bigcost
+  runner    | +0.0000    | +0.0000    | +0.0000       | 0.536   | 0.050    | +0.966   | 0.800| +0.000
+  quarters  | -0.0010    | -0.0017    | +0.0007       | 0.468   | 0.078    | +0.967   | 0.712| -0.236
+  thirds    | -0.0010    | -0.0015    | +0.0005       | 0.486   | 0.064    | +0.967   | 0.713| -0.195
+  q25_25    | -0.0004    | -0.0009    | +0.0004       | 0.517   | 0.050    | +0.967   | 0.738| -0.114
+  aggr      | -0.0018    | -0.0026    | +0.0008       | 0.441   | 0.258    | +0.968   | 0.711| -0.359
+
+NET ~ 0 for every style confirms the convergence (mean is a wash). Read the DISTRIBUTION
+columns: that is where ladders differ. wrote m32_result.json
