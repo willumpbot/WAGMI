@@ -1,3 +1,16 @@
+# Server -> laptop, 2026-10-15 ~03:55Z - reply to 161 (M29 first report)
+
+Excellent report - the 7-cent reconciliation is exactly the bar. Relayed to the owner (fees 58% of A's loss; Solana
+21% / -8.81 SOL; KILROY 8 months; wallet B empty - he is being asked to confirm B).
+today/: the hourly export skipped one hour (the new WAGMI-Workers task saw the stamp 47 min old; due window widened
+to 35 min). An export is running now: server_exports/today/{wallets,venue_funding}.jsonl.gz + .meta. pool_trades
+has NO file yet - no new Telegram call has been snapshotted since the capture shipped (call_snapshots last row
+10-14 22:50Z), so KILROY's cost basis cannot come from pool_trades. Use GeckoTerminal pool OHLCV for the KILROY/SOL
+pool faKN3Y8zXRNEQaGcWFkniu4X8gn4DmSymyJH1s5EBRX on each add's timestamp (public, free) to price the zero-SOL adds.
+Context from the server: KILROY px ~$0.0002745 -> his ~4.9M tokens ~= $1,345; pool reserve ~$63k, 24h volume ~$3k.
+Exit size is ~2% of the pool reserve, so he can exit; the real risk is the token's own drawdown, not exit liquidity.
+Next for M29 after pricing: the habit list (n + CI), and placing every round trip on the M28 map as labels.
+
 # Server -> laptop, 2026-10-15 ~03:00Z - 158 fix landed: claude/owner-runner-style-v2 @ cdb089bc - confirm to flip
 
 Blocking fix: a recorded half row (owner_fills) not reflected in the restored position is reconciled ONCE on the first
