@@ -645,7 +645,7 @@ def drain(bot, trace_id: str = "", now: Optional[float] = None) -> Dict[str, Any
                                   "pnl_lev": res.get("pnl_lev", 1.0), "exit_mode": res.get("exit_mode"),
                                   "exit_style": res.get("exit_style"), "atr_at_fill": res.get("atr_at_fill"),
                                   "exit_style_reason": res.get("exit_style_reason"),
-                                  "reason": fill_reason})
+                                  "reason": fill_reason, **res.get("any_coin_marks", {})})
                 except Exception:
                     logger.debug("[OWNER-PLAN] open row write failed", exc_info=True)
             else:
@@ -843,7 +843,8 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
         return {"ok": True, "entry": pos.entry, "qty": pos.qty, "sl": pos.sl, "tp1": pos.tp1, "tp2": pos.tp2,
                 "risk_usd": round(abs(pos.entry - pos.sl) * pos.qty * (pnl_lev or 1.0), 4),
                 "position_id": pos.position_id, "pnl_lev": pnl_lev or 1.0, "exit_mode": exit_mode,
-                "exit_style": exit_style, "atr_at_fill": _atr_d, "exit_style_reason": _style_reason}
+                "exit_style": exit_style, "atr_at_fill": _atr_d, "exit_style_reason": _style_reason,
+                "any_coin_marks": _oac.row_marks(pos.entry_reasons)}
     finally:
         if lock is not None and execs is not None:
             with lock:
@@ -886,6 +887,11 @@ def record_owner_close(event, pos, pos_mgr=None) -> Dict[str, Any]:
         "exit_style": normalize_exit_style(er.get("exit_style")) if isinstance(er, dict) else None,
         "exit_mode": er.get("exit_mode") if isinstance(er, dict) else None,
     }
+    try:   # OWNER_PLAN_ANY_COIN: requested vs effective exit mode on extra-coin rows ({} for core coins)
+        from core.owner_any_coin import row_marks
+        row.update(row_marks(er))
+    except Exception:
+        pass
     if final:
         row["total_pnl"] = round(total, 6)
         row["total_r"] = round(total / risk_usd, 4) if risk_usd > 0 else None

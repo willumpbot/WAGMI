@@ -1,7 +1,7 @@
 """OWNER_PLAN_ANY_COIN: the paper bot executes the owner's plans on ANY Hyperliquid perp, not only its own 6.
 
-Default OFF (= today's behaviour exactly: a plan on a coin outside trading_config.DEFAULT_SYMBOLS is rejected
-"bot only manages ..."). ON: core/owner_plan_exec.drain accepts such a plan and opens it through the SAME path a
+Default OFF: a plan on a coin outside trading_config.DEFAULT_SYMBOLS is rejected "bot only manages ..." as today
+(one flag-independent exception, the sub-$1 stop-width fix - see B1 below). ON: core/owner_plan_exec.drain accepts such a plan and opens it through the SAME path a
 core-coin owner plan takes (limit-touch / market-drift entry rules, plan_levels, PositionManager.open_position,
 owner exit modes, OWNER_RUNNER_STYLE half/trail with atr_at_fill, plan time limit, owner_fills.jsonl rows,
 position_state persistence + restart restore). The bot's OWN strategy scan is untouched: it iterates
@@ -27,6 +27,20 @@ avoidance, liquidation-tighten, 5m early-exit momentum) live in _process_symbol 
 bot only fetches for its 6; the exit engine / exit agent would see regime "unknown" and no candles. Rather than run
 a half-blind "bot_manages", the owner's stop / target / partials / runner rule govern (requested mode is kept in
 entry_reasons["exit_mode_requested"]). OWNER_PLAN_EXIT_MODE_FORCE=bot_manages degrades the same way for them.
+PRECEDENCE (laptop 178 B3): profits_only is a RESTRICTED mode, and the owner exit styles (OWNER_RUNNER_STYLE runner,
+OWNER_LADDER_STYLE ladder) apply only to restricted modes. So a degraded extra-coin bot_manages plan DOES exit via the
+runner/ladder style when those flags are on, while a CORE bot_manages plan does not. Every extra-coin position and
+owner_fills row carries any_coin / exit_mode_requested / exit_mode_effective / exit_mode_degraded - exclude
+exit_mode_degraded=true rows from any core-vs-extra comparison.
+
+Lot size (B2): on coarse-lot coins (szDecimals 0) a runner half that rounds to 0 is snapped up to one lot; if that
+leaves nothing, the half closes the remainder. A reduce leg below one lot is booked without a paper order (never a
+failing order, never re-emitted).
+
+Flag-INDEPENDENT fix shipped with this branch (B1): PositionManager.open_position measured stop width as
+|entry-sl|/max(entry,1), which rejected every stop on any sub-$1 coin. For strategy=="owner_plan" it is now relative
+to the price, with the flag on OR off - so a sub-$1 CORE owner plan (e.g. XRP if it trades < $1) is now accepted
+where it used to be refused. Intentional; bot-opened positions are unchanged.
 
 Sizing: the plan's risk_usd exactly as for a core owner plan, then execution.risk_cap.apply_risk_cap (the 0.5%
 MAX_RISK_PCT_CEILING; scales DOWN only, and only when RISK_CAP_HARD_CLAMP is on, shadow-logged otherwise).
@@ -292,11 +306,24 @@ def atr_1h(symbol: str) -> float:
 
 
 def entry_marks(symbol: str, requested_mode: str, note: Optional[str]) -> Dict[str, Any]:
-    out = {"any_coin": True, "hl_coin": hl_name(symbol)}
+    """Stamped on the position's entry_reasons AND (via row_marks) on every owner_fills row, so a study can
+    exclude degraded plans from core-vs-extra comparisons (laptop 178 B3)."""
+    effective = exit_mode_for(requested_mode)[0]
+    out = {"any_coin": True, "hl_coin": hl_name(symbol), "exit_mode_requested": requested_mode,
+           "exit_mode_effective": effective, "exit_mode_degraded": effective != requested_mode}
     if note:
-        out["exit_mode_requested"] = requested_mode
         out["exit_mode_note"] = note
     return out
+
+
+ROW_KEYS = ("any_coin", "hl_coin", "exit_mode_requested", "exit_mode_effective", "exit_mode_degraded")
+
+
+def row_marks(entry_reasons: Any) -> Dict[str, Any]:
+    """The any-coin fields to copy onto an owner_fills row ({} for every core-coin position)."""
+    if not isinstance(entry_reasons, dict) or not entry_reasons.get("any_coin"):
+        return {}
+    return {k: entry_reasons.get(k) for k in ROW_KEYS}
 
 
 # ── per-tick management of open extra-coin owner positions ───────────────────────────────────
@@ -401,7 +428,19 @@ def _manage_one(bot, pm, ope, sym: str, mids: Dict[str, float], trace_id: str) -
         events.extend(mine)
     for event in events:
         captured = pm.positions.get(sym)
-        if event.action in _CLOSE_ACTIONS and event.qty > 0 and not event.metadata.get("_exchange_submitted"):
+        _sub_lot = False
+        if not getattr(event, "is_position_close", False):
+            try:
+                from execution.precision import round_qty
+                _sub_lot = round_qty(sym, event.qty) <= 0
+            except Exception:
+                _sub_lot = False
+        if _sub_lot:
+            # a reduce leg below one lot (laptop 178 B2): the position manager already booked it, an order for it
+            # would fail and the leg would be lost - record it without a paper order (consumed once, never retried)
+            logger.warning(f"[{trace_id}][{sym}] {event.action} leg qty {event.qty:g} is below one lot - "
+                           f"booked without a paper close order")
+        elif event.action in _CLOSE_ACTIONS and event.qty > 0 and not event.metadata.get("_exchange_submitted"):
             res = bot.order_executor.close_position(symbol=event.symbol, side="SELL" if event.side == "LONG" else "BUY",
                                                     qty=event.qty, price=event.price, reason=event.action)
             if not getattr(res, "filled", False):

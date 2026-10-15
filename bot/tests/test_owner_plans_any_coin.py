@@ -30,12 +30,13 @@ class HL:
     """Mocked Hyperliquid info API: allMids / metaAndAssetCtxs / candleSnapshot. Counts calls."""
 
     def __init__(self):
-        self.mids = {"BTC": "60000", "ETH": "3000", "SUI": "3.05", "kPEPE": "0.012340", "@107": "1.0"}
+        self.mids = {"BTC": "60000", "ETH": "3000", "SUI": "3.05", "kPEPE": "0.012340", "BIGLOT": "50", "@107": "1.0"}
         self.universe = [{"name": "BTC", "szDecimals": 5, "maxLeverage": 40},
                          {"name": "ETH", "szDecimals": 4, "maxLeverage": 25},
                          {"name": "SUI", "szDecimals": 1, "maxLeverage": 10},
                          {"name": "kPEPE", "szDecimals": 0, "maxLeverage": 10},
-                         {"name": "OLDCOIN", "szDecimals": 0, "maxLeverage": 3, "isDelisted": True}]
+                         {"name": "OLDCOIN", "szDecimals": 0, "maxLeverage": 3, "isDelisted": True},
+                         {"name": "BIGLOT", "szDecimals": 0, "maxLeverage": 5}]
         self.funding = {"SUI": "0.0000125", "kPEPE": "0.00001"}
         self.calls = []
         self.down = False
@@ -377,3 +378,69 @@ def test_core_coin_identical_with_flag_on(tmp_path, monkeypatch, hl):
     assert out[0] == out[1]
     assert "any_coin" not in out[1][3]
     assert hl.calls == [], "a core-coin plan must never touch the any-coin HL client"
+
+
+# ── laptop 178 fixes ────────────────────────────────────────────────────────
+
+def test_b1_sub_dollar_core_owner_plan_flag_independent_fix(sandbox, hl):
+    """B1 is an INTENTIONAL flag-independent fix: with OWNER_PLAN_ANY_COIN off, a sub-$1 CORE owner plan (XRP at
+    $0.50, stop 0.14% away) is accepted - the old |entry-sl|/max(entry, 1) refused it (0.07%). A bot-opened
+    position with the same geometry is still refused exactly as before."""
+    assert oac.enabled() is False
+    _write_rows(sandbox, _plan("x", coin="XRP", etype="market", entry=0.5, stop=0.4993, target=0.52,
+                               price_at_plan=0.5))
+    pm = PositionManager()
+    _tick(AnyBot(pm, {"XRP": 0.5}), hl)
+    st = _state(sandbox)["x"]
+    assert st["status"] == "open" and pm.positions["XRP"].sl == 0.4993, st
+    assert hl.calls == []
+    kw = dict(symbol="XRP", side="LONG", entry=0.5, qty=100, sl=0.4993, tp1=0.51, tp2=0.52)
+    assert PositionManager().open_position(strategy="llm_first", **kw) is None        # bot: unchanged
+    assert PositionManager().open_position(strategy=ope.OWNER_STRATEGY, **kw) is not None
+
+
+@pytest.mark.parametrize("risk_usd,qty,legs", [(2.0, 1.0, ["open", "final"]), (6.0, 3.0, ["open", "partial"])])
+def test_b2_runner_half_on_szdecimals_zero_coin(sandbox, hl, on, monkeypatch, risk_usd, qty, legs):
+    """szDecimals 0. 1 lot: the half rounds to 0 -> snapped to one lot = everything -> the half closes the
+    remainder. 3 lots: half = 1 lot, 2 lots trail. Never a dropped, failing or re-emitted leg."""
+    monkeypatch.setenv("OWNER_RUNNER_STYLE", "true")
+    monkeypatch.setattr(ope, "atr_at_fill", lambda bot, coin, ts: (3.0, "test"))
+    _write_rows(sandbox, _plan("bl", coin="BIGLOT", etype="market", entry=50.0, stop=48.0, target=60.0,
+                               price_at_plan=50.0, risk_usd=risk_usd))
+    pm = PositionManager()
+    bot = AnyBot(pm, {})
+    _tick(bot, hl, BIGLOT=50)
+    assert pm.positions["BIGLOT"].qty == qty
+    _tick(bot, hl, BIGLOT=52.5)                              # past +1R
+    rows = _fills(sandbox)
+    assert [r["kind"] for r in rows] == legs
+    assert rows[1]["reason"] == "OWNER_RUNNER_HALF" and rows[1]["qty"] == 1.0
+    assert rows[1]["managed_by"] == "runner_half"
+    if legs[-1] == "final":
+        assert "BIGLOT" not in pm.positions
+    else:
+        assert pm.positions["BIGLOT"].qty == 2.0            # 1.5 rounds down to 1 lot; 2 lots trail
+    n = len(rows)
+    _tick(bot, hl, BIGLOT=52.6)                              # nothing re-fires
+    assert len(_fills(sandbox)) == n
+
+
+def test_b3_requested_vs_effective_mode_stamped(sandbox, hl, on):
+    p = _sui("m", etype="market", entry=3.05, price_at_plan=3.05, stop=2.95, target=3.4)
+    p["exit_mode"] = "bot_manages"
+    _write_rows(sandbox, p, _plan("c", coin="ETH", etype="market", entry=3000.0, stop=2950.0, target=3150.0))
+    pm = PositionManager()
+    bot = AnyBot(pm, {"ETH": 3000.0})
+    _tick(bot, hl, 3.05)
+    pos = pm.positions["SUI"]
+    assert pos.entry_reasons["exit_mode_requested"] == "bot_manages"
+    assert pos.entry_reasons["exit_mode_effective"] == "profits_only" and pos.entry_reasons["exit_mode_degraded"]
+    _tick(bot, hl, 2.94)                                     # SUI stops out
+    rows = _fills(sandbox)
+    sui = [r for r in rows if r["coin"] == "SUI"]
+    assert [r["kind"] for r in sui] == ["open", "final"]
+    for r in sui:
+        assert r["any_coin"] is True and r["exit_mode_requested"] == "bot_manages"
+        assert r["exit_mode_effective"] == "profits_only" and r["exit_mode_degraded"] is True
+    eth = [r for r in rows if r["coin"] == "ETH"]
+    assert eth and not any(k in eth[0] for k in oac.ROW_KEYS), "core rows carry no any-coin fields"

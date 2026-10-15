@@ -127,6 +127,15 @@ def _owner_block_log(pos, source: str, action: str, reason: str) -> None:
         pass
 
 
+def _owner_any_coin_symbol(symbol) -> bool:
+    """OWNER_PLAN_ANY_COIN: symbol registered as an extra (non-core) coin. Always False for the bot's own coins."""
+    try:
+        from core.owner_any_coin import is_extra
+        return is_extra(symbol)
+    except Exception:
+        return False
+
+
 def _owner_runner_mode(pos) -> str:
     """OWNER exit_style=runner (core.owner_plan_exec): 'live' (OWNER_RUNNER_STYLE on -> applied),
     'shadow' (flag off -> only logged), '' (not a runner position; every bot position)."""
@@ -1580,7 +1589,22 @@ class PositionManager:
             orig = float(pos.original_qty or 0) or float(pos.qty)
             already = max(0.0, orig - float(pos.qty))
             want = round_qty(pos.symbol, round(max(0.0, 0.5 * orig - already), 10))  # round off float dust first
-            if want > 0 and want < pos.qty and round_qty(pos.symbol, pos.qty - want) > 0:
+            _split = want > 0 and want < pos.qty and round_qty(pos.symbol, pos.qty - want) > 0
+            if not _split and 0.5 * orig - already > 1e-12 and _owner_any_coin_symbol(pos.symbol):
+                # OWNER_PLAN_ANY_COIN (laptop 178 B2): on a coarse-lot coin (szDecimals 0) the half can round to
+                # 0. Snap it UP to the minimum lot; if that leaves nothing behind, the half closes the remainder
+                # (a sub-lot leg is never silently dropped, never retried).
+                want = round_qty(pos.symbol, max(want, get_min_qty(pos.symbol)))
+                _split = want > 0 and want < pos.qty and round_qty(pos.symbol, pos.qty - want) > 0
+                if not _split:
+                    st.update(half_taken=True, half_px=price, one_r=one_r, best=price, half_qty=float(pos.qty),
+                              half_ts=datetime.now(timezone.utc).isoformat(), atr=atr, half_closed_all=True)
+                    logger.info(f"[OWNER-RUNNER] {pos.symbol} +1R @ {price:g}: qty {pos.qty:g} too small to split "
+                                f"on this coin's lot size - the half closes the whole remainder")
+                    event = self._close_position(pos, price, "OWNER_RUNNER_HALF")
+                    event.metadata["owner_runner"] = "half at +1R (lot too coarse to split: closed the remainder)"
+                    return event
+            if _split:
                 event = self.partial_close(pos.symbol, want / pos.qty, price, action="OWNER_RUNNER_HALF",
                                            qty=want, owner_rule=True)
                 if event is not None:
