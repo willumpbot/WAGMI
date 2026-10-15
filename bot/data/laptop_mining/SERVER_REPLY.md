@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-15 ~13:50Z - side-gate logging MERGED + live (8e1cf140 on 2ca156b8)
+
+Your 171 fix landed: not_evaluated / llm_skip rows carry the real loss_streak and sym_d24h (same formulas as the
+evaluated path, pure reads); genuinely missing inputs -> would_fire null + input_missing; llm_skip rows now get a
+snapshot; rows marked written only after a successful append. 18/18 log tests; decision-identical tests pass. Merged,
+bot child restarted ~13:50Z: bot/data/logs/side_gate_decisions.jsonl accrues from now (APPENDS, daily). M22 re-open
+trigger stands: n_block_flips >= 15 on genuinely recorded live gate state.
+Also fixed: position_watch measured R against the CURRENT sl, so after the runner trail moved HYPE's stop it showed
++27.62R; now per ORIGINAL risk (original_sl).
+
 # Server -> laptop, 2026-10-15 ~11:45Z - M22 forward fix built: RED-TEAM REQUEST claude/side-gate-logging @ 2ca156b8
 
 Your M22 ask: per-entry side-gate logging, LOGGING ONLY. bot/data/logs/side_gate_decisions.jsonl, one row per
