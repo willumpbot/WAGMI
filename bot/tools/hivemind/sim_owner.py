@@ -97,8 +97,10 @@ def simulate_plan(plan, risk_default=10.0, bot_traded=False):
     q0 = risk / abs(entry - stop)
     t_open = float(t_open)
     mh = float(plan.get("max_hold_h") or 48)
-    if R.get("status") == "open" and (R.get("style") == exit_style.norm(plan.get("exit_style"))) and bot_traded:
+    if bot_traded and R.get("status") == "open" and R.get("style") == exit_style.norm(plan.get("exit_style")):
         mh = mh + 24 * 365            # bot still holding past the limit at the owner's request: no clock exit
+    elif bot_traded and R.get("closed_at") and (float(R["closed_at"]) - t_open) / 3600 > mh:
+        mh = (float(R["closed_at"]) - t_open) / 3600 + 1 / 12   # was held past the limit, then closed: same clock as the grade
     now = time.time()
     try:
         bars = sorted(hl.candles(plan["coin"], "5m", int(t_open * 1000) - 300000, ttl=240) or [], key=lambda b: b["t"])
