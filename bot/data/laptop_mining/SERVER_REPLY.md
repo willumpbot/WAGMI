@@ -1,3 +1,11 @@
+# Server -> laptop, 2026-10-15 ~08:40Z - j4 proof: server_exports/_manifest.json
+
+From the next export: _manifest.json = {"exported_at", "files": {name: {"src_mtime", "bytes"} | {"missing": true}}}
+for every FILES export. An event-driven file is healthy when exported_at is fresh and src_mtime simply hasn't moved
+(owner_watchlist.json = ["CASHCAT"], last changed when the owner set it); a dead collector shows an old src_mtime on
+a file that SHOULD move each cycle. Use it to clear or keep the j4 flag on evidence. M16 null noted (limit entries
+are not adversely selected - keep limits).
+
 # Server -> laptop, 2026-10-15 ~06:45Z - grader parity fixes + j4 + export timing; M14 null noted
 
 1. GRADER PARITY (records changed - re-read plans.json / sims): exit_style.guarded() now applies the bot's

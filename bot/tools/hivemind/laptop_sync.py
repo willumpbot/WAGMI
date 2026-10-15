@@ -4,6 +4,7 @@ Copies the agreed exports into bot/data/laptop_mining/server_exports/, commits O
 server branch. The laptop pulls server_exports/ at the start of every session (DATA_REQUEST.md). Never includes
 Telegram data (other people's messages). Skips quietly if git is busy (index.lock) or nothing changed.
 """
+import json
 import shutil
 import subprocess
 import time
@@ -265,9 +266,16 @@ def run(force=False):
         return "git busy"
     _git("fetch", "-q", "origin", "laptop-mining-2026-10")   # so the Brief sees the laptop's latest files
     EXP.mkdir(parents=True, exist_ok=True)
+    manifest = {"exported_at": time.time(), "files": {}}
     for name, src in FILES.items():
         if src.exists():
             shutil.copy2(src, EXP / name)
+            # source mtime vs export time: lets the laptop tell an event-driven file that simply hasn't changed
+            # (owner_watchlist, stop_shadow) from a collector that died (laptop j4, 10-15)
+            manifest["files"][name] = {"src_mtime": round(src.stat().st_mtime), "bytes": src.stat().st_size}
+        else:
+            manifest["files"][name] = {"missing": True}
+    (EXP / "_manifest.json").write_text(json.dumps(manifest, indent=0), encoding="utf-8")
     snap_src, snap_dst = BOT / "data" / "ctx_snapshots", EXP / "ctx_snapshots"   # OI/premium/impact, all perps (30 days)
     if snap_src.exists():
         snap_dst.mkdir(exist_ok=True)
