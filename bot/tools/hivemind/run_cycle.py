@@ -134,6 +134,18 @@ def main():
                     expmove_grade.resolve()
             except Exception as e:
                 log(f"{mod} failed: {e}")
+        try:   # broad wallet miner (~1,200 wallets), hourly, DETACHED (it takes ~10 min, paced for HL's rate limit)
+            import wallet_miner, subprocess
+            wlock = wallet_miner.LOCK
+            wbusy = wlock.exists() and time.time() - wlock.stat().st_mtime < 50 * 60
+            if wallet_miner.due() and not wbusy:
+                wallet_miner.OUT.mkdir(parents=True, exist_ok=True)
+                wlock.write_text(str(time.time()))
+                subprocess.Popen([sys.executable, str(HERE / "wallet_miner.py")], cwd=str(HERE),
+                                 creationflags=0x00000008 | 0x08000000,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as e:
+            log(f"wallet_miner launch failed: {e}")
         try:   # laptop export, hourly, in a DETACHED process (10-14: a 584s sync pushed a cycle to 18 of its 25 min)
             import laptop_sync, subprocess
             lock = HERE.parents[1] / "data" / "hivemind" / ".laptop_sync.lock"

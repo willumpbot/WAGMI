@@ -25,7 +25,8 @@ FILES = {
     "owner_plan_sims.json": BOT / "data" / "hivemind" / "owner_plan_sims.json",   # every owner plan played out on 5m, any coin
     "owner_plan_sims_resolved.jsonl": BOT / "data" / "hivemind" / "owner_plan_sims_resolved.jsonl",   # append-only, one row per finished plan
     "dissent_log.jsonl": BOT / "data" / "hivemind" / "dissent_log.jsonl",
-    "cases_index.json": BOT / "data" / "hivemind" / "cases" / "index.json",   # per-trade case index (full files on request)   # live stage-2 dissent input per coin per cycle (M3)
+    "cases_index.json": BOT / "data" / "hivemind" / "cases" / "index.json",
+    "wallet_snapshots.jsonl": BOT / "data" / "hivemind" / "wallets" / "snapshots.jsonl",   # per-trade case index (full files on request)   # live stage-2 dissent input per coin per cycle (M3)
     "ai_plans.json": BOT / "data" / "hivemind" / "ai_plans.json",
     "scan_grades.json": BOT / "data" / "hivemind" / "scan_grades.json",
     "scan_log.jsonl": BOT / "data" / "hivemind" / "scan_log.jsonl",
@@ -66,6 +67,7 @@ STREAMS = {
     "whales": BOT / "data" / "hivemind" / "whales_log.jsonl",                      # HL whale net positions
     "voices": BOT / "data" / "hivemind" / "voice_log.jsonl",                       # every voice reading, 15 min
     "depth_all": BOT / "data" / "hivemind" / "depth_all.jsonl",                    # L2 bands, all ~178 perps, 15 min
+    "wallets": BOT / "data" / "hivemind" / "wallets" / "positions.jsonl",        # ~1,200 wallets' positions >= $5k, hourly
 }
 LEARNED_STATE = ["epoch_start.json", "ic_history.json", "position_state.json", "feedback/signal_quality.json",
                  "feedback/regime_feedback_state.json", "llm/agent_calibration.json", "llm/neuroplasticity_state.json",
