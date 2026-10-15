@@ -241,6 +241,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
       <div class="calc">
         <label>Side<select id="c_side"><option>LONG</option><option>SHORT</option></select></label>
         <label>Leverage<input id="c_lev" type="number" value="3" step="1"></label>
+        <label>Exit style<select id="c_style"><option value="runner" selected>Half at +1R, run the rest</option><option value="full">All at target</option></select></label>
         <label>Time limit<select id="c_hold"><option value="24">24 hours</option><option value="48" selected>48 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="720">none (30 days)</option></select></label>
         <label>Entry<input id="c_entry" type="number" step="any"></label>
         <label>Stop<input id="c_stop" type="number" step="any"></label>
@@ -932,7 +933,8 @@ async function makePlan(){
   const body = {coin: sel, side, entry: +$("c_entry").value, stop: +$("c_stop").value, target: +$("c_tgt").value, entry_type: et, price: now,
     leverage: +$("c_lev").value, risk_usd: +$("c_acct").value * +$("c_risk").value / 100, setup: $("c_setup").value, reason: $("c_reason").value,
     exit_mode: ($("c_exitmode") && $("c_exitmode").value) || "profits_only",
-    max_hold_h: +(($("c_hold") && $("c_hold").value) || 48)};
+    max_hold_h: +(($("c_hold") && $("c_hold").value) || 48),
+    exit_style: ($("c_style") && $("c_style").value) || "runner"};
   if (window.LOADED_IDEA && window.LOADED_IDEA.coin === sel) { body.source_idea_id = window.LOADED_IDEA.id; body.adopt_mode = "adjust"; }
   try {
     const r = await fetch(API + "/v1/owner_plan", {method:"POST", headers:{"Content-Type":"application/json","X-Owner-Token":DATA.ownerToken}, body: JSON.stringify(body)});
@@ -1319,8 +1321,8 @@ document.querySelectorAll(".seg button[data-tf]").forEach(b=>b.onclick=()=>{tf=b
 document.querySelectorAll("#ovseg button").forEach(b=>{ b.classList.toggle("on", !!OV[b.dataset.ov]); b.onclick=()=>{ OV[b.dataset.ov] = OV[b.dataset.ov] ? 0 : 1; b.classList.toggle("on", !!OV[b.dataset.ov]); try { localStorage.setItem("ov", JSON.stringify(OV)); } catch(e) {} drawChart(); }; });
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 try { showTab(localStorage.getItem("tab") || "t_brief"); const t0 = localStorage.getItem("tf"); if (t0 && TF_MS[t0]) { tf = t0; document.querySelectorAll(".seg button[data-tf]").forEach(x=>x.classList.toggle("on", x.dataset.tf===tf)); } } catch(e) {}
-["c_acct","c_risk","c_side","c_lev","c_hold"].forEach(id=>$(id).oninput=()=>{ try { localStorage.setItem(id, $(id).value); } catch(e) {} calc(); });
-try { for (const id of ["c_acct","c_risk","c_hold"]) { const v = localStorage.getItem(id); if (v) $(id).value = v; } } catch(e) {}
+["c_acct","c_risk","c_side","c_lev","c_hold","c_style"].forEach(id=>$(id).oninput=()=>{ try { localStorage.setItem(id, $(id).value); } catch(e) {} calc(); });
+try { for (const id of ["c_acct","c_risk","c_hold","c_style"]) { const v = localStorage.getItem(id); if (v) $(id).value = v; } } catch(e) {}
 ["c_entry","c_stop"].forEach(id=>$(id).oninput=()=>{$(id).dataset.touched=1;if(id==="c_stop")delete $("c_tgt").dataset.touched;calc()});
 $("c_side").onchange=()=>{delete $("c_stop").dataset.touched;delete $("c_tgt").dataset.touched;calc()};
 $("al_add").onclick = () => { const p = +$("al_px").value; if (!p) return; const now = px(sel);

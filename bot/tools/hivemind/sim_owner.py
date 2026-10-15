@@ -80,10 +80,11 @@ def simulate(plan_id, plan):
             "r": round(total / risk, 3) if risk else None, "exit_ts": exit_ts, "expires_ts": t_end, "as_of": now}
 
 
-def simulate_plan(plan, risk_default=10.0):
-    """Any owner plan the bot did NOT execute (coin outside its 6, or blocked): play it out on HL 5m bars from the
-    grader's fill time with the plan's own stop / target / max_hold_h - the same 'Profits only' rules minus the bot's
-    partials (there is no bot managing it). Sized at the plan's risk_usd (else risk_default). Works on any HL perp."""
+def simulate_plan(plan, risk_default=10.0, bot_traded=False):
+    """Any owner plan, played out on HL 5m bars from the grader's fill time under the owner's exit style
+    (exit_style.py: default 'runner' = half at +1R, rest trails 1 daily ATR, plan time limit). Sized at the plan's
+    risk_usd (else risk_default). Works on any HL perp."""
+    import exit_style
     R = plan.get("result") or {}
     t_open = R.get("filled_at")
     if not t_open:
@@ -94,47 +95,43 @@ def simulate_plan(plan, risk_default=10.0):
         return None
     risk = float(plan.get("risk_usd") or 0) or risk_default
     q0 = risk / abs(entry - stop)
-    sg = 1 if side == "LONG" else -1
     t_open = float(t_open)
-    t_end = t_open + float(plan.get("max_hold_h") or 48) * 3600
+    mh = float(plan.get("max_hold_h") or 48)
+    if R.get("status") == "open" and (R.get("style") == exit_style.norm(plan.get("exit_style"))) and bot_traded:
+        mh = mh + 24 * 365            # bot still holding past the limit at the owner's request: no clock exit
     now = time.time()
     try:
-        bars = sorted(hl.candles(plan["coin"], "5m", int(t_open * 1000), int(min(now, t_end) * 1000), ttl=240) or [],
-                      key=lambda b: b["t"])
+        bars = sorted(hl.candles(plan["coin"], "5m", int(t_open * 1000) - 300000, ttl=240) or [], key=lambda b: b["t"])
     except Exception:
         bars = []
-    status, exit_px, exit_ts = "open", None, None
-    for b in bars:
-        t, hi, lo = int(b["t"]) / 1000, float(b["h"]), float(b["l"])
-        if t + 300 <= t_open:
-            continue
-        if (sg < 0 and hi >= stop) or (sg > 0 and lo <= stop):
-            status, exit_px, exit_ts = "stop", stop, t
-            break
-        if (sg < 0 and lo <= target) or (sg > 0 and hi >= target):
-            status, exit_px, exit_ts = "target", target, t
-            break
-    if status == "open" and now >= t_end and bars:
-        status, exit_px, exit_ts = "time limit", float(bars[-1]["c"]), t_end
-    if status == "open":
+    sty = exit_style.norm(plan.get("exit_style"))
+    pr = exit_style.play(side, entry, stop, target, bars, t_open, mh, sty, exit_style.atr_at(hl, plan["coin"], t_open), now)
+    mark = None
+    if pr["status"] == "open":
         try:
             mark = float(hl.post({"type": "allMids"}, ttl=30)[plan["coin"]])
         except Exception:
-            mark = float(bars[-1]["c"]) if bars else None   # unknown, never a fake 0.00 (laptop 138)
+            mark = float(bars[-1]["c"]) if bars else None
+        if mark is None:
+            r_now = None
+        else:
+            sg = 1 if side == "LONG" else -1
+            banked = sum(l["frac"] * (sg * (l["px"] - entry) / abs(entry - stop)) for l in pr["legs"])
+            r_now = banked + pr.get("frac_left", 1.0) * sg * (mark - entry) / abs(entry - stop)
     else:
-        mark = exit_px
-    if mark is None:
-        total = None
-        return {"mode": "plan_levels", "status": status, "lev": float(plan.get("leverage") or 1), "entry": entry,
-                "stop": stop, "target": target, "partials": [], "banked_usd": 0.0, "open_qty": round(q0, 6), "mark": None,
-                "open_pnl_usd": None, "total_usd": None, "r": None, "risk_usd": risk, "exit_ts": exit_ts,
-                "expires_ts": t_end, "as_of": now, "filled_at": t_open, "bot_traded": False}
-    total = sg * (mark - entry) * q0
-    return {"mode": "plan_levels", "status": status, "lev": float(plan.get("leverage") or 1), "entry": entry, "stop": stop,
-            "target": target, "partials": [], "banked_usd": 0.0, "open_qty": round(q0, 6), "mark": mark,
-            "open_pnl_usd": round(total, 2) if status == "open" else 0.0, "total_usd": round(total, 2),
-            "r": round(total / risk, 3), "risk_usd": risk, "exit_ts": exit_ts, "expires_ts": t_end, "as_of": now,
-            "filled_at": t_open, "bot_traded": False}
+        mark = pr["legs"][-1]["px"]
+        r_now = pr["r"]
+    total = None if r_now is None else round(r_now * risk, 2)
+    banked_usd = round(sum(l["frac"] * (1 if side == "LONG" else -1) * (l["px"] - entry) / abs(entry - stop)
+                           for l in pr["legs"] if l["why"] == "half at +1R") * risk, 2)
+    return {"mode": sty, "status": {"won": "target", "lost": "stop"}.get(pr["status"], pr["status"]) if pr["status"] != "open" else "open",
+            "lev": float(plan.get("leverage") or 1), "entry": entry, "stop": stop, "target": target,
+            "partials": [l for l in pr["legs"] if l["why"] == "half at +1R"], "banked_usd": banked_usd,
+            "open_qty": round(q0 * pr.get("frac_left", 0 if pr["status"] != "open" else 1.0), 6), "mark": mark,
+            "open_pnl_usd": None if total is None else round(total - banked_usd, 2), "total_usd": total,
+            "r": None if r_now is None else round(r_now, 3), "risk_usd": risk, "exit_ts": pr["exit_ts"],
+            "expires_ts": t_open + mh * 3600, "as_of": now, "filled_at": t_open, "bot_traded": bot_traded,
+            "legs": pr["legs"], "trail": pr.get("trail"), "exit_why": pr["legs"][-1]["why"] if pr["legs"] and pr["status"] != "open" else None}
 
 
 if __name__ == "__main__":

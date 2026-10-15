@@ -83,7 +83,9 @@ def create(p):
            # what the bot may do to the paper position (core/owner_plan_exec.owner_exit_mode):
            # profits_only (default) = partial profits only, stop never moved, no early close;
            # hands_off = stop/target only; bot_manages = the bot's full exit machinery.
-           "exit_mode": _exit_mode(p.get("exit_mode"))}
+           "exit_mode": _exit_mode(p.get("exit_mode")),
+           # how the position is exited (exit_style.py): runner (default) = half at +1R, rest trails 1 ATR; full = all at target
+           "exit_style": ("full" if str(p.get("exit_style") or "").lower() == "full" else "runner")}
     HM.mkdir(parents=True, exist_ok=True)
     with open(PLANS, "a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")
@@ -390,6 +392,35 @@ def resolve(write=True):
                 res = dict(old or {"status": "waiting"}, error=str(e)[:120])
             if pl["id"] in cancelled and res.get("status") == "waiting":
                 res = {"status": "cancelled"}
+        # Owner's exit style (default "runner": half at +1R, rest trails 1 daily ATR, time limit) - one engine for every
+        # grade and simulation (tools/hivemind/exit_style.py). Recomputed once per plan when the style changes.
+        try:
+            import exit_style as _xs
+            sty = _xs.norm(pl.get("exit_style"))
+            if res.get("filled_at") and (res.get("style") != sty or "alt_style" not in res or res.get("status") == "open"):
+                if res.get("filled_at"):
+                    f_ts = float(res["filled_at"])
+                    _bars = sorted(hl.candles(pl["coin"], "5m", int(f_ts * 1000) - 300000, ttl=50) or [], key=lambda b: b["t"])
+                    _atr = _xs.atr_at(hl, pl["coin"], f_ts)
+                    e_, st_, tg_ = float(pl["entry"]), float(pl["stop"]), float(pl["target"])
+                    pr = _xs.play(pl["side"], e_, st_, tg_, _bars, f_ts, pl_g.get("max_hold_h"), sty, _atr, now)
+                    alt = _xs.play(pl["side"], e_, st_, tg_, _bars, f_ts, pl_g.get("max_hold_h"),
+                                   "full" if sty == "runner" else "runner", _atr, now)   # the other style, for comparison
+                    risk_ = abs(e_ - st_)
+                    fee_r = round(FEE_RT * e_ / risk_, 3) if risk_ else 0.0
+                    keep = {k: res.get(k) for k in ("best_r", "worst_r") if k in res}
+                    if pr["status"] == "open":
+                        res = dict(keep, status="open", filled_at=f_ts, live_r=round(pr["live_r"], 2), style=sty,
+                                   legs=pr["legs"], trail=pr["trail"])
+                    else:
+                        res = dict(keep, status=pr["status"], filled_at=f_ts, closed_at=pr["exit_ts"], r_gross=pr["r"],
+                                   r=round(pr["r"] - fee_r, 3), fee_r=fee_r, exit=pr["legs"][-1]["px"], style=sty,
+                                   legs=pr["legs"], hold_h=round((pr["exit_ts"] - f_ts) / 3600, 1))
+                    res["alt_style"] = "full" if sty == "runner" else "runner"
+                    res["alt_r"] = alt.get("r") if alt["status"] != "open" else None
+                    res["alt_live_r"] = alt.get("live_r") if alt["status"] == "open" else None
+        except Exception as _e:
+            res = dict(res, style_error=str(_e)[:120])
         rv = (reviews.get(pl["id"]) or {}).get("review")
         bot_res = (prev.get(pl["id"]) or {}).get("bot_result") or {}
         if rv and rv.get("bot_stop") and rv.get("bot_target") and res.get("status") not in ("waiting", "expired", "cancelled") and bot_res.get("status") not in ("won", "lost", "timed out"):

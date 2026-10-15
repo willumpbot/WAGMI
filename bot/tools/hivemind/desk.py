@@ -281,11 +281,7 @@ def _trade_history():
             import sim_owner
             plans = {p["id"]: p for p in _load(HM / "plans.json", {}).get("plans", [])}
             out["sims"] = []
-            for pid, p in plans.items():
-                if pid == "11624f4364" and (p.get("exec_result") or {}).get("fills"):   # owner's BTC short only
-                    sm = sim_owner.simulate(pid, p)
-                    if sm:
-                        out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts")))
+            # 10-15: every filled owner plan (bot-run ones too) is shown under the owner's exit style, below.
         except Exception:
             out["sims"] = []
         # Every owner plan the bot did NOT execute (coin outside its 6, or blocked) is simulated on real 5m prices with the
@@ -296,9 +292,9 @@ def _trade_history():
             risk_default = float(os.getenv("OWNER_PLAN_DEFAULT_RISK_USD", "10") or 10)
             for pid, p in plans.items():
                 X = p.get("exec_result") or {}
-                if X.get("fills") or not (p.get("result") or {}).get("filled_at"):
-                    continue          # bot-executed plans already have their real fills; unfilled plans have nothing to play
-                sm = sim_owner.simulate_plan(p, risk_default)
+                if not (p.get("result") or {}).get("filled_at"):
+                    continue          # unfilled plans have nothing to play
+                sm = sim_owner.simulate_plan(p, risk_default, bot_traded=bool(X.get("fills")))
                 if sm:
                     out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts"),
                                             why_untraded=X.get("reason") or X.get("status") or ""))
