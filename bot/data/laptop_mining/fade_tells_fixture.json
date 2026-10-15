@@ -1,0 +1,81 @@
+{
+ "module": "fade_tells.classify(velocity_bars, vol_prev_bar, vol_mean_72_before_entry) -> (label, note)",
+ "thresholds": {
+  "S_STAR": 0.6907,
+  "VEL_STAR": 9.0,
+  "base_fade": 0.642
+ },
+ "note": "INSIGHT-ONLY ~7pt lean (sealed M32C composite); FADE_PRONE = clean_surge<=S* AND velocity>=VEL*",
+ "fixture": [
+  {
+   "velocity_bars": 12,
+   "vol_prev_bar": 0.5,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 0.5,
+   "expected_label": "FADE_PRONE"
+  },
+  {
+   "velocity_bars": 3,
+   "vol_prev_bar": 3.0,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 3.0,
+   "expected_label": "RUN_LIKELY"
+  },
+  {
+   "velocity_bars": 9,
+   "vol_prev_bar": 0.6,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 0.6,
+   "expected_label": "FADE_PRONE"
+  },
+  {
+   "velocity_bars": 20,
+   "vol_prev_bar": 0.4,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 0.4,
+   "expected_label": "FADE_PRONE"
+  },
+  {
+   "velocity_bars": 2,
+   "vol_prev_bar": 1.2,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 1.2,
+   "expected_label": "RUN_LIKELY"
+  },
+  {
+   "velocity_bars": 15,
+   "vol_prev_bar": 0.69,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 0.69,
+   "expected_label": "FADE_PRONE"
+  },
+  {
+   "velocity_bars": 8,
+   "vol_prev_bar": 2.5,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 2.5,
+   "expected_label": "RUN_LIKELY"
+  },
+  {
+   "velocity_bars": 11,
+   "vol_prev_bar": 0.5,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 0.5,
+   "expected_label": "FADE_PRONE"
+  },
+  {
+   "velocity_bars": 1,
+   "vol_prev_bar": 0.3,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 0.3,
+   "expected_label": "RUN_LIKELY"
+  },
+  {
+   "velocity_bars": 30,
+   "vol_prev_bar": 0.55,
+   "vol_mean_72_before_entry": 1.0,
+   "clean_surge": 0.55,
+   "expected_label": "FADE_PRONE"
+  }
+ ]
+}
