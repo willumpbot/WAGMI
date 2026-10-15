@@ -219,11 +219,58 @@ def test_probe_fire_recorded(monkeypatch, log_path):
     assert r["outcome"] == "probe_opened" and r["position_id"] == "pid-123"
 
 
+D24_EXPECTED = (ENTRY * 1.029 - ENTRY * 1.005) / (ENTRY * 1.005) * 100.0  # closes[-1] vs closes[-25]
+
+
 def test_llm_skip_row(monkeypatch, log_path):
-    bot = _bot(monkeypatch, action="skip")
+    bot = _bot(monkeypatch, side="SELL", action="skip")
+    bot.risk_mgr.circuit_breaker.consecutive_losses = 4
     _run(bot)
     rows = _rows(log_path)
-    assert len(rows) == 1 and rows[0]["outcome"] == "llm_skip"
+    assert len(rows) == 1
+    r = rows[0]
+    assert r["outcome"] == "llm_skip"
+    # laptop 171: skip rows carry the REAL inputs, not blanks
+    assert r["gate"]["mode"] == "not_evaluated"
+    legs = r["selectivity"]["legs"]
+    assert legs["loss_streak"]["loss_streak"] == 4
+    assert legs["trend_direction"]["sym_d24h"] == pytest.approx(D24_EXPECTED)
+    assert legs["trend_direction"]["would_fire"] is True
+    assert legs["trend_direction"]["input_missing"] is None
+
+
+def test_missing_input_is_null_with_reason_not_false(monkeypatch, log_path):
+    """A genuinely unavailable input -> would_fire None + input_missing, never False."""
+    monkeypatch.setenv("ENTRY_SELECTIVITY", "off")
+    monkeypatch.setitem(es._cache, "streak", {"n_star": 3})
+    bot = _bot(monkeypatch, side="SELL", num_agree=2, action="skip")
+    bot.risk_mgr.circuit_breaker = None   # streak unavailable -> int(0) per live formula
+    random.seed(7)
+    sgl.start_scope()
+    try:
+        msm.MultiStrategyBot._process_symbol_llm_first(
+            bot, SYMBOL, None, None, {}, {}, ENTRY, "trace-1")   # no 1h data -> no d24h
+    finally:
+        sgl.end_scope()
+    legs = _rows(log_path)[0]["selectivity"]["legs"]
+    assert legs["trend_direction"]["sym_d24h"] is None
+    assert legs["trend_direction"]["would_fire"] is None
+    assert legs["trend_direction"]["input_missing"] == "sym_d24h"
+    assert legs["neg_ev"]["would_fire"] is None
+    assert legs["neg_ev"]["input_missing"] == "ev_per_dollar"
+    # live path: missing breaker -> consecutive_losses defaults to 0 (a real value)
+    assert legs["loss_streak"]["loss_streak"] == 0
+    assert legs["loss_streak"]["would_fire"] is False
+
+
+def test_gate_snapshot_null_when_input_missing():
+    snap = es.gate_snapshot(num_agree=None, ev_per_dollar=None, loss_streak=None,
+                            is_exploration=False, side="SELL", regime="range", sym_d24h=None)
+    legs = snap["legs"]
+    assert legs["solo"]["would_fire"] is None and legs["solo"]["input_missing"] == "num_agree"
+    assert legs["trend_direction"]["would_fire"] is None
+    # loss-streak: n_star None in fixture -> leg cannot fire, False is a real answer
+    assert legs["loss_streak"]["would_fire"] is False and legs["loss_streak"]["input_missing"] is None
 
 
 def test_downstream_abort_row(monkeypatch, log_path):
@@ -245,6 +292,20 @@ def test_gate_off_still_snapshots_state(monkeypatch, log_path):
     legs = r["selectivity"]["legs"]
     # frozen solo gate WOULD fire, but the gate is off -> verdict off
     assert legs["solo"]["would_fire"] is True and legs["solo"]["verdict"] == "off"
+    # laptop 171: real inputs, same formulas as the evaluated path (not blanks)
+    assert legs["loss_streak"]["loss_streak"] == 0
+    assert legs["trend_direction"]["sym_d24h"] == pytest.approx(D24_EXPECTED)
+    assert legs["trend_direction"]["input_missing"] is None
+    assert legs["long_regime_veto"]["would_fire"] is True
+
+
+def test_gate_off_short_trend_would_fire_from_real_d24h(monkeypatch, log_path):
+    monkeypatch.setenv("ENTRY_SELECTIVITY", "off")
+    bot = _bot(monkeypatch, side="SELL", num_agree=2)
+    _run(bot)
+    legs = _rows(log_path)[0]["selectivity"]["legs"]
+    assert legs["trend_direction"]["would_fire"] is True      # +2.4% 24h on a short
+    assert legs["trend_direction"]["verdict"] == "off"
 
 
 @pytest.mark.parametrize("side,num_agree", [("SELL", 2), ("BUY", 1), ("BUY", 2)])

@@ -580,7 +580,8 @@ def gate_snapshot(*, num_agree, ev_per_dollar, loss_streak, is_exploration,
     For every leg it records the leg's mode, the living-value state it read
     (n / wr / breakeven / drain / N* / T_down) and the entry's inputs, plus:
       would_fire: the leg's condition is true for this entry, IGNORING every
-                  enable flag (so a frozen-vs-living comparison can be made later)
+                  enable flag (so a frozen-vs-living comparison can be made later);
+                  None (+ input_missing) when an input it depends on is unavailable
       verdict:    what the live gate actually did with that leg:
                   'off' | 'exempt' | 'pass' | 'block' | 'shadow_block'
     Mirrors evaluate_entry's conditions exactly; never raises (returns {"error"})."""
@@ -641,22 +642,37 @@ def gate_snapshot(*, num_agree, ev_per_dollar, loss_streak, is_exploration,
             d24 = None
         trend_fire = bool(is_short and d24 is not None and d24 > t_down)
 
+        # A blanked input must never read as a benign market (laptop 171): when a
+        # leg's outcome depends on an input we do not have, would_fire is None and
+        # input_missing names it. Verdicts still mirror the live gate exactly (the
+        # live gate treats a missing input as "does not fire").
+        def _wf(fire, missing):
+            return (None, missing) if missing else (fire, None)
+
+        solo_wf, solo_miss = _wf(solo_fire, "num_agree" if (na is None and solo.get("active")) else None)
+        streak_wf, streak_miss = _wf(streak_fire, "loss_streak" if (ls is None and n_star is not None) else None)
+        negev_wf, negev_miss = _wf(negev_fire, "ev_per_dollar" if ev is None else None)
+        trend_wf, trend_miss = _wf(trend_fire, "sym_d24h" if (d24 is None and is_short) else None)
+
         legs = {
             "solo": {"mode": m, "num_agree": na, "state": solo,
-                     "would_fire": solo_fire,
+                     "would_fire": solo_wf, "input_missing": solo_miss,
                      "verdict": _verdict(True, True, solo_fire)},
             "loss_streak": {"enabled": streak_on, "loss_streak": ls, "n_star": n_star,
-                            "state": streak, "would_fire": streak_fire,
+                            "state": streak, "would_fire": streak_wf,
+                            "input_missing": streak_miss,
                             "verdict": _verdict(streak_on, True, streak_fire)},
-            "neg_ev": {"mode": negev_mode, "ev_per_dollar": ev, "would_fire": negev_fire,
+            "neg_ev": {"mode": negev_mode, "ev_per_dollar": ev, "would_fire": negev_wf,
+                       "input_missing": negev_miss,
                        "verdict": _verdict(negev_mode != "off" and ev is not None,
                                            negev_mode == "true", negev_fire)},
             "long_regime_veto": {"enabled": lrv_on, "is_long": is_long, "regime": regime,
                                  "uptrend_regimes": upt, "state": long_st,
-                                 "would_fire": long_fire,
+                                 "would_fire": long_fire, "input_missing": None,
                                  "verdict": _verdict(lrv_on, True, long_fire)},
             "trend_direction": {"mode": tmode, "sym_d24h": d24, "t_down": t_down,
-                                "is_short": is_short, "would_fire": trend_fire,
+                                "is_short": is_short, "would_fire": trend_wf,
+                                "input_missing": trend_miss,
                                 "verdict": _verdict(tmode != "off" and d24 is not None,
                                                     tmode == "true", trend_fire)},
         }

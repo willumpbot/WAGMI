@@ -8910,6 +8910,12 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 logger.info(
                     f"[{trace_id}][{symbol}] LLM-FIRST SKIP: {_thesis}"
                 )
+                if _sgl is not None:  # M22: gate state for the skip row (log only)
+                    _side_gate_log.note_not_evaluated(
+                        _sgl, entry_decision=entry_decision, signal_ctx=signal_ctx,
+                        risk_mgr=self.risk_mgr, data=data, is_exploration=False,
+                        side=raw_signal.side,
+                        regime=(raw_signal.metadata or {}).get("regime_1h"))
                 # Record for counterfactual tracking.
                 # Audit #7 (labeling half): pipeline failures are NOT LLM vetoes —
                 # recording them as vetoes polluted veto-accuracy learning
@@ -9101,14 +9107,13 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         # M22: gate not evaluated (ENTRY_SELECTIVITY=off, a non-'go', or a gate
         # error) -> still snapshot the living gate state for this entry.
-        if _sgl is not None and _sgl.get("gate") is None:
-            _side_gate_log.note_gate(
-                _sgl, action=entry_decision.action, mode="not_evaluated",
-                block=False, reasons=[], num_agree=signal_ctx.get("num_agree"),
-                ev_per_dollar=signal_ctx.get("ev_per_dollar"), loss_streak=None,
-                is_exploration=_exploration_entry, side=raw_signal.side,
-                regime=(raw_signal.metadata or {}).get("regime_1h"), sym_d24h=None)
+        # Inputs are computed exactly as the evaluated path does (read-only), so a
+        # not_evaluated row never carries a blanked input (laptop 171).
         if _sgl is not None:
+            _side_gate_log.note_not_evaluated(
+                _sgl, entry_decision=entry_decision, signal_ctx=signal_ctx,
+                risk_mgr=self.risk_mgr, data=data, is_exploration=_exploration_entry,
+                side=raw_signal.side, regime=(raw_signal.metadata or {}).get("regime_1h"))
             _side_gate_log.set_stage(_sgl, "post_gate")
 
         # ── Step 4: Post-LLM safety caps ──

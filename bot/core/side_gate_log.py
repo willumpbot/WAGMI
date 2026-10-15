@@ -159,6 +159,52 @@ def note_gate(rec, *, action, mode, block, reasons, num_agree, ev_per_dollar,
         logger.debug(f"side_gate_log note_gate failed: {e!r}")
 
 
+def entry_inputs(risk_mgr, data):
+    """(loss_streak, sym_d24h) computed EXACTLY as the evaluated gate path in
+    multi_strategy_main does (circuit-breaker consecutive_losses; 24h % change
+    from the entry data's 1h closes, <=T). Used only by the not_evaluated
+    fallback so those rows carry real inputs instead of blanks (laptop 171).
+    Pure reads; None for an input that is genuinely unavailable. Never raises."""
+    ls = None
+    try:
+        cb = getattr(risk_mgr, "circuit_breaker", None)
+        ls = int(getattr(cb, "consecutive_losses", 0) or 0)
+    except Exception:
+        ls = None
+    d24 = None
+    try:
+        df = data.get("1h") if isinstance(data, dict) else None
+        if df is not None and len(df) >= 25:
+            cl = df["close"]
+            p0 = float(cl.iloc[-25])
+            if p0 > 0:
+                d24 = (float(cl.iloc[-1]) - p0) / p0 * 100.0
+    except Exception:
+        d24 = None
+    return ls, d24
+
+
+def note_not_evaluated(rec, *, entry_decision, signal_ctx, risk_mgr, data,
+                       is_exploration, side, regime):
+    """Snapshot the gate for an entry the live gate did NOT evaluate (LLM skip,
+    ENTRY_SELECTIVITY=off, pipeline-failure skip, gate exception), with the same
+    inputs the evaluated path would have used. Never raises."""
+    try:
+        if rec is None or rec.get("gate") is not None:
+            return
+        ls, d24 = entry_inputs(risk_mgr, data)
+        ctx = signal_ctx if isinstance(signal_ctx, dict) else {}
+        ev = ctx.get("ev_per_dollar")
+        if ev is None:
+            ev = getattr(entry_decision, "predicted_ev", None)
+        note_gate(rec, action=getattr(entry_decision, "action", None), mode="not_evaluated",
+                  block=False, reasons=[], num_agree=ctx.get("num_agree"),
+                  ev_per_dollar=ev, loss_streak=ls, is_exploration=is_exploration,
+                  side=side, regime=regime, sym_d24h=d24)
+    except Exception as e:
+        logger.debug(f"side_gate_log note_not_evaluated failed: {e!r}")
+
+
 def note_probe(rec, *, enabled_, rate, roll, breaker, fire, size_mult=None):
     try:
         if rec is None:
@@ -194,8 +240,8 @@ def finish(rec, outcome, position_id=None):
         rec["outcome"] = outcome
         if position_id:
             rec["position_id"] = position_id
-        rec["_written"] = True
         row = {k: v for k, v in rec.items() if k != "_written"}
-        _append(row)
+        if _append(row):
+            rec["_written"] = True   # only after a successful write (end_scope may retry)
     except Exception as e:
         logger.debug(f"side_gate_log write failed: {e!r}")
