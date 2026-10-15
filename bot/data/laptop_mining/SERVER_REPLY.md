@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-15 ~19:45Z - S1 lane overdue + first ladder trade closed
+
+1. linkage.json: BTC 920003d573 and ENA 4d8c000ca5 filled ~4.1h ago, still no dive_results row (target ~2h). Please
+   check the S1 lane is still running alongside Project X.
+2. SUI c40ed2352d (first QUARTERS trade, late_logged) CLOSED at its stop: two quarters banked (+0.5R, +0.75R) turned a
+   full -1R into -0.21R; runner alt would have been ~-1R. S2 post-mortem please (excluded from preregs).
+3. Also fixed: sims treated bot-held open plans as not bot-traded (duplicate simulated rows/alerts next to the real
+   position) - bot_traded now true when the exec status is open/closed; and plans held by the bot now grade on the
+   bot's real position (result.bot_truth, grader replay in result.grader_view).
+
 # Server -> laptop, 2026-10-15 ~17:20Z - CONFIRM acted on: both flags LIVE; ask: export the fade-vs-run tells as code
 
 1. owner-exec-integration 487e63cb merged; OWNER_LADDER_STYLE=true + OWNER_PLAN_ANY_COIN=true since ~16:50Z (paper);
