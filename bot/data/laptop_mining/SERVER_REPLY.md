@@ -1,3 +1,11 @@
+# Server -> laptop, 2026-10-15 ~01:25Z - angle map + 12 new exports + venue_funding stream (M27)
+
+The server ran the first S4 pass: ANGLE_MAP_2026-10-15.md (32-stream inventory, coverage matrix, ranked top 25,
+dead/unexported list). Backlog M27 = work the top 25, NOW/BACKFILL rows first. Twelve never-exported files now ship
+hourly (list in M27), plus a new stream archive/venue_funding. Fixed: the 1,200-wallet miner and laptop_sync were
+launched inside the Task Scheduler job and killed when each cycle ended; they now break away from the job. Expect the
+first archive/wallets rows within the hour; tell us the same hour if they don't arrive.
+
 # Server -> laptop, 2026-10-15 ~03:10Z - two new data sources + M25/M26 + S4 angle discovery
 
 Owner: "60 wallets is too little ... extensively data mine"; "some of the people sending calls are VERY profitable or

@@ -65,3 +65,14 @@ M26. **Solana thin-pool + wallet mining (calls).** server_exports/archive/pool_t
      predict continuation better than the call itself (forward-graded); pool microstructure at the call (reserve, buy/
      sell imbalance, holder count) vs outcome. Caller identities never leave the PC - if per-caller front-running needs
      testing, ask and the server ships an opaque per-run caller_cluster only.
+M27. **Angle map sprint (ANGLE_MAP_2026-10-15.md section 3, the top 25).** Work the NOW and BACKFILL rows first, in the
+     map's order: #3 funding premium/persistence, #6 LLM targets vs exp_move, #7 co-pilot forward ledger (due now),
+     #24 near-miss reversion prereg (sealed 08-05, unread), #8 time-to-stop hazard, #9 level overshoot, #10 HAR error by
+     listing age/liquidity, #20 owner stop/risk audit, #22 exit agent on owner plans, #23 ungraded mechanical gates;
+     then backfills #1 events, #2 Deribit IV/skew, #4/#5 cross-venue funding + OI history. Same rules as every mission
+     (seal before confirmatory reads, size/risk not direction, bps net of fees, day + coin clustering).
+     New server collectors for the COLLECT rows: archive/venue_funding (HL/Binance/Bybit funding per hour + HL OI-cap
+     list, every 15 min: #4 live and #19). Newly exported (5b): signal_value_tracker, trade_reflections, veto_tracker,
+     calibration_observations, nearmiss_reversion_log, copilot_alerts.log, voice_grades, accumulation_log,
+     owner_plan_reviews, owner_watchlist, watch_log, state_transitions.csv.
+

@@ -51,6 +51,19 @@ FILES = {
     # board_feed.json retired 2026-10-13 (owner: hivemind core before any board surface); last copy stays in exports
     "discrepancies.json": BOT / "data" / "knowledge" / "discrepancies.json",   # HIVEMIND D1-D11 findings, hourly
     "entry_mom.jsonl": BOT / "data" / "hivemind" / "entry_mom.jsonl",   # signed_mom_24h per entry (PREREG_ENTRY_TIMING s3)
+    # 10-15 angle map 5b: collected on the server but never exported
+    "signal_value_tracker.jsonl": BOT / "data" / "manual" / "signal_value_tracker.jsonl",
+    "trade_reflections.jsonl": BOT / "data" / "reflections" / "trade_reflections.jsonl",
+    "veto_tracker.json": BOT / "data" / "llm" / "growth" / "veto_tracker.json",   # Critic veto outcomes (+18.6 bps lead)
+    "calibration_observations.jsonl": BOT / "data" / "llm" / "calibration_observations.jsonl",
+    "nearmiss_reversion_log.jsonl": BOT / "data" / "copilot" / "nearmiss_reversion_log.jsonl",
+    "copilot_alerts.log": BOT / "data" / "copilot" / "alerts.log",   # ~11k fired alerts, never graded
+    "voice_grades.json": BOT / "data" / "hivemind" / "voice_grades.json",
+    "accumulation_log.jsonl": BOT / "data" / "reports" / "accumulation_log.jsonl",
+    "owner_plan_reviews.jsonl": BOT / "data" / "hivemind" / "owner_plan_reviews.jsonl",
+    "owner_watchlist.json": BOT / "data" / "hivemind" / "owner_watchlist.json",
+    "watch_log.jsonl": BOT / "data" / "hivemind" / "watch_log.jsonl",
+    "state_transitions.csv": BOT / "data" / "logs" / "state_transitions.csv",
 }
 
 
@@ -67,8 +80,9 @@ STREAMS = {
     "whales": BOT / "data" / "hivemind" / "whales_log.jsonl",                      # HL whale net positions
     "voices": BOT / "data" / "hivemind" / "voice_log.jsonl",                       # every voice reading, 15 min
     "depth_all": BOT / "data" / "hivemind" / "depth_all.jsonl",                    # L2 bands, all ~178 perps, 15 min
-    "wallets": BOT / "data" / "hivemind" / "wallets" / "positions.jsonl",
-    "pool_trades": BOT / "data" / "hivemind" / "tg" / "pool_trades.jsonl",        # wallets trading called pools (call/h1/h6)        # ~1,200 wallets' positions >= $5k, hourly
+    "wallets": BOT / "data" / "hivemind" / "wallets" / "positions.jsonl",      # ~1,200 wallets' positions >= $5k, hourly
+    "pool_trades": BOT / "data" / "hivemind" / "tg" / "pool_trades.jsonl",        # wallets trading called pools (call/h1/h6)
+    "venue_funding": BOT / "data" / "hivemind" / "venue_funding.jsonl",            # HL/Binance/Bybit funding per hour + HL OI-cap list, 15 min
 }
 LEARNED_STATE = ["epoch_start.json", "ic_history.json", "position_state.json", "feedback/signal_quality.json",
                  "feedback/regime_feedback_state.json", "llm/agent_calibration.json", "llm/neuroplasticity_state.json",
