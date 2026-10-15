@@ -1,0 +1,69 @@
+{
+ "n": 7,
+ "agree": 1,
+ "rows": [
+  {
+   "coin": "SOL",
+   "src": "owner",
+   "setup": "breakdown",
+   "peakR": 0.8,
+   "vel_bars": 1,
+   "fade_lean": "RUN_LIKELY",
+   "outcome": "neither"
+  },
+  {
+   "coin": "BTC",
+   "src": "claude_idea",
+   "setup": "ai idea",
+   "peakR": 0.73,
+   "vel_bars": 39,
+   "fade_lean": "RUN_LIKELY",
+   "outcome": "neither"
+  },
+  {
+   "coin": "BTC",
+   "src": "claude_idea",
+   "setup": "ai idea",
+   "peakR": 0.89,
+   "vel_bars": 38,
+   "fade_lean": "RUN_LIKELY",
+   "outcome": "neither"
+  },
+  {
+   "coin": "BTC",
+   "src": "claude_idea",
+   "setup": "ai idea",
+   "peakR": 0.85,
+   "vel_bars": 38,
+   "fade_lean": "RUN_LIKELY",
+   "outcome": "neither"
+  },
+  {
+   "coin": "ETH",
+   "src": "claude_idea",
+   "setup": "ai idea",
+   "peakR": 0.84,
+   "vel_bars": 1,
+   "fade_lean": "RUN_LIKELY",
+   "outcome": "FADED"
+  },
+  {
+   "coin": "HYPE",
+   "src": "claude_idea",
+   "setup": "ai idea",
+   "peakR": 1.56,
+   "vel_bars": 1,
+   "fade_lean": "RUN_LIKELY",
+   "outcome": "RAN"
+  },
+  {
+   "coin": "CASHCAT",
+   "src": "owner",
+   "setup": "other",
+   "peakR": 2.43,
+   "vel_bars": 23,
+   "fade_lean": "FADE_PRONE",
+   "outcome": "RAN"
+  }
+ ]
+}
