@@ -112,3 +112,67 @@ make no forecast.
 
 **no-edge control → MDE → cluster counts → arm A → arm B (when due) → verdict.** The equal-weighted
 figure sits beside every pooled one. No number is read before the one above it.
+
+---
+
+# AMENDMENT 2 — 2026-10-15, arm B UNREAD. Adding a trail arm; **NOT demoting the sealed one.**
+
+**Arm B has not been read.** Its gate is 30 forward days or 2026-12-01, neither reached. No outcome
+quantity from arm B has been computed, inspected, or estimated. **That is what makes this amendment
+legitimate** — the reason comes from an *external* study, not from a peek.
+
+## A2(a) Why this is being amended
+
+`M12_TRAIL_WIDTH_RESULT.md` measured trail width across 176 coins. A trail at **1.0 × exp_move** — the
+width this prereg sealed into `partial_1R_har` — came in at **−16.14 bps, CI [−25.52, −6.90]**, the only
+arm in that study whose interval excluded zero, and it excluded it on the **wrong side**. The mechanism
+is that 1 em is only ~**0.43 ATR** at the median (and 0.29 ATR on a coin like CASHCAT), so the trail
+sits inside ordinary intraday range and exits on noise rather than on a reversal.
+
+**The server flagged the consequence and I agree with the flag:** a sealed forward test would otherwise
+spend until December measuring a trail we already have cross-sectional reason to think is noise-bound.
+
+## A2(b) 🔴 Where I DIFFER from the server's suggested fix, and why
+
+They proposed **1.00 ATR as primary, 1-em demoted to secondary.** I am not doing that.
+
+**This prereg's purpose is to replicate M1 out of sample.** M1 found the `partial_1R_*` family led at
+all five K — *with the 1-em trail*. If I promote a different trail to primary, arm B stops being a
+replication of M1 and becomes a first test of a new rule. **The thing being replicated has to stay the
+primary, or there is no replication.**
+
+**And M12 is not strong enough to redefine a confirmatory test.** It is EXPLORATORY, no wide arm is
+significantly *positive*, and its headline framing contained an error I have since corrected (I called
+1-em "live"; nothing live uses it). **Letting an underpowered exploratory study reassign the primary arm
+of a sealed prereg is precisely the move preregistration exists to prevent.**
+
+## A2(c) What actually changes
+
+| | |
+|---|---|
+| **PRIMARY, unchanged** | `partial_1R_har` (50% at +1R, **trail 1.0 × exp_move**) vs `stop_only` — the literal replication of M1 |
+| **ADDED, secondary** | `partial_1R_atr` (50% at +1R, **trail 1.0 × ATR, point-in-time, 14-day TR mean**) vs the same `stop_only` |
+| **threshold** | primary unchanged at **\|z\| > 2.24**. The secondary is **descriptive only** and may not carry a verdict on its own; if it is ever quoted as support, the threshold becomes **\|z\| > 2.50** (Bonferroni over 3 comparisons) |
+| **point-in-time is mandatory** | ATR computed from the **14 daily bars preceding each entry**, never the full sample. M12's ATR60 used the latest 60 bars applied backwards, which is look-ahead; it was acceptable for an exploratory ranking and is **not** acceptable here |
+
+**Both arms run on the same forward bars and the same entries**, so adding one costs nothing but the
+multiplicity I have just priced in.
+
+## A2(d) What this amendment does NOT do
+
+- **It does not drop the 1-em arm.** If 1-em underperforms in arm B, that is a *result* — an independent
+  forward confirmation of M12 — not a wasted test.
+- **It does not change K** (1.65 only), the outcome unit, the clustering, the control, or §4's decision
+  rule.
+- **It does not touch arm A**, which is already reported and closed as UNDERPOWERED.
+- **It does not create a "best trail" search.** Two widths, both named now. No grid, no tuning.
+
+## A2(e) Recorded expectation
+
+**I expect the primary (1-em) to underperform `stop_only` and the secondary (1 ATR) to beat it**, on
+M12's mechanism. **If the 1-em arm instead beats `stop_only`, M12's width finding does not survive
+forward and I will say so explicitly** — that is the falsifiable content of this amendment.
+
+**Re-seal:** `e0018cf1` (original) → amended hash recorded below. **Arm B unread at amendment time.**
+
+**Amendment 2 hash: `e0621993`.**
