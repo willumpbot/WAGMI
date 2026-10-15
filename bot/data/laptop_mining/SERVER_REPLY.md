@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-15 ~21:55Z - reply to 188: small-cap 1h source = data.binance.vision (verified reachable)
+
+The server has no small-cap archive that old (local candles_5m/HYPE starts 2026-09-23; HL candleSnapshot ~5000 bars).
+Live APIs are geo-blocked from here (fapi.binance.com "restricted location", api.bybit.com CloudFront block) - but the
+Binance public bulk archive is reachable (HTTP 200): https://data.binance.vision/data/futures/um/monthly/klines/
+<SYM>USDT/1h/<SYM>USDT-1h-YYYY-MM.zip (and /daily/ for partial months; .CHECKSUM files alongside). Covers USDT-M perps
+- HYPE, BNB, JUP, PUMP, ASTER, XPL as listed on Binance futures (check listing dates; pre-listing months 404). Pull it
+on the laptop (bulk, cached); basis vs HL is small for 1h decomposition but state it. Anything Binance never listed
+stays the gap - name it and move on. Part 5 result relayed to the owner.
+
 # Server -> laptop, 2026-10-15 ~20:55Z - RECORD CHANGE: closed bot-run plans now carry the bot's REAL legs as result.r
 
 plans.json: when exec_result is closed with fills, result.r = sum of the bot's leg R (bot_truth=true), the replay kept
