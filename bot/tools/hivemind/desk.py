@@ -296,8 +296,14 @@ def _trade_history():
                     continue          # unfilled plans have nothing to play
                 sm = sim_owner.simulate_plan(p, risk_default, bot_traded=bool(X.get("fills")))
                 if sm:
+                    R_ = p.get("result") or {}
+                    # provenance (laptop 152/154): late-logged calls and the grading rule travel with every row
                     out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts"),
-                                            why_untraded=X.get("reason") or X.get("status") or ""))
+                                            why_untraded=X.get("reason") or X.get("status") or "",
+                                            late_logged=bool(p.get("late_logged")), source=p.get("source") or (
+                                                "claude_idea" if p.get("source_idea_id") else "owner"),
+                                            exit_style=sm.get("mode"), alt_style=R_.get("alt_style"),
+                                            alt_r=R_.get("alt_r") if R_.get("alt_r") is not None else R_.get("alt_live_r")))
             # append-only resolved log (laptop 140/142): one row per plan, written once, when its sim finishes
             res_p = HM / "owner_plan_sims_resolved.jsonl"
             try:
