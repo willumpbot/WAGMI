@@ -1,0 +1,200 @@
+{
+"exported_at": 1792055829.614519,
+"files": {
+"trade_ledger.csv": {
+"src_mtime": 1791786021,
+"bytes": 56488
+},
+"trades.csv": {
+"src_mtime": 1791786039,
+"bytes": 390594
+},
+"position_journal.jsonl": {
+"src_mtime": 1792031347,
+"bytes": 569396
+},
+"confidence_state.json": {
+"src_mtime": 1791786021,
+"bytes": 3204
+},
+"execution_analytics.csv": {
+"src_mtime": 1791762381,
+"bytes": 17177
+},
+"owner_plans.jsonl": {
+"src_mtime": 1792024781,
+"bytes": 18598
+},
+"owner_fills.jsonl": {
+"src_mtime": 1792031347,
+"bytes": 3024
+},
+"plans.json": {
+"src_mtime": 1792055812,
+"bytes": 48731
+},
+"owner_plan_sims.json": {
+"src_mtime": 1792055791,
+"bytes": 6583
+},
+"owner_plan_sims_resolved.jsonl": {
+"src_mtime": 1792044563,
+"bytes": 3463
+},
+"dissent_log.jsonl": {
+"src_mtime": 1792055356,
+"bytes": 128893
+},
+"cases_index.json": {
+"src_mtime": 1792055784,
+"bytes": 1888
+},
+"wallet_snapshots.jsonl": {
+"src_mtime": 1792055825,
+"bytes": 918
+},
+"ai_plans.json": {
+"src_mtime": 1792055777,
+"bytes": 27450
+},
+"scan_grades.json": {
+"src_mtime": 1792055428,
+"bytes": 34927
+},
+"scan_log.jsonl": {
+"src_mtime": 1792055226,
+"bytes": 792460
+},
+"chief_calls.jsonl": {
+"src_mtime": 1792055407,
+"bytes": 152468
+},
+"chief_scorecard.json": {
+"src_mtime": 1792055407,
+"bytes": 663
+},
+"geometry_shadow.json": {
+"src_mtime": 1792055407,
+"bytes": 637
+},
+"geometry_shadow_results.jsonl": {
+"src_mtime": 1792052485,
+"bytes": 183862
+},
+"uptime.jsonl": {
+"src_mtime": 1792055221,
+"bytes": 47420
+},
+"live_scorecard.json": {
+"src_mtime": 1792055417,
+"bytes": 1343
+},
+"agent_grades_resolved.jsonl": {
+"src_mtime": 1792055417,
+"bytes": 1508674
+},
+"exit_decisions.jsonl": {
+"src_mtime": 1791784821,
+"bytes": 778858
+},
+"llm_exits_resolved.jsonl": {
+"src_mtime": 1785465642,
+"bytes": 21046
+},
+"position_manager.py": {
+"src_mtime": 1792032323,
+"bytes": 159028
+},
+"scanner.py": {
+"src_mtime": 1791866080,
+"bytes": 10912
+},
+"chief.py": {
+"src_mtime": 1791848818,
+"bytes": 12441
+},
+"board_decisions.jsonl": {
+"missing": true
+},
+"copilot_call_ledger.jsonl": {
+"src_mtime": 1791988472,
+"bytes": 246366
+},
+"copilot_call_ledger_resolved.jsonl": {
+"src_mtime": 1791983661,
+"bytes": 270040
+},
+"expmove_log.jsonl": {
+"src_mtime": 1792054382,
+"bytes": 38863
+},
+"call_snapshots.jsonl": {
+"src_mtime": 1792053549,
+"bytes": 76244
+},
+"stop_shadow.json": {
+"src_mtime": 1792055773,
+"bytes": 1881
+},
+"discrepancies.json": {
+"src_mtime": 1792055610,
+"bytes": 15366
+},
+"entry_mom.jsonl": {
+"src_mtime": 1791938525,
+"bytes": 485945
+},
+"signal_value_tracker.jsonl": {
+"src_mtime": 1792025242,
+"bytes": 305855
+},
+"trade_reflections.jsonl": {
+"src_mtime": 1791786031,
+"bytes": 168397
+},
+"veto_tracker.json": {
+"src_mtime": 1792051066,
+"bytes": 841749
+},
+"calibration_observations.jsonl": {
+"src_mtime": 1791786031,
+"bytes": 14836
+},
+"nearmiss_reversion_log.jsonl": {
+"src_mtime": 1791983901,
+"bytes": 17926
+},
+"copilot_alerts.log": {
+"src_mtime": 1792053230,
+"bytes": 416193
+},
+"voice_grades.json": {
+"src_mtime": 1792055240,
+"bytes": 11680
+},
+"accumulation_log.jsonl": {
+"src_mtime": 1792047707,
+"bytes": 158076
+},
+"owner_plan_reviews.jsonl": {
+"src_mtime": 1792012338,
+"bytes": 18052
+},
+"owner_watchlist.json": {
+"src_mtime": 1791842513,
+"bytes": 11
+},
+"watch_log.jsonl": {
+"src_mtime": 1792033937,
+"bytes": 818
+},
+"promoted_log.jsonl": {
+"src_mtime": 1792055297,
+"bytes": 6506
+},
+"state_transitions.csv": {
+"src_mtime": 1791786020,
+"bytes": 1282994
+}
+}
+}

@@ -1,0 +1,16 @@
+{
+ "pairs": 13410,
+ "lambda_within": 1.3065786746444321,
+ "chosen": [
+  "beta_budget",
+  1.5
+ ],
+ "confirmation": {
+  "n_allowed": 327,
+  "n_blocked": 3778,
+  "tail_allowed": 0.14067278287461774,
+  "tail_all": 0.2,
+  "blocked_ER_pooled": 0.008089443341312815,
+  "blocked_ER_eqw": 0.006336840623835611
+ }
+}
