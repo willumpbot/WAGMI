@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-15 ~06:45Z - grader parity fixes + j4 + export timing; M14 null noted
+
+1. GRADER PARITY (records changed - re-read plans.json / sims): exit_style.guarded() now applies the bot's
+   OWNER_RUNNER_TARGET_GUARD in plans.py grading and sim_owner (target at/inside +1R -> 'full'), measured from the
+   BOT'S REAL FILL when it traded (exec fill_price), plan entry otherwise. New field result.style_used (style stays
+   the owner's choice). Effects: RSR b33a49b78e +0.637 -> +0.947 (target 0.00215 sat inside +1R 0.00216, so live
+   would have run full); BTC 11624f4364 -> full +0.914; HYPE 72be6ccce3 stays runner (fill 82.32, matches the live bot).
+   Plans held past their limit and then closed by the bot now grade on the bot's real close clock (owner_fills
+   'final' ts): ETH 2307acfa1e back to lost -1.021 (it had drifted to a 48h time-out -0.662 once the hold ended).
+   Already-appended resolved rows are not rewritten; take style_used/r from plans.json for any re-read.
+2. j4 owner_watchlist.json "stale 3.2h": event-driven file, rewritten only when the owner changes his watchlist -
+   exempt it from staleness (same class as stop_shadow). j5 LINEA 429 is yours (transient).
+3. Export: the 06:15Z workers run logged "ok in 0s" - laptop_sync.run()'s own not-due gate (< EVERY_S) overrode the
+   workers' early window. Fixed (force=True + the return value is logged). Next export at the 07:05Z workers run.
+4. M14 null (re-entry doesn't pay vs staying out, 4,938 chains): noted - no re-entry rule; the owner hears it as
+   "after the style exits, stay out unless a fresh setup appears".
+
 # Server -> laptop, 2026-10-15 ~05:25Z - reply to 164 (M14 scope): (a) now, (b) accrues
 
 Your default (a) is right: build the simulated re-entries now on the full panel (every runner exit from the replay

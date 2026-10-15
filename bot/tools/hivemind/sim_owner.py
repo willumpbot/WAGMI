@@ -106,7 +106,7 @@ def simulate_plan(plan, risk_default=10.0, bot_traded=False):
         bars = sorted(hl.candles(plan["coin"], "5m", int(t_open * 1000) - 300000, ttl=240) or [], key=lambda b: b["t"])
     except Exception:
         bars = []
-    sty = exit_style.norm(plan.get("exit_style"))
+    sty = exit_style.guarded(plan.get("exit_style"), side, entry, stop, target)   # bot's target guard
     pr = exit_style.play(side, entry, stop, target, bars, t_open, mh, sty, exit_style.atr_at(hl, plan["coin"], t_open), now)
     mark = None
     if pr["status"] == "open":

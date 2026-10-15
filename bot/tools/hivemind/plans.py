@@ -399,15 +399,29 @@ def resolve(write=True):
     plans = []
     last_px = {}
     try:   # plans the bot is STILL holding live (owner chose to hold past the time limit, 10-14 ETH long)
-        held = {k for k, v in (_exec_results({}) or {}).items() if (v or {}).get("status") == "open"}
+        _ex = _exec_results({}) or {}
+        held = {k for k, v in _ex.items() if (v or {}).get("status") == "open"}
     except Exception:
-        held = set()
+        _ex, held = {}, set()
+    bot_close = {}   # plan_id -> when the bot's position actually closed (a plan held past its limit keeps that clock)
+    try:
+        for l in (HM / "owner_fills.jsonl").read_text(encoding="utf-8").splitlines():
+            f_ = json.loads(l)
+            if f_.get("kind") == "final" and f_.get("plan_id"):
+                bot_close[f_["plan_id"]] = float(f_.get("ts") or 0)
+    except (OSError, ValueError):
+        pass
     for pl in (r for r in rows if r.get("kind") == "plan"):
         old = (prev.get(pl["id"]) or {}).get("result") or {}
         if pl["id"] in held:
             # the grade follows the real position: no time-out while it is still open; stop/target still end it
             pl_g = dict(pl, max_hold_h=float(pl.get("max_hold_h") or 48) + 24 * 365)
             if old.get("status") == "timed out":
+                old = {}
+        elif pl["id"] in bot_close and (bot_close[pl["id"]] - pl["ts"]) / 3600 > float(pl.get("max_hold_h") or 48):
+            # held past the limit, then closed by the bot: grade on the same clock as the real position
+            pl_g = dict(pl, max_hold_h=(bot_close[pl["id"]] - pl["ts"]) / 3600 + 1 / 12)
+            if old.get("status") == "timed out" or old.get("hold_h") and old["hold_h"] < pl_g["max_hold_h"] - 1:
                 old = {}
         else:
             pl_g = pl
@@ -432,15 +446,18 @@ def resolve(write=True):
         try:
             import exit_style as _xs
             sty = _xs.norm(pl.get("exit_style"))
-            if res.get("filled_at") and (res.get("style") != sty or "alt_style" not in res or res.get("status") == "open"):
+            if res.get("filled_at") and (res.get("style") != sty or "alt_style" not in res or "style_used" not in res
+                                         or res.get("status") == "open"):
                 if res.get("filled_at"):
                     f_ts = float(res["filled_at"])
                     _bars = sorted(hl.candles(pl["coin"], "5m", int(f_ts * 1000) - 300000, ttl=50) or [], key=lambda b: b["t"])
                     _atr = _xs.atr_at(hl, pl["coin"], f_ts)
                     e_, st_, tg_ = float(pl["entry"]), float(pl["stop"]), float(pl["target"])
-                    pr = _xs.play(pl["side"], e_, st_, tg_, _bars, f_ts, pl_g.get("max_hold_h"), sty, _atr, now)
+                    fill_px = float((_ex.get(pl["id"]) or {}).get("fill_price") or 0) or e_   # bot's real fill if it traded
+                    used = _xs.guarded(sty, pl["side"], fill_px, st_, tg_)   # same target guard as the live bot
+                    pr = _xs.play(pl["side"], e_, st_, tg_, _bars, f_ts, pl_g.get("max_hold_h"), used, _atr, now)
                     alt = _xs.play(pl["side"], e_, st_, tg_, _bars, f_ts, pl_g.get("max_hold_h"),
-                                   "full" if sty == "runner" else "runner", _atr, now)   # the other style, for comparison
+                                   "full" if used == "runner" else "runner", _atr, now)   # the other style, for comparison
                     risk_ = abs(e_ - st_)
                     fee_r = round(FEE_RT * e_ / risk_, 3) if risk_ else 0.0
                     keep = {k: res.get(k) for k in ("best_r", "worst_r") if k in res}
@@ -451,7 +468,8 @@ def resolve(write=True):
                         res = dict(keep, status=pr["status"], filled_at=f_ts, closed_at=pr["exit_ts"], r_gross=pr["r"],
                                    r=round(pr["r"] - fee_r, 3), fee_r=fee_r, exit=pr["legs"][-1]["px"], style=sty,
                                    legs=pr["legs"], hold_h=round((pr["exit_ts"] - f_ts) / 3600, 1))
-                    res["alt_style"] = "full" if sty == "runner" else "runner"
+                    res["style_used"] = used
+                    res["alt_style"] = "full" if used == "runner" else "runner"
                     res["alt_r"] = alt.get("r") if alt["status"] != "open" else None
                     res["alt_live_r"] = alt.get("live_r") if alt["status"] == "open" else None
         except Exception as _e:

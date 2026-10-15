@@ -20,6 +20,18 @@ def norm(v):
     return v if v in STYLES else DEFAULT
 
 
+def guarded(style, side, entry, stop, target):
+    """The bot's target guard (OWNER_RUNNER_TARGET_GUARD, default on, live since 10-15): when the target sits at or
+    inside +1R, 'runner' would ignore it and wait for a +1R that may never print, so the plan runs 'full' (all at
+    target). Graders must apply it too, or live and graded diverge (RSR b33a49b78e, 10-15: target 0.00215 vs +1R
+    0.00216)."""
+    import os
+    style = norm(style)
+    if style != "runner" or os.getenv("OWNER_RUNNER_TARGET_GUARD", "true").strip().lower() in ("0", "false", "no", "off"):
+        return style
+    return "full" if abs(target - entry) <= abs(entry - stop) else style
+
+
 def atr_at(hl, coin, ts, n=14):
     try:
         d = sorted(hl.candles(coin, "1d", int((ts - 60 * 86400) * 1000), int(ts * 1000), ttl=3600) or [],

@@ -35,8 +35,8 @@ def main():
             lock.write_text(str(time.time()))
             try:
                 t = time.time()
-                laptop_sync.run()
-                log(f"laptop_sync ok in {time.time() - t:.0f}s")
+                r = laptop_sync.run(force=True)   # its own "not due" gate would undo the early window above
+                log(f"laptop_sync {r} in {time.time() - t:.0f}s")
             finally:
                 lock.unlink(missing_ok=True)
     except Exception as e:
