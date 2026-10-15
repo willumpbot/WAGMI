@@ -373,7 +373,7 @@ def _stats(rows):
             return {"n": 0}
         return {"n": len(rs), "win_rate": round(sum(r > 0 for r in rs) / len(rs), 3), "avg_r": round(sum(rs) / len(rs), 3),
                 "total_r": round(sum(rs), 2)}
-    done = [x for x in rows if "r" in x.get("result", {})]
+    done = [x for x in rows if (x.get("result") or {}).get("r") is not None]
     out = {"all": agg(done), "by_setup": {}, "by_side": {}, "by_chief": {}}
     for k in sorted({x["setup"] for x in done}):
         out["by_setup"][k] = agg([x for x in done if x["setup"] == k])
@@ -448,6 +448,11 @@ def resolve(write=True):
         held = {k for k, v in _ex.items() if (v or {}).get("status") == "open"}
     except Exception:
         _ex, held = {}, set()
+    try:
+        _bp = json.loads((HM.parent / "position_state.json").read_text(encoding="utf-8"))
+        bot_pos = _bp.get("positions", _bp) if isinstance(_bp, dict) else {}
+    except Exception:
+        bot_pos = {}
     bot_close = {}   # plan_id -> when the bot's position actually closed (a plan held past its limit keeps that clock)
     try:
         for l in (HM / "owner_fills.jsonl").read_text(encoding="utf-8").splitlines():
@@ -536,6 +541,24 @@ def resolve(write=True):
                     res["alt_live_r"] = alt.get("live_r") if alt["status"] == "open" else None
         except Exception as _e:
             res = dict(res, style_error=str(_e)[:120])
+        if pl["id"] in held:
+            # the bot still holds this plan: the bot's real position IS the record (10-15: the grade said HYPE 72be
+            # closed +0.49R on its replayed trail while the bot, whose half came off earlier via an AI partial, still held)
+            try:
+                bp = next((v for v in (bot_pos or {}).values()
+                           if ((v.get("entry_reasons") or {}).get("owner_plan_id")) == pl["id"]), None)
+                if bp:
+                    sg_b = 1 if bp["side"] in ("LONG", "BUY") else -1
+                    e_b, q0 = float(bp["entry"]), float(bp.get("original_qty") or bp["qty"])
+                    rk_b = abs(e_b - float(bp.get("original_sl") or bp["sl"])) * q0
+                    px_b = last_px.get(pl["id"]) or e_b
+                    if rk_b:
+                        tot = float(bp.get("realized_pnl") or 0) + sg_b * (px_b - e_b) * float(bp["qty"])
+                        grader = {k: res.get(k) for k in ("status", "r", "live_r", "legs")}
+                        res = dict(res, status="open", r=None, live_r=round(tot / rk_b, 3), bot_truth=True,
+                                   bot_trail=float(bp["sl"]), grader_view=grader)
+            except Exception as _be:
+                res = dict(res, bot_truth_error=str(_be)[:120])
         tr_ = trims.get(pl["id"]) or []
         if tr_ and res.get("filled_at") and not res.get("manual_close"):
             # owner trims: those fractions closed at his price; the rest keeps following the plan's rules
