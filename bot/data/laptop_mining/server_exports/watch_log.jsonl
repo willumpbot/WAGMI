@@ -1,3 +1,4 @@
 {"ts": 1792018080.5954125, "day": "2026-10-14", "key": "watch:CASHCAT", "kind": "watchlist", "msg": "CASHCAT (watchlist): funding_hot"}
 {"ts": 1792018267.3662877, "day": "2026-10-14", "key": "wake:CASHCAT:1792011600000", "kind": "waking_up", "msg": "CASHCAT: +6.0% in the 21:00 UTC hour on 5.6x normal volume - waking up (a heads-up to look, not a direction call)"}
 {"ts": 1792031248.697154, "day": "2026-10-15", "key": "pos:ETH", "kind": "near_stop", "msg": "ETH LONG: 0.8% from your stop (0.38 of a normal day), now -1.18R"}
+{"ts": 1792033935.845822, "day": "2026-10-15", "key": "wake:VVV:1792029600000", "kind": "waking_up", "msg": "VVV: -3.5% in the 02:00 UTC hour on 3.6x normal volume - waking up - worth a look; across 177 coins such surges slightly FADED over the next 4h-3d (laptop M11), so don't chase"}
