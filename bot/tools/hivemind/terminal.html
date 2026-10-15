@@ -570,8 +570,15 @@ function calc(){
     <div>If stopped</div><div class="dn">−$${riskUsd.toFixed(2)}</div>
     <div>If target hit</div><div class="up">+$${winUsd.toFixed(2)} <span class="mut">(${tgR.toFixed(2)}R)</span></div>
     <div>Liquidation</div><div>${fmt(liq)}</div>`;
+  // Funding over the hold (laptop M17, 10-15: at extreme funding a 48h hold costs 1 to several fees, and the recent
+  // funding rate forecasts it at entry). Positive = you pay. Uses the current hourly rate as the forecast.
+  const fH = (C(sel).market||{}).funding_hourly ?? ((((typeof SCAN!=="undefined"&&SCAN.coins)||[]).find(r=>r.coin===sel)||{}).funding_h);
+  const holdH = +((document.getElementById("c_hold")||{}).value || 48);
+  const carryUsd = (fH!=null && notional) ? fH * notional * holdH * sgn : null;
+  const carryRow = carryUsd==null ? "" : `<div>Funding over ${holdH}h</div><div class="${carryUsd>0?"dn":"up"}">${carryUsd>0?"you pay":"you earn"} $${Math.abs(carryUsd).toFixed(2)} (${(Math.abs(carryUsd)/riskUsd*100||0).toFixed(0)}% of risk)</div>`;
   $("c_more").innerHTML = `<div>Stop distance</div><div>${(dist*100).toFixed(2)}% = ${(dist*100/a).toFixed(1)}× expected daily move</div>
     <div>Round-trip fees</div><div>$${fee.toFixed(2)} (${(fee/riskUsd*100||0).toFixed(0)}% of risk)</div>
+    ${carryRow}
     ${(()=>{const x=safeLev(sel);if(!x)return"";const sl=sgn>0?x.long:x.short;const a1=((x.adv["1d"]||{})[side.toLowerCase()]||{});
       return `<div>Safe leverage now</div><div>${sl.toFixed(1)}×</div><div>Worst day against you</div><div>${a1.p99!=null?a1.p99.toFixed(1)+"% (1 day in 100)":"–"}</div>`;})()}
     ${tgts.slice(0,3).map(t=>`<div>To ${t[0]}</div><div>${t[2].toFixed(1)}R</div>`).join("")}`;
@@ -586,6 +593,7 @@ function calc(){
     if (sr && sr.flags.includes("funding_hot")) w.push(`Longs are paying a lot of funding on ${sel} right now. On days like this a normal stop tended to get hit a bit more often in testing (about +2 points). Consider a slightly smaller size.`);
     if (sr && side==="LONG" && (sr.vol_rank||0) > 15 && sr.hi20 && sr.px > sr.hi20) { const up = (sr.px/sr.hi20-1)*100;
       w.push(`${sel} is a small cap ${up.toFixed(1)}% above its 20-day high. Tested on 164 coins: breakouts like this tended to fall back vs other small caps over the next few days${up>=8?" (this far above: about -15% in 3 days)":""}. Buying here is chasing.`); } }
+  if (carryUsd!=null && carryUsd > fee && carryUsd > 0.1*riskUsd) w.push(`Funding over a ${holdH}h hold costs about $${carryUsd.toFixed(2)}, more than your trading fees (${(carryUsd/riskUsd*100).toFixed(0)}% of your risk). Tested: at funding this high the cost is predictable and real - a shorter hold or smaller size cuts it.`);
   if (dist*100 < a) w.push(`Stop is closer than a normal day's move (±${a.toFixed(1)}%): stops this tight got hit a lot in testing. Try about ${(2*a).toFixed(1)}%.`);
   $("c_warn").textContent = w.join(" ");
   $("c_safe").innerHTML = w.length
