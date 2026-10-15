@@ -1,0 +1,48 @@
+{
+ "source_snapshot": {
+  "candles_1h": {
+   "max_t": 1792029600000,
+   "rows": 890144
+  }
+ },
+ "coins": 176,
+ "moments": 25965,
+ "discovery_moments": 18668,
+ "confirmation_moments": 7297,
+ "coverage": {
+  "atr_em": 1.0,
+  "atr_pct": 1.0,
+  "stop_atr": 1.0,
+  "trend_raw": 1.0,
+  "room_long": 1.0,
+  "room_short": 1.0,
+  "ret7_raw": 1.0,
+  "hour_b": 1.0,
+  "btc_beta": 1.0,
+  "btc_r2": 1.0,
+  "oi_chg": 0.022684382823031004,
+  "fund_pctl": 1.0,
+  "fund_rate": 1.0,
+  "fund_hot_xs": 1.0,
+  "waking_24h": 1.0,
+  "btc_shock_24h": 1.0,
+  "vol_rank_xs": 1.0
+ },
+ "filters": {
+  "min_1h_bars": 972,
+  "min_days": 70,
+  "min_dayidx": 61,
+  "spacing_h": 24,
+  "fwd_bars": 72,
+  "k_stop": 1.65,
+  "atr_trail": 1.0,
+  "k_ctrl": 8,
+  "boundary_daykey": 20693,
+  "pool": "bars strictly before ts",
+  "wake": "ret>=0.5*em_lag_daily AND vol>=2.5*median(vol[-480:]) closed bars",
+  "btc_shock": "abs(1h ret) > 3*em_lag/sqrt(24)",
+  "fund_hot": "xs interpolated p80 strict"
+ },
+ "filters_hash": "d716c09e",
+ "notes": "moment unit; shared-path both sides; point-in-time control pools; boundary 20693"
+}
