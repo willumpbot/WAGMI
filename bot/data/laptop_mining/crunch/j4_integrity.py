@@ -263,6 +263,26 @@ EVENT_DRIVEN = ("stop_shadow.json", "owner_watchlist.json")  # event-driven file
 UNMATCHED_OPEN_GRACE_H = 1.0
 
 
+def manifest_proof(name):
+    """server_exports/_manifest.json evidence for one file (server 10-15 08:40Z).
+    Returns (fresh_export, src_mtime, note). An event-driven file is healthy when the EXPORT is fresh
+    (exported_at recent) and src_mtime simply has not moved; a dead collector shows an old src_mtime
+    on a file that SHOULD move. Absence of the manifest returns note set -- never a clean bill."""
+    p = os.path.join(EXP, "_manifest.json")
+    try:
+        m = json.load(io.open(p, encoding="utf-8"))
+    except (ValueError, OSError) as e:
+        return None, None, "no _manifest.json (%s)" % type(e).__name__
+    exp_at = m.get("exported_at")
+    rec = (m.get("files") or {}).get(name)
+    if exp_at is None or not isinstance(rec, dict):
+        return None, None, "file absent from manifest"
+    if rec.get("missing"):
+        return (time.time() - exp_at) < 2 * 3600, None, "manifest marks the source MISSING"
+    fresh = (time.time() - exp_at) < 2 * 3600          # export itself ran within ~2h
+    return fresh, rec.get("src_mtime"), ""
+
+
 def unmatched_opens(p, grace_h=UNMATCHED_OPEN_GRACE_H):
     """position_ids opened > grace_h ago that never reached this file's keys.
 
@@ -362,8 +382,28 @@ def snapshot_health(p):
     if age <= stale_limit(p):
         return "ok"
     if os.path.basename(p) in EVENT_DRIVEN:
+        # stop_shadow carries position_id semantics -> the deep unmatched-opens check decides it.
+        # Other event-driven files (owner_watchlist) have no such semantics; the manifest proof does.
+        if os.path.basename(p) != "stop_shadow.json":
+            fresh, src_mtime, mnote = manifest_proof(os.path.basename(p))
+            if mnote:
+                return ("stale %.1fh — event-driven, but %s. Cannot confirm, so NOT cleared."
+                        % (age / 3600.0, mnote))
+            if fresh:
+                return ("info: event-driven quiet — manifest shows a fresh export with src_mtime "
+                        "unmoved (last changed %s); age %.1fh carries no information."
+                        % (time.strftime("%Y-%m-%d", time.gmtime(src_mtime)) if src_mtime else "?",
+                           age / 3600.0))
+            return ("🔴 stale %.1fh — the EXPORT itself is stale per the manifest (not just this "
+                    "event-driven file); the sync, not the source, is the problem" % (age / 3600.0))
         miss, total, done, note = unmatched_opens(p)
         if note:
+            # strengthen the old "cannot confirm" with manifest evidence when available
+            fresh, src_mtime, mnote = manifest_proof(os.path.basename(p))
+            if not mnote and fresh:
+                return ("info: event-driven quiet — %s, BUT the manifest shows a fresh export with "
+                        "src_mtime unmoved, so the source is healthy; age %.1fh carries no information."
+                        % (note, age / 3600.0))
             return ("stale %.1fh — event-driven, but %s. Cannot confirm, so NOT cleared."
                     % (age / 3600.0, note))
         if miss:
