@@ -1,0 +1,13 @@
+Mission 7: plan-grader fill/path optimism (B, 1.0R). m5 geometry, panels grid.
+filled limit plans: 18480 (coins 176)
+
+=== M7 contamination the grader should SUBTRACT (R per filled plan; wider coin/day CI) ===
+  SELECTION credit (limit-filled R - market-at-plan R) = +0.492 R [+0.460,+0.523]
+     -> graded limit entries start +0.492 R better than a market entry PURELY because a limit only
+        fills at a selected local extreme; the grader must not read this as direction skill.
+  FILL-TIMING (fill@level - fill@bar-close) = -0.000 R [-0.010,+0.010]  (A, the cheap one)
+     -> grading the exact wicked level vs the realistic close of the tagging bar.
+  TOTAL optimism anchor to subtract ~= +0.492 R per filled plan.
+  (context: graded limit mean -0.017 R vs market mean -0.509 R)
+
+wrote m7_result.json
