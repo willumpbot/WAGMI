@@ -1,0 +1,607 @@
+{
+ "updated": "2026-10-15T01:07+00:00",
+ "voices": {
+  "momentum_7d": {
+   "source": "history",
+   "n": 3159,
+   "n_eff": 203,
+   "mean_bps_5d": 13.3,
+   "ci95": [
+    -69.2,
+    98.2
+   ],
+   "full_period": {
+    "n": 6575,
+    "n_eff": 439,
+    "mean_bps_5d": 65.8,
+    "ci95": [
+     -7.8,
+     128.0
+    ]
+   },
+   "trust": "promising",
+   "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees",
+   "history": {
+    "source": "history",
+    "n": 3159,
+    "n_eff": 203,
+    "mean_bps_5d": 13.3,
+    "ci95": [
+     -69.2,
+     98.2
+    ],
+    "full_period": {
+     "n": 6575,
+     "n_eff": 439,
+     "mean_bps_5d": 65.8,
+     "ci95": [
+      -7.8,
+      128.0
+     ]
+    },
+    "trust": "promising",
+    "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees"
+   },
+   "live": {
+    "source": "live",
+    "n": 13,
+    "n_eff": 13,
+    "mean_bps_5d": 39.3,
+    "ci95": [
+     -194.5,
+     216.2
+    ],
+    "trust": "promising"
+   }
+  },
+  "rules": {
+   "source": "live",
+   "n": 13,
+   "n_eff": 13,
+   "mean_bps_5d": -257.8,
+   "ci95": [
+    -545.1,
+    -24.5
+   ],
+   "trust": "backwards",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 13,
+    "n_eff": 13,
+    "mean_bps_5d": -257.8,
+    "ci95": [
+     -545.1,
+     -24.5
+    ],
+    "trust": "backwards"
+   }
+  },
+  "rsi": {
+   "source": "history",
+   "n": 549,
+   "n_eff": 96,
+   "mean_bps_5d": -236.0,
+   "ci95": [
+    -410.4,
+    -55.6
+   ],
+   "full_period": {
+    "n": 1310,
+    "n_eff": 232,
+    "mean_bps_5d": -258.9,
+    "ci95": [
+     -382.1,
+     -124.9
+    ]
+   },
+   "trust": "backwards",
+   "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees",
+   "history": {
+    "source": "history",
+    "n": 549,
+    "n_eff": 96,
+    "mean_bps_5d": -236.0,
+    "ci95": [
+     -410.4,
+     -55.6
+    ],
+    "full_period": {
+     "n": 1310,
+     "n_eff": 232,
+     "mean_bps_5d": -258.9,
+     "ci95": [
+      -382.1,
+      -124.9
+     ]
+    },
+    "trust": "backwards",
+    "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees"
+   },
+   "live": null
+  },
+  "strategies": {
+   "source": "live",
+   "n": 18,
+   "n_eff": 18,
+   "mean_bps_5d": -52.9,
+   "ci95": [
+    -304.3,
+    140.4
+   ],
+   "trust": "unproven",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 18,
+    "n_eff": 18,
+    "mean_bps_5d": -52.9,
+    "ci95": [
+     -304.3,
+     140.4
+    ],
+    "trust": "unproven"
+   }
+  },
+  "history_5d": {
+   "source": "live",
+   "n": 13,
+   "n_eff": 13,
+   "mean_bps_5d": -348.8,
+   "ci95": [
+    -607.8,
+    -135.9
+   ],
+   "trust": "backwards",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 13,
+    "n_eff": 13,
+    "mean_bps_5d": -348.8,
+    "ci95": [
+     -607.8,
+     -135.9
+    ],
+    "trust": "backwards"
+   }
+  },
+  "copilot": {
+   "source": "live",
+   "n": 15,
+   "n_eff": 15,
+   "mean_bps_5d": -133.7,
+   "ci95": [
+    -233.9,
+    -19.8
+   ],
+   "trust": "backwards",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 15,
+    "n_eff": 15,
+    "mean_bps_5d": -133.7,
+    "ci95": [
+     -233.9,
+     -19.8
+    ],
+    "trust": "backwards"
+   }
+  },
+  "book": {
+   "source": "live",
+   "n": 12,
+   "n_eff": 12,
+   "mean_bps_5d": -287.7,
+   "ci95": [
+    -598.6,
+    -20.8
+   ],
+   "trust": "backwards",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 12,
+    "n_eff": 12,
+    "mean_bps_5d": -287.7,
+    "ci95": [
+     -598.6,
+     -20.8
+    ],
+    "trust": "backwards"
+   }
+  },
+  "top_traders": {
+   "source": "live",
+   "n": 13,
+   "n_eff": 13,
+   "mean_bps_5d": 148.3,
+   "ci95": [
+    36.3,
+    246.3
+   ],
+   "trust": "promising",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 13,
+    "n_eff": 13,
+    "mean_bps_5d": 148.3,
+    "ci95": [
+     36.3,
+     246.3
+    ],
+    "trust": "promising"
+   }
+  },
+  "stretch_4h": {
+   "source": "history",
+   "n": 28733,
+   "n_eff": 824,
+   "mean_bps_5d": 1.7,
+   "ci95": [
+    -10.8,
+    14.2
+   ],
+   "horizon": "1d",
+   "trust": "unproven",
+   "note": "closed 4h bars since 2024-07-12, next-1-day vs drift, before fees",
+   "history": {
+    "source": "history",
+    "n": 28733,
+    "n_eff": 824,
+    "mean_bps_5d": 1.7,
+    "ci95": [
+     -10.8,
+     14.2
+    ],
+    "horizon": "1d",
+    "trust": "unproven",
+    "note": "closed 4h bars since 2024-07-12, next-1-day vs drift, before fees"
+   },
+   "live": {
+    "source": "live",
+    "n": 18,
+    "n_eff": 18,
+    "mean_bps_5d": -34.8,
+    "ci95": [
+     -280.9,
+     155.3
+    ],
+    "trust": "unproven"
+   }
+  },
+  "driver": {
+   "source": "history",
+   "n": 5689,
+   "n_eff": 204,
+   "mean_bps_5d": 21.2,
+   "ci95": [
+    -34.3,
+    77.8
+   ],
+   "full_period": {
+    "n": 11352,
+    "n_eff": 440,
+    "mean_bps_5d": 76.2,
+    "ci95": [
+     28.9,
+     127.0
+    ]
+   },
+   "trust": "promising",
+   "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees",
+   "history": {
+    "source": "history",
+    "n": 5689,
+    "n_eff": 204,
+    "mean_bps_5d": 21.2,
+    "ci95": [
+     -34.3,
+     77.8
+    ],
+    "full_period": {
+     "n": 11352,
+     "n_eff": 440,
+     "mean_bps_5d": 76.2,
+     "ci95": [
+      28.9,
+      127.0
+     ]
+    },
+    "trust": "promising",
+    "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees"
+   },
+   "live": {
+    "source": "live",
+    "n": 18,
+    "n_eff": 18,
+    "mean_bps_5d": 195.4,
+    "ci95": [
+     -4.3,
+     413.3
+    ],
+    "trust": "promising"
+   }
+  },
+  "driver_4h": {
+   "source": "history",
+   "n": 28733,
+   "n_eff": 824,
+   "mean_bps_5d": 6.2,
+   "ci95": [
+    -7.3,
+    20.0
+   ],
+   "horizon": "1d",
+   "trust": "unproven",
+   "note": "closed 4h bars since 2024-07-12, next-1-day vs drift, before fees",
+   "history": {
+    "source": "history",
+    "n": 28733,
+    "n_eff": 824,
+    "mean_bps_5d": 6.2,
+    "ci95": [
+     -7.3,
+     20.0
+    ],
+    "horizon": "1d",
+    "trust": "unproven",
+    "note": "closed 4h bars since 2024-07-12, next-1-day vs drift, before fees"
+   },
+   "live": {
+    "source": "live",
+    "n": 18,
+    "n_eff": 18,
+    "mean_bps_5d": -50.1,
+    "ci95": [
+     -300.1,
+     140.3
+    ],
+    "trust": "unproven"
+   }
+  },
+  "bot_position": {
+   "source": "live",
+   "n": 2,
+   "n_eff": 2,
+   "mean_bps_5d": -1270.0,
+   "ci95": null,
+   "trust": "unproven",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 2,
+    "n_eff": 2,
+    "mean_bps_5d": -1270.0,
+    "ci95": null,
+    "trust": "unproven"
+   }
+  },
+  "funding": {
+   "source": "live",
+   "n": 5,
+   "n_eff": 5,
+   "mean_bps_5d": -173.6,
+   "ci95": null,
+   "trust": "unproven",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 5,
+    "n_eff": 5,
+    "mean_bps_5d": -173.6,
+    "ci95": null,
+    "trust": "unproven"
+   }
+  },
+  "btc": {
+   "source": "live",
+   "n": 10,
+   "n_eff": 10,
+   "mean_bps_5d": 58.3,
+   "ci95": [
+    -177.2,
+    328.0
+   ],
+   "trust": "promising",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 10,
+    "n_eff": 10,
+    "mean_bps_5d": 58.3,
+    "ci95": [
+     -177.2,
+     328.0
+    ],
+    "trust": "promising"
+   }
+  },
+  "structure": {
+   "source": "history",
+   "n": 5689,
+   "n_eff": 204,
+   "mean_bps_5d": 28.4,
+   "ci95": [
+    -39.0,
+    95.9
+   ],
+   "full_period": {
+    "n": 11352,
+    "n_eff": 440,
+    "mean_bps_5d": 52.2,
+    "ci95": [
+     -1.5,
+     104.2
+    ]
+   },
+   "trust": "promising",
+   "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees",
+   "history": {
+    "source": "history",
+    "n": 5689,
+    "n_eff": 204,
+    "mean_bps_5d": 28.4,
+    "ci95": [
+     -39.0,
+     95.9
+    ],
+    "full_period": {
+     "n": 11352,
+     "n_eff": 440,
+     "mean_bps_5d": 52.2,
+     "ci95": [
+      -1.5,
+      104.2
+     ]
+    },
+    "trust": "promising",
+    "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees"
+   },
+   "live": {
+    "source": "live",
+    "n": 18,
+    "n_eff": 18,
+    "mean_bps_5d": 19.5,
+    "ci95": [
+     -172.4,
+     270.9
+    ],
+    "trust": "promising"
+   }
+  },
+  "trade_agent": {
+   "source": "live",
+   "n": 3,
+   "n_eff": 3,
+   "mean_bps_5d": -222.1,
+   "ci95": null,
+   "trust": "unproven",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 3,
+    "n_eff": 3,
+    "mean_bps_5d": -222.1,
+    "ci95": null,
+    "trust": "unproven"
+   }
+  },
+  "weather": {
+   "source": "live",
+   "n": 18,
+   "n_eff": 18,
+   "mean_bps_5d": -37.5,
+   "ci95": [
+    -284.6,
+    155.7
+   ],
+   "trust": "unproven",
+   "history": null,
+   "live": {
+    "source": "live",
+    "n": 18,
+    "n_eff": 18,
+    "mean_bps_5d": -37.5,
+    "ci95": [
+     -284.6,
+     155.7
+    ],
+    "trust": "unproven"
+   }
+  },
+  "stretch": {
+   "source": "history",
+   "n": 5689,
+   "n_eff": 204,
+   "mean_bps_5d": 16.6,
+   "ci95": [
+    -37.8,
+    74.5
+   ],
+   "full_period": {
+    "n": 11352,
+    "n_eff": 440,
+    "mean_bps_5d": 61.5,
+    "ci95": [
+     12.8,
+     108.9
+    ]
+   },
+   "trust": "promising",
+   "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees",
+   "history": {
+    "source": "history",
+    "n": 5689,
+    "n_eff": 204,
+    "mean_bps_5d": 16.6,
+    "ci95": [
+     -37.8,
+     74.5
+    ],
+    "full_period": {
+     "n": 11352,
+     "n_eff": 440,
+     "mean_bps_5d": 61.5,
+     "ci95": [
+      12.8,
+      108.9
+     ]
+    },
+    "trust": "promising",
+    "note": "vs the period's own drift (always-long was ~+100 bps/5d); trust from 2024+ only; clustered by 5-day calendar block across coins; before fees"
+   },
+   "live": {
+    "source": "live",
+    "n": 18,
+    "n_eff": 18,
+    "mean_bps_5d": -52.9,
+    "ci95": [
+     -304.3,
+     140.4
+    ],
+    "trust": "unproven"
+   }
+  },
+  "structure_4h": {
+   "source": "history",
+   "n": 28733,
+   "n_eff": 824,
+   "mean_bps_5d": 5.3,
+   "ci95": [
+    -8.0,
+    19.8
+   ],
+   "horizon": "1d",
+   "trust": "unproven",
+   "note": "closed 4h bars since 2024-07-12, next-1-day vs drift, before fees",
+   "history": {
+    "source": "history",
+    "n": 28733,
+    "n_eff": 824,
+    "mean_bps_5d": 5.3,
+    "ci95": [
+     -8.0,
+     19.8
+    ],
+    "horizon": "1d",
+    "trust": "unproven",
+    "note": "closed 4h bars since 2024-07-12, next-1-day vs drift, before fees"
+   },
+   "live": {
+    "source": "live",
+    "n": 18,
+    "n_eff": 18,
+    "mean_bps_5d": 80.2,
+    "ci95": [
+     -156.7,
+     258.0
+    ],
+    "trust": "promising"
+   }
+  }
+ },
+ "live_pending": 502
+}
