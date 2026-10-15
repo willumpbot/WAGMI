@@ -1,37 +1,39 @@
-# Project X part 5 (NOW 89% COVERED via data.binance.vision) - "how much of my loss was exits vs entries?" UPDATED ANSWER: once the thin-book small-caps are in, GIVING BACK WINNERS is the bigger dollar loss (-$831 over 38 trips) vs never-went-my-way (-$483 over 60). The majors alone are ~even; the small-caps add the big exit-give-back - the SUI/ENA spike-then-reverse shape the ladder + fade-lean target.
+# Project X part 5 (100% of trips covered; CORRECTED) - "exits vs entries?" The real answer is THREE buckets, and the #1 leak is neither: it's SCALPING. 151 sub-10-minute trades lost ~$659. When you actually HOLD a trade (multi-hour) you're ~breakeven; the losses there are a few big thin-coin give-backs, then smaller entry misses.
 
-_2026-10-15. wallet_exit_vs_entry.py. 261 round-trips from hl_fills (wallet A-I, gitignored). Candle paths
-SELF-SOURCED: Coinbase 1h for its listed coins (BTC/SOL/ETH/XRP/AVAX/PUMP/PENGU/DOT/LTC) + the Binance
-public bulk archive data.binance.vision for the small-caps (HYPE/BNB/ASTER/XPL; PC reply 7c3c30a9). 233
-of 261 trips covered (89%). GAP: JUP (69 fills, ~18 trips) is not on the Binance futures archive (404)._
+_2026-10-15. wallet_exit_vs_entry.py. 261 round-trips from hl_fills (wallet A-I, gitignored). Candle
+paths self-sourced: Coinbase 1h + data.binance.vision bulk archive (HYPE/BNB/JUP/ASTER/XPL). 260/261
+trips covered (only kPEPE, 1 trip -$5, uncovered). CORRECTION: an earlier version applied a 1h-candle
+MFE to sub-1h SCALPS, which faked a huge "exit give-back" (the candle range is not a 5-min excursion).
+Scalps are now a SEPARATE bucket; the entry-vs-exit split is computed only on genuinely multi-hour trips._
 
-## The split (covered trips, closedPnl $)
-| bucket | trips | $ | per trip |
+## Three buckets (closedPnl $)
+| bucket | trips | $ | note |
 |---|---|---|---|
-| winners | 104 | +$1,569 | +$15.1 |
-| ENTRY-driven losers (never went his way, MFE<0.5%) | 60 | -$483 | -$8.0 |
-| **EXIT-driven losers (went green >=1% then closed red)** | 38 | **-$831** | **-$21.9** |
-mean MFE available 1.73%, mean realised -0.20%, capture -11%, mean give-back 1.93%/trip.
+| **SCALPS (sub-1h, median ~5 min)** | 151 | **-$659** | overtrading/fees bleed - M29 U-curve. NOT entry/exit-decomposable (no intra-trade path at 1h). |
+| multi-hour WINNERS | 58 | +$1,189 | |
+| multi-hour ENTRY-driven losers (never went his way) | 26 | -$254 | wrong-direction entries |
+| multi-hour EXIT-driven losers (green >=1% then red) | 10 | -$550 | thin-coin spike-then-reverse; ladder/fade-lean target |
+Multi-hour net +$151 (~breakeven). Mean MFE 1.87%, realised -0.18%, capture -10%.
 
-## The update vs the majors-only read
-- Majors alone were ~even (entry -$420 vs exit -$338). Adding the thin-book small-caps FLIPS it: the
-  EXIT give-back (-$831) is now the biggest dollar loss - and it is ENTIRELY the small-caps. They spike
-  (go green >=1%) then V-reverse and close red - the SUI/ENA thin-book pattern, which is exit-shaped.
-- So the bleed is not "bad entries" - it is GIVING BACK WINNERS on thin coins. That is exactly the slice
-  the quarters ladder (SUI saved ~0.8R) and the fade-lean are built for.
+## The honest answer
+1. **Your biggest single money leak is SCALPING** - 151 trades held about 5 minutes, -$659. This is not
+   a bad-entry or bad-exit problem; it's OVERTRADING (too many tiny round-trips, fees + noise). Fix:
+   trade far fewer, hold longer. (Matches M29's U-curve: sub-10min scalps were the worst bucket.)
+2. **When you actually hold a trade (multi-hour), you're about breakeven (+$151).** The losses there are
+   a HANDFUL of big exit give-backs (10 trips, -$550 - thin-coin spikes you rode up then gave back) plus
+   smaller entry misses (26 trips, -$254). The give-backs are the ladder/fade-lean slice (SUI: -1R -> -0.21R).
+3. **Bad entries are the smallest piece.** Direction isn't your main problem; overtrading is, and after
+   that, giving back thin-coin spikes.
 
-## Honest caveat (don't over-read the small-cap exit figure)
-Small-cap MFE comes from Binance perp; on a THIN coin the spike shown there may not have been exitable on
-HL's thinner book. So part of the "-$831 exit give-back" is really "shouldn't have traded a spiky thin
-coin" - the line between a bad EXIT and a bad INSTRUMENT choice blurs for thin-book small-caps. Either
-framing points to the same fix: ladder/trim the thin-coin spikes, or trade them smaller/not at all. JUP
-(~-? , 69 fills) still uncovered -> the one remaining gap; covered net is -$130 of the -$726 total, so
-JUP + the uncovered tail hold ~-$596 (likely a big chunk - flag to re-pull if JUP lists elsewhere).
+## Correction + caveats (transparent)
+Earlier reply 191 said "EXIT give-back dominates (-$831)" - that was WRONG: it counted 151 scalps with a
+1h-candle MFE (a by-construction artifact - a 5-min trade can't have a 1h excursion). Corrected here:
+scalps split out, exit give-back on real multi-hour trips is -$550 (10 trips). The exit-give-back small-caps
+still carry the Binance-vs-HL thin-book basis caveat (part of the "give-back" may be an unexitable spike).
+Scalp -$659 is straight closedPnl (no MFE needed), solid.
 
 ## Rules for the owner (one number each)
-1. Your biggest dollar loss is GIVING BACK WINNERS, not bad entries - especially on thin small-caps that
-   spike then reverse. (exit give-backs -$831 vs entry misses -$483)
-2. That is exactly what your new ladder is for - it banked +0.5R/+0.75R on SUI and turned a -1R into
-   -0.21R. Use it (or trim) on thin-coin spikes. (SUI ladder saved ~0.8R)
-3. On the big liquid coins you're about even - the thin small-caps are where the money goes. Trade them
-   smaller, or not at all. (majors ~even; small-caps hold the loss)
+1. Stop scalping - 151 ~5-minute trades cost you ~$659, your biggest leak. Trade less, hold longer.
+2. When you hold properly you're about even; the real losses are a few thin-coin spikes you gave back -
+   use the ladder/trim there. (multi-hour +$151; exit give-backs -$550 on 10 trips)
+3. Your entries aren't the problem (-$254, smallest bucket). Overtrading is.

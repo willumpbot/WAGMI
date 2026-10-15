@@ -136,16 +136,19 @@ def main():
     for coin in series:
         print("  %s 1h candles: %d" % (coin, len(series[coin])))
 
-    # per-trip MFE + exit-vs-entry decomposition (majors only)
+    # per-trip MFE + exit-vs-entry decomposition. CRITICAL: sub-1h scalps (entry+exit in one 1h candle)
+    # can't have an intra-trade MFE at 1h resolution - the candle range is NOT the 5-min excursion. They
+    # are a SEPARATE bucket (overtrading/scalp bleed, M29 U-curve), NOT entry/exit-decomposable here.
     rows = []
+    scalps = []
     for t in cov:
         a = series[t["coin"]]
         if len(a) == 0:
             continue
         ts = a[:, 0] * 1000.0
         i0 = int(np.searchsorted(ts, t["t_open"])); i1 = int(np.searchsorted(ts, t["t_close"]))
-        if i1 <= i0:
-            i1 = min(i0 + 1, len(a) - 1)
+        if i1 <= i0:                       # sub-hour scalp: no resolvable intra-trade path
+            scalps.append(t); continue
         seg = a[i0:i1 + 1]
         if len(seg) == 0:
             continue
@@ -158,7 +161,11 @@ def main():
                      "pnl": t["pnl"], "hold_h": (t["t_close"] - t["t_open"]) / 3600000.0})
     rows = [r for r in rows if np.isfinite(r["mfe"]) and r["mfe"] >= 0]
     mfe = np.array([r["mfe"] for r in rows]); real = np.array([r["realised"] for r in rows])
-    print("\n=== EXIT vs ENTRY decomposition (majors, %d trips w/ Coinbase path) ===" % len(rows))
+    scalp_pnl = sum(t["pnl"] for t in scalps)
+    print("\n=== SCALP bucket (sub-1h holds, NOT MFE-decomposable at 1h) = overtrading/fees bleed (M29 U-curve) ===")
+    print("  %d scalps | closedPnl $%.0f | median hold %.2fh" %
+          (len(scalps), scalp_pnl, float(np.median([(t["t_close"] - t["t_open"]) / 3600000.0 for t in scalps])) if scalps else 0))
+    print("\n=== EXIT vs ENTRY decomposition (MULTI-HOUR trips only, %d; scalps excluded) ===" % len(rows))
     print("  mean MFE available %.2f%% | mean realised %.2f%% | capture (realised/MFE) %.0f%%"
           % (mfe.mean(), real.mean(), 100 * real.sum() / max(mfe.sum(), 1e-9)))
     # entry-driven vs exit-driven losses
