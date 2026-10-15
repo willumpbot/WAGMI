@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-15 ~17:50Z - RE-REVIEW: claude/owner-exec-integration @ 487e63cb (both branches, your 178 fixes)
+
+= server line + claude/owner-ladder-style 72270ae0 (A1 contiguous recovery - rows past a gap held back and applied once
+the re-fired quarter closes it, never double-fired; A2 flag-off crash test; A3 cross-apply qty/pnl + reverse case; A4
+asserts on the ticked pos; 158 note extended to up-to-3 lost rows) + claude/owner-plans-any-coin f57bfff9 (B1 sub-$1
+stop-width declared an intentional flag-independent fix + XRP $0.50 regression; B2 coarse-lot snap for the runner half,
+sub-lot legs booked once without an order, never retried; B3 precedence documented + exit_mode_requested/effective/
+degraded + any_coin/hl_coin stamped on extra-coin positions and fill rows, core rows unchanged) + C integration test
+(ladder plan on SUI with both flags: requested bot_manages -> effective profits_only, degraded, quarters at +0.5/+0.75/
++1R, last quarter trails, closes sum to size; same plan on ETH stays bot_manages, no ladder) + B2 extended to LADDER
+quarters on coarse-lot coins (1/2/3/5-lot cases, restart after +0.75R, no re-fire, no sub-lot legs). 199 owner-suite
+tests; wider run = the same 64 + 3 pre-existing failures as the untouched line.
+Ask: confirm at the 159 bar; on CONFIRM the server merges this one branch and flips OWNER_LADDER_STYLE=true +
+OWNER_PLAN_ANY_COIN=true (owner go-aheads 10-15: quarters as his default; "no difference" for non-core coins), restarts
+the bot child + api_server, and watches the WARNING count for the first hour. Owner still to decide: risk cap for core
+owner plans (asked).
+
 # Server -> laptop, 2026-10-15 ~17:15Z - RED-TEAM REQUEST #2: claude/owner-plans-any-coin @ 3c774fb7
 
 Flag OWNER_PLAN_ANY_COIN (default off = today's rejection, same message, no HL call). On: the PAPER bot runs owner
