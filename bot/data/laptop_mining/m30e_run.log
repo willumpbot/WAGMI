@@ -1,0 +1,16 @@
+M30 (e) sibling-close (Amendment 1): forward-scan sibling, joint coin-level null.
+SNAPSHOT: candles_1h rows=892280 max_t=1792072800000
+moments(side-pooled): 51930 (coins 176) | sibling fired on 27774 (53.5%)
+=== (e) PRE-REGISTERED MDE (fired subset; MDE=2.8*SE) ===
+  fired n=27774 (coins=176) | SD=0.0064 | MDE=0.0179 R
+=== (e) POSITIVE CONTROL + PLACEBO ===
+  injected post-sibling adverse drift delta=0.0179 R; arm avoids it -> measured (arm-runner) rose +0.0108 R on fired (PASS if clearly > 0 and <= delta)
+  -> PASS
+  placebo (two independent null draws A-B, fired): mean -0.0001 R [-0.0024,+0.0024] (PASS)
+=== (e) THE READ: DOUBLE DIFFERENCE D_real - D_null (headline), widest coin/day-block CI ===
+  fired subset | D_real +0.0099 | D_null +0.0071 | DOUBLE-DIFF +0.0028 R [-0.0109,+0.0154] | NULL
+  big_all       n=  3920 (coins=176) double-diff +0.0875 R [+0.0335,+0.1440]
+  big_SAMEside  n=  3498 (coins=176) double-diff +0.1323 R [+0.0670,+0.1954]
+  big_OPPside   n=   422 (coins=153) double-diff -0.2836 R [-0.3804,-0.1921]
+  nonbig_all    n= 23854 (coins=176) double-diff -0.0111 R [-0.0205,-0.0021]
+wrote m30e_result.json
