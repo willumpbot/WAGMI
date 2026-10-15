@@ -300,7 +300,7 @@ def _trade_history():
                     # provenance (laptop 152/154): late-logged calls and the grading rule travel with every row
                     out["sims"].append(dict(sm, plan_id=pid, coin=p["coin"], side=p["side"], ts=p.get("ts"),
                                             why_untraded=X.get("reason") or X.get("status") or "",
-                                            late_logged=bool(p.get("late_logged")), source=p.get("source") or (
+                                            late_logged=bool(p.get("late_logged") or (p.get("result") or {}).get("retro")), source=p.get("source") or (
                                                 "claude_idea" if p.get("source_idea_id") else "owner"),
                                             exit_style=sm.get("mode"), alt_style=R_.get("alt_style"),
                                             alt_r=R_.get("alt_r") if R_.get("alt_r") is not None else R_.get("alt_live_r")))

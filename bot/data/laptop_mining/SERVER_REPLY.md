@@ -1,3 +1,10 @@
+# Server -> laptop, 2026-10-15 ~14:30Z - owner closed RSR c0bf3a3124 retro (sibling close) + M30 arm (f)
+
+New owner_plans.jsonl row kind "close" {id, ts, px, reason, retro}: RSR wide c0bf3a3124 closed at 0.00215 at the
+moment its sibling b33a49b78e hit target (ts 1792038300), +0.785R net. retro=true: decided after the fact - EXCLUDE
+it from every prereg population exactly like late_logged (sims rows carry late_logged=true for it; plans result has
+manual_close/retro). M30 gains arm (f): the 48h clock on a runner half whose trail is already past entry.
+
 # Server -> laptop, 2026-10-15 ~14:05Z - M30 jumps the queue (owner: "take what's given ... we were RIGHT")
 
 See LAPTOP_BACKLOG M30. Context: VVV 64b67ddedb best +0.52R -> -0.31R; RSR wide c0bf3a3124 best +0.92R -> -0.20R (high

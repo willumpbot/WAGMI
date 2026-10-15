@@ -96,6 +96,15 @@ def simulate_plan(plan, risk_default=10.0, bot_traded=False):
     risk = float(plan.get("risk_usd") or 0) or risk_default
     q0 = risk / abs(entry - stop)
     t_open = float(t_open)
+    if R.get("manual_close"):   # owner closed it (plans.close): the record follows his close, not a replay
+        r_ = float(R.get("r_gross") or 0)
+        return {"mode": "owner close", "status": "closed by owner", "lev": float(plan.get("leverage") or 1),
+                "entry": entry, "stop": stop, "target": target, "partials": [l for l in R.get("legs", []) if l["why"] == "half at +1R"],
+                "banked_usd": None, "open_qty": 0.0, "mark": R.get("exit"), "open_pnl_usd": 0.0,
+                "total_usd": round(r_ * risk, 2), "r": round(r_, 3), "risk_usd": risk, "exit_ts": R.get("closed_at"),
+                "expires_ts": t_open + float(plan.get("max_hold_h") or 48) * 3600, "as_of": time.time(),
+                "filled_at": t_open, "bot_traded": bot_traded, "legs": R.get("legs"), "trail": None,
+                "exit_why": "closed by owner", "retro": bool(R.get("retro"))}
     mh = float(plan.get("max_hold_h") or 48)
     if bot_traded and R.get("status") == "open" and R.get("style") == exit_style.norm(plan.get("exit_style")):
         mh = mh + 24 * 365            # bot still holding past the limit at the owner's request: no clock exit

@@ -266,6 +266,19 @@ def _exec_results(last_px=None):
     return out
 
 
+def _xs_norm(v):
+    import exit_style
+    return exit_style.norm(v)
+
+
+def close(pid, px, ts=None, reason="", retro=False):
+    """Owner closes a filled plan at a price (owner 10-15: RSR wide closed together with its sibling's target exit).
+    retro=True marks a decision taken after the fact - kept out of every prereg population like late_logged."""
+    with open(PLANS, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"kind": "close", "id": str(pid)[:20], "ts": float(ts or time.time()), "px": float(px),
+                            "reason": str(reason)[:200], "retro": bool(retro), "logged_at": time.time()}) + chr(10))
+
+
 def cancel(pid):
     with open(PLANS, "a", encoding="utf-8") as f:
         f.write(json.dumps({"kind": "cancel", "id": str(pid)[:20], "ts": time.time()}) + "\n")
@@ -394,6 +407,7 @@ def resolve(write=True):
     except Exception:
         prev = {}
     dups = _dup_of(rows, {k: (v.get("result") or {}).get("closed_at") for k, v in prev.items()})
+    closes = {r["id"]: r for r in rows if r.get("kind") == "close"}
     now = time.time()
     reviews = _reviews()
     plans = []
@@ -441,12 +455,28 @@ def resolve(write=True):
                 res = dict(old or {"status": "waiting"}, error=str(e)[:120])
             if pl["id"] in cancelled and res.get("status") == "waiting":
                 res = {"status": "cancelled"}
+        if pl["id"] in closes and res.get("filled_at") and res.get("status") == "open":
+            c_ = closes[pl["id"]]
+            e_c, st_c = float(pl["entry"]), float(pl["stop"])
+            sg_c = 1 if pl["side"] == "LONG" else -1
+            rk = abs(e_c - st_c)
+            banked = sum(l["frac"] * sg_c * (l["px"] - e_c) / rk for l in res.get("legs") or [])
+            left = 1.0 - sum(l["frac"] for l in res.get("legs") or [])
+            r_g = banked + left * sg_c * (c_["px"] - e_c) / rk
+            fee_c = round(FEE_RT * e_c / rk, 3) if rk else 0.0
+            res = dict(status="won" if r_g - fee_c > 0 else "lost", filled_at=res["filled_at"], closed_at=c_["ts"],
+                       exit=c_["px"], r_gross=round(r_g, 3), r=round(r_g - fee_c, 3), fee_r=fee_c,
+                       legs=(res.get("legs") or []) + [{"at": c_["ts"], "px": c_["px"], "frac": left, "why": "closed by owner"}],
+                       hold_h=round((c_["ts"] - float(res["filled_at"])) / 3600, 1), style=_xs_norm(pl.get("exit_style")),
+                       style_used="owner close", alt_style=None, alt_r=None, manual_close=True,
+                       retro=bool(c_.get("retro")), close_reason=c_.get("reason"),
+                       best_r=res.get("best_r"), worst_r=res.get("worst_r"))
         # Owner's exit style (default "runner": half at +1R, rest trails 1 daily ATR, time limit) - one engine for every
         # grade and simulation (tools/hivemind/exit_style.py). Recomputed once per plan when the style changes.
         try:
             import exit_style as _xs
             sty = _xs.norm(pl.get("exit_style"))
-            if res.get("filled_at") and (res.get("style") != sty or "alt_style" not in res or "style_used" not in res
+            if res.get("filled_at") and not res.get("manual_close") and (res.get("style") != sty or "alt_style" not in res or "style_used" not in res
                                          or res.get("status") == "open"):
                 if res.get("filled_at"):
                     f_ts = float(res["filled_at"])
