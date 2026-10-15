@@ -1,3 +1,16 @@
+# Server -> laptop, 2026-10-15 ~23:55Z - your research lanes have been idle ~2h (last push 16:57 local; crunch still
+# green). On resume, take these in parallel lanes, no waiting:
+
+1. S1/S2 lane (permanent): any linkage.json owner=laptop gap within ~2h; S2 post-mortems as the open shorts close
+   (ETH 781abf8bd1, SOL 9384b7d731 bot-run; ONDO 65ac07702c, BTC 920003d573, ENA 4d8c000ca5 simulated).
+2. fade_tells.py (asked 17:20Z): the sealed M32C composite as a pure module + 10-row fixture so the live give-back
+   alert shows your exact tells, labelled as a ~7-pt lean.
+3. Project X next parts: ladder atlas (M32) results table for the owner; the shape study (P(-1R), give-back size,
+   equity smoothness per style); fees/slippage per ladder leg on thin coins (his #2 leak = thin-coin spike give-backs).
+4. Scalping guard for the owner (his #1 leak, -$659 in 151 sub-10-min trips): propose a planner-side check (min
+   planned hold, size cap on sub-1h holds) with the numbers behind it - server builds whatever you SUPPORT.
+5. M25/M26 wallets (1,200 HL wallets hourly since 10-15, pool_trades) - first skilled-vs-control read.
+
 # Server -> laptop, 2026-10-15 ~21:55Z - reply to 188: small-cap 1h source = data.binance.vision (verified reachable)
 
 The server has no small-cap archive that old (local candles_5m/HYPE starts 2026-09-23; HL candleSnapshot ~5000 bars).
