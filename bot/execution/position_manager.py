@@ -127,6 +127,15 @@ def _owner_block_log(pos, source: str, action: str, reason: str) -> None:
         pass
 
 
+def _owner_any_coin_symbol(symbol) -> bool:
+    """OWNER_PLAN_ANY_COIN: symbol registered as an extra (non-core) coin. Always False for the bot's own coins."""
+    try:
+        from core.owner_any_coin import is_extra
+        return is_extra(symbol)
+    except Exception:
+        return False
+
+
 def _owner_runner_mode(pos) -> str:
     """OWNER exit_style=runner (core.owner_plan_exec): 'live' (OWNER_RUNNER_STYLE on -> applied),
     'shadow' (flag off -> only logged), '' (not a runner position; every bot position)."""
@@ -162,6 +171,39 @@ def _owner_runner_geometry(pos):
     except (TypeError, ValueError):
         atr = None
     return sg, risk, float(pos.entry) + sg * risk, atr
+
+
+def _owner_ladder_mode(pos) -> str:
+    """OWNER exit_style=ladder (core.owner_plan_exec): 'live' (OWNER_LADDER_STYLE on -> applied),
+    'shadow' (flag off -> only logged), '' (not a ladder position; every bot position)."""
+    if not _is_owner(pos):
+        return ""
+    try:
+        from core.owner_plan_exec import ladder_applies, ladder_live, ladder_style_enabled
+        if ladder_style_enabled():
+            # ladder_live runs the same once-per-position readiness check as the runner (ATR backfill / target
+            # guard), which may turn the position into exit_style=full -> '' (unchanged stop / target machinery)
+            return "live" if ladder_live(pos) else ""
+        return "shadow" if ladder_applies(pos) else ""
+    except Exception:
+        return ""
+
+
+def _owner_ladder_shadow_log(pos, action: str, details: str, key: str = None) -> None:
+    try:
+        from core.owner_plan_exec import log_owner_ladder_shadow
+        log_owner_ladder_shadow(pos, action, details, key=key)
+    except Exception:
+        pass
+
+
+def _owner_ladder_steps():
+    """((k, R multiple, fraction of original qty), ...) - core.owner_plan_exec.LADDER_STEPS."""
+    try:
+        from core.owner_plan_exec import LADDER_STEPS
+        return LADDER_STEPS
+    except Exception:
+        return ((1, 0.5, 0.25), (2, 0.75, 0.25), (3, 1.0, 0.25))
 
 
 class _OwnerSkip(Exception):
@@ -915,7 +957,8 @@ class PositionManager:
 
         # HARD SAFETY: Never open a position without a stop loss.
         # Sniper trades with sl=0 caused -$330 in catastrophic losses (4 trades, no SL).
-        if sl <= 0 or abs(entry - sl) / max(entry, 1) < 0.001:
+        # (owner plans: width relative to the price itself - max(entry, 1) rejected every stop on a sub-$1 coin)
+        if sl <= 0 or abs(entry - sl) / (entry if strategy == "owner_plan" and entry > 0 else max(entry, 1)) < 0.001:
             logger.error(
                 f"[{symbol}] REJECTED: No valid stop loss (sl={sl}, entry={entry}). "
                 f"Every trade MUST have a stop loss. This is non-negotiable."
@@ -1114,9 +1157,14 @@ class PositionManager:
         # OWNER exit_style=runner: 'live' replaces the TP1 leg + target close with the owner's
         # half-at-+1R / 1-ATR trail (see _owner_runner_step); 'shadow' only logs. '' for bot positions.
         _runner = _owner_runner_mode(pos) if _owner_locked else ""
+        # OWNER exit_style=ladder: 'live' replaces the TP1 leg + target close with the owner's quarters at
+        # +0.5R / +0.75R / +1R and a 1-ATR trail on the last quarter (see _owner_ladder_step); 'shadow' only logs.
+        _ladder = _owner_ladder_mode(pos) if _owner_locked else ""
         if _owner_locked:
             # restore-time reconcile of an already-recorded runner half, before ANY stop / hold check below
             self._owner_runner_reconcile(pos, arm=(_runner == "live"))
+            # ...and of already-recorded ladder quarters (same pattern; rows are accounting facts, flag aside)
+            self._owner_ladder_reconcile(pos, arm=(_ladder == "live"))
 
         # Track MFE/MAE (max favorable/adverse excursion from entry)
         if current_price > pos.highest_price:
@@ -1330,6 +1378,9 @@ class PositionManager:
             if (_runner == "live" and ((pos.entry_reasons or {}).get("owner_runner") or {}).get("half_taken")
                     and (1 if is_long else -1) * (float(pos.sl) - float(pos.original_sl or pos.sl)) > 0):
                 action = "OWNER_RUNNER_TRAIL"  # the trail had moved the stop; at the UNTRAILED stop it stays "SL"
+            if (_ladder == "live" and ((pos.entry_reasons or {}).get("owner_ladder") or {}).get("trail_on")
+                    and (1 if is_long else -1) * (float(pos.sl) - float(pos.original_sl or pos.sl)) > 0):
+                action = "OWNER_LADDER_TRAIL"  # same rule: only once the trail has actually moved the owner's stop
             fill_price = self._sl_fill_price(pos, current_price, is_long)
             event = self._close_position(pos, fill_price, action)
             events.append(event)
@@ -1342,6 +1393,11 @@ class PositionManager:
                 events.append(_rev)
         elif _runner == "shadow":
             self._owner_runner_shadow_step(pos, current_price, is_long)
+        # 0d. OWNER exit_style=ladder: quarters at +0.5R / +0.75R / +1R, then the last quarter trails 1 daily ATR.
+        if _ladder == "live":
+            events.extend(self._owner_ladder_step(pos, current_price, is_long))
+        elif _ladder == "shadow":
+            self._owner_ladder_shadow_step(pos, current_price, is_long)
 
         # 1a. Smart time stop: assess position health before closing.
         # Original logic: hard 8h cutoff. Problem: closes profitable trades approaching TP1.
@@ -1484,8 +1540,8 @@ class PositionManager:
                 pos._early_exit_review_requested = True
 
         # 2. Check TP1 (dynamic partial close -> TP1_HIT -> TRAILING)
-        # (runner 'live': no TP1 leg - the owner's +1R half above IS the partial)
-        if pos.state == OPEN and _runner != "live":
+        # (runner 'live': no TP1 leg - the owner's +1R half above IS the partial; ladder 'live': same, its quarters)
+        if pos.state == OPEN and _runner != "live" and _ladder != "live":
             tp1_hit = (current_price >= pos.tp1) if is_long else (current_price <= pos.tp1)
             if tp1_hit:
                 # OWNER_PLAN_EXEC: hands_off -> no TP1 partial at all; profits_only -> TP1 partial
@@ -1516,7 +1572,10 @@ class PositionManager:
         if tp2_hit and pos.state != CLOSED and _runner == "shadow":
             _owner_runner_shadow_log(pos, "keep_runner", f"would NOT close at the target {pos.tp2:g} "
                                      f"(runner style ignores the target; price {current_price:g})")
-        if tp2_hit and pos.state != CLOSED and _runner != "live":
+        if tp2_hit and pos.state != CLOSED and _ladder == "shadow":
+            _owner_ladder_shadow_log(pos, "keep_ladder", f"would NOT close at the target {pos.tp2:g} "
+                                     f"(ladder style ignores the target; price {current_price:g})")
+        if tp2_hit and pos.state != CLOSED and _runner != "live" and _ladder != "live":
             event = self._close_position(pos, current_price, "TP2")
             events.append(event)
 
@@ -1579,7 +1638,22 @@ class PositionManager:
             orig = float(pos.original_qty or 0) or float(pos.qty)
             already = max(0.0, orig - float(pos.qty))
             want = round_qty(pos.symbol, round(max(0.0, 0.5 * orig - already), 10))  # round off float dust first
-            if want > 0 and want < pos.qty and round_qty(pos.symbol, pos.qty - want) > 0:
+            _split = want > 0 and want < pos.qty and round_qty(pos.symbol, pos.qty - want) > 0
+            if not _split and 0.5 * orig - already > 1e-12 and _owner_any_coin_symbol(pos.symbol):
+                # OWNER_PLAN_ANY_COIN (laptop 178 B2): on a coarse-lot coin (szDecimals 0) the half can round to
+                # 0. Snap it UP to the minimum lot; if that leaves nothing behind, the half closes the remainder
+                # (a sub-lot leg is never silently dropped, never retried).
+                want = round_qty(pos.symbol, max(want, get_min_qty(pos.symbol)))
+                _split = want > 0 and want < pos.qty and round_qty(pos.symbol, pos.qty - want) > 0
+                if not _split:
+                    st.update(half_taken=True, half_px=price, one_r=one_r, best=price, half_qty=float(pos.qty),
+                              half_ts=datetime.now(timezone.utc).isoformat(), atr=atr, half_closed_all=True)
+                    logger.info(f"[OWNER-RUNNER] {pos.symbol} +1R @ {price:g}: qty {pos.qty:g} too small to split "
+                                f"on this coin's lot size - the half closes the whole remainder")
+                    event = self._close_position(pos, price, "OWNER_RUNNER_HALF")
+                    event.metadata["owner_runner"] = "half at +1R (lot too coarse to split: closed the remainder)"
+                    return event
+            if _split:
                 event = self.partial_close(pos.symbol, want / pos.qty, price, action="OWNER_RUNNER_HALF",
                                            qty=want, owner_rule=True)
                 if event is not None:
@@ -1619,6 +1693,9 @@ class PositionManager:
         the half cannot re-fire - but the 'partial' row is missing while the plan is open. The FINAL row's
         total_pnl (from pos.realized_pnl) still carries the half, so the plan total self-heals at close.
         The reverse order (row written, save lost) is handled by _owner_runner_reconcile.
+        LADDER (same helper, laptop 178): one gap tick can take up to 3 quarters, so up to 3 'partial' rows can be
+        missing in that window; the position state is still exact and the FINAL row's total_pnl heals the plan total
+        the same way. Row written / save lost is handled by _owner_ladder_reconcile (contiguous steps only).
         """
         try:
             from execution.auto_recovery import save_position_state
@@ -1641,6 +1718,8 @@ class PositionManager:
         er = pos.entry_reasons if isinstance(pos.entry_reasons, dict) else None
         if er is None or ((er.get("owner_runner") or {}).get("half_taken")):
             return
+        if str(er.get("exit_style") or "").strip().lower() == "ladder":
+            return   # a ladder position never takes a runner half (its own steps: _owner_ladder_reconcile)
         geo = _owner_runner_geometry(pos)
         one_r, atr = (geo[2], geo[3]) if geo else (None, None)
         st = er.get("owner_runner")
@@ -1725,6 +1804,255 @@ class PositionManager:
                 if last is None or sg * (cand - last) >= 0.25 * atr:   # log every >= 1/4-ATR step
                     sh["logged_trail"] = cand
                     _owner_runner_shadow_log(pos, "trail", f"would trail to {cand:g} (best {sh['best']:g} - 1 ATR {atr:g})",
+                                             key=f"trail:{cand:.10g}")
+
+    # ── OWNER exit_style=ladder (quarters) ──────────────────────────────────────────────────────────────
+    # Same crash-safety pattern as the runner: state in pos.entry_reasons["owner_ladder"] (persisted right after
+    # every step and every trail ratchet), each step's 'partial' row in owner_fills.jsonl reconciled ONCE per
+    # position per process BEFORE any SL / hold check (_owner_ladder_reconcile), so a step can never re-fire and
+    # a stop / time close after a lost save books only what is really left.
+
+    def _owner_ladder_step(self, pos, price: float, is_long: bool) -> List[TradeEvent]:
+        """OWNER exit_style=ladder, applied (OWNER_LADDER_STYLE on). Mirrors tools/hivemind/exit_style.play:
+
+        - before +0.5R: nothing here (the owner's stop, checked by the caller, is the only exit);
+        - step k (k=1,2,3 at +0.5R / +0.75R / +1R, 1R = |entry - original stop| from the ACTUAL fill): close a
+          quarter of the ORIGINAL qty, sized so the cumulative partial-closed qty is k/4 of the original (anything
+          banked before - e.g. a pre-flag TP1 leg - counts, never double-closed). A tick that is through several
+          levels takes each of them, one event / one owner_fills row per step, at the tick price;
+        - after step 3 the last quarter trails 1 x atr_at_fill behind the best price since, starting from the
+          owner's stop and only ever moving the profitable way; the caller's SL check closes it next tick;
+        - the plan target closes nothing; the plan's own time limit (check_hold_limits) closes the rest.
+        """
+        geo = _owner_runner_geometry(pos)
+        if geo is None:
+            return []
+        sg, risk, _one_r, atr = geo
+        er = pos.entry_reasons if isinstance(pos.entry_reasons, dict) else {}
+        if not isinstance(pos.entry_reasons, dict):
+            pos.entry_reasons = er
+        st = er.get("owner_ladder")
+        if not isinstance(st, dict):
+            st = {}
+            er["owner_ladder"] = st
+        events: List[TradeEvent] = []
+        n = int(st.get("steps_taken") or 0)
+        orig = float(pos.original_qty or 0) or float(pos.qty)
+        for k, k_r, k_f in _owner_ladder_steps():
+            n = int(st.get("steps_taken") or 0)   # (a pending recorded row may have advanced it below)
+            if k <= n:
+                continue
+            lvl = float(pos.entry) + sg * k_r * risk
+            if sg * (price - lvl) < 0:
+                break
+            already = max(0.0, orig - float(pos.qty))
+            cum = sum(f for j, _r, f in _owner_ladder_steps() if j <= k)
+            want = round_qty(pos.symbol, round(max(0.0, cum * orig - already), 10))   # float dust off first
+            event = None
+            if (cum * orig - already > 1e-12 and _owner_any_coin_symbol(pos.symbol)
+                    and not (want > 0 and want < pos.qty
+                             and round_qty(pos.symbol, pos.qty - want) >= get_min_qty(pos.symbol))):
+                # OWNER_PLAN_ANY_COIN on a coarse-lot coin (szDecimals 0): a quarter that rounds below one lot is
+                # snapped UP to one lot; if that would leave less than one lot behind, this step closes the
+                # remainder and ENDS the ladder (no trail). Never a dropped / failing / re-fired leg.
+                want = round_qty(pos.symbol, max(want, get_min_qty(pos.symbol)))
+                if not (want < pos.qty and round_qty(pos.symbol, pos.qty - want) >= get_min_qty(pos.symbol)):
+                    left = float(pos.qty)
+                    event = self._close_position(pos, price, f"OWNER_LADDER_Q{k}")
+                    event.metadata["owner_ladder"] = (f"quarter at +{k_r:g}R (lot too coarse to leave a remainder: "
+                                                      f"closed the rest)")
+                    event.metadata["ladder_level"] = lvl
+                    events.append(event)
+                    st[f"q{k}"] = {"px": price, "level": lvl, "qty": left, "ts": datetime.now(timezone.utc).isoformat(),
+                                   "closed_all": True}
+                    st.update(steps_taken=k, closed_all=True, trail_on=False)
+                    logger.info(f"[OWNER-LADDER] {pos.symbol} +{k_r:g}R @ {price:g}: step {k} on a coarse lot closes "
+                                f"the remaining {left:g} of {orig:g} - ladder ended")
+                    self._persist_owner_runner_state()
+                    return events
+            if want > 0 and want < pos.qty and round_qty(pos.symbol, pos.qty - want) > 0:
+                event = self.partial_close(pos.symbol, want / pos.qty, price, action=f"OWNER_LADDER_Q{k}",
+                                           qty=want, owner_rule=True)
+                if event is not None:
+                    event.metadata["owner_ladder"] = f"quarter at +{k_r:g}R"
+                    event.metadata["ladder_level"] = lvl
+                    events.append(event)
+            st[f"q{k}"] = {"px": price, "level": lvl, "qty": (event.qty if event is not None else 0.0),
+                           "ts": datetime.now(timezone.utc).isoformat()}
+            st["steps_taken"] = n = k
+            if k == 3:
+                st.update(trail_on=True, best=price, one_r=lvl, atr=atr)
+                if pos.state == OPEN:
+                    pos._transition(TP1_HIT, f"owner ladder: third quarter at +1R @ {price}")
+                    pos._transition(TRAILING, "owner ladder trail armed")
+            logger.info(f"[OWNER-LADDER] {pos.symbol} {pos.side} +{k_r:g}R ({lvl:g}) reached @ {price:g}: closed "
+                        f"{(event.qty if event is not None else 0.0):g} of {orig:g} (step {k}/3, {already:g} already "
+                        f"banked)" + ("" if k < 3 else "; last quarter trails " + (
+                            ("1 ATR = " + format(atr, "g")) if atr else "NOTHING (no atr_at_fill: rides the owner stop)")))
+            # Persist NOW (after every step): the close loop appends this step's 'partial' row to owner_fills.jsonl
+            # after the tick; a crash in between must not restore a pre-step position (and if the save is lost,
+            # _owner_ladder_reconcile re-applies the recorded row instead of re-firing the step).
+            self._persist_owner_runner_state()
+            # A recorded row beyond a gap (torn middle row, laptop 178 A1) becomes contiguous once this step is
+            # taken: apply it now (it really filled earlier) instead of re-firing it.
+            _pend = getattr(pos, "_owner_ladder_pending_rows", None)
+            if _pend and self._owner_ladder_apply_recorded(pos, st, _pend, arm=True):
+                self._persist_owner_runner_state()
+        if st.get("trail_on"):
+            best = float(st.get("best") or price)
+            best = max(best, price) if is_long else min(best, price)
+            st["best"] = best
+            if atr:
+                cand = round_price(pos.symbol, best - sg * atr)
+                if sg * (cand - pos.sl) > 0:
+                    old = pos.sl
+                    pos.sl = cand
+                    st["trail"] = cand
+                    logger.info(f"[OWNER-LADDER] {pos.symbol} trail {old:g} -> {cand:g} (best {best:g} - 1 ATR {atr:g})")
+                    self._persist_owner_runner_state()
+        return events
+
+    def _owner_ladder_reconcile(self, pos, arm: bool) -> None:
+        """Once per position per process, BEFORE any SL or hold-limit check: owner_fills.jsonl rows for ladder steps
+        the restored state does not have (crash after the row, before the save) are re-applied to the position
+        (qty, realised PnL, fee and funding shares; no new event / row) and marked taken, so a step never re-fires
+        and a stop / time close books only what is left. Runs for every owner position whatever the flag (the rows
+        are accounting facts); arm=True (ladder live) also arms the trail state transitions after step 3."""
+        if getattr(pos, "_owner_ladder_reconciled", False) or not _is_owner(pos):
+            return
+        try:
+            pos._owner_ladder_reconciled = True
+        except Exception:
+            pass
+        er = pos.entry_reasons if isinstance(pos.entry_reasons, dict) else None
+        if er is None:
+            return
+        try:
+            from core.owner_plan_exec import normalize_exit_style
+            if normalize_exit_style(er.get("exit_style")) == "runner":
+                return   # a runner position never takes ladder steps (its half: _owner_runner_reconcile)
+        except Exception:
+            pass
+        st = er.get("owner_ladder")
+        if not isinstance(st, dict):
+            st = {}
+        n = int(st.get("steps_taken") or 0)
+        if n >= 3:
+            return
+        try:
+            from core.owner_plan_exec import recorded_ladder_steps
+            rows = recorded_ladder_steps(str(er.get("owner_plan_id") or ""), str(pos.position_id or ""))
+        except Exception:
+            logger.debug("[OWNER-LADDER] fills lookup failed", exc_info=True)
+            rows = {}
+        # Rows beyond a gap stay pending: once the live loop re-fires the missing step, the run becomes
+        # contiguous again and they are applied then (_owner_ladder_apply_recorded) - never re-fired.
+        try:
+            pos._owner_ladder_pending_rows = {k: r for k, r in rows.items() if k > n}
+        except Exception:
+            pass
+        if not self._owner_ladder_apply_recorded(pos, st, rows, arm):
+            if any(j > n for j in rows):
+                logger.warning(f"[OWNER-LADDER] {pos.symbol} owner_fills.jsonl has ladder rows {sorted(rows)} but "
+                               f"not step {n + 1}: gapped record, nothing recovered yet (step {n + 1} re-fires live)")
+            return
+        er["owner_ladder"] = st
+        self._persist_owner_runner_state()
+
+    def _owner_ladder_apply_recorded(self, pos, st: dict, rows: dict, arm: bool) -> bool:
+        """Apply recorded step rows to the position for the CONTIGUOUS run steps_taken+1, +2, ... only (laptop 178 A1):
+        a torn / missing middle row must never let steps_taken jump past an un-applied quarter - recovery stops at the
+        first missing step and the live loop re-fires that quarter at its level. Applied rows leave
+        pos._owner_ladder_pending_rows. Re-applies qty, realised PnL, fee and funding shares (no new event / row).
+        True if anything was applied."""
+        n = int(st.get("steps_taken") or 0)
+        todo = []
+        k = n + 1
+        while k in rows:
+            todo.append(k)
+            k += 1
+        if not todo:
+            return False
+        geo = _owner_runner_geometry(pos)
+        atr = geo[3] if geo else None
+        orig = float(pos.original_qty or 0) or float(pos.qty)
+        steps = {k: (k_r, k_f) for k, k_r, k_f in _owner_ladder_steps()}
+        pending = getattr(pos, "_owner_ladder_pending_rows", None)
+        for k in todo:
+            row = rows[k]
+            rq = float(row.get("qty") or 0)
+            already = max(0.0, orig - float(pos.qty))
+            cum = sum(f for j, (_r, f) in steps.items() if j <= k)
+            # the restored state predates the recorded leg if the qty already reduced is short of k/4 of the original
+            missing = round(max(0.0, min(rq, cum * orig - already)), 10)
+            if missing > 0 and round_qty(pos.symbol, pos.qty - missing) > 0:
+                frac = missing / rq if rq > 0 else 0.0
+                pos.qty = round_qty(pos.symbol, pos.qty - missing)
+                pos.realized_pnl += float(row.get("pnl") or 0) * frac        # row pnl is already net of fee + funding
+                pos.fees_paid += float(row.get("fee") or 0) * frac
+                pos.funding_costs -= float(row.get("funding") or 0) * frac   # partial_close moves its share out too
+            lvl = (float(pos.entry) + (geo[0] * steps[k][0] * geo[1])) if geo else None
+            st[f"q{k}"] = {"px": float(row.get("exit") or 0) or None, "level": lvl, "qty": rq, "ts": row.get("ts"),
+                           "recovered_from_fills": True}
+            st["steps_taken"] = k
+            if isinstance(pending, dict):
+                pending.pop(k, None)
+            logger.warning(f"[OWNER-LADDER] {pos.symbol} step {k} already recorded in owner_fills.jsonl (qty {rq:g} @ "
+                           f"{row.get('exit')}): not re-fired; re-applied {missing:g} to the position")
+        if int(st.get("steps_taken") or 0) >= 3 and not st.get("trail_on"):
+            px3 = (st.get("q3") or {}).get("px")
+            st.update(trail_on=True, best=px3, one_r=(st.get("q3") or {}).get("level"), atr=atr)
+            if arm and pos.state == OPEN:
+                pos._transition(TP1_HIT, "owner ladder: third quarter (recovered from owner_fills.jsonl)")
+                pos._transition(TRAILING, "owner ladder trail armed")
+        return True
+
+    def _owner_ladder_shadow_step(self, pos, price: float, is_long: bool) -> None:
+        """OWNER_LADDER_STYLE off: compute what the ladder rule WOULD do and log it (deduped). Touches nothing
+        the bot acts on (state lives on a private, non-persisted attribute)."""
+        geo = _owner_runner_geometry(pos)
+        if geo is None:
+            return
+        sg, risk, _one_r, atr = geo
+        sh = getattr(pos, "_owner_ladder_shadow", None)
+        if sh is None:
+            sh = {"n": 0, "best": None, "trail": float(pos.original_sl or pos.sl), "logged_trail": None, "done": False}
+            try:
+                pos._owner_ladder_shadow = sh
+            except Exception:
+                return
+        if sh["done"]:
+            return
+        if sh["n"] >= 3 and sg * (price - sh["trail"]) <= 0:
+            sh["done"] = True
+            _owner_ladder_shadow_log(pos, "close_remainder",
+                                     f"would close the last quarter on the ladder trail {sh['trail']:g} (price {price:g})")
+            return
+        orig = float(pos.original_qty or 0) or float(pos.qty)
+        for k, k_r, k_f in _owner_ladder_steps():
+            if k <= sh["n"]:
+                continue
+            lvl = float(pos.entry) + sg * k_r * risk
+            if sg * (price - lvl) < 0:
+                break
+            sh["n"] = k
+            _owner_ladder_shadow_log(pos, f"quarter_{k}",
+                                     f"would take quarter {k}/3 at +{k_r:g}R ({lvl:g}): close {k_f * orig:g} of "
+                                     f"{orig:g} @ {price:g}" + ("" if k < 3 or atr else
+                                                                "; no atr_at_fill -> trail would stay at the owner stop"))
+            if k == 3:
+                sh["best"] = price
+        if sh["n"] < 3:
+            return
+        sh["best"] = max(sh["best"], price) if is_long else min(sh["best"], price)
+        if atr:
+            cand = sh["best"] - sg * atr
+            if sg * (cand - sh["trail"]) > 0:
+                sh["trail"] = cand
+                last = sh["logged_trail"]
+                if last is None or sg * (cand - last) >= 0.25 * atr:   # log every >= 1/4-ATR step
+                    sh["logged_trail"] = cand
+                    _owner_ladder_shadow_log(pos, "trail", f"would trail to {cand:g} (best {sh['best']:g} - 1 ATR {atr:g})",
                                              key=f"trail:{cand:.10g}")
 
     def _assess_position_health(self, pos, current_price: float, df_5m=None) -> dict:
@@ -2840,6 +3168,8 @@ class PositionManager:
             # close at market like a plan that timed out. Without this, an owner position could stay open forever.
             # (first: an already-recorded runner half is reconciled, so the time close books only the remainder)
             self._owner_runner_reconcile(pos, arm=(_owner_runner_mode(pos) == "live"))
+            # (same for already-recorded ladder quarters)
+            self._owner_ladder_reconcile(pos, arm=(_owner_ladder_mode(pos) == "live"))
             try:
                 _mh = float(((getattr(pos, "entry_reasons", None) or {}).get("plan_max_hold_h")) or 0)
             except (TypeError, ValueError):
