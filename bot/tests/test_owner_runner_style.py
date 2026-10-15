@@ -193,15 +193,35 @@ def test_no_atr_degrades_to_full_never_a_trailless_runner(sandbox, on, monkeypat
     """No atr_at_fill and the point-in-time backfill fails -> exit_style=full: the TARGET still closes it."""
     calls = []
     monkeypatch.setattr(ope, "atr_at_fill", lambda bot, coin, ts: (calls.append(ts), (None, "unavailable"))[1])
+    monkeypatch.setenv("OWNER_RUNNER_ATR_RETRY_S", "0")              # default: 3 attempts, 60s apart
     pos = _pos(atr=None)
     pm = _pm(pos)
-    ev = pm.update_price("ETH", 3051.0)
+    for px in (3010.0, 3020.0):                                        # attempts 1, 2: retry pending, not live
+        assert pm.update_price("ETH", px) == []
+        assert "exit_style_reason" not in pos.entry_reasons and not pos.entry_reasons.get("runner_checked")
+    assert pos.entry_reasons["atr_backfill_attempts"] == 2
+    ev = pm.update_price("ETH", 3051.0)                                # attempt 3 fails -> full
     assert pos.entry_reasons["exit_style"] == "full" and "atr_at_fill" in pos.entry_reasons["exit_style_reason"]
     assert [e.action for e in ev] == ["TP1"]                           # full style: old profits_only TP1 leg
     ev = pm.update_price("ETH", 3151.0)
     assert ev and ev[-1].action == "TP2" and pos.state == "CLOSED"
-    assert len(calls) == 1, "backfill is tried once per position, not every tick"
+    assert len(calls) == 3, "backfill tried 3 times, then never again"
     assert [r["exit_action"] for r in _rows(sandbox, "owner_runner_check")] == ["style_full"]
+
+
+def test_atr_backfill_retry_is_spaced_and_can_succeed(sandbox, on, monkeypatch):
+    res = iter([(None, "unavailable"), (100.0, "hl_1d")])
+    calls = []
+    monkeypatch.setattr(ope, "atr_at_fill", lambda bot, coin, ts: (calls.append(ts), next(res))[1])
+    pos = _pos(atr=None)
+    pm = _pm(pos)
+    assert pm.update_price("ETH", 3010.0) == []
+    assert pm.update_price("ETH", 3020.0) == [] and len(calls) == 1, "second try waits for the retry spacing"
+    assert not ope.runner_live(pos), "not live while the retry is pending"
+    pos.entry_reasons["atr_backfill_next"] = 0                         # spacing elapsed
+    ev = pm.update_price("ETH", 3050.0)
+    assert len(calls) == 2 and pos.entry_reasons["atr_at_fill"] == 100.0
+    assert pos.entry_reasons["exit_style"] == "runner" and [e.action for e in ev] == ["OWNER_RUNNER_HALF"]
 
 
 def test_untrailed_stop_after_half_is_labelled_sl(sandbox, on):
@@ -248,6 +268,7 @@ def test_prebranch_position_backfills_atr_point_in_time(sandbox, on, monkeypatch
 
 def test_prebranch_position_backfill_fails_runs_full(sandbox, on, monkeypatch):
     monkeypatch.setattr(ope, "atr_at_fill", lambda bot, coin, ts: (None, "unavailable"))
+    monkeypatch.setenv("OWNER_RUNNER_ATR_RETRIES", "1")
     pos = _prebranch()
     pm = _pm(pos)
     pm.update_price("ETH", 2949.0)
@@ -383,6 +404,51 @@ def test_crash_after_partial_row_before_save_does_not_refire_half(sandbox, on):
     # the trail still works on the recovered remainder
     pm2.update_price("ETH", 3200.0)
     assert back.sl == pytest.approx(3100.0)
+
+
+@pytest.mark.parametrize("closer", ["stop", "time"])
+def test_restore_with_recorded_half_then_stop_below_1r_closes_exactly_original(sandbox, on, closer):
+    """Laptop 158 blocker: the half's save was lost but its 'partial' row exists; after restore price goes
+    to the STOP (or the time limit) WITHOUT revisiting +1R. Must book one 0.5 partial + one 0.5 final,
+    total closed == original, PnL not double-booked, fee/funding shares carried."""
+    from execution.auto_recovery import _position_to_dict, _dict_to_position
+    pos = _pos()
+    pos.position_id = "pid-2"
+    pos.funding_costs = 0.8
+    pm = _pm(pos)
+    pm.update_price("ETH", 3030.0)
+    snapshot = json.loads(json.dumps(_position_to_dict(pos), default=str))     # last good save: pre-half
+    evs = pm.update_price("ETH", 3050.0)
+    half_row = ope.record_owner_close(evs[0], pos, pm)
+    assert half_row["fee"] > 0 and half_row["funding"] == pytest.approx(0.4)
+    fees_after_half, funding_after_half, banked = pos.fees_paid, pos.funding_costs, pos.realized_pnl
+    # --- crash, restore the pre-half state ---
+    back = _dict_to_position(snapshot)
+    assert back.qty == pytest.approx(1.0)
+    pm2 = _pm(back)
+    if closer == "stop":
+        out = pm2.update_price("ETH", 2949.0)                         # straight to the owner stop
+    else:
+        back.open_time = datetime.now(timezone.utc) - timedelta(hours=49)
+        out = [pm2.check_hold_limits("ETH", 3010.0, 48, "tighten_sl")]  # hold check FIRST, no tick before it
+    assert len(out) == 1 and out[0].is_position_close
+    assert out[0].qty == pytest.approx(0.5), "final leg must be the remaining half, not the full size"
+    final_row = ope.record_owner_close(out[0], back, pm2)
+    fills = [json.loads(l) for l in ope.fills_path().read_text().splitlines()]
+    assert [(f["kind"], f["qty"]) for f in fills] == [("partial", pytest.approx(0.5)), ("final", pytest.approx(0.5))]
+    assert sum(f["qty"] for f in fills) == pytest.approx(back.original_qty)
+    assert funding_after_half == pytest.approx(0.4)
+    assert final_row["total_pnl"] == pytest.approx(banked + final_row["pnl"], abs=1e-5)
+    # the recovered position ends with the SAME books as if there had been no crash
+    if closer == "stop":
+        ref = pm.update_price("ETH", 2949.0)
+    else:
+        pos.open_time = back.open_time
+        ref = [pm.check_hold_limits("ETH", 3010.0, 48, "tighten_sl")]
+    assert ref[0].qty == pytest.approx(out[0].qty)
+    for k in ("fees_paid", "funding_costs", "realized_pnl"):
+        assert getattr(back, k) == pytest.approx(getattr(pos, k), abs=1e-5), k
+    assert fees_after_half > 0
 
 
 def test_recorded_half_for_other_plan_is_ignored(sandbox, on):

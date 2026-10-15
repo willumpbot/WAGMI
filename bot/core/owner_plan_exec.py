@@ -178,12 +178,21 @@ def runner_live(pos: Any) -> bool:
 
     The first time a runner position is seen with the flag on it is checked once (ensure_runner_ready):
     no usable atr_at_fill -> point-in-time backfill, else degrade to exit_style=full; target at/inside +1R
-    -> full (OWNER_RUNNER_TARGET_GUARD). A runner without a trail never ignores its target.
+    -> full (OWNER_RUNNER_TARGET_GUARD). A runner without a trail never ignores its target. While a failed
+    backfill is waiting for its retry the position is NOT live (the full stop/target machinery manages it).
     """
     if not (runner_style_enabled() and runner_applies(pos)):
         return False
     ensure_runner_ready(pos)
-    return runner_applies(pos)
+    er = getattr(pos, "entry_reasons", None)
+    return runner_applies(pos) and isinstance(er, dict) and bool(er.get("runner_checked"))
+
+
+def _env_num(name: str, default: float) -> float:
+    try:
+        return float(os.getenv(name, "") or default)
+    except ValueError:
+        return default
 
 
 def runner_target_guard_enabled() -> bool:
@@ -246,15 +255,28 @@ def ensure_runner_ready(pos: Any) -> None:
         sym = getattr(pos, "symbol", "")
         atr = _valid_atr(er.get("atr_at_fill"))
         if atr is None:
+            now = time.time()
+            if now < float(er.get("atr_backfill_next") or 0):
+                return   # waiting for the next retry (the position runs on the full machinery meanwhile)
             ot = getattr(pos, "open_time", None)
-            ts = ot.timestamp() if hasattr(ot, "timestamp") else time.time()
+            ts = ot.timestamp() if hasattr(ot, "timestamp") else now
             v, src = atr_at_fill(None, sym, ts)
             atr = _valid_atr(v)
             if atr is not None:
                 er["atr_at_fill"] = atr
                 er["atr_at_fill_source"] = f"backfill_{src}"
-                er["atr_backfilled_at"] = time.time()
+                er["atr_backfilled_at"] = now
                 logger.info(f"[OWNER-RUNNER] {sym} atr_at_fill backfilled point-in-time = {atr:g} ({src})")
+            else:
+                # one transient HL blip must not permanently degrade a runner: retry a few times, spaced
+                n = int(er.get("atr_backfill_attempts") or 0) + 1
+                er["atr_backfill_attempts"] = n
+                tries = int(_env_num("OWNER_RUNNER_ATR_RETRIES", 3))
+                if n < tries:
+                    er["atr_backfill_next"] = now + _env_num("OWNER_RUNNER_ATR_RETRY_S", 60.0)
+                    logger.warning(f"[OWNER-RUNNER] {sym} plan {er.get('owner_plan_id')}: atr_at_fill backfill "
+                                   f"failed ({src}), attempt {n}/{tries} - retrying; full machinery until then")
+                    return
         fill = float(getattr(pos, "entry", 0) or 0)
         stop = float(getattr(pos, "original_sl", 0) or getattr(pos, "sl", 0) or 0)
         target = er.get("plan_target") if er.get("plan_target") not in (None, "") else getattr(pos, "tp2", None)
@@ -834,6 +856,7 @@ def record_owner_close(event, pos, pos_mgr=None) -> Dict[str, Any]:
         "r": round(leg_net / risk_usd, 4) if risk_usd > 0 else None, "reason": getattr(event, "action", ""),
         "position_id": getattr(event, "position_id", "") or getattr(pos, "position_id", ""),
         "opened_at": opened.isoformat() if hasattr(opened, "isoformat") else opened, "ts": time.time(),
+        "fee": round(float(getattr(event, "fee", 0) or 0), 8), "funding": round(funding, 8),
         "managed_by": managed_by(getattr(event, "action", "")),
         "exit_style": normalize_exit_style(er.get("exit_style")) if isinstance(er, dict) else None,
         "exit_mode": er.get("exit_mode") if isinstance(er, dict) else None,

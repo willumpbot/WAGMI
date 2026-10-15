@@ -1114,6 +1114,9 @@ class PositionManager:
         # OWNER exit_style=runner: 'live' replaces the TP1 leg + target close with the owner's
         # half-at-+1R / 1-ATR trail (see _owner_runner_step); 'shadow' only logs. '' for bot positions.
         _runner = _owner_runner_mode(pos) if _owner_locked else ""
+        if _owner_locked:
+            # restore-time reconcile of an already-recorded runner half, before ANY stop / hold check below
+            self._owner_runner_reconcile(pos, arm=(_runner == "live"))
 
         # Track MFE/MAE (max favorable/adverse excursion from entry)
         if current_price > pos.highest_price:
@@ -1571,8 +1574,8 @@ class PositionManager:
         if not st.get("half_taken"):
             if sg * (price - one_r) < 0:
                 return None
-            if self._owner_runner_recover_half(pos, st, one_r, atr):
-                return None   # the half was already booked before a crash/restart: never re-fire it
+            # (a half already recorded in owner_fills.jsonl was reconciled BEFORE the SL / hold checks by
+            #  _owner_runner_reconcile, so half_taken is already True for it and we never get here)
             orig = float(pos.original_qty or 0) or float(pos.qty)
             already = max(0.0, orig - float(pos.qty))
             want = round_qty(pos.symbol, round(max(0.0, 0.5 * orig - already), 10))  # round off float dust first
@@ -1608,17 +1611,49 @@ class PositionManager:
         return event
 
     def _persist_owner_runner_state(self) -> None:
-        """save_position_state right after a runner half / trail ratchet (normally only _close_position saves)."""
+        """save_position_state right after a runner half / trail ratchet (normally only _close_position saves).
+
+        KNOWN RESIDUAL WINDOW (laptop 158 ruling: record blemish, does not gate): this save runs inside the tick,
+        BEFORE the close loop appends the half's 'partial' row to owner_fills.jsonl. A hard crash in between
+        (milliseconds) leaves the position correctly at half size with half_taken persisted - nothing re-closes and
+        the half cannot re-fire - but the 'partial' row is missing while the plan is open. The FINAL row's
+        total_pnl (from pos.realized_pnl) still carries the half, so the plan total self-heals at close.
+        The reverse order (row written, save lost) is handled by _owner_runner_reconcile.
+        """
         try:
             from execution.auto_recovery import save_position_state
             save_position_state(self)
         except Exception:
             logger.exception("[OWNER-RUNNER] non-fatal state persistence failure")
 
-    def _owner_runner_recover_half(self, pos, st: dict, one_r: float, atr) -> bool:
+    def _owner_runner_reconcile(self, pos, arm: bool) -> None:
+        """Once per position per process (i.e. at restore / first tick), BEFORE any SL or hold-limit check:
+        if owner_fills.jsonl already holds this plan's OWNER_RUNNER_HALF row but the restored position has no
+        half_taken, re-apply the recorded leg so a stop / time close books only the remaining half (never
+        a full-size final next to the recorded partial). Runs for every owner position whatever the flag:
+        the row is an accounting fact. arm=True (runner live) also arms the trail state."""
+        if getattr(pos, "_owner_runner_reconciled", False) or not _is_owner(pos):
+            return
+        try:
+            pos._owner_runner_reconciled = True
+        except Exception:
+            pass
+        er = pos.entry_reasons if isinstance(pos.entry_reasons, dict) else None
+        if er is None or ((er.get("owner_runner") or {}).get("half_taken")):
+            return
+        geo = _owner_runner_geometry(pos)
+        one_r, atr = (geo[2], geo[3]) if geo else (None, None)
+        st = er.get("owner_runner")
+        if not isinstance(st, dict):
+            st = {}
+        if self._owner_runner_recover_half(pos, st, one_r, atr, arm=arm):
+            er["owner_runner"] = st
+
+    def _owner_runner_recover_half(self, pos, st: dict, one_r, atr, arm: bool = True) -> bool:
         """Idempotency: owner_fills.jsonl already holds this plan's OWNER_RUNNER_HALF partial row (the bot crashed
         after the row was written but before the position state was saved). Re-apply that recorded leg to the
-        in-memory position (qty + realised PnL, no new event/row) and mark the half taken. True if recovered."""
+        in-memory position (qty, realised PnL, fee and funding shares; no new event/row) and mark the half taken.
+        True if a recorded half was found."""
         try:
             from core.owner_plan_exec import recorded_runner_half
             er = pos.entry_reasons or {}
@@ -1634,12 +1669,15 @@ class PositionManager:
         # the restored state predates the recorded leg if the qty already reduced is short of 50% of the original
         missing = round(max(0.0, min(rq, 0.5 * orig - already)), 10)
         if missing > 0 and round_qty(pos.symbol, pos.qty - missing) > 0:
+            frac = missing / rq if rq > 0 else 0.0
             pos.qty = round_qty(pos.symbol, pos.qty - missing)
-            pos.realized_pnl += float(row.get("pnl") or 0) * (missing / rq if rq > 0 else 0.0)
+            pos.realized_pnl += float(row.get("pnl") or 0) * frac        # row pnl is already net of fee + funding
+            pos.fees_paid += float(row.get("fee") or 0) * frac
+            pos.funding_costs -= float(row.get("funding") or 0) * frac   # partial_close moves its share out too
         st.update(half_taken=True, half_px=float(row.get("exit") or 0) or None, one_r=one_r,
                   best=float(row.get("exit") or 0) or None, half_qty=rq, atr=atr,
                   half_ts=row.get("ts"), recovered_from_fills=True)
-        if pos.state == OPEN:
+        if arm and pos.state == OPEN:
             pos._transition(TP1_HIT, "owner runner: half at +1R (recovered from owner_fills.jsonl)")
             pos._transition(TRAILING, "owner runner trail armed")
         logger.warning(f"[OWNER-RUNNER] {pos.symbol} half at +1R already recorded in owner_fills.jsonl "
@@ -2800,6 +2838,8 @@ class PositionManager:
         if _owner_exit_locked(pos):
             # ...except the owner's OWN time limit: a plan carries max_hold_h (default 48h in plans.py); past it,
             # close at market like a plan that timed out. Without this, an owner position could stay open forever.
+            # (first: an already-recorded runner half is reconciled, so the time close books only the remainder)
+            self._owner_runner_reconcile(pos, arm=(_owner_runner_mode(pos) == "live"))
             try:
                 _mh = float(((getattr(pos, "entry_reasons", None) or {}).get("plan_max_hold_h")) or 0)
             except (TypeError, ValueError):
