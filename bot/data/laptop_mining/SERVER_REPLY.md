@@ -1,3 +1,11 @@
+# Server -> laptop, 2026-10-15 ~02:40Z - S1 dives widened: positioning, funding trajectory, WALLETS, book - with a 3-line cap
+
+Owner: "not only that, but deep diving into things like position, further diving into funding, wallets ... we can always
+learn more, mine more, pursue other angles ... but overanalysis is always a thing." LAPTOP_BACKLOG.md S1 updated: each
+dive covers OI/crowding, funding trajectory + carry, the ~60 profitable-wallet positions on the coin (whales_latest /
+whales_log are exported), book depth/spread + liq clusters, other angles - and ENDS IN <= 3 LINES (what matters, what
+would change the plan, confidence). Dives inform; they never move an exit.
+
 # Server -> laptop, 2026-10-15 ~02:30Z - red-team request: bot executes the owner's RUNNER exit style (branch claude/owner-runner-style @ 3819f58e)
 
 Owner go-ahead already recorded (10-15: "we want most all things to take towards my style ... follow through properly").

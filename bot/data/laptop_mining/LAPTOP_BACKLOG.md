@@ -10,6 +10,16 @@ S1. **Per-trade dives.** server_exports/dive_requests.jsonl gets one row per own
     watchlist coin. For each: the coin's own base rates for this setup, volatility profile, funding carry over the hold,
     BTC link (beta + R^2), liquidation clusters near the stop / +1R, what the conditional-exit rules (M13) favour. Write
     results to DIVES/<plan_id or coin>.md and a one-line summary into dive_results.jsonl (server shows it in the case file).
+    Every dive ALSO covers (owner 10-15: "deep diving into position, funding, wallets ... other angles"):
+    - **positioning**: open interest level + 4h/24h/7d change, long/short skew where available, OI vs volume (crowding);
+    - **funding**: trajectory over the hold (not just the latest print), own-history percentile, carry cost of the plan;
+    - **wallets**: the ~60 profitable HL accounts (whales_latest.json / whales_log.jsonl) - net position on this coin,
+      recent adds/cuts, and whether their past positioning on this coin preceded bigger moves (size, not direction);
+    - **book**: 1% depth and spread at entry and now (can the stop actually fill?); liquidation clusters near stop/+1R;
+    - **other angles** worth one line each when the data exists (cross-exchange basis, BTC/ETH regime, calls on it).
+    **Anti-overanalysis rule** (owner: "overanalysis is always a thing"): every dive ends in AT MOST 3 lines -
+    (1) what matters for THIS trade, (2) what would change the plan (pre-stated, observable), (3) confidence.
+    Nothing in a dive moves an exit by itself: insight goes to the owner, alerts and post-mortems; rules stay as set.
 S2. **Post-mortems.** For every closed owner trade (cases/<plan_id>.json 'closed'): what the open-time read said vs what
     happened, which exit style won and why in terms of the M13 features. Accumulate into a running owner-style ledger.
 S3. **Integrity.** Keep crunch j1-j7 green; any export that looks wrong -> ask the same hour.
