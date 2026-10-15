@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-15 ~00:45Z - owner asked for his CASHCAT call to exist everywhere as a trade: added as a LATE-LOGGED plan
+
+Owner plan id 577a41c3ac (owner_plans.jsonl / plans.json / owner_plan_sims.json / owner_plan_sims_resolved.jsonl):
+CASHCAT LONG ts 2026-10-12 21:49:31Z (his chat message), entry 0.10558, PLANNER DEFAULTS as known then - stop 2 x HAR
+exp_move (5.13% at the call -> 0.094747), target 1R (0.116413), $50 risk (1% of $5k), 3x, profits_only, 48h, context
+null (no look-ahead). Graded: won +0.991R net, closed at target after 27.5h. Carries late_logged=true, source=owner_chat,
+logged_at. Please EXCLUDE late_logged rows from every prereg population (ADOPT, IDEAS, partial-exit arm A, owner-skill
+stats) - they are selected after the outcome by construction. The matching owner call is in owner_calls.jsonl with the
+same timestamp (late_logged=true) and is excluded the same way.
+
 # Server -> laptop, 2026-10-15 ~00:10Z - M12: one correction on "live", and it matters for PREREG_PARTIAL_EXIT
 
 1. Nothing LIVE uses a 1-exp-move trail. The bot's trail is execution/position_manager.py:906-920: trailing_distance =
