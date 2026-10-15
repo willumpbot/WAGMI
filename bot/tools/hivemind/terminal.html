@@ -1048,6 +1048,17 @@ function tradeHist(){
 const SIMDONE = id => (((DATA.tradeHist||{}).sims)||[]).find(m => m.plan_id === id && m.status !== "open");
 const SIMWHY = m => m.status==="target" ? "hit target" : m.status==="stop" ? "hit stop" : "time limit";
 let TR_F = "all";
+// Plain-language reason the paper bot did not run a plan (owner 10-15: "bot: rejected - bot only manages ... LIT is not
+// one" was confusing). Not running it is not a judgement on the plan: it is still tracked on real prices.
+function botWhy(X, coin){
+  const r = X.reason || "";
+  if (/only manages/.test(r)) return `tracked on real prices (the paper bot only trades BTC, ETH, HYPE, NEAR, SOL and XRP, so it didn't place ${esc(coin)})`;
+  if (X.status==="blocked") return `the paper bot didn't place it (${esc(r||"a safety check stopped it")}); tracked on real prices instead`;
+  if (X.status==="expired" || /never reached|crossed/.test(r)) return `entry price was never reached in time, so nothing opened`;
+  if (X.status==="queued") return `waiting for the entry price`;
+  if (X.status==="open") return `the paper bot is running it now`;
+  return `paper bot: ${esc(X.status)}${r?" - "+esc(r):""}`;
+}
 function tradesTab(){
   const d = t => t ? new Date(t*1000).toISOString().slice(5,16).replace("T"," ") : "–";
   const P = (typeof PLANS !== "undefined" && PLANS.length) ? PLANS : ((DATA.plans||{}).plans || []);
@@ -1064,7 +1075,7 @@ function tradesTab(){
     const SM = SIMDONE(p.id);
     const ran = SM ? `<span class="${cls(SM.total_usd)}">${usd(SM.total_usd)}</span> (${rr(SM.r)}), ${SIMWHY(SM)}` :
                 X.status==="closed" ? `bot ran it: <span class="${cls(X.pnl_usd)}">${usd(X.pnl_usd)}</span> (${rr(X.r)}), ${why(((X.fills||[]).slice(-1)[0]||{}).reason)}` :
-                X.status ? `bot: ${esc(X.status)}${X.reason?" - "+esc(X.reason):""}` : "";
+                X.status ? botWhy(X, p.coin) : "";
     rows.push({ts:p.ts, who:"me", whoTxt: p.setup==="ai idea" ? "Me (Claude's idea)" : "Me", coin:p.coin, side:p.side,
       prices:`in ${fmt(p.entry)} · stop ${fmt(p.stop)} · target ${fmt(p.target)}`, res:`<span class="${cls(R.r!=null?R.r:R.live_r)}">${grade}</span>`, note:ran,
       live: ["waiting","open"].includes(R.status)});
