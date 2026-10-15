@@ -1,5 +1,5 @@
 {
-"exported_at": 1792066573.8987265,
+"exported_at": 1792070219.376337,
 "files": {
 "trade_ledger.csv": {
 "src_mtime": 1791786021,
@@ -30,68 +30,68 @@
 "bytes": 3024
 },
 "plans.json": {
-"src_mtime": 1792066551,
-"bytes": 48733
+"src_mtime": 1792070210,
+"bytes": 48814
 },
 "owner_plan_sims.json": {
-"src_mtime": 1792066228,
-"bytes": 6587
+"src_mtime": 1792069947,
+"bytes": 6733
 },
 "owner_plan_sims_resolved.jsonl": {
 "src_mtime": 1792044563,
 "bytes": 3463
 },
 "dissent_log.jsonl": {
-"src_mtime": 1792065983,
-"bytes": 148030
+"src_mtime": 1792069716,
+"bytes": 156079
 },
 "cases_index.json": {
-"src_mtime": 1792066220,
-"bytes": 1889
+"src_mtime": 1792069941,
+"bytes": 1891
 },
 "wallet_snapshots.jsonl": {
-"src_mtime": 1792066562,
-"bytes": 1224
+"src_mtime": 1792070215,
+"bytes": 1326
 },
 "ai_plans.json": {
-"src_mtime": 1792066214,
-"bytes": 29462
+"src_mtime": 1792069935,
+"bytes": 29495
 },
 "scan_grades.json": {
-"src_mtime": 1792066030,
-"bytes": 35336
+"src_mtime": 1792069791,
+"bytes": 35554
 },
 "scan_log.jsonl": {
 "src_mtime": 1792065104,
 "bytes": 803157
 },
 "chief_calls.jsonl": {
-"src_mtime": 1792059704,
-"bytes": 152683
+"src_mtime": 1792069769,
+"bytes": 156201
 },
 "chief_scorecard.json": {
-"src_mtime": 1792065983,
+"src_mtime": 1792069769,
 "bytes": 669
 },
 "geometry_shadow.json": {
-"src_mtime": 1792065984,
+"src_mtime": 1792069770,
 "bytes": 637
 },
 "geometry_shadow_results.jsonl": {
-"src_mtime": 1792065983,
-"bytes": 187873
+"src_mtime": 1792069580,
+"bytes": 189065
 },
 "uptime.jsonl": {
-"src_mtime": 1792065922,
-"bytes": 48780
+"src_mtime": 1792069621,
+"bytes": 49349
 },
 "live_scorecard.json": {
-"src_mtime": 1792066220,
+"src_mtime": 1792069818,
 "bytes": 1343
 },
 "agent_grades_resolved.jsonl": {
-"src_mtime": 1792066219,
-"bytes": 1532880
+"src_mtime": 1792069817,
+"bytes": 1543867
 },
 "exit_decisions.jsonl": {
 "src_mtime": 1791784821,
@@ -117,12 +117,12 @@
 "missing": true
 },
 "copilot_call_ledger.jsonl": {
-"src_mtime": 1791988472,
-"bytes": 246366
+"src_mtime": 1792070016,
+"bytes": 251852
 },
 "copilot_call_ledger_resolved.jsonl": {
-"src_mtime": 1791983661,
-"bytes": 270040
+"src_mtime": 1792070043,
+"bytes": 276991
 },
 "expmove_log.jsonl": {
 "src_mtime": 1792063335,
@@ -133,12 +133,12 @@
 "bytes": 76244
 },
 "stop_shadow.json": {
-"src_mtime": 1792066210,
+"src_mtime": 1792069931,
 "bytes": 1881
 },
 "discrepancies.json": {
-"src_mtime": 1792063703,
-"bytes": 15886
+"src_mtime": 1792068025,
+"bytes": 14957
 },
 "entry_mom.jsonl": {
 "src_mtime": 1791938525,
@@ -161,20 +161,20 @@
 "bytes": 14836
 },
 "nearmiss_reversion_log.jsonl": {
-"src_mtime": 1791983901,
-"bytes": 17926
+"src_mtime": 1792070138,
+"bytes": 17942
 },
 "copilot_alerts.log": {
-"src_mtime": 1792060432,
-"bytes": 416999
+"src_mtime": 1792067631,
+"bytes": 417805
 },
 "voice_grades.json": {
-"src_mtime": 1792055240,
+"src_mtime": 1792069634,
 "bytes": 11680
 },
 "accumulation_log.jsonl": {
-"src_mtime": 1792058507,
-"bytes": 158390
+"src_mtime": 1792069307,
+"bytes": 158704
 },
 "owner_plan_reviews.jsonl": {
 "src_mtime": 1792012338,
@@ -185,12 +185,12 @@
 "bytes": 11
 },
 "watch_log.jsonl": {
-"src_mtime": 1792065262,
-"bytes": 954
+"src_mtime": 1792068955,
+"bytes": 1257
 },
 "promoted_log.jsonl": {
-"src_mtime": 1792065943,
-"bytes": 9188
+"src_mtime": 1792069657,
+"bytes": 10310
 },
 "state_transitions.csv": {
 "src_mtime": 1791786020,

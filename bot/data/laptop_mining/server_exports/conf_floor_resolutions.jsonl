@@ -954,3 +954,6 @@
 {"decision_id":"cfd_1791787514.678501","kind":"trade_link_v1","resolved_at":"2026-10-15T06:58:37+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
 {"decision_id":"cfd_1791787916.948217","kind":"trade_link_v1","resolved_at":"2026-10-15T06:58:37+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
 {"decision_id":"cfd_1791788981.846228","kind":"trade_link_v1","resolved_at":"2026-10-15T08:12:01+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
+{"decision_id":"cfd_1791806172.147312","kind":"trade_link_v1","resolved_at":"2026-10-15T12:40:24+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
+{"decision_id":"cfd_1791806677.446030","kind":"trade_link_v1","resolved_at":"2026-10-15T12:40:24+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
+{"decision_id":"cfd_1791806965.216002","kind":"trade_link_v1","resolved_at":"2026-10-15T12:40:24+00:00","method":"proximity_same_symbol_entry_in[-30m,+2h]_NOT_causal","matched":false,"n_candidates":0}
