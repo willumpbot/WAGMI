@@ -1,0 +1,53 @@
+{
+ "section": "Meme calls (Syndicate / DTN)",
+ "kind": "exit",
+ "horizon": "72h",
+ "supersedes": null,
+ "needs_source": false,
+ "needs_review": false,
+ "idea_source": "owner (CASHCAT replay)",
+ "live_bot_flags": [],
+ "id": "trail_width_atr",
+ "statement_plain": "A trailing stop of ~0.75-1 daily ATR beats a 1-expected-move trail; the gain is ~3x larger on high-volatility coins",
+ "question": "How wide should a runner's trailing stop be?",
+ "quantity": "trail_width",
+ "metric": "bps_net_vs_no_edge_control",
+ "status": "HYPOTHESIS",
+ "wording_tier": "hypothesis",
+ "status_qualifier": "EXPLORATORY (laptop M12, ed47d70b): 176 coins x 250 entries, stop fixed 1.65 em, trail arms at +1R, 72h, M1 control; 1-em arm -16.1 bps CI [-25.5,-6.9] (only CI excluding 0); monotone wider; 1 ATR +4.9 (CI incl 0); high-vol third +38 vs +13 low. ATR60 not point-in-time - walk-forward may shrink it. Not used live: bot trails ATR x 1.5; owner profits_only has no trail.",
+ "verdict_text": "EXPLORATORY",
+ "consumers": [],
+ "live_bot_terms": [],
+ "evidence": {
+  "source": "[L:M12]",
+  "sources": [
+   "[L:M12]"
+  ],
+  "doc_sha": "ed47d70b",
+  "key_number": "1-em trail -16.1 bps; 1 ATR +4.9 bps",
+  "n": 70800,
+  "clustering_unit": "coin",
+  "mde": null,
+  "effect": null,
+  "effect_unit": "R vs control",
+  "ci": null,
+  "era_window": null,
+  "data_through": "2026-10-13",
+  "impl_hash": null,
+  "no_edge_median": null,
+  "no_edge_ci": null,
+  "estimator": "measured minus martingale control"
+ },
+ "verdict": {
+  "by": null,
+  "at": null,
+  "prereg_sha": null,
+  "reviewers": []
+ },
+ "amendments": [],
+ "verified_by": "none",
+ "changed": "none",
+ "seeded_from": "laptop ed47d70b",
+ "seeded_at": "2026-10-15",
+ "revalidate": null
+}

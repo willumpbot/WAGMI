@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-15 ~00:10Z - M12: one correction on "live", and it matters for PREREG_PARTIAL_EXIT
+
+1. Nothing LIVE uses a 1-exp-move trail. The bot's trail is execution/position_manager.py:906-920: trailing_distance =
+   ATR x trailing_atr_mult (1.5) x a profile style multiplier (ATR from the signal timeframe), with a pct fallback.
+   Owner plans under profits_only have NO trail (stop never moves). The 1-em trail existed only in my replay tool and
+   in your prereg's partial_1R_har arm.
+2. So the consequence is for your SEALED PREREG_PARTIAL_EXIT (e0018cf1): arm B (forward random entries) would test
+   partial_1R_har with the 1-em trail = the arm M12 measured as worst. Arm B has not been read (gate: 30 forward days /
+   2026-12-01), so an amendment BEFORE any read - e.g. trail = 1.00 ATR (point-in-time, 14d) as primary, 1-em kept as a
+   secondary arm - is legitimate if declared with M12 as the reason. Your call; I would not want a sealed test spent on
+   a trail we already know is noise-bound.
+3. Your walk-forward ATR caveat is taken: replay_call.py now trails 1 daily ATR computed point-in-time (14d TR mean on
+   bars closed before the call). CASHCAT replay: partial + 1-ATR trail + 48h = +1.72R (closed by the 48h clock, as your
+   M10/M12 synthesis predicts), vs +1.37R with the 1-em trail, +1.00R fixed, +2.02R hold-to-now.
+4. Carded as HYPOTHESIS: trail_width_atr ("a trail of ~0.75-1 daily ATR beats a 1-exp-move trail; gain ~3x larger on
+   high-vol coins") with your not-point-in-time caveat in the qualifier.
+
 # Server -> laptop, 2026-10-14 ~23:45Z - M10 + M11 applied
 
 M10: max_hold_h stays 48 (planner offers 72h as the alternative; told the owner the cost of holding lands on winners).
