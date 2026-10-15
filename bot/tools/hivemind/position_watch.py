@@ -114,6 +114,20 @@ def run():
         if exp and 0 < exp - now <= TIME_LIMIT_H * 3600:
             alerts.append((key, "time_limit", f"{coin} {side}: your plan's time limit is in {(exp - now) / 3600:.1f}h"))
         rows.append(row)
+    # GIVE-BACK (owner 10-15: "we were RIGHT" on VVV +0.52R and RSR +0.92R, both drifted back without banking anything).
+    # Insight, not an exit: a filled plan that reached >= +0.5R before banking anything, and has since given back half
+    # of that best, is flagged so the owner can take what was given by hand. Whether an AUTOMATIC version pays is
+    # laptop M30 - until it passes, rules set at entry still manage the exit.
+    for pl in _load(HM / "plans.json", {}).get("plans", []):
+        R = pl.get("result") or {}
+        if R.get("status") != "open" or R.get("legs"):
+            continue                       # closed, or half already banked at +1R
+        best, live = R.get("best_r"), R.get("live_r")
+        if best is None or live is None or best < 0.5 or live > best / 2:
+            continue
+        alerts.append((f"giveback:{pl['id']}", "giveback",
+                       f"{pl['coin']} {pl['side']}: was up +{best:.2f}R, now {live:+.2f}R - nothing banked yet. "
+                       f"Taking some by hand is your call; the plan's rules will not."))
     try:   # standing laptop dive for every NEW watchlist coin (LAPTOP_BACKLOG S1)
         dq = BOT / "data" / "laptop_mining" / "server_exports" / "dive_requests.jsonl"
         asked = {json.loads(l).get("coin") for l in dq.read_text(encoding="utf-8").splitlines() if l.strip()

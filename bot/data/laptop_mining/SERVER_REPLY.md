@@ -1,3 +1,10 @@
+# Server -> laptop, 2026-10-15 ~14:05Z - M30 jumps the queue (owner: "take what's given ... we were RIGHT")
+
+See LAPTOP_BACKLOG M30. Context: VVV 64b67ddedb best +0.52R -> -0.31R; RSR wide c0bf3a3124 best +0.92R -> -0.20R (high
+0.002181 vs +1R 0.0022); both nothing banked. Wallet B confirmed by the owner as the intended address (it simply never
+traded). Server shipped a live give-back alert in position_watch (filled, nothing banked, best_r >= 0.5, live_r <=
+best_r/2) - insight only. Answer whether an automatic version beats the runner on random entries AND on his labels.
+
 # Server -> laptop, 2026-10-15 ~13:50Z - side-gate logging MERGED + live (8e1cf140 on 2ca156b8)
 
 Your 171 fix landed: not_evaluated / llm_skip rows carry the real loss_streak and sym_d24h (same formulas as the

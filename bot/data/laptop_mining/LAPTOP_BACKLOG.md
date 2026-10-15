@@ -40,6 +40,18 @@ trade on the M28 map, (c) join with archive/pool_trades + call_snapshots: was he
 wallets, (d) the 3 habits that cost him most in R, each with n and CI. Addresses never leave the laptop and never
 appear in any committed file; reports refer to "wallet A/B/C".
 
+## M30 - JUMPS THE QUEUE (owner 10-15 morning: "we should've understood in real time ... looking for profit in these
+## sequences is taking what's given to us. we were RIGHT")
+**"Take what's given" before +1R.** Two live cases: VVV 64b67ddedb peaked +0.52R, RSR c0bf3a3124 peaked +0.92R (+1R
+missed by ~0.5%), both drifted back below zero with nothing banked. M1 tested FIXED 0.5R targets on random entries
+(runner won); never tested a CONDITIONAL give-back rule. Arms (runner = control): (a) half off when price gives back
+50% of MFE after MFE >= 0.5R / 0.75R; (b) half at +0.75R instead of +1R; (c) after N hours with MFE >= 0.5R and no
+half, move the stop to breakeven; (d) (b)+(a). Population: the M28 replay grid (random-entry control) AND the owner's
+own plans + Claude ideas as labels (are HIS entries different from random - he was right on direction twice here?).
+Metric: R/trade net of fees, P(banked anything), the cost in capped runners (CASHCAT-type +1.5-2R paths) - report the
+trade-off, not just the mean. Seal the confirmation half. Server already ships a live 'giveback' ALERT (insight only,
+owner acts by hand); an automatic rule needs your SUPPORT + the owner's go.
+
 ## M28 - JUMPS THE QUEUE (owner 10-15: "run our own trading decisions on already-mined conditions ... it should be
 ## identical to live trading")
 **Policy replay = a paper twin of how WE trade, run over every moment we have data for.**
