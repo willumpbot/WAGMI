@@ -98,8 +98,15 @@ def _rows(sandbox, source=None):
 
 
 def _fills():
+    """Parseable owner_fills.jsonl rows (a deliberately torn line is skipped, as recorded_ladder_steps does)."""
     p = ope.fills_path()
-    return [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()] if p.exists() else []
+    out = []
+    for l in (p.read_text(encoding="utf-8").splitlines() if p.exists() else []):
+        try:
+            out.append(json.loads(l))
+        except ValueError:
+            continue
+    return out
 
 
 def _xs():
@@ -566,6 +573,86 @@ def test_recorded_steps_of_other_plan_or_runner_rows_ignored(sandbox, on):
     pos.entry_reasons["exit_style"] = "ladder"
     ev = _pm(pos).update_price("ETH", 3025.0)
     assert [e.action for e in ev] == [Q[0]]
+    # no stray runner half stripped 50% first: only the quarter left the position, and only its PnL is booked
+    assert pos.qty == pytest.approx(0.75) and "owner_runner" not in pos.entry_reasons
+    assert pos.realized_pnl == pytest.approx(ev[0].pnl - ev[0].fee, abs=1e-9)
+    assert ev[0].pnl == pytest.approx(25.0 * 0.25)
+
+
+def test_runner_position_ignores_ladder_rows(sandbox, monkeypatch):
+    """Reverse cross-apply: a RUNNER position whose plan id carries ladder step rows is untouched by them."""
+    monkeypatch.setenv("OWNER_RUNNER_STYLE", "true")
+    monkeypatch.setenv("OWNER_LADDER_STYLE", "true")
+    for k, px in ((1, 3025.0), (2, 3037.5)):
+        ope._append_fill({"kind": "partial", "plan_id": "R1", "reason": Q[k - 1], "qty": 0.25, "exit": px,
+                          "pnl": 6.0, "fee": 0.1, "position_id": ""})
+    pos = _pos(style="runner", pid="R1")
+    pm = _pm(pos)
+    assert pm.update_price("ETH", 3040.0) == []
+    assert pos.qty == pytest.approx(1.0) and pos.realized_pnl == 0.0 and pos.fees_paid == 0.0
+    assert "owner_ladder" not in pos.entry_reasons
+    ev = pm.update_price("ETH", 3050.0)
+    assert [e.action for e in ev] == ["OWNER_RUNNER_HALF"] and pos.qty == pytest.approx(0.5)
+
+
+def test_torn_middle_row_recovers_only_contiguous_steps(sandbox, on):
+    """Laptop 178 A1: owner_fills.jsonl has q1 and q3 but q2's row is torn (unparseable). Restore pre-q1: only q1 is
+    recovered (steps_taken 1, qty 0.75, trail NOT armed); the live loop then re-fires q2 at its level; q3 (recorded)
+    is never re-fired past that point... it fires live once q2 is taken, exactly as a fresh step."""
+    pos = _pos()
+    pos.position_id = "lp-torn"
+    pm = _pm(pos)
+    snapshot = _snap(pos)
+    evs = pm.update_price("ETH", 3060.0)                              # q1, q2, q3 in one tick
+    rows = [ope.record_owner_close(e, pos, pm) for e in evs]
+    lines = ope.fills_path().read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 3
+    lines[1] = lines[1][: len(lines[1]) // 2]                         # tear the MIDDLE (q2) row
+    ope.fills_path().write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert sorted(ope.recorded_ladder_steps("L1", "lp-torn")) == [1, 3]
+    back = _restore(snapshot)
+    pm2 = _pm(back)
+    assert pm2.update_price("ETH", 3030.0) == []                      # below q2: nothing fires
+    st = back.entry_reasons["owner_ladder"]
+    assert st["steps_taken"] == 1 and not st.get("trail_on") and back.qty == pytest.approx(0.75)
+    assert back.realized_pnl == pytest.approx(rows[0]["pnl"], abs=1e-5)
+    assert back.state == "OPEN" and back.sl == 2950.0
+    ev = pm2.update_price("ETH", 3037.5)                              # the missing quarter re-fires at its level...
+    assert [e.action for e in ev] == [Q[1]]
+    for e in ev:
+        ope.record_owner_close(e, back, pm2)
+    # ...which makes the recorded q3 contiguous: applied from its row (it really filled), never re-fired
+    st = back.entry_reasons["owner_ladder"]
+    assert st["steps_taken"] == 3 and st["q3"]["recovered_from_fills"] and st["trail_on"]
+    assert back.qty == pytest.approx(0.25) and back.state == "TRAILING"
+    assert pm2.update_price("ETH", 3060.0) == []
+    parsed = [f["reason"] for f in _fills()]
+    assert sorted(parsed) == sorted(Q), "one parseable row per step (q1, q3 original; q2 re-fired)"
+    assert sum(f["qty"] for f in _fills()) == pytest.approx(0.75)
+    assert back.realized_pnl == pytest.approx(sum(f["pnl"] for f in _fills()), abs=1e-5)
+
+
+def test_flag_off_crash_recovery_is_flag_independent(sandbox, monkeypatch):
+    """Laptop 178 A2: q1 fired LIVE, its row landed, the save was lost; the bot restarts with OWNER_LADDER_STYLE
+    unset (full machinery). A stop must close exactly what is left (0.75), not the original size."""
+    monkeypatch.setenv("OWNER_LADDER_STYLE", "true")
+    pos = _pos()
+    pos.position_id = "lp-off"
+    pm = _pm(pos)
+    snapshot = _snap(pos)
+    evs = pm.update_price("ETH", 3025.0)
+    assert [e.action for e in evs] == [Q[0]]
+    ope.record_owner_close(evs[0], pos, pm)
+    monkeypatch.delenv("OWNER_LADDER_STYLE")                          # --- crash; restart with the flag off ---
+    back = _restore(snapshot)
+    pm2 = _pm(back)
+    out = pm2.update_price("ETH", 2949.0)
+    assert [e.action for e in out] == ["SL"] and out[0].qty == pytest.approx(0.75)
+    assert back.entry_reasons["owner_ladder"]["q1"]["recovered_from_fills"]
+    final = ope.record_owner_close(out[0], back, pm2)
+    fills = _fills()
+    assert [(f["kind"], f["qty"]) for f in fills] == [("partial", pytest.approx(0.25)), ("final", pytest.approx(0.75))]
+    assert final["total_pnl"] == pytest.approx(back.realized_pnl, abs=1e-5)
 
 
 def test_restart_keeps_ladder_state(sandbox, on):
@@ -682,10 +769,14 @@ def test_flag_off_is_byte_identical_to_full_and_shadow_logs(sandbox, monkeypatch
     if runner_flag:
         monkeypatch.setenv("OWNER_RUNNER_STYLE", runner_flag)        # the runner flag never acts on a ladder
     path = [_m(side, p) for p in (3020.0, 3026.0, 3038.0, 3051.0, 3120.0, 3200.0, 3080.0, 3151.0)]
-    a = _replay(_pos(side), path)                                       # ladder style, OWNER_LADDER_STYLE off
+    persists = []
+    monkeypatch.setattr(PositionManager, "_persist_owner_runner_state", lambda self: persists.append(1))
+    lad = _pos(side)
+    a = _replay(lad, path)                                              # ladder style, OWNER_LADDER_STYLE off
     b = _replay(_pos(side, style="full"), path)                         # full style: the old behaviour
     assert a == b
-    assert "owner_ladder" not in _pos(side).entry_reasons
+    assert "owner_ladder" not in lad.entry_reasons, "the TICKED ladder position carries no ladder state"
+    assert not persists, "no ladder/runner persistence fired with the flag off"
     rows = _rows(sandbox, "owner_ladder_shadow")
     acts = [r["exit_action"] for r in rows]
     assert [acts.count(f"quarter_{k}") for k in (1, 2, 3)] == [1, 1, 1], acts

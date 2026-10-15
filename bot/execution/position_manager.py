@@ -1668,6 +1668,9 @@ class PositionManager:
         the half cannot re-fire - but the 'partial' row is missing while the plan is open. The FINAL row's
         total_pnl (from pos.realized_pnl) still carries the half, so the plan total self-heals at close.
         The reverse order (row written, save lost) is handled by _owner_runner_reconcile.
+        LADDER (same helper, laptop 178): one gap tick can take up to 3 quarters, so up to 3 'partial' rows can be
+        missing in that window; the position state is still exact and the FINAL row's total_pnl heals the plan total
+        the same way. Row written / save lost is handled by _owner_ladder_reconcile (contiguous steps only).
         """
         try:
             from execution.auto_recovery import save_position_state
@@ -1811,6 +1814,7 @@ class PositionManager:
         n = int(st.get("steps_taken") or 0)
         orig = float(pos.original_qty or 0) or float(pos.qty)
         for k, k_r, k_f in _owner_ladder_steps():
+            n = int(st.get("steps_taken") or 0)   # (a pending recorded row may have advanced it below)
             if k <= n:
                 continue
             lvl = float(pos.entry) + sg * k_r * risk
@@ -1843,6 +1847,11 @@ class PositionManager:
             # after the tick; a crash in between must not restore a pre-step position (and if the save is lost,
             # _owner_ladder_reconcile re-applies the recorded row instead of re-firing the step).
             self._persist_owner_runner_state()
+            # A recorded row beyond a gap (torn middle row, laptop 178 A1) becomes contiguous once this step is
+            # taken: apply it now (it really filled earlier) instead of re-firing it.
+            _pend = getattr(pos, "_owner_ladder_pending_rows", None)
+            if _pend and self._owner_ladder_apply_recorded(pos, st, _pend, arm=True):
+                self._persist_owner_runner_state()
         if st.get("trail_on"):
             best = float(st.get("best") or price)
             best = max(best, price) if is_long else min(best, price)
@@ -1890,13 +1899,39 @@ class PositionManager:
         except Exception:
             logger.debug("[OWNER-LADDER] fills lookup failed", exc_info=True)
             rows = {}
-        todo = sorted(k for k in rows if k > n)
-        if not todo:
+        # Rows beyond a gap stay pending: once the live loop re-fires the missing step, the run becomes
+        # contiguous again and they are applied then (_owner_ladder_apply_recorded) - never re-fired.
+        try:
+            pos._owner_ladder_pending_rows = {k: r for k, r in rows.items() if k > n}
+        except Exception:
+            pass
+        if not self._owner_ladder_apply_recorded(pos, st, rows, arm):
+            if any(j > n for j in rows):
+                logger.warning(f"[OWNER-LADDER] {pos.symbol} owner_fills.jsonl has ladder rows {sorted(rows)} but "
+                               f"not step {n + 1}: gapped record, nothing recovered yet (step {n + 1} re-fires live)")
             return
+        er["owner_ladder"] = st
+        self._persist_owner_runner_state()
+
+    def _owner_ladder_apply_recorded(self, pos, st: dict, rows: dict, arm: bool) -> bool:
+        """Apply recorded step rows to the position for the CONTIGUOUS run steps_taken+1, +2, ... only (laptop 178 A1):
+        a torn / missing middle row must never let steps_taken jump past an un-applied quarter - recovery stops at the
+        first missing step and the live loop re-fires that quarter at its level. Applied rows leave
+        pos._owner_ladder_pending_rows. Re-applies qty, realised PnL, fee and funding shares (no new event / row).
+        True if anything was applied."""
+        n = int(st.get("steps_taken") or 0)
+        todo = []
+        k = n + 1
+        while k in rows:
+            todo.append(k)
+            k += 1
+        if not todo:
+            return False
         geo = _owner_runner_geometry(pos)
         atr = geo[3] if geo else None
         orig = float(pos.original_qty or 0) or float(pos.qty)
         steps = {k: (k_r, k_f) for k, k_r, k_f in _owner_ladder_steps()}
+        pending = getattr(pos, "_owner_ladder_pending_rows", None)
         for k in todo:
             row = rows[k]
             rq = float(row.get("qty") or 0)
@@ -1914,16 +1949,17 @@ class PositionManager:
             st[f"q{k}"] = {"px": float(row.get("exit") or 0) or None, "level": lvl, "qty": rq, "ts": row.get("ts"),
                            "recovered_from_fills": True}
             st["steps_taken"] = k
+            if isinstance(pending, dict):
+                pending.pop(k, None)
             logger.warning(f"[OWNER-LADDER] {pos.symbol} step {k} already recorded in owner_fills.jsonl (qty {rq:g} @ "
-                           f"{row.get('exit')}): not re-fired; re-applied {missing:g} to the restored position")
-        if int(st.get("steps_taken") or 0) >= 3:
+                           f"{row.get('exit')}): not re-fired; re-applied {missing:g} to the position")
+        if int(st.get("steps_taken") or 0) >= 3 and not st.get("trail_on"):
             px3 = (st.get("q3") or {}).get("px")
             st.update(trail_on=True, best=px3, one_r=(st.get("q3") or {}).get("level"), atr=atr)
             if arm and pos.state == OPEN:
                 pos._transition(TP1_HIT, "owner ladder: third quarter (recovered from owner_fills.jsonl)")
                 pos._transition(TRAILING, "owner ladder trail armed")
-        er["owner_ladder"] = st
-        self._persist_owner_runner_state()
+        return True
 
     def _owner_ladder_shadow_step(self, pos, price: float, is_long: bool) -> None:
         """OWNER_LADDER_STYLE off: compute what the ladder rule WOULD do and log it (deduped). Touches nothing
