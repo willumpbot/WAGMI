@@ -67,7 +67,8 @@ STREAMS = {
     "whales": BOT / "data" / "hivemind" / "whales_log.jsonl",                      # HL whale net positions
     "voices": BOT / "data" / "hivemind" / "voice_log.jsonl",                       # every voice reading, 15 min
     "depth_all": BOT / "data" / "hivemind" / "depth_all.jsonl",                    # L2 bands, all ~178 perps, 15 min
-    "wallets": BOT / "data" / "hivemind" / "wallets" / "positions.jsonl",        # ~1,200 wallets' positions >= $5k, hourly
+    "wallets": BOT / "data" / "hivemind" / "wallets" / "positions.jsonl",
+    "pool_trades": BOT / "data" / "hivemind" / "tg" / "pool_trades.jsonl",        # wallets trading called pools (call/h1/h6)        # ~1,200 wallets' positions >= $5k, hourly
 }
 LEARNED_STATE = ["epoch_start.json", "ic_history.json", "position_state.json", "feedback/signal_quality.json",
                  "feedback/regime_feedback_state.json", "llm/agent_calibration.json", "llm/neuroplasticity_state.json",

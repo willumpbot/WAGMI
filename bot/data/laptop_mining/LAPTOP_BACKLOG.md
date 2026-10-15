@@ -24,6 +24,11 @@ S2. **Post-mortems.** For every closed owner trade (cases/<plan_id>.json 'closed
     happened, which exit style won and why in terms of the M13 features. Accumulate into a running owner-style ledger.
 S3. **Integrity.** Keep crunch j1-j7 green; any export that looks wrong -> ask the same hour.
 
+S4. **Angle discovery** (owner 10-15: "there are no projects that can be left behind other than ones we did not think of").
+    Weekly: inventory every stream in server_exports + every closed/refuted claim, cross them, and list angles NOT yet
+    mined (stream x question x horizon). Top 10 by (data available now x decision value) go straight into this backlog.
+    The server ran the first pass on 10-15 (ANGLE_MAP_2026-10-15.md).
+
 ## Missions (in order, after M13)
 M13. Conditional exit policy - which exit wins given what is knowable at entry (in flight).
 M14. **Re-entry after a runner exits.** Owner asked "did we ever re-enter?". When a trail or time limit ends a runner
@@ -48,3 +53,15 @@ M22. **Bot learning unfreeze (P1).** Shadow living gates in R/bps with recency w
 M23. **Telegram calls at scale.** More callers (the caller test died at ~8 effective callers): which chats/callers to
      add, and the call-to-peak profile of calls that later did >= 2x.
 M24. **Time-of-day for owner plans.** Entry-hour effects on owner plans and Claude ideas specifically (M6 used random entries).
+M25. **Perp wallet mining (1,200 wallets).** server_exports/archive/wallets (hourly positions >= $5k: 1,000 skilled by
+     all-time PnL + 200 random CONTROL, cohort files daily). Grade every wallet forward like a voice (did its adds/cuts
+     precede bigger moves / its own PnL?); persistence of skill out of sample; cohorts by style (turnover, leverage,
+     hold time, coin focus); skill-weighted net positioning per coin as a SIZE/risk input; crowding of skilled wallets
+     near liquidation prices. Control group mandatory for every claim (skill vs "big wallets look smart in hindsight").
+M26. **Solana thin-pool + wallet mining (calls).** server_exports/archive/pool_trades: every wallet that traded a called
+     pool in the ~24h before the call and at +1h/+6h (GeckoTerminal trades, public). Questions: wallets repeatedly
+     early (pre-call) in calls that later ran >= 2x (smart wallets) vs a control of random wallets in the same pools;
+     pre-call accumulation patterns (buy clustering, new wallets, bundles) vs outcome; does a known smart wallet's buy
+     predict continuation better than the call itself (forward-graded); pool microstructure at the call (reserve, buy/
+     sell imbalance, holder count) vs outcome. Caller identities never leave the PC - if per-caller front-running needs
+     testing, ask and the server ships an opaque per-run caller_cluster only.

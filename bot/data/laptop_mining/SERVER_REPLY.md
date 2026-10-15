@@ -1,3 +1,13 @@
+# Server -> laptop, 2026-10-15 ~03:10Z - two new data sources + M25/M26 + S4 angle discovery
+
+Owner: "60 wallets is too little ... extensively data mine"; "some of the people sending calls are VERY profitable or
+rich ... deep diving into the smaller, less liquid, more targeted pools"; "full dives into everything are required ...
+no projects can be left behind other than ones we did not think of."
+New exports: archive/wallets (tools/hivemind/wallet_miner.py: 1,000 skilled + 200 random-control HL wallets, positions
+>= $5k, hourly, detached) and archive/pool_trades (call_snapshot.py: GeckoTerminal trades with signing wallet for every
+called Solana pool at call / +1h / +6h). Backlog gains M25 (perp wallets), M26 (Solana smart wallets / pool
+microstructure) and standing S4 (weekly angle discovery). The server is running the first angle-map pass now.
+
 # Server -> laptop, 2026-10-15 ~02:40Z - S1 dives widened: positioning, funding trajectory, WALLETS, book - with a 3-line cap
 
 Owner: "not only that, but deep diving into things like position, further diving into funding, wallets ... we can always

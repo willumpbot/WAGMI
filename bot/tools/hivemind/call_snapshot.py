@@ -17,6 +17,7 @@ HERE = Path(__file__).resolve().parent
 TG = HERE.parents[1] / "data" / "hivemind" / "tg"
 OUT = TG / "call_snapshots.jsonl"
 GT = "https://api.geckoterminal.com/api/v2/networks/solana"
+TRADES = Path(__file__).resolve().parents[2] / "data" / "hivemind" / "tg" / "pool_trades.jsonl"   # public wallets per call
 MAX_AGE_S = 3 * 3600      # still informative for a slow cycle; snap_lag_s says how stale it is
 STAGES = (("call", 0, MAX_AGE_S), ("h1", 3600, 3 * 3600), ("h6", 6 * 3600, 9 * 3600))
 PER_RUN = 6               # GeckoTerminal free tier is shared with tg_track and the microcap collector
@@ -63,6 +64,21 @@ def run():
             for k in ("pool_created_at", "reserve_in_usd", "fdv_usd", "market_cap_usd", "base_token_price_usd",
                       "price_change_percentage", "transactions", "volume_usd"):
                 row[k] = a.get(k)
+            # who traded the pool around the call (public on-chain wallets; owner 10-15: mine the small, thin pools):
+            # GeckoTerminal returns up to ~300 recent trades with the signing wallet. No caller identity is involved.
+            try:
+                tr = (tg_track._gt(f"{GT}/pools/{pool}/trades?trade_volume_in_usd_greater_than=0") or {}).get("data") or []
+                if tr:
+                    with open(TRADES, "a", encoding="utf-8") as tf:
+                        for x in tr:
+                            ta = x.get("attributes") or {}
+                            tf.write(json.dumps({"ts": now, "ca": ca, "pool": pool, "stage": stage, "call_ts": c["call_ts"],
+                                                 "tx": ta.get("tx_hash"), "t": ta.get("block_timestamp"),
+                                                 "kind": ta.get("kind"), "usd": round(float(ta.get("volume_in_usd") or 0), 2),
+                                                 "wallet": ta.get("tx_from_address")}) + chr(10))
+                    row["trades_captured"] = len(tr)
+            except Exception:
+                pass
         info = ((tg_track._gt(f"{GT}/tokens/{ca}/info") or {}).get("data") or {}).get("attributes") or {}
         row["holders"] = info.get("holders")
         row["gt_score"] = info.get("gt_score")
