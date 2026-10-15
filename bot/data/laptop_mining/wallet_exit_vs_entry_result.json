@@ -1,0 +1,16 @@
+{
+ "n_trips": 261,
+ "net_pnl": -726.288909,
+ "fees": 1211.35017,
+ "cov_trips": 159,
+ "entry_losers_pnl": -373.099109,
+ "exit_losers_pnl": -331.617932,
+ "n_winners": 67,
+ "mean_mfe_pct": 0.9726612983684025,
+ "mean_realised_pct": -0.18461045966819256,
+ "capture_pct": -18.979932683439618,
+ "losers": 92,
+ "entry_driven": 50,
+ "exit_driven": 17,
+ "mean_giveback_pct": 1.1572717580365954
+}
