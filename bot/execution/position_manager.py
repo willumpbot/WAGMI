@@ -133,10 +133,12 @@ def _owner_runner_mode(pos) -> str:
     if not _is_owner(pos):
         return ""
     try:
-        from core.owner_plan_exec import runner_applies, runner_style_enabled
-        if not runner_applies(pos):
-            return ""
-        return "live" if runner_style_enabled() else "shadow"
+        from core.owner_plan_exec import runner_applies, runner_live, runner_style_enabled
+        if runner_style_enabled():
+            # runner_live runs the once-per-position readiness check (ATR backfill / target guard), which may
+            # turn the position into exit_style=full -> '' (stop / target / time limit, unchanged machinery)
+            return "live" if runner_live(pos) else ""
+        return "shadow" if runner_applies(pos) else ""
     except Exception:
         return ""
 
@@ -1322,8 +1324,9 @@ class PositionManager:
         if sl_hit:
             # (an owner-locked position's stop was never trailed, so it is the owner's SL)
             action = "TRAILING_STOP" if (pos.state == TRAILING and not _owner_locked) else "SL"
-            if _runner == "live" and ((pos.entry_reasons or {}).get("owner_runner") or {}).get("half_taken"):
-                action = "OWNER_RUNNER_TRAIL"  # the owner's runner trail (or his stop, if it never moved)
+            if (_runner == "live" and ((pos.entry_reasons or {}).get("owner_runner") or {}).get("half_taken")
+                    and (1 if is_long else -1) * (float(pos.sl) - float(pos.original_sl or pos.sl)) > 0):
+                action = "OWNER_RUNNER_TRAIL"  # the trail had moved the stop; at the UNTRAILED stop it stays "SL"
             fill_price = self._sl_fill_price(pos, current_price, is_long)
             event = self._close_position(pos, fill_price, action)
             events.append(event)
@@ -1568,6 +1571,8 @@ class PositionManager:
         if not st.get("half_taken"):
             if sg * (price - one_r) < 0:
                 return None
+            if self._owner_runner_recover_half(pos, st, one_r, atr):
+                return None   # the half was already booked before a crash/restart: never re-fire it
             orig = float(pos.original_qty or 0) or float(pos.qty)
             already = max(0.0, orig - float(pos.qty))
             want = round_qty(pos.symbol, round(max(0.0, 0.5 * orig - already), 10))  # round off float dust first
@@ -1586,6 +1591,9 @@ class PositionManager:
             logger.info(f"[OWNER-RUNNER] {pos.symbol} {pos.side} +1R ({one_r:g}) reached @ {price:g}: "
                         f"closed {want:g} of {orig:g} (half of original minus {already:g} already banked); "
                         f"remainder trails {('1 ATR = ' + format(atr, 'g')) if atr else 'NOTHING (no atr_at_fill: rides the owner stop)'}")
+            # Persist NOW: the caller's close loop appends the 'partial' row to owner_fills.jsonl; a crash
+            # between that row and the next periodic save must not restore a pre-half position.
+            self._persist_owner_runner_state()
         best = float(st.get("best") or price)
         best = max(best, price) if is_long else min(best, price)
         st["best"] = best
@@ -1596,7 +1604,48 @@ class PositionManager:
                 pos.sl = cand
                 st["trail"] = cand
                 logger.info(f"[OWNER-RUNNER] {pos.symbol} trail {old:g} -> {cand:g} (best {best:g} - 1 ATR {atr:g})")
+                self._persist_owner_runner_state()
         return event
+
+    def _persist_owner_runner_state(self) -> None:
+        """save_position_state right after a runner half / trail ratchet (normally only _close_position saves)."""
+        try:
+            from execution.auto_recovery import save_position_state
+            save_position_state(self)
+        except Exception:
+            logger.exception("[OWNER-RUNNER] non-fatal state persistence failure")
+
+    def _owner_runner_recover_half(self, pos, st: dict, one_r: float, atr) -> bool:
+        """Idempotency: owner_fills.jsonl already holds this plan's OWNER_RUNNER_HALF partial row (the bot crashed
+        after the row was written but before the position state was saved). Re-apply that recorded leg to the
+        in-memory position (qty + realised PnL, no new event/row) and mark the half taken. True if recovered."""
+        try:
+            from core.owner_plan_exec import recorded_runner_half
+            er = pos.entry_reasons or {}
+            row = recorded_runner_half(str(er.get("owner_plan_id") or ""), str(pos.position_id or ""))
+        except Exception:
+            logger.debug("[OWNER-RUNNER] fills lookup failed", exc_info=True)
+            row = None
+        if not row:
+            return False
+        rq = float(row.get("qty") or 0)
+        orig = float(pos.original_qty or 0) or float(pos.qty)
+        already = max(0.0, orig - float(pos.qty))
+        # the restored state predates the recorded leg if the qty already reduced is short of 50% of the original
+        missing = round(max(0.0, min(rq, 0.5 * orig - already)), 10)
+        if missing > 0 and round_qty(pos.symbol, pos.qty - missing) > 0:
+            pos.qty = round_qty(pos.symbol, pos.qty - missing)
+            pos.realized_pnl += float(row.get("pnl") or 0) * (missing / rq if rq > 0 else 0.0)
+        st.update(half_taken=True, half_px=float(row.get("exit") or 0) or None, one_r=one_r,
+                  best=float(row.get("exit") or 0) or None, half_qty=rq, atr=atr,
+                  half_ts=row.get("ts"), recovered_from_fills=True)
+        if pos.state == OPEN:
+            pos._transition(TP1_HIT, "owner runner: half at +1R (recovered from owner_fills.jsonl)")
+            pos._transition(TRAILING, "owner runner trail armed")
+        logger.warning(f"[OWNER-RUNNER] {pos.symbol} half at +1R already recorded in owner_fills.jsonl "
+                       f"(qty {rq:g} @ {row.get('exit')}): not re-fired; re-applied {missing:g} to the restored position")
+        self._persist_owner_runner_state()
+        return True
 
     def _owner_runner_shadow_step(self, pos, price: float, is_long: bool) -> None:
         """OWNER_RUNNER_STYLE off: compute what the runner rule WOULD do and log it (deduped). Touches

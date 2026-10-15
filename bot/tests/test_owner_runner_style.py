@@ -189,12 +189,234 @@ def test_stop_before_1r_is_the_owner_stop(sandbox, on):
     assert [e.action for e in ev] == ["SL"] and ev[0].qty == pytest.approx(1.0)
 
 
-def test_no_atr_rides_owner_stop(sandbox, on):
+def test_no_atr_degrades_to_full_never_a_trailless_runner(sandbox, on, monkeypatch):
+    """No atr_at_fill and the point-in-time backfill fails -> exit_style=full: the TARGET still closes it."""
+    calls = []
+    monkeypatch.setattr(ope, "atr_at_fill", lambda bot, coin, ts: (calls.append(ts), (None, "unavailable"))[1])
     pos = _pos(atr=None)
     pm = _pm(pos)
+    ev = pm.update_price("ETH", 3051.0)
+    assert pos.entry_reasons["exit_style"] == "full" and "atr_at_fill" in pos.entry_reasons["exit_style_reason"]
+    assert [e.action for e in ev] == ["TP1"]                           # full style: old profits_only TP1 leg
+    ev = pm.update_price("ETH", 3151.0)
+    assert ev and ev[-1].action == "TP2" and pos.state == "CLOSED"
+    assert len(calls) == 1, "backfill is tried once per position, not every tick"
+    assert [r["exit_action"] for r in _rows(sandbox, "owner_runner_check")] == ["style_full"]
+
+
+def test_untrailed_stop_after_half_is_labelled_sl(sandbox, on):
+    """Half taken, but the trail never moved the stop (best - 1 ATR still behind the owner stop): a stop-out
+    there is the owner's plain stop, not 'your 1-ATR trail'."""
+    pos = _pos()
+    pm = _pm(pos)
+    assert [e.action for e in pm.update_price("ETH", 3050.0)] == ["OWNER_RUNNER_HALF"]
+    assert pos.sl == 2950.0                                           # 3050 - 100 == the owner stop: not moved
+    ev = pm.update_price("ETH", 2949.0)
+    assert [e.action for e in ev] == ["SL"] and ev[0].qty == pytest.approx(0.5)
+    assert ope.managed_by(ev[0].action) == "stop"
+
+
+# ── pre-branch positions (no exit_style / atr_at_fill), checked once at flag-on ─────────────
+
+def _prebranch(side="SHORT"):
+    """Live shape of HYPE 72be6ccce3: opened before the runner build -> no exit_style, no atr_at_fill keys."""
+    pos = _pos(side)
+    for k in ("exit_style", "atr_at_fill"):
+        pos.entry_reasons.pop(k, None)
+    pos.entry_reasons["plan_target"] = pos.tp2
+    pos.open_time = datetime(2026, 10, 14, 0, 35, 59, tzinfo=timezone.utc)
+    return pos
+
+
+def test_prebranch_position_backfills_atr_point_in_time(sandbox, on, monkeypatch):
+    seen = {}
+
+    def fake(bot, coin, ts):
+        seen["ts"] = ts
+        return 100.0, "hl_1d"
+    monkeypatch.setattr(ope, "atr_at_fill", fake)
+    pos = _prebranch()
+    pm = _pm(pos)
+    ev = pm.update_price("ETH", 2950.0)                               # SHORT +1R
+    assert seen["ts"] == pytest.approx(pos.open_time.timestamp()), "ATR must be as known AT THE FILL"
+    er = pos.entry_reasons
+    assert er["atr_at_fill"] == 100.0 and er["atr_at_fill_source"] == "backfill_hl_1d" and er["exit_style"] == "runner"
+    assert [e.action for e in ev] == ["OWNER_RUNNER_HALF"]
+    pm.update_price("ETH", 2800.0)
+    assert pos.sl == pytest.approx(2900.0)                            # trail armed with the backfilled ATR
+
+
+def test_prebranch_position_backfill_fails_runs_full(sandbox, on, monkeypatch):
+    monkeypatch.setattr(ope, "atr_at_fill", lambda bot, coin, ts: (None, "unavailable"))
+    pos = _prebranch()
+    pm = _pm(pos)
+    pm.update_price("ETH", 2949.0)
+    assert pos.entry_reasons["exit_style"] == "full"
+    ev = pm.update_price("ETH", 2849.0)                               # the target closes it, as before
+    assert ev and ev[-1].action == "TP2" and pos.state == "CLOSED"
+    assert "owner_runner" not in pos.entry_reasons
+    assert not ope.runner_live(pos)
+
+
+def test_prebranch_untouched_while_flag_off(sandbox, monkeypatch):
+    called = []
+    monkeypatch.setattr(ope, "atr_at_fill", lambda *a: called.append(a) or (None, "unavailable"))
+    pos = _prebranch()
+    _pm(pos).update_price("ETH", 2949.0)
+    assert not called and "exit_style" not in pos.entry_reasons and "runner_checked" not in pos.entry_reasons
+
+
+# ── target guard (OWNER_RUNNER_TARGET_GUARD, default on) ───────────────────────────────────
+
+@pytest.mark.parametrize("target,guard,expect", [
+    (3040.0, None, "full"),      # target inside +1R (3050)
+    (3050.0, None, "full"),      # target exactly at +1R
+    (3040.0, "false", "runner"),  # guard switched off -> runner as before
+    (3150.0, None, "runner"),
+])
+def test_target_guard_on_existing_position(sandbox, on, monkeypatch, target, guard, expect):
+    if guard is not None:
+        monkeypatch.setenv("OWNER_RUNNER_TARGET_GUARD", guard)
+    pos = _pos()
+    pos.tp2 = target
+    pos.entry_reasons["plan_target"] = target
+    assert ope.runner_live(pos) == (expect == "runner")
+    assert pos.entry_reasons["exit_style"] == expect
+    if expect == "full":
+        assert "OWNER_RUNNER_TARGET_GUARD" in pos.entry_reasons["exit_style_reason"]
+
+
+def _drain_one(sandbox, monkeypatch, atr, target=3150.0, style=None, price=3000.0):
+    from tests.test_owner_plan_exec import FakeBot
+    import time
+    monkeypatch.setenv("OWNER_PLAN_EXEC", "true")
+    monkeypatch.setattr(ope, "atr_at_fill", lambda bot, coin, ts: (atr, "test" if atr else "unavailable"))
+    r = {"kind": "plan", "id": "g1", "ts": time.time(), "coin": "ETH", "side": "LONG", "entry": 3000.0,
+         "stop": 2950.0, "target": target, "price_at_plan": price, "entry_type": "market",
+         "entry_window_h": 24, "leverage": 3, "risk_usd": 20.0, "setup": "breakout", "max_hold_h": 48}
+    if style:
+        r["exit_style"] = style
+    (sandbox / "hivemind" / "owner_plans.jsonl").write_text(json.dumps(r) + "\n", encoding="utf-8")
+    pm = PositionManager()
+    ope.drain(FakeBot(pm, {"ETH": price}))
+    fills = [json.loads(l) for l in (sandbox / "hivemind" / "owner_fills.jsonl").read_text().splitlines()]
+    return pm.positions["ETH"], fills[0]
+
+
+def test_atr_failure_at_open_degrades_to_full_loudly(sandbox, monkeypatch, caplog):
+    import logging
+    with caplog.at_level(logging.WARNING):
+        pos, row = _drain_one(sandbox, monkeypatch, atr=None)
+    assert pos.entry_reasons["exit_style"] == "full" and row["exit_style"] == "full"
+    assert "atr_at_fill" in row["exit_style_reason"] and row["exit_style_reason"] == pos.entry_reasons["exit_style_reason"]
+    assert any("ATR fetch failed at open" in m for m in caplog.messages)
+
+
+def test_target_guard_at_open_from_the_fill(sandbox, monkeypatch):
+    pos, row = _drain_one(sandbox, monkeypatch, atr=100.0, target=3045.0)
+    fill = pos.entry
+    assert abs(3045.0 - fill) <= abs(fill - 2950.0)
+    assert row["exit_style"] == "full" and "OWNER_RUNNER_TARGET_GUARD" in row["exit_style_reason"]
+
+
+def test_target_guard_flag_off_keeps_runner(sandbox, monkeypatch):
+    monkeypatch.setenv("OWNER_RUNNER_TARGET_GUARD", "false")
+    pos, row = _drain_one(sandbox, monkeypatch, atr=100.0, target=3045.0)
+    assert row["exit_style"] == "runner" and row["exit_style_reason"] is None
+
+
+# ── crash safety: persist at the half / each ratchet; the half is idempotent vs owner_fills ─────
+
+@pytest.fixture
+def saved(monkeypatch, tmp_path):
+    """Route save_position_state to a temp file (the default live path is refused under pytest)."""
+    import execution.auto_recovery as ar
+    real = ar.save_position_state
+    path = tmp_path / "position_state.json"
+    calls = []
+
+    def save(pm, filepath=None):
+        calls.append(1)
+        return real(pm, str(path))
+    monkeypatch.setattr(ar, "save_position_state", save)
+    return path, calls
+
+
+def test_state_persisted_at_half_and_each_ratchet(sandbox, on, saved):
+    path, calls = saved
+    pos = _pos()
+    pm = _pm(pos)
     pm.update_price("ETH", 3050.0)
-    pm.update_price("ETH", 3400.0)
-    assert pos.sl == 2950.0 and pos.qty == pytest.approx(0.5) and pos.state != "CLOSED"
+    st = json.loads(path.read_text())["positions"]["ETH"]
+    assert st["qty"] == pytest.approx(0.5) and st["entry_reasons"]["owner_runner"]["half_taken"]
+    n = len(calls)
+    pm.update_price("ETH", 3120.0)                                    # ratchet -> 3020
+    assert len(calls) == n + 1 and json.loads(path.read_text())["positions"]["ETH"]["sl"] == pytest.approx(3020.0)
+    pm.update_price("ETH", 3100.0)                                    # no ratchet -> no save
+    assert len(calls) == n + 1
+
+
+def test_crash_after_partial_row_before_save_does_not_refire_half(sandbox, on):
+    """Persist BEFORE the half, take the half (its 'partial' row lands in owner_fills.jsonl), crash, restore the
+    pre-half state, replay the +1R tick: exactly ONE partial leg, and the restored position is at half size."""
+    from execution.auto_recovery import _position_to_dict, _dict_to_position
+    pos = _pos()
+    pos.position_id = "pid-1"
+    pm = _pm(pos)
+    pm.update_price("ETH", 3030.0)
+    snapshot = json.loads(json.dumps(_position_to_dict(pos), default=str))     # last save before the half
+    evs = pm.update_price("ETH", 3050.0)
+    assert [e.action for e in evs] == ["OWNER_RUNNER_HALF"]
+    rows = [ope.record_owner_close(e, pos, pm) for e in evs]                   # the close loop's row
+    banked = pos.realized_pnl
+    # --- crash: the in-memory half is lost, the row is not ---
+    back = _dict_to_position(snapshot)
+    assert back.qty == pytest.approx(1.0) and not (back.entry_reasons.get("owner_runner") or {}).get("half_taken")
+    pm2 = _pm(back)
+    replay = pm2.update_price("ETH", 3050.0) + pm2.update_price("ETH", 3060.0)
+    assert [e.action for e in replay] == [], "half must not re-fire after a restore"
+    fills = [json.loads(l) for l in ope.fills_path().read_text().splitlines()]
+    assert [f["kind"] for f in fills] == ["partial"] and fills[0]["reason"] == "OWNER_RUNNER_HALF"
+    assert back.qty == pytest.approx(0.5) and back.realized_pnl == pytest.approx(banked)
+    assert back.entry_reasons["owner_runner"]["half_taken"] and back.entry_reasons["owner_runner"]["recovered_from_fills"]
+    assert rows[0]["managed_by"] == "runner_half"
+    # the trail still works on the recovered remainder
+    pm2.update_price("ETH", 3200.0)
+    assert back.sl == pytest.approx(3100.0)
+
+
+def test_recorded_half_for_other_plan_is_ignored(sandbox, on):
+    ope._append_fill({"kind": "partial", "plan_id": "other", "reason": "OWNER_RUNNER_HALF", "qty": 0.5,
+                      "exit": 3050.0, "pnl": 25.0, "position_id": "x"})
+    pos = _pos()
+    ev = _pm(pos).update_price("ETH", 3050.0)
+    assert [e.action for e in ev] == ["OWNER_RUNNER_HALF"]
+
+
+# ── hands_off, LIVE (the owner's own rule applies under hands_off; fill rows say which rule acted) ─
+
+@pytest.mark.parametrize("side", ["LONG", "SHORT"])
+def test_runner_live_under_hands_off(sandbox, on, side):
+    pos = _pos(side, mode="hands_off")
+    pos.entry_reasons["owner_plan_id"] = "ho1"
+    pm = _pm(pos)
+    assert ope.runner_live(pos) and ope.owner_partial_allowance(pos) == 0.0
+    assert pm.partial_close("ETH", 0.3, _mirror(side, 3030.0), action="LLM_EXIT_PARTIAL") is None
+    evs = pm.update_price("ETH", _mirror(side, 3050.0))
+    assert [e.action for e in evs] == ["OWNER_RUNNER_HALF"]
+    more = pm.update_price("ETH", _mirror(side, 3200.0))              # past the target 3150: target closes nothing
+    assert more == [] and pos.sl == pytest.approx(_mirror(side, 3100.0))
+    evs += pm.update_price("ETH", _mirror(side, 3099.0))
+    rows = [ope.record_owner_close(e, pos, pm) for e in evs]
+    assert [(r["kind"], r["managed_by"]) for r in rows] == [("partial", "runner_half"), ("final", "runner_trail")]
+    assert all(r["exit_mode"] == "hands_off" and r["exit_style"] == "runner" for r in rows)
+    assert rows[0]["qty"] + rows[1]["qty"] == pytest.approx(1.0)
+
+
+def test_managed_by_labels():
+    assert [ope.managed_by(a) for a in ("OWNER_RUNNER_HALF", "OWNER_RUNNER_TRAIL", "SL", "TP2", "TP1",
+                                        "OWNER_PLAN_MAX_HOLD", "LLM_EXIT_PARTIAL")] == \
+        ["runner_half", "runner_trail", "stop", "target", "tp1_leg", "time", "bot:llm_exit_partial"]
 
 
 @pytest.mark.parametrize("side", ["LONG", "SHORT"])
@@ -365,3 +587,52 @@ def test_matches_exit_style_play(sandbox, on, side):
     assert [round(l["px"], 4) for l in pr["legs"]][0] == round(legs[0][1], 4)
     assert pos.state == "CLOSED" and legs[-1][2] == "OWNER_RUNNER_TRAIL"
     assert pr["trail"] == pytest.approx(pos.sl)
+
+
+@pytest.mark.parametrize("side", ["LONG", "SHORT"])
+def test_parity_known_delta_fill_slip_and_gap(sandbox, on, side):
+    """Live vs graded drift, declared: the bot measures 1R from its ACTUAL fill (here 10 worse than the plan entry)
+    and sees one price per tick, so a bar that GAPS through +1R fills the half at the tick, not at the level.
+    play() (plan entry, 5m bar highs/lows) takes the half exactly at its +1R. Known delta: the bot's half is
+    never at a worse price than play's (sign) and is off by at most the gap overshoot + the fill slip (bound);
+    same legs, same fractions, and both trails converge on best - 1 ATR."""
+    sg = 1 if side == "LONG" else -1
+    xs = ope._exit_style_module()
+    m = lambda p: _mirror(side, p)  # noqa: E731
+    plan_entry, fill, stop, tgt = m(3000.0), m(3010.0), m(2950.0), m(3300.0)
+    # 5m bars: (o, h, l, c) in LONG terms; bar 3 GAPS from 3040 straight to 3045..3100, through both +1R levels
+    raw = [(3015, 3022, 3012, 3020), (3020, 3041, 3018, 3040), (3045, 3100, 3045, 3095),
+           (3095, 3180, 3095, 3180), (3180, 3180, 3070, 3070)]
+    t0 = 1_700_000_000
+    bars = []
+    for i, (o, h, l, c) in enumerate(raw):
+        hi, lo = (m(h), m(l)) if side == "LONG" else (m(l), m(h))
+        bars.append({"t": (t0 + 300 * (i + 1)) * 1000, "o": m(o), "h": hi, "l": lo, "c": m(c)})
+    pr = xs.play(side, plan_entry, stop, tgt, bars, t0, 48, "runner", ATR, now=t0 + 10 ** 6)
+
+    pos = _pos(side)
+    pos.entry = fill                                                   # filled 10 worse than the plan entry
+    pos.tp2 = tgt
+    pos.entry_reasons["plan_target"] = tgt
+    pm = _pm(pos)
+    legs = []
+    for b in bars:                                                     # the bot sees one tick per bar: the close
+        for e in pm.update_price("ETH", b["c"]):
+            legs.append(e)
+    assert [l["why"] for l in pr["legs"]] == ["half at +1R", "trail"]
+    assert [e.action for e in legs] == ["OWNER_RUNNER_HALF", "OWNER_RUNNER_TRAIL"]
+    assert [round(l["frac"], 6) for l in pr["legs"]] == [round(e.qty, 6) for e in legs]
+    play_one_r = plan_entry + sg * abs(plan_entry - stop)
+    bot_one_r = fill + sg * abs(fill - stop)
+    assert pos.entry_reasons["owner_runner"]["one_r"] == pytest.approx(bot_one_r)
+    delta = sg * (legs[0].price - pr["legs"][0]["px"])
+    gap_overshoot = sg * ((bars[2]["h"] if sg > 0 else bars[2]["l"]) - play_one_r)
+    assert pr["legs"][0]["px"] == pytest.approx(play_one_r)
+    assert delta >= 0, "bot's half is never at a worse price than the graded level"
+    assert delta <= gap_overshoot + abs(fill - plan_entry) + 1e-9, "bounded by gap overshoot + fill slip"
+    assert delta > 0, "the gap makes the drift real (this case must not zero it by construction)"
+    # both trails: best (3180) - 1 ATR
+    assert pr["trail"] == pytest.approx(m(3080.0)) and pos.sl == pytest.approx(m(3080.0))
+    # in R the bot's half is measured on ITS risk (fill-based), the graded one on the plan's
+    bot_half_r = sg * (legs[0].price - fill) / abs(fill - stop)
+    assert bot_half_r >= 1.0

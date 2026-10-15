@@ -67,7 +67,10 @@ def is_owner_event(event: Any) -> bool:
 #                            ratchet, trailing, AI tighten, hold-limit tighten) and never fully closes
 #                            early (no AI close, MFE/funding/hold-limit close). Only the owner's stop,
 #                            the owner's target, or the partial legs end it.
-#   hands_off              — as profits_only, and no partials either: pure stop/target.
+#   hands_off              — as profits_only, and no bot partials either: pure stop/target. Exception: with
+#                            OWNER_RUNNER_STYLE on, the owner's OWN exit_style=runner rule (half at +1R, 1-ATR
+#                            trail, plan time limit) applies here too - it is his declared rule, not bot judgment.
+#                            Every owner_fills.jsonl row says which rule closed it ("managed_by").
 #   bot_manages            — the bot's normal exit machinery, no restrictions (pre-2026-10-12 behaviour).
 # Bot-opened positions always resolve to bot_manages, so every guard is inert for them.
 # Kill-switches (no code change needed):
@@ -171,8 +174,131 @@ def runner_applies(pos: Any) -> bool:
 
 
 def runner_live(pos: Any) -> bool:
-    """True when the runner rule is ACTUALLY applied (OWNER_RUNNER_STYLE on)."""
-    return runner_style_enabled() and runner_applies(pos)
+    """True when the runner rule is ACTUALLY applied (OWNER_RUNNER_STYLE on).
+
+    The first time a runner position is seen with the flag on it is checked once (ensure_runner_ready):
+    no usable atr_at_fill -> point-in-time backfill, else degrade to exit_style=full; target at/inside +1R
+    -> full (OWNER_RUNNER_TARGET_GUARD). A runner without a trail never ignores its target.
+    """
+    if not (runner_style_enabled() and runner_applies(pos)):
+        return False
+    ensure_runner_ready(pos)
+    return runner_applies(pos)
+
+
+def runner_target_guard_enabled() -> bool:
+    """OWNER_RUNNER_TARGET_GUARD (default true): a plan whose target sits at or inside +1R (measured from the
+    actual fill) runs exit_style=full - in runner style a touch of such a target would bank nothing."""
+    return os.getenv("OWNER_RUNNER_TARGET_GUARD", "true").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _valid_atr(v: Any) -> Optional[float]:
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f > 0 else None
+
+
+def runner_style_check(side: str, fill: float, stop: float, target: Any, atr: Any) -> Optional[str]:
+    """Why a runner plan must run as 'full' instead (None = runner is fine). Geometry from the ACTUAL fill."""
+    if _valid_atr(atr) is None:
+        return "no atr_at_fill (14d daily ATR at the fill unavailable): a runner needs a trail width"
+    try:
+        risk = abs(float(fill) - float(stop))
+        reward = abs(float(target) - float(fill)) if target not in (None, "") else None
+    except (TypeError, ValueError):
+        risk, reward = 0.0, None
+    if runner_target_guard_enabled() and reward is not None and risk > 0 and reward <= risk:
+        return (f"target {float(target):g} is at or inside +1R from the fill {float(fill):g} (reward {reward:g} <= "
+                f"risk {risk:g}): runner would bank nothing at the target (OWNER_RUNNER_TARGET_GUARD)")
+    return None
+
+
+def _log_style_decision(pos: Any, action: str, details: str) -> None:
+    try:
+        er = getattr(pos, "entry_reasons", None) or {}
+        row = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "symbol": getattr(pos, "symbol", ""),
+               "exit_action": action, "applied": True, "source": "owner_runner_check",
+               "exit_mode": owner_exit_mode(pos), "exit_style": owner_exit_style(pos), "details": details,
+               "owner_plan_id": er.get("owner_plan_id") if isinstance(er, dict) else None,
+               "position_side": getattr(pos, "side", ""), "position_id": getattr(pos, "position_id", "")}
+        p = Path(HM_DIR) / "owner_exit_decisions.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, default=str) + "\n")
+    except Exception:
+        logger.debug("[OWNER-PLAN] runner check log failed", exc_info=True)
+
+
+def ensure_runner_ready(pos: Any) -> None:
+    """Once per position, with OWNER_RUNNER_STYLE on: make sure a runner can actually run.
+
+    Positions opened before the runner build carry no atr_at_fill / exit_style. Backfill atr_at_fill point-in-time
+    from the fill timestamp (exit_style.atr_at on completed daily bars, same as the graders); if that fails, or the
+    target sits at/inside +1R of the fill, store exit_style=full (stop / target / time limit) with the reason.
+    Never raises.
+    """
+    try:
+        er = getattr(pos, "entry_reasons", None)
+        if not isinstance(er, dict) or er.get("runner_checked") or owner_exit_style(pos) != "runner":
+            return
+        sym = getattr(pos, "symbol", "")
+        atr = _valid_atr(er.get("atr_at_fill"))
+        if atr is None:
+            ot = getattr(pos, "open_time", None)
+            ts = ot.timestamp() if hasattr(ot, "timestamp") else time.time()
+            v, src = atr_at_fill(None, sym, ts)
+            atr = _valid_atr(v)
+            if atr is not None:
+                er["atr_at_fill"] = atr
+                er["atr_at_fill_source"] = f"backfill_{src}"
+                er["atr_backfilled_at"] = time.time()
+                logger.info(f"[OWNER-RUNNER] {sym} atr_at_fill backfilled point-in-time = {atr:g} ({src})")
+        fill = float(getattr(pos, "entry", 0) or 0)
+        stop = float(getattr(pos, "original_sl", 0) or getattr(pos, "sl", 0) or 0)
+        target = er.get("plan_target") if er.get("plan_target") not in (None, "") else getattr(pos, "tp2", None)
+        why = runner_style_check(getattr(pos, "side", ""), fill, stop, target, atr)
+        er["runner_checked"] = time.time()
+        if why:
+            er["exit_style"] = "full"
+            er["exit_style_reason"] = why
+            logger.warning(f"[OWNER-RUNNER] {sym} plan {er.get('owner_plan_id')}: runs exit_style=full - {why}")
+            _log_style_decision(pos, "style_full", why)
+        else:
+            er["exit_style"] = "runner"
+    except Exception:
+        logger.warning("[OWNER-RUNNER] ensure_runner_ready failed", exc_info=True)
+
+
+def managed_by(action: str) -> str:
+    """Which rule produced an owner fill row (owner_fills.jsonl 'managed_by')."""
+    a = str(action or "").upper()
+    return {"OWNER_RUNNER_HALF": "runner_half", "OWNER_RUNNER_TRAIL": "runner_trail", "SL": "stop",
+            "TP2": "target", "TP1": "tp1_leg", "OWNER_PLAN_MAX_HOLD": "time"}.get(a, f"bot:{a.lower()}" if a else "")
+
+
+def recorded_runner_half(plan_id: str, position_id: str = "") -> Optional[Dict[str, Any]]:
+    """The OWNER_RUNNER_HALF partial row already in owner_fills.jsonl for this plan/position, or None."""
+    if not plan_id:
+        return None
+    hit = None
+    try:
+        with open(fills_path(), encoding="utf-8") as fh:
+            for line in fh:
+                if "OWNER_RUNNER_HALF" not in line:
+                    continue
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                if (r.get("kind") == "partial" and r.get("reason") == "OWNER_RUNNER_HALF"
+                        and str(r.get("plan_id") or "") == str(plan_id)
+                        and (not position_id or not r.get("position_id") or r.get("position_id") == position_id)):
+                    hit = r
+    except OSError:
+        return None
+    return hit
 
 
 def log_owner_runner_shadow(pos: Any, action: str, details: str, key: Optional[str] = None) -> None:
@@ -475,13 +601,15 @@ def drain(bot, trace_id: str = "", now: Optional[float] = None) -> Dict[str, Any
                 mark("open", fill_reason, fill_price=res["entry"], qty=res["qty"], tp1=res["tp1"],
                      tp2=res["tp2"], sl=res["sl"], risk_usd=res["risk_usd"], position_id=res["position_id"],
                      exit_mode=res.get("exit_mode"), exit_style=res.get("exit_style"),
-                     atr_at_fill=res.get("atr_at_fill"), filled_at=now, fills=[])
+                     atr_at_fill=res.get("atr_at_fill"), exit_style_reason=res.get("exit_style_reason"),
+                     filled_at=now, fills=[])
                 try:
                     _append_fill({"kind": "open", "plan_id": pid, "coin": coin, "side": side, "entry": res["entry"],
                                   "qty": res["qty"], "sl": res["sl"], "tp1": res["tp1"], "tp2": res["tp2"],
                                   "risk_usd": res["risk_usd"], "position_id": res["position_id"], "ts": now,
                                   "pnl_lev": res.get("pnl_lev", 1.0), "exit_mode": res.get("exit_mode"),
                                   "exit_style": res.get("exit_style"), "atr_at_fill": res.get("atr_at_fill"),
+                                  "exit_style_reason": res.get("exit_style_reason"),
                                   "reason": fill_reason})
                 except Exception:
                     logger.debug("[OWNER-PLAN] open row write failed", exc_info=True)
@@ -637,6 +765,18 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
         # 14-day daily ATR known AT THE FILL (the runner's trail width). Stored whatever the flag, so the
         # shadow log and the trade case files see the same number the live rule would use.
         _atr_d, _atr_src = atr_at_fill(bot, coin, time.time())
+        # A runner needs a trail width and a target beyond +1R of the FILL; otherwise run this plan as 'full'
+        # (stop / target / time limit), loudly, with the reason on the fill row.
+        _style_reason = None
+        if exit_style == "runner":
+            _style_reason = runner_style_check(side, fill, stop, target, _atr_d)
+            if _style_reason:
+                if _valid_atr(_atr_d) is None:
+                    logger.warning(f"[OWNER-PLAN] {coin} plan {pl.get('id')}: daily ATR fetch failed at open "
+                                   f"({_atr_src}) - plan degraded to exit_style=full")
+                else:
+                    logger.warning(f"[OWNER-PLAN] {coin} plan {pl.get('id')}: exit_style=full - {_style_reason}")
+                exit_style = "full"
         pos = pm.open_position(
             symbol=coin, side=side, entry=fill, qty=qty, sl=lv["sl"], tp1=lv["tp1"], tp2=lv["tp2"],
             atr=_atr_1h(bot, coin), leverage=leverage, mode="leverage" if leverage > 1 else "spot",
@@ -645,7 +785,8 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
                            "primary_driver": OWNER_STRATEGY, "regime": regime, "setup": pl.get("setup"),
                            "plan_entry": pl.get("entry"), "plan_stop": stop, "plan_target": target,
                            "exit_mode": exit_mode, "plan_max_hold_h": pl.get("max_hold_h"),
-                           "exit_style": exit_style, "atr_at_fill": _atr_d, "atr_at_fill_source": _atr_src},
+                           "exit_style": exit_style, "atr_at_fill": _atr_d, "atr_at_fill_source": _atr_src,
+                           "exit_style_reason": _style_reason, "runner_checked": time.time()},
             trade_profile=prof,
             notes=f"THESIS: owner plan {side} {coin} tgt {target:g} inval {stop:g} | setup=owner_plan",
             setup_type=OWNER_STRATEGY,
@@ -655,7 +796,7 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
         return {"ok": True, "entry": pos.entry, "qty": pos.qty, "sl": pos.sl, "tp1": pos.tp1, "tp2": pos.tp2,
                 "risk_usd": round(abs(pos.entry - pos.sl) * pos.qty * (pnl_lev or 1.0), 4),
                 "position_id": pos.position_id, "pnl_lev": pnl_lev or 1.0, "exit_mode": exit_mode,
-                "exit_style": exit_style, "atr_at_fill": _atr_d}
+                "exit_style": exit_style, "atr_at_fill": _atr_d, "exit_style_reason": _style_reason}
     finally:
         if lock is not None and execs is not None:
             with lock:
@@ -693,6 +834,9 @@ def record_owner_close(event, pos, pos_mgr=None) -> Dict[str, Any]:
         "r": round(leg_net / risk_usd, 4) if risk_usd > 0 else None, "reason": getattr(event, "action", ""),
         "position_id": getattr(event, "position_id", "") or getattr(pos, "position_id", ""),
         "opened_at": opened.isoformat() if hasattr(opened, "isoformat") else opened, "ts": time.time(),
+        "managed_by": managed_by(getattr(event, "action", "")),
+        "exit_style": normalize_exit_style(er.get("exit_style")) if isinstance(er, dict) else None,
+        "exit_mode": er.get("exit_mode") if isinstance(er, dict) else None,
     }
     if final:
         row["total_pnl"] = round(total, 6)
