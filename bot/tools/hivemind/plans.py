@@ -87,6 +87,18 @@ def create(p):
            # how the position is exited (exit_style.py): runner (default) = half at +1R, rest trails 1 ATR; full = all at target
            "exit_style": ("full" if str(p.get("exit_style") or "").lower() == "full" else "runner")}
     HM.mkdir(parents=True, exist_ok=True)
+    try:   # re-adding a plan that is still live returns the existing one (no second position)
+        prior = _rows()
+        try:
+            done = {q["id"]: (q.get("result") or {}).get("closed_at")
+                    for q in json.loads(OUT.read_text(encoding="utf-8")).get("plans", [])}
+        except Exception:
+            done = {}
+        d = _dup_of(prior + [row], done)
+        if row["id"] in d:
+            return dict(next(r for r in prior if r.get("id") == d[row["id"]]), duplicate=True)
+    except Exception:
+        pass
     with open(PLANS, "a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")
     return row
@@ -353,6 +365,26 @@ def _stats(rows):
     return out
 
 
+def _dup_of(rows, closed=None):
+    """Re-adds of a plan that is still live (owner 10-14: re-selected the same ideas ~4h later; laptop reply 153 found
+    VVV/RSR logged twice with identical levels). Same coin/side/entry/stop/target created while the first could still
+    be waiting or open = the same position, so the later copy is graded as 'duplicate' and left out of every total."""
+    seen, dup = {}, {}
+    cancelled = {r.get("id") for r in rows if r.get("kind") == "cancel"}
+    for r in rows:
+        if r.get("kind") != "plan" or r.get("id") in cancelled:
+            continue
+        k = (r.get("coin"), r.get("side"), float(r.get("entry") or 0), float(r.get("stop") or 0), float(r.get("target") or 0))
+        first = seen.get(k)
+        life = (float(first.get("entry_window_h") or 24) + float(first.get("max_hold_h") or 48)) * 3600 if first else 0
+        ended = (closed or {}).get(first["id"]) if first else None   # first already closed = a real re-entry
+        if first and r.get("ts", 0) - first.get("ts", 0) < life and not (ended and ended <= r.get("ts", 0)):
+            dup[r["id"]] = first["id"]
+        else:
+            seen[k] = r
+    return dup
+
+
 def resolve(write=True):
     import hl
     rows = _rows()
@@ -361,6 +393,7 @@ def resolve(write=True):
         prev = {p["id"]: p for p in json.loads(OUT.read_text(encoding="utf-8")).get("plans", [])}
     except Exception:
         prev = {}
+    dups = _dup_of(rows, {k: (v.get("result") or {}).get("closed_at") for k, v in prev.items()})
     now = time.time()
     reviews = _reviews()
     plans = []
@@ -378,7 +411,9 @@ def resolve(write=True):
                 old = {}
         else:
             pl_g = pl
-        if old.get("status") in ("won", "lost", "timed out", "expired"):
+        if pl["id"] in dups:
+            res = {"status": "duplicate", "duplicate_of": dups[pl["id"]]}
+        elif old.get("status") in ("won", "lost", "timed out", "expired"):
             res = old
         elif pl["id"] in cancelled and old.get("status") != "open":
             res = {"status": "cancelled"}

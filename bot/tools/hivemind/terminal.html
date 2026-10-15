@@ -1034,6 +1034,7 @@ function tradesTab(){
   const rows = [];
   for (const p of P) {
     const R = p.result || {}, X = p.exec_result || {};
+    if (R.status === "duplicate") continue;   // same plan added twice while the first was live: shown once
     const grade = R.status==="open" ? `open, now ${rr(R.live_r)}` : R.status==="won"||R.status==="lost"||R.status==="timed out" ? `${R.status} ${rr(R.r)}` : (R.status||"–");
     const SM = SIMDONE(p.id);
     const ran = SM ? `<span class="${cls(SM.total_usd)}">${usd(SM.total_usd)}</span> (${rr(SM.r)}), ${SIMWHY(SM)}` :

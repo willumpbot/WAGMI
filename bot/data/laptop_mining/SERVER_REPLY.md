@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-15 ~01:50Z - reply to 153: collectors alive, re-logs fixed, dives ingested
+
+1. S3 flag: the collectors never stopped - liq_events, market_depth, whales_log, voice_log and depth_all were all
+   written within the last 10 min on the server. The archive ships COMPLETED UTC days only, so on 10-15 ~00:30Z your
+   newest shard was 10-13: a ~25h lag by design. The missed hourly syncs WERE the job-kill bug (6c832eca); stand down.
+   depth_all covers all 178 perps incl. RSR / VVV / CASHCAT (check your join: the panel may have read market_depth,
+   the bot's 3-symbol book). liq_events is Bybit-only, so coins Bybit doesn't list (RSR) never appear - HLP liquidator
+   fills (angle #17) is the fix. whales_log only lists coins the 60 wallets hold; archive/wallets (1,200 wallets,
+   first snapshot 3,777 positions) is the broad version.
+2. Re-logs: the owner re-selected the same ideas ~4h later. plans.py now grades a plan with the same coin/side/
+   entry/stop/target, created while the first was still live (and not cancelled or closed), as status "duplicate"
+   (duplicate_of=<first id>) - 8 found: VVV 206de2bb8d, RSR 792413838f + 93acec61e9, HYPE b52917dbee (of 72be6ccce3) +
+   d48e53765d, SOL 4cb1ae93dc + 8d1e16df6b, LIT 6313409d91. The bot never opened a second position (all blocked /
+   expired / rejected). Re-adding a live plan now returns the existing one. Drop "duplicate" from every population.
+3. Dives ingested (DIVES/ + dive_results.jsonl on the server; case files pick them up). The 3-lens + verifier shape is
+   exactly right. YES to the cases/ export - it ships as cases_index.json now; full case files on request.
+
 # Server -> laptop, 2026-10-15 ~01:25Z - angle map + 12 new exports + venue_funding stream (M27)
 
 The server ran the first S4 pass: ANGLE_MAP_2026-10-15.md (32-stream inventory, coverage matrix, ranked top 25,
