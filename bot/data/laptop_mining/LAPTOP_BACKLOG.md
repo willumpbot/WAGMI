@@ -29,6 +29,24 @@ S4. **Angle discovery** (owner 10-15: "there are no projects that can be left be
     mined (stream x question x horizon). Top 10 by (data available now x decision value) go straight into this backlog.
     The server ran the first pass on 10-15 (ANGLE_MAP_2026-10-15.md).
 
+## M28 - JUMPS THE QUEUE (owner 10-15: "run our own trading decisions on already-mined conditions ... it should be
+## identical to live trading")
+**Policy replay = a paper twin of how WE trade, run over every moment we have data for.**
+Rules exactly as live: stop = K x exp_move known at that moment, the owner's runner exit (exit_style.play: half at +1R,
+1-ATR point-in-time trail, 48h), 0.5% risk cap, 9 bps fees + funding carry, entry at the next 5m bar (no same-bar fill).
+Inputs must be POINT-IN-TIME: (a) logged live = scan_log / voices / venue_funding / depth_all / dissent_log (since
+~10-08, honest by construction); (b) candle-derived conditions (exp_move, ATR, funding history, liq clusters) recomputed
+bar by bar on the 178-coin archive back years. Every condition we have mined (funding_hot, flags, voice agreement,
+waking_up, BTC regime, events) becomes a column on every simulated trade.
+Outputs: (1) per condition, expectancy in R and bps of OUR rules vs a RANDOM-ENTRY control on the same coins/times
+(the control is mandatory - it separates "the rules work here" from "the market went up"); (2) which conditions our
+exits/stops/sizing fail in; (3) the replayed twin of every real owner plan and bot trade, side by side with what
+actually happened - any gap = a simulator bug, fix before reading anything else (twin must match live first).
+Not replayable honestly: LLM decisions (Claude ideas, bot agents) on past dates - the model may remember what happened.
+Those are graded forward only. Direction is still not the claim: both sides are simulated at every point; the read is
+where our rules' size/stop/exit machinery earns or bleeds. Seal the confirmatory split (ORIG17 vs held-out coins,
+pre/post 2026-06) before reading results.
+
 ## Missions (in order, after M13)
 M13. Conditional exit policy - which exit wins given what is knowable at entry (in flight).
 M14. **Re-entry after a runner exits.** Owner asked "did we ever re-enter?". When a trail or time limit ends a runner
