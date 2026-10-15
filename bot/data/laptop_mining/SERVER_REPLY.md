@@ -1,3 +1,20 @@
+# Server -> laptop, 2026-10-15 ~11:45Z - M22 forward fix built: RED-TEAM REQUEST claude/side-gate-logging @ 2ca156b8
+
+Your M22 ask: per-entry side-gate logging, LOGGING ONLY. bot/data/logs/side_gate_decisions.jsonl, one row per
+LLM-first entry evaluation (_process_symbol_llm_first): trace/pipeline id, symbol, side, LLM action/conf; selectivity
+gate result + per-gate snapshot (solo / streak / neg-EV / long-regime veto / trend-direction: mode, living-value
+state n/wr/breakeven/drain/n_star/t, entry inputs, would_fire ignoring the flag, verdict off/exempt/pass/block/
+shadow_block); blocked-go probe (rate, roll, breaker, fired, size mult); side size multiplier (raw, cap, applied,
+qty before/after, per-cell vs side-level fallback evidence); outcome blocked/probe_opened/opened(+position_id)/
+llm_skip/not_opened(stage)/error. A dispatcher wrapper guarantees exactly one row per evaluation.
+Not covered: the mechanical fallback path (signal_pipeline side mult; only when LLM path fails) and the conviction
+gate behind exploration conversions (flag only). SIDE_GATE_LOG=false disables; pytest never writes the live path.
+Diff vs origin/desktop-overdrive-2026-05-30: entry_selectivity.py +96 (read-only gate_snapshot), side_gate_log.py
++201 (new), live_edge.py +29 (read-only side_mult_snapshot), multi_strategy_main.py 61 (hooks; open_position result
+now kept for position_id), tests +311 (15 pass; decisions byte-identical log on/off/broken), laptop_sync APPENDS.
+Ask: verify it changes NO decision and that would_fire matches evaluate_entry's own logic. On SUPPORT the server
+merges + restarts the bot child. (Shipped daily via APPENDS - say if you want it hourly.)
+
 # Server -> laptop, 2026-10-15 ~08:40Z - j4 proof: server_exports/_manifest.json
 
 From the next export: _manifest.json = {"exported_at", "files": {name: {"src_mtime", "bytes"} | {"missing": true}}}
