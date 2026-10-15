@@ -99,6 +99,10 @@ def owner_exit_mode(pos: Any) -> str:
     if not is_owner_position(pos):
         return EXIT_BOT_MANAGES
     forced = normalize_exit_mode(os.getenv("OWNER_PLAN_EXIT_MODE_FORCE", ""))
+    _er = getattr(pos, "entry_reasons", None)
+    if isinstance(_er, dict) and _er.get("any_coin"):   # OWNER_PLAN_ANY_COIN: bot_manages -> profits_only
+        from core.owner_any_coin import resolve_exit_mode
+        return resolve_exit_mode(forced or normalize_exit_mode(_er.get("exit_mode")) or default_exit_mode())
     if forced:
         return forced
     er = getattr(pos, "entry_reasons", None) or {}
@@ -550,8 +554,15 @@ def drain(bot, trace_id: str = "", now: Optional[float] = None) -> Dict[str, Any
                 continue
 
             if coin not in managed:
-                mark("rejected", f"bot only manages {'/'.join(sorted(managed))}; {coin or '?'} is not one")
-                continue
+                from core import owner_any_coin as _oac
+                _any = _oac.plan_check(coin, pl) if _oac.enabled() else ("rejected", "")
+                if _any[0] == "wait":
+                    if not rec or rec.get("reason") != _any[1]:
+                        mark("queued", _any[1])
+                    continue
+                if _any[0] != "ok":
+                    mark("rejected", _any[1] or f"bot only manages {'/'.join(sorted(managed))}; {coin or '?'} is not one")
+                    continue
             if side not in ("LONG", "SHORT") or plan_levels(side, entry, stop, target) is None:
                 mark("rejected", "invalid side / stop / target geometry")
                 continue
@@ -560,6 +571,8 @@ def drain(bot, trace_id: str = "", now: Optional[float] = None) -> Dict[str, Any
                 continue
 
             price = prices.get(coin)
+            if coin not in managed:   # OWNER_PLAN_ANY_COIN (only reached with the flag on): one shared allMids call
+                price = _oac.price_for(bot, coin)
             fill_reason = ""
             if etype == "market":
                 if now - ts > market_max_age:
@@ -647,6 +660,9 @@ def drain(bot, trace_id: str = "", now: Optional[float] = None) -> Dict[str, Any
 
 
 def _atr_1h(bot, coin: str) -> float:
+    from core import owner_any_coin as _oac
+    if _oac.is_extra(coin):   # OWNER_PLAN_ANY_COIN: the bot's fetcher has no feed for this coin -> HL candles
+        return _oac.atr_1h(coin)
     try:
         from trading_config import DEFAULT_SYMBOLS
         cfg = DEFAULT_SYMBOLS.get(coin)
@@ -725,7 +741,8 @@ def atr_at_fill(bot, coin: str, ts: float):
     """
     if not os.getenv("PYTEST_CURRENT_TEST"):
         try:
-            v = _exit_style_module().atr_at(_HLOneShot(), coin, ts)
+            from core.owner_any_coin import hl_name   # HL's own name for an any-coin symbol (KPEPE -> kPEPE)
+            v = _exit_style_module().atr_at(_HLOneShot(), hl_name(coin), ts)
             if v and v > 0:
                 return float(v), "hl_1d"
         except Exception:
@@ -757,6 +774,9 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
     except Exception:
         pnl_lev = 1.0
     qty = risk_usd / (lv["r"] * (pnl_lev or 1.0))
+    from core import owner_any_coin as _oac
+    if _oac.is_extra(coin):   # OWNER_PLAN_ANY_COIN: the bot's per-trade risk cap (scales down only)
+        qty = _oac.cap_qty(bot, coin, qty, price, stop)
     order_side = "BUY" if side == "LONG" else "SELL"
 
     lock = getattr(bot, "_executing_lock", None)
@@ -783,6 +803,9 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
             prof = None
         regime = (getattr(bot, "_tick_regime_cache", {}) or {}).get(coin, "unknown")
         exit_mode = normalize_exit_mode(pl.get("exit_mode")) or default_exit_mode()
+        _req_mode, _mode_note = exit_mode, None
+        if _oac.is_extra(coin):
+            exit_mode, _mode_note = _oac.exit_mode_for(exit_mode)
         exit_style = normalize_exit_style(pl.get("exit_style"))
         # 14-day daily ATR known AT THE FILL (the runner's trail width). Stored whatever the flag, so the
         # shadow log and the trade case files see the same number the live rule would use.
@@ -815,6 +838,8 @@ def _open(bot, pl: Dict[str, Any], coin: str, side: str, price: float, stop: flo
         )
         if pos is None:
             return {"ok": False, "reason": "position manager refused (duplicate / cooldown / stop too tight)"}
+        if _oac.is_extra(coin):
+            pos.entry_reasons.update(_oac.entry_marks(coin, _req_mode, _mode_note))
         return {"ok": True, "entry": pos.entry, "qty": pos.qty, "sl": pos.sl, "tp1": pos.tp1, "tp2": pos.tp2,
                 "risk_usd": round(abs(pos.entry - pos.sl) * pos.qty * (pnl_lev or 1.0), 4),
                 "position_id": pos.position_id, "pnl_lev": pnl_lev or 1.0, "exit_mode": exit_mode,

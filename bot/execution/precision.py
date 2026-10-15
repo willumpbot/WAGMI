@@ -82,6 +82,20 @@ def get_max_leverage(symbol: str) -> float:
     return _get_precision(symbol).get("max_leverage", _DEFAULT["max_leverage"])
 
 
+def register_symbol_spec(symbol: str, spec: dict, overwrite: bool = False) -> bool:
+    """Add a runtime spec for a symbol outside config/symbol_precision.json (OWNER_PLAN_ANY_COIN: owner plans
+    on any Hyperliquid perp). Never replaces a config entry unless overwrite=True. True if written."""
+    cfg = _load_config()
+    if symbol in cfg and not overwrite:
+        return False
+    cfg[symbol] = dict(_DEFAULT, **spec)
+    return True
+
+
+def unregister_symbol_spec(symbol: str) -> None:
+    _load_config().pop(symbol, None)
+
+
 def get_all_symbol_specs() -> Dict[str, dict]:
     """Return the full precision config dict (for health checks)."""
     return dict(_load_config())

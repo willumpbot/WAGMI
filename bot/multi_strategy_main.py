@@ -54,6 +54,7 @@ from strategies.mean_reversion import MeanReversionStrategy
 from strategies.ensemble import EnsembleStrategy
 from execution.position_manager import PositionManager
 from core import owner_plan_exec as _owner_plan_exec
+from core import owner_any_coin as _owner_any_coin
 try:  # M22 side-gate decision log -- LOGGING ONLY, never read by a decision
     from core import side_gate_log as _side_gate_log
 except Exception:  # pragma: no cover
@@ -2355,6 +2356,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # ── OWNER_PLAN_EXEC: paper-trade the owner's saved plans (default OFF) ──
         if _owner_plan_exec.enabled():
             self._drain_owner_orders(trace_id)
+        # OWNER_PLAN_ANY_COIN: price-update + close-route owner positions on coins outside DEFAULT_SYMBOLS
+        # (_process_symbol only runs for the bot's own coins). No-op, no network, when none is open. Never raises.
+        _owner_any_coin.manage(self, trace_id)
 
         # ── Pending limit order fills ──
         # Check if any pending orders should fill at current prices

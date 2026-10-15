@@ -915,7 +915,8 @@ class PositionManager:
 
         # HARD SAFETY: Never open a position without a stop loss.
         # Sniper trades with sl=0 caused -$330 in catastrophic losses (4 trades, no SL).
-        if sl <= 0 or abs(entry - sl) / max(entry, 1) < 0.001:
+        # (owner plans: width relative to the price itself - max(entry, 1) rejected every stop on a sub-$1 coin)
+        if sl <= 0 or abs(entry - sl) / (entry if strategy == "owner_plan" and entry > 0 else max(entry, 1)) < 0.001:
             logger.error(
                 f"[{symbol}] REJECTED: No valid stop loss (sl={sl}, entry={entry}). "
                 f"Every trade MUST have a stop loss. This is non-negotiable."
