@@ -110,10 +110,10 @@ def run(deep_reads=2):
                 "updated": hv.get("updated"),
                 "consensus": {k: cons.get(k) for k in ("bull", "bear", "neutral", "bull_families", "bear_families",
                                                       "dissent_families", "move_size", "move_size_hint")},
-                "with_you": sum(1 for v in vlist if (v.get("lean") or "").upper() == side),
-                "against_you": sum(1 for v in vlist if (v.get("lean") or "").upper() in ("LONG", "SHORT")
-                                   and (v.get("lean") or "").upper() != side),
-                "voices": [{k: v.get(k) for k in ("name", "family", "lean", "strength", "grade", "why") if k in v}
+                # voices.py: reading +1 = leans up, -1 = leans down, 0 = neutral (context only - none predicts direction)
+                "with_you": sum(1 for v in vlist if (v.get("reading") or 0) * sg > 0),
+                "against_you": sum(1 for v in vlist if (v.get("reading") or 0) * sg < 0),
+                "voices": [{k: v.get(k) for k in ("voice", "family", "label", "reading", "detail", "trust") if k in v}
                            for v in vlist][:24],
                 "contradictions": (hv.get("contradictions") or [])[:6],
                 "liquidation_magnets": ((hv.get("deep") or {}).get("liquidation_magnets")),
