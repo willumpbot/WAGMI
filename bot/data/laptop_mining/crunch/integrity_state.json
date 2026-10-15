@@ -24,11 +24,11 @@
   "u": "rows"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 3435,
+  "v": 3459,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 27418,
+  "v": 27417,
   "u": "bytes"
  },
  "archive": {
@@ -60,15 +60,15 @@
   "u": "rows"
  },
  "call_snapshots.jsonl": {
-  "v": 62,
+  "v": 63,
   "u": "rows"
  },
  "candles_5m": {
-  "v": 39006,
+  "v": 39084,
   "u": "rows+bytes"
  },
  "cases_index.json": {
-  "v": 1882,
+  "v": 1884,
   "u": "bytes"
  },
  "chief.py": {
@@ -84,11 +84,11 @@
   "u": "bytes"
  },
  "conf_floor_decisions.jsonl": {
-  "v": 506,
+  "v": 516,
   "u": "rows"
  },
  "conf_floor_resolutions.jsonl": {
-  "v": 955,
+  "v": 956,
   "u": "rows"
  },
  "confidence_state.json": {
@@ -108,15 +108,15 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 79744,
+  "v": 80456,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
-  "v": 14991,
+  "v": 15268,
   "u": "bytes"
  },
  "dissent_log.jsonl": {
-  "v": 860,
+  "v": 908,
   "u": "rows"
  },
  "dive_requests.jsonl": {
@@ -148,7 +148,7 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 52086,
+  "v": 52123,
   "u": "rows"
  },
  "geometry_shadow.json": {
@@ -184,7 +184,7 @@
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 6576,
+  "v": 6575,
   "u": "bytes"
  },
  "owner_plan_sims_resolved.jsonl": {
@@ -200,7 +200,7 @@
   "u": "bytes"
  },
  "plans.json": {
-  "v": 48727,
+  "v": 48726,
   "u": "bytes"
  },
  "position_journal.jsonl": {
@@ -212,15 +212,15 @@
   "u": "bytes"
  },
  "promoted_log.jsonl": {
-  "v": 22,
+  "v": 26,
   "u": "rows"
  },
  "scan_grades.json": {
-  "v": 34542,
+  "v": 34624,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 742,
+  "v": 744,
   "u": "rows"
  },
  "scanner.py": {
@@ -248,7 +248,7 @@
   "u": "bytes"
  },
  "syndicate_calls_anon.jsonl": {
-  "v": 224,
+  "v": 225,
   "u": "rows"
  },
  "syndicate_features_anon.jsonl": {
@@ -276,7 +276,7 @@
   "u": "rows"
  },
  "today": {
-  "v": 26212,
+  "v": 30246,
   "u": "rows+bytes"
  },
  "trade_ledger.csv": {
@@ -292,11 +292,11 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 411,
+  "v": 415,
   "u": "rows"
  },
  "veto_tracker.json": {
-  "v": 841625,
+  "v": 841749,
   "u": "bytes"
  },
  "voice_grades.json": {
@@ -304,7 +304,7 @@
   "u": "bytes"
  },
  "wallet_snapshots.jsonl": {
-  "v": 7,
+  "v": 8,
   "u": "rows"
  },
  "watch_log.jsonl": {
