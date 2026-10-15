@@ -1,8 +1,27 @@
 {
- "updated": 1792087883.0697505,
+ "updated": 1792091591.6943176,
  "filled_plans": 16,
- "gaps": [],
+ "gaps": [
+  {
+   "plan_id": "920003d573",
+   "coin": "BTC",
+   "side": "SHORT",
+   "missing": "dive result",
+   "owner": "laptop",
+   "status": "open",
+   "filled_h_ago": 3.6
+  },
+  {
+   "plan_id": "4d8c000ca5",
+   "coin": "ENA",
+   "side": "SHORT",
+   "missing": "dive result",
+   "owner": "laptop",
+   "status": "open",
+   "filled_h_ago": 3.6
+  }
+ ],
  "stale": [],
- "laptop_export_age_min": 53.1,
- "ok": true
+ "laptop_export_age_min": 55.6,
+ "ok": false
 }

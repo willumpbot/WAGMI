@@ -24,3 +24,4 @@
 {"ts": 1792080849.8626878, "day": "2026-10-15", "key": "wake:ENA:1792076400000", "kind": "waking_up", "msg": "ENA: +3.3% in the 15:00 UTC hour on 4.8x normal volume - waking up - worth a look; across 177 coins such surges slightly FADED over the next 4h-3d (laptop M11), so don't chase"}
 {"ts": 1792080849.8626878, "day": "2026-10-15", "key": "wake:ETH:1792076400000", "kind": "waking_up", "msg": "ETH: +1.9% in the 15:00 UTC hour on 4.4x normal volume - waking up - worth a look; across 177 coins such surges slightly FADED over the next 4h-3d (laptop M11), so don't chase"}
 {"ts": 1792084280.3075411, "day": "2026-10-15", "key": "sim:65ac07702c", "kind": "near_stop", "msg": "ONDO SHORT: 1.94% from your stop (0.45 of a normal day), now -0.63R"}
+{"ts": 1792089703.8384569, "day": "2026-10-15", "key": "pos:HYPE", "kind": "time_limit", "msg": "HYPE SHORT: your plan's time limit is in 5.9h"}
