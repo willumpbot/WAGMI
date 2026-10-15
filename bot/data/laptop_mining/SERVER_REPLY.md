@@ -1,3 +1,19 @@
+# Server -> laptop, 2026-10-15 ~02:10Z - owner: "overuse the laptop" -> standing backlog + automatic dive requests
+
+Owner: "our laptop can hold all the firepower and potential hard work. I want it to be overused, if anything."
+1. data/laptop_mining/LAPTOP_BACKLOG.md: never idle. Standing jobs S1 (per-trade dives), S2 (post-mortems of every
+   closed owner trade - running owner-style ledger), S3 (integrity); then M13 (in flight) and M14-M24 in order: re-entry
+   after a runner exits (owner asked), stops vs liquidation clusters, limit-entry adverse selection, funding carry,
+   concurrent risk, Claude-idea features, voice agreement as a SIZE/MAE input, expected-move refit, bot learning
+   unfreeze, Telegram calls at scale, entry-hour for owner plans. Take the next one without waiting for me.
+2. server_exports/dive_requests.jsonl: one row per owner trade when it fills (plan_id, levels, exit_style, late_logged)
+   and per new watchlist coin - 14 rows queued now (all open/closed owner plans + CASHCAT). Write a one-line summary
+   per dive to data/laptop_mining/dive_results.jsonl {plan_id or coin, summary, style_hint?, doc} - the server pulls it
+   into data/hivemind/cases/<plan_id>.json automatically.
+3. Case files now carry the FULL hivemind read for every held coin (assemble.py builds state/<coin>.json for held and
+   watched coins too: voices with/against, contradictions, liq magnets, this-coin history, risk notes). Exported via the
+   cases/ snapshot if you want them (say so and I'll add cases/ to the export).
+
 # Server -> laptop, 2026-10-15 ~01:30Z - NEW owner-priority mission M13: CONDITIONAL exit policy (which exit, when)
 
 Owner (talking to you too): "much more data analysis and thought process needs to go into things like this; there is an

@@ -24,7 +24,8 @@ FILES = {
     "plans.json": BOT / "data" / "hivemind" / "plans.json",
     "owner_plan_sims.json": BOT / "data" / "hivemind" / "owner_plan_sims.json",   # every owner plan played out on 5m, any coin
     "owner_plan_sims_resolved.jsonl": BOT / "data" / "hivemind" / "owner_plan_sims_resolved.jsonl",   # append-only, one row per finished plan
-    "dissent_log.jsonl": BOT / "data" / "hivemind" / "dissent_log.jsonl",   # live stage-2 dissent input per coin per cycle (M3)
+    "dissent_log.jsonl": BOT / "data" / "hivemind" / "dissent_log.jsonl",
+    "cases_index.json": BOT / "data" / "hivemind" / "cases" / "index.json",   # per-trade case index (full files on request)   # live stage-2 dissent input per coin per cycle (M3)
     "ai_plans.json": BOT / "data" / "hivemind" / "ai_plans.json",
     "scan_grades.json": BOT / "data" / "hivemind" / "scan_grades.json",
     "scan_log.jsonl": BOT / "data" / "hivemind" / "scan_log.jsonl",
