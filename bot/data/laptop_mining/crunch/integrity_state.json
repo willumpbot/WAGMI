@@ -24,11 +24,11 @@
   "u": "rows"
  },
  "agent_grades_resolved.jsonl": {
-  "v": 3357,
+  "v": 3381,
   "u": "rows"
  },
  "ai_plans.json": {
-  "v": 26446,
+  "v": 26447,
   "u": "bytes"
  },
  "archive": {
@@ -64,7 +64,7 @@
   "u": "rows"
  },
  "candles_5m": {
-  "v": 38670,
+  "v": 38760,
   "u": "rows+bytes"
  },
  "cases_index.json": {
@@ -84,7 +84,7 @@
   "u": "bytes"
  },
  "conf_floor_decisions.jsonl": {
-  "v": 502,
+  "v": 504,
   "u": "rows"
  },
  "conf_floor_resolutions.jsonl": {
@@ -96,7 +96,7 @@
   "u": "bytes"
  },
  "copilot_alerts.log": {
-  "v": 409185,
+  "v": 411283,
   "u": "bytes"
  },
  "copilot_call_ledger.jsonl": {
@@ -108,15 +108,15 @@
   "u": "rows"
  },
  "ctx_snapshots": {
-  "v": 76184,
+  "v": 77252,
   "u": "rows+bytes"
  },
  "discrepancies.json": {
-  "v": 14714,
+  "v": 14955,
   "u": "bytes"
  },
  "dissent_log.jsonl": {
-  "v": 625,
+  "v": 694,
   "u": "rows"
  },
  "dive_requests.jsonl": {
@@ -140,7 +140,7 @@
   "u": "rows"
  },
  "expmove_log.jsonl": {
-  "v": 319,
+  "v": 322,
   "u": "rows"
  },
  "floor_decisions_log.jsonl.gz": {
@@ -148,7 +148,7 @@
   "u": "rows"
  },
  "funding_oi_history.jsonl.gz": {
-  "v": 51957,
+  "v": 51992,
   "u": "rows"
  },
  "geometry_shadow.json": {
@@ -156,7 +156,7 @@
   "u": "bytes"
  },
  "geometry_shadow_results.jsonl": {
-  "v": 837,
+  "v": 843,
   "u": "rows"
  },
  "ic_dropped_resolved.jsonl": {
@@ -176,7 +176,7 @@
   "u": "rows"
  },
  "owner_fills.jsonl": {
-  "v": 8,
+  "v": 9,
   "u": "rows"
  },
  "owner_plan_reviews.jsonl": {
@@ -184,11 +184,11 @@
   "u": "rows"
  },
  "owner_plan_sims.json": {
-  "v": 6827,
+  "v": 6871,
   "u": "bytes"
  },
  "owner_plan_sims_resolved.jsonl": {
-  "v": 3,
+  "v": 4,
   "u": "rows"
  },
  "owner_plans.jsonl": {
@@ -200,23 +200,27 @@
   "u": "bytes"
  },
  "plans.json": {
-  "v": 48365,
+  "v": 48471,
   "u": "bytes"
  },
  "position_journal.jsonl": {
-  "v": 3112,
+  "v": 3114,
   "u": "rows"
  },
  "position_manager.py": {
-  "v": 144251,
+  "v": 159028,
   "u": "bytes"
  },
+ "promoted_log.jsonl": {
+  "v": 8,
+  "u": "rows"
+ },
  "scan_grades.json": {
-  "v": 33663,
+  "v": 33913,
   "u": "bytes"
  },
  "scan_log.jsonl": {
-  "v": 695,
+  "v": 732,
   "u": "rows"
  },
  "scanner.py": {
@@ -271,6 +275,10 @@
   "v": 50447,
   "u": "rows"
  },
+ "today": {
+  "v": 11316,
+  "u": "rows+bytes"
+ },
  "trade_ledger.csv": {
   "v": 296,
   "u": "rows"
@@ -284,7 +292,7 @@
   "u": "rows"
  },
  "uptime.jsonl": {
-  "v": 391,
+  "v": 397,
   "u": "rows"
  },
  "veto_tracker.json": {
@@ -296,11 +304,11 @@
   "u": "bytes"
  },
  "wallet_snapshots.jsonl": {
-  "v": 2,
+  "v": 3,
   "u": "rows"
  },
  "watch_log.jsonl": {
-  "v": 3,
+  "v": 4,
   "u": "rows"
  }
 }
