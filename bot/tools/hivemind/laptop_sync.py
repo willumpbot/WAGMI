@@ -267,6 +267,10 @@ def run(force=False):
     if (BOT.parent / ".git" / "index.lock").exists():
         return "git busy"
     _git("fetch", "-q", "origin", "laptop-mining-2026-10")   # so the Brief sees the laptop's latest files
+    # pull the laptop's per-trade dives in (dive_results.jsonl feeds case files + linkage; DIVES/ holds the docs) -
+    # until 10-15 this was a manual step and 10 dives sat unseen on the laptop branch
+    _git("checkout", "origin/laptop-mining-2026-10", "--", "bot/data/laptop_mining/dive_results.jsonl",
+         "bot/data/laptop_mining/DIVES")
     EXP.mkdir(parents=True, exist_ok=True)
     manifest = {"exported_at": time.time(), "files": {}}
     for name, src in FILES.items():
