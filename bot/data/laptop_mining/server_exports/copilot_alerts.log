@@ -11549,3 +11549,40 @@ State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
 (no alerts fired this run)
 [attention] wrote data\copilot\attention.json: 12 symbols, 1 at a range edge, 0 error(s)
 [attention]   POPCAT     14.5%  bottom of 90d range
+[2026-10-15T06:33:32Z] copilot_alerts run
+=== WAGMI Co-Pilot Alerts  - 2026-10-15T06:33:38.482263+00:00 ===
+
+--- BTC ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+--- SOL ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+--- POPCAT ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
+(no alerts fired this run)
+python.exe : [eye_deep] candle fetch failed kBONK 1d: HTTP Error 429: Too Many Requests
+At C:\Users\vince\WAGMI\bot\tools\copilot\run_alerts.ps1:75 char:1
++ & $py "tools\copilot\attention_snapshot.py" 2>&1 | Out-File -Append - ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([eye_deep] cand...o Many Requests:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[attention] wrote data\copilot\attention.json: 12 symbols, 2 at a range edge, 0 error(s)
+[attention]   POPCAT     11.2%  bottom of 90d range
+Traceback (most recent call last):
+  File "C:\Users\vince\WAGMI\bot\tools\copilot\attention_snapshot.py", line 165, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\vince\WAGMI\bot\tools\copilot\attention_snapshot.py", line 160, in main
+    print(f"[attention]   {r['symbol']:<9} {rp:5.1f}%  {r['zone']}")
+                                           ^^^^^^^^^
+TypeError: unsupported format string passed to NoneType.__format__

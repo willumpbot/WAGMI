@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-15T04:25:50+00:00",
- "now": "2026-10-15T04:25:49+00:00",
+ "generated": "2026-10-15T06:58:29+00:00",
+ "now": "2026-10-15T06:58:19+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 3,
+   "flagged": 5,
    "high": 3,
    "not_automated": 0
   },
@@ -164,6 +164,28 @@
      "impl_hash": "af42d2e18c676c6096433286e59c512f1c11c2669aaab17f70ef39d7d135ff15"
     }
    ]
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_ETH",
+   "severity": "warn",
+   "what": "exp_move for ETH disagrees by 11% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 2.08,
+    "scan.exp_move": 2.09,
+    "chief.expected_move_pct": 2.3
+   }
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_SOL",
+   "severity": "warn",
+   "what": "exp_move for SOL disagrees by 12% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 2.33,
+    "scan.exp_move": 2.39,
+    "chief.expected_move_pct": 2.6
+   }
   },
   {
    "check": "D5",
