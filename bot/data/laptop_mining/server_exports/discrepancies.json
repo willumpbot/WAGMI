@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-15T14:55:00+00:00",
- "now": "2026-10-15T14:55:00+00:00",
+ "generated": "2026-10-15T15:58:18+00:00",
+ "now": "2026-10-15T15:58:17+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -169,9 +169,9 @@
    "check": "D3",
    "id": "exp_move_BLUR",
    "severity": "warn",
-   "what": "exp_move for BLUR disagrees by 509% across live outputs",
+   "what": "exp_move for BLUR disagrees by 67% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 0.87,
+    "state.vol.next_day_move_pct": 3.18,
     "scan.exp_move": 5.3
    }
   },
@@ -179,9 +179,9 @@
    "check": "D3",
    "id": "exp_move_BTC",
    "severity": "warn",
-   "what": "exp_move for BTC disagrees by 18% across live outputs",
+   "what": "exp_move for BTC disagrees by 15% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 1.52,
+    "state.vol.next_day_move_pct": 1.61,
     "scan.exp_move": 1.57,
     "chief.expected_move_pct": 1.8
    }
@@ -190,9 +190,9 @@
    "check": "D3",
    "id": "exp_move_ETH",
    "severity": "warn",
-   "what": "exp_move for ETH disagrees by 24% across live outputs",
+   "what": "exp_move for ETH disagrees by 20% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 2.01,
+    "state.vol.next_day_move_pct": 2.12,
     "scan.exp_move": 2.09,
     "chief.expected_move_pct": 2.5
    }
@@ -201,9 +201,9 @@
    "check": "D3",
    "id": "exp_move_HYPE",
    "severity": "warn",
-   "what": "exp_move for HYPE disagrees by 14% across live outputs",
+   "what": "exp_move for HYPE disagrees by 15% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 2.55,
+    "state.vol.next_day_move_pct": 2.53,
     "scan.exp_move": 2.69,
     "chief.expected_move_pct": 2.9
    }
@@ -212,9 +212,9 @@
    "check": "D3",
    "id": "exp_move_NEAR",
    "severity": "warn",
-   "what": "exp_move for NEAR disagrees by 18% across live outputs",
+   "what": "exp_move for NEAR disagrees by 16% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 4.65,
+    "state.vol.next_day_move_pct": 4.73,
     "scan.exp_move": 4.8,
     "chief.expected_move_pct": 5.5
    }
@@ -223,9 +223,9 @@
    "check": "D3",
    "id": "exp_move_SOL",
    "severity": "warn",
-   "what": "exp_move for SOL disagrees by 18% across live outputs",
+   "what": "exp_move for SOL disagrees by 15% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 2.2,
+    "state.vol.next_day_move_pct": 2.27,
     "scan.exp_move": 2.39,
     "chief.expected_move_pct": 2.6
    }
@@ -234,9 +234,9 @@
    "check": "D3",
    "id": "exp_move_XRP",
    "severity": "warn",
-   "what": "exp_move for XRP disagrees by 16% across live outputs",
+   "what": "exp_move for XRP disagrees by 19% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 2.24,
+    "state.vol.next_day_move_pct": 2.19,
     "scan.exp_move": 2.32,
     "chief.expected_move_pct": 2.6
    }

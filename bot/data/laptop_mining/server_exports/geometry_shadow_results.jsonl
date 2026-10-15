@@ -908,3 +908,15 @@
 {"sym": "XRP", "ts": 1791896897.374974, "side": -1, "entry": 1.364, "sl": 1.3786357142857144, "tp": 1.3347285714285715, "src": "ic_muted", "r_current": -1.084, "r_proposal": 0.637, "r_adaptive": 0.484, "fc": 2.79}
 {"sym": "BTC", "ts": 1791896908.761948, "side": 1, "entry": 83322.0, "sl": 82205.0, "tp": 85556.0, "src": "ic_muted", "r_current": -1.067, "r_proposal": -0.36, "r_adaptive": -1.024, "fc": 1.91}
 {"sym": "NEAR", "ts": 1791897589.286828, "side": -1, "entry": 5.1082, "sl": 5.348628571428572, "tp": 4.627342857142857, "src": "ic_muted", "r_current": 1.981, "r_proposal": 0.271, "r_adaptive": 0.492, "fc": 5.54}
+{"sym": "ETH", "ts": 1791900873.563437, "side": 1, "entry": 2501.9, "sl": 2453.0285714285715, "tp": 2599.6428571428573, "src": "ic_muted", "r_current": -1.046, "r_proposal": -0.277, "r_adaptive": -1.02, "fc": 2.21}
+{"sym": "SOL", "ts": 1791900873.563689, "side": -1, "entry": 106.73, "sl": 108.22428571428571, "tp": 103.74142857142859, "src": "ic_muted", "r_current": -1.064, "r_proposal": 0.155, "r_adaptive": 0.484, "fc": 2.83}
+{"sym": "XRP", "ts": 1791900874.154278, "side": -1, "entry": 1.3621, "sl": 1.3765857142857143, "tp": 1.3331285714285717, "src": "ic_muted", "r_current": -1.085, "r_proposal": 0.313, "r_adaptive": 0.484, "fc": 2.79}
+{"sym": "HYPE", "ts": 1791900884.411413, "side": -1, "entry": 81.209, "sl": 82.791, "tp": 78.04500000000002, "src": "ic_muted", "r_current": 1.954, "r_proposal": 0.042, "r_adaptive": 0.486, "fc": 3.11}
+{"sym": "BTC", "ts": 1791900885.394345, "side": 1, "entry": 83234.0, "sl": 82109.71428571429, "tp": 85482.57142857142, "src": "ic_muted", "r_current": -1.067, "r_proposal": -0.162, "r_adaptive": -1.024, "fc": 1.91}
+{"sym": "NEAR", "ts": 1791900895.412433, "side": -1, "entry": 4.9915, "sl": 5.239071428571429, "tp": 4.496357142857143, "src": "ic_muted", "r_current": 0.16, "r_proposal": 0.02, "r_adaptive": 0.492, "fc": 5.54}
+{"sym": "ETH", "ts": 1791903817.714511, "side": 1, "entry": 2516.3, "sl": 2469.571428571429, "tp": 2609.7571428571428, "src": "ic_muted", "r_current": -1.048, "r_proposal": -0.209, "r_adaptive": -1.02, "fc": 2.21}
+{"sym": "HYPE", "ts": 1791903817.743016, "side": -1, "entry": 81.141, "sl": 82.791, "tp": 77.84100000000002, "src": "ic_muted", "r_current": 1.956, "r_proposal": -0.034, "r_adaptive": 0.486, "fc": 3.11}
+{"sym": "XRP", "ts": 1791903818.174381, "side": -1, "entry": 1.3729, "sl": 1.3863714285714286, "tp": 1.3459571428571429, "src": "ic_muted", "r_current": 1.908, "r_proposal": 0.305, "r_adaptive": 0.484, "fc": 2.79}
+{"sym": "SOL", "ts": 1791903828.423179, "side": 1, "entry": 107.5, "sl": 104.86, "tp": 112.78, "src": "ic_muted", "r_current": -1.037, "r_proposal": -0.074, "r_adaptive": -1.016, "fc": 2.83}
+{"sym": "BTC", "ts": 1791903829.484151, "side": 1, "entry": 83495.0, "sl": 82408.71428571429, "tp": 85667.57142857142, "src": "ic_muted", "r_current": -1.069, "r_proposal": -0.136, "r_adaptive": -1.024, "fc": 1.91}
+{"sym": "NEAR", "ts": 1791903839.48593, "side": -1, "entry": 5.012, "sl": 5.2425428571428565, "tp": 4.550914285714286, "src": "ic_muted", "r_current": 1.98, "r_proposal": -0.061, "r_adaptive": 0.492, "fc": 5.54}
