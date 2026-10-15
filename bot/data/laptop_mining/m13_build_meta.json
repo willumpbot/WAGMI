@@ -1,0 +1,21 @@
+{
+ "source_snapshot": {
+  "candles_1h": {
+   "max_t": 1792015200000,
+   "rows": 889412
+  }
+ },
+ "coins": 174,
+ "entries": 19566,
+ "oi_coverage_frac": 0.021925789635081263,
+ "funding_any_frac": 1.0,
+ "median_abs_hourly_rate": 1.25e-05,
+ "median_abs_carry_frac_runner48": 0.0004908118499999997,
+ "k_ctrl": 16,
+ "fee_half": 0.00045,
+ "k_stop": 1.65,
+ "horizon": 72,
+ "spacing_bars": 24,
+ "atr_n": 14,
+ "notes": "Amendment 1 build: per-entry K=16 control + nullreal draw; leg fees; funding carry accrued; day-level feature table for the day-shift placebo; em lagged."
+}
