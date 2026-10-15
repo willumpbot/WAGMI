@@ -118,7 +118,8 @@ def run():
     # Insight, not an exit: a filled plan that reached >= +0.5R before banking anything, and has since given back half
     # of that best, is flagged so the owner can take what was given by hand. Whether an AUTOMATIC version pays is
     # laptop M30 - until it passes, rules set at entry still manage the exit.
-    for pl in _load(HM / "plans.json", {}).get("plans", []):
+    ideas = [dict(x, _idea=True) for x in (_load(HM / "ai_plans.json", {}) or {}).get("ideas", [])]
+    for pl in _load(HM / "plans.json", {}).get("plans", []) + ideas:
         R = pl.get("result") or {}
         if R.get("status") != "open" or R.get("legs"):
             continue                       # closed, or half already banked at +1R
@@ -126,7 +127,7 @@ def run():
         if best is None or live is None or best < 0.5 or live > best / 2:
             continue
         alerts.append((f"giveback:{pl['id']}", "giveback",
-                       f"{pl['coin']} {pl['side']}: was up +{best:.2f}R, now {live:+.2f}R - nothing banked yet. "
+                       f"{'Claude idea (not taken) ' if pl.get('_idea') else ''}{pl['coin']} {pl['side']}: was up +{best:.2f}R, now {live:+.2f}R - nothing banked yet. "
                        f"Taking some by hand is your call; the plan's rules will not."))
     try:   # standing laptop dive for every NEW watchlist coin (LAPTOP_BACKLOG S1)
         dq = BOT / "data" / "laptop_mining" / "server_exports" / "dive_requests.jsonl"
