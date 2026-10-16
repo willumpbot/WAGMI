@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-16T12:10:45+00:00",
- "now": "2026-10-16T12:10:45+00:00",
+ "generated": "2026-10-16T13:11:42+00:00",
+ "now": "2026-10-16T13:11:42+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 5,
+   "flagged": 4,
    "high": 3,
    "not_automated": 0
   },
@@ -164,16 +164,6 @@
      "impl_hash": "af42d2e18c676c6096433286e59c512f1c11c2669aaab17f70ef39d7d135ff15"
     }
    ]
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_BLUR",
-   "severity": "warn",
-   "what": "exp_move for BLUR disagrees by 63% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 3.15,
-    "scan.exp_move": 5.15
-   }
   },
   {
    "check": "D3",

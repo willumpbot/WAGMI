@@ -11904,3 +11904,24 @@ State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
 State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
 (no alerts fired this run)
 [attention] wrote data\copilot\attention.json: 12 symbols, 0 at a range edge, 0 error(s)
+[2026-10-16T12:33:26Z] copilot_alerts run
+=== WAGMI Co-Pilot Alerts  - 2026-10-16T12:33:28.195366+00:00 ===
+
+--- BTC ---
+  prior state:   ADD|SAFE
+  current state: HOLD|SAFE  (action=HOLD, leverage=SAFE)
+  verdict: NONE - cleared ADD|SAFE->HOLD|SAFE but --alert-on-clear is off
+
+--- SOL ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+--- POPCAT ---
+  prior state:   HOLD|SAFE
+  current state: HOLD|SAFE  (action=HOLD, leverage=SAFE)
+  verdict: NONE - unchanged (HOLD|SAFE) - no alert
+
+State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
+(no alerts fired this run)
+[attention] wrote data\copilot\attention.json: 12 symbols, 0 at a range edge, 0 error(s)

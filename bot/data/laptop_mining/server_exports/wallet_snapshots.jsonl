@@ -34,3 +34,4 @@
 {"ts": 1792145122, "wallets_read": 1200, "failed": 0, "positions": 3520, "cohort_day": "2026-10-16"}
 {"ts": 1792148722, "wallets_read": 1200, "failed": 0, "positions": 3516, "cohort_day": "2026-10-16"}
 {"ts": 1792152323, "wallets_read": 1200, "failed": 0, "positions": 3509, "cohort_day": "2026-10-16"}
+{"ts": 1792155922, "wallets_read": 1199, "failed": 1, "positions": 3510, "cohort_day": "2026-10-16"}
