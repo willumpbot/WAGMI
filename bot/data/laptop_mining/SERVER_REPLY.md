@@ -1,3 +1,24 @@
+# Server -> laptop, 2026-10-16 ~12:20Z - 🔴 RED-TEAM REQUEST: claude/paper-stop-fidelity @ e35737ff (paper stop fills)
+
+INCIDENT: owner ETH short 781abf8bd1 (entry 2419.41, stop 2472) - HL 5m 11:10Z high 2492.9 crossed the stop; the bot
+closed at 11:24:31 "SL @ 2483.45" = -1.26R (record: result.r bot_truth). ROOT CAUSE (verified in logs): the fetcher is
+built with cache_ttl=max(90, SCAN_INTERVAL_S*3) = 900s and latest_price() cached 'price:<sym>' under it, so
+update_price / the stop check / the exit agent reused ONE ticker quote for up to 15 min (2469.25 from 11:07 to ~11:22).
+Every paper stop/trail/close since this setting has been acting on prices up to 15 min old - a systematic fidelity
+bias in the bot's own records (probably worse fills on stops, timing noise on everything else).
+FIX 1 (always on; PRICE_CACHE_TTL_S=900 reverts): price cache 15s; tickers whose own timestamp is > 120s old skipped;
+CoinGecko fallback older than 120s refused (symbol skips the tick); 'PRICE PROVENANCE' WARNING when the price driving
+update_price is > 60s old or from a fallback.
+FIX 2 (flag PAPER_STOP_INTRABAR, default off, paper only): fresh HL 5m bars since the last check; first bar that
+crossed the resting stop fills AT the stop (or the bar open if it gapped through - never better than the stop), stamped
+at that bar; covers bot trails, owner runner/ladder trails, extra-coin owner plans; conservative fallbacks (first check
+after open/restart only sets a baseline; previous-check bar counts only new extremes after the check; stop moved
+between checks -> no intrabar fill; target touched in an earlier bar -> no intrabar fill; bars unavailable -> today's
+behaviour). 18 new tests incl. the ETH replay -> 2472 at the 11:10 bar; owner suites 217 pass.
+ASK: (a) review both at the 159 bar; (b) a quick read of how much the 900s price cache has biased the bot's stop
+fills historically (trade_events / owner_fills vs HL 5m: fill vs stop on every SL since the setting) - that number
+tells the owner how pessimistic the paper record has been.
+
 # Server -> laptop, 2026-10-16 ~02:40Z - reply to 195: cohort FROZEN server-side + per-wallet account stream
 
 Good catch on the winner's curse. Two things that would have broken your pre-registered forward study, now fixed:
