@@ -10,14 +10,14 @@ metric's MDE has fallen below the in-sample effect it is replicating. Both numbe
 printed below, every run. A replication read before it could have come out the other
 way is not a replication._
 
-_Updated 2026-10-15 19:20. 7 out-of-sample day-block(s) evaluated since 2026-10-09._
+_Updated 2026-10-15 20:22. 7 out-of-sample day-block(s) evaluated since 2026-10-09._
 
 ## What accrued
 
 | asof | metric | n | value | note |
 |---|---|---|---|---|
 | run | `meta.oos_boundary` | 205 | — | OOS outcome days start 2026-10-09. 205 earlier closed days are WITHHELD as in-sample for the flag tests (all built on history through 2026-10-08) -- counted here so the small n below reads as a deliberate exclusion, not as missing data. |
-| run | `meta.panel` | 176 | 355 | 176 coins with >=60 closed 24-bar days; 355 partial days excluded; universe capped at the top 60 by candle USD volume (live caps at the top 60 by ctx.dayNtlVlm -- a stated deviation) |
+| run | `meta.panel` | 176 | 356 | 176 coins with >=60 closed 24-bar days; 356 partial days excluded; universe capped at the top 60 by candle USD volume (live caps at the top 60 by ctx.dayNtlVlm -- a stated deviation) |
 | run | `meta.em` | — | — | live em = volforecast.forecast(closes), stage 1 + the 0.8 haircut at >= 3.9, exactly as scanner.py calls it |
 | run | `meta.oos_days` | 7 | — | evaluated 2026-10-09 .. 2026-10-15; scanned universe 60..60 coins/day; coin-days skipped: gap=0, no_em=0, short_history=0 |
 | 2026-10-09 | `scan.squeeze.day.diff_ret_pct` | 0 | — | flag fired on none of the 60 coins scanned on 2026-10-09. A real non-firing: every input was present. |

@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-15T22:57:54+00:00",
- "now": "2026-10-15T22:57:54+00:00",
+ "generated": "2026-10-16T00:10:59+00:00",
+ "now": "2026-10-16T00:10:56+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 5,
+   "flagged": 7,
    "high": 3,
    "not_automated": 0
   },
@@ -169,20 +169,40 @@
    "check": "D3",
    "id": "exp_move_BLUR",
    "severity": "warn",
-   "what": "exp_move for BLUR disagrees by 47% across live outputs",
+   "what": "exp_move for BLUR disagrees by 43% across live outputs",
    "values": {
     "state.vol.next_day_move_pct": 3.61,
-    "scan.exp_move": 5.3
+    "scan.exp_move": 5.15
    }
   },
   {
    "check": "D3",
    "id": "exp_move_CASHCAT",
    "severity": "warn",
-   "what": "exp_move for CASHCAT disagrees by 23% across live outputs",
+   "what": "exp_move for CASHCAT disagrees by 16% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 6.83,
-    "scan.exp_move": 5.57
+    "state.vol.next_day_move_pct": 5.66,
+    "scan.exp_move": 4.89
+   }
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_LIT",
+   "severity": "warn",
+   "what": "exp_move for LIT disagrees by 19% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 4.07,
+    "scan.exp_move": 3.43
+   }
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_NXPC",
+   "severity": "warn",
+   "what": "exp_move for NXPC disagrees by 12% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 3.01,
+    "scan.exp_move": 3.36
    }
   },
   {
