@@ -1,24 +1,24 @@
 {
- "updated": "2026-10-16T06:06+00:00",
- "n": 1002,
+ "updated": "2026-10-16T07:06+00:00",
+ "n": 1009,
  "proposal": "stop x8, target 1R, 48h time stop, equal dollar risk",
- "mean_r_current": -0.172,
- "mean_r_proposal": -0.024,
- "paired_diff_r": 0.148,
+ "mean_r_current": -0.175,
+ "mean_r_proposal": -0.025,
+ "paired_diff_r": 0.151,
  "ci95": [
   -0.032,
-  0.342
+  0.346
  ],
  "n_days": 26,
  "laptop_backtest": "+0.542R paired diff, CI [+0.300, +0.799] out of sample (GEOMETRY.md)",
  "adaptive": {
   "rule": "stop 2x forecast move, 0.5R target, 48h",
-  "n": 1002,
-  "mean_r": -0.043,
-  "paired_diff_vs_current": 0.129,
+  "n": 1009,
+  "mean_r": -0.048,
+  "paired_diff_vs_current": 0.127,
   "ci95": [
    -0.071,
-   0.296
+   0.291
   ],
   "laptop_test": "+0.093R vs bot -0.431R (ADAPTIVE_STOPS.md)"
  },

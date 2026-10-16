@@ -1000,3 +1000,10 @@
 {"sym": "SOL", "ts": 1791951248.717008, "side": -1, "entry": 107.81, "sl": 108.63785714285714, "tp": 106.15428571428572, "src": "ic_muted", "r_current": -1.117, "r_proposal": 0.985, "r_adaptive": 0.48, "fc": 2.25}
 {"sym": "SOL", "ts": 1791954338.312531, "side": 1, "entry": 107.92, "sl": 106.04857142857142, "tp": 110.1657142857143, "src": "ic_muted", "r_current": -1.052, "r_proposal": -0.141, "r_adaptive": -1.02, "fc": 2.25}
 {"sym": "XRP", "ts": 1791954338.385926, "side": 1, "entry": 1.3747, "sl": 1.3532, "tp": 1.4005, "src": "ic_muted", "r_current": -1.058, "r_proposal": -0.22, "r_adaptive": -1.02, "fc": 2.29}
+{"sym": "ETH", "ts": 1791954633.833561, "side": 1, "entry": 2514.1, "sl": 2488.557142857143, "tp": 2565.185714285714, "src": "ic_muted", "r_current": -1.089, "r_proposal": -0.34, "r_adaptive": -1.023, "fc": 1.93}
+{"sym": "NEAR", "ts": 1791954634.806225, "side": 1, "entry": 5.0862, "sl": 4.907457142857143, "tp": 5.443685714285714, "src": "ic_muted", "r_current": -1.026, "r_proposal": 0.092, "r_adaptive": -1.01, "fc": 4.56}
+{"sym": "BTC", "ts": 1791954644.914542, "side": 1, "entry": 83702.0, "sl": 82866.28571428571, "tp": 84704.85714285714, "src": "ic_muted", "r_current": -1.09, "r_proposal": -0.245, "r_adaptive": -1.03, "fc": 1.5}
+{"sym": "HYPE", "ts": 1791954895.611407, "side": -1, "entry": 82.317, "sl": 82.93592857142856, "tp": 81.07914285714286, "src": "ic_muted", "r_current": 1.88, "r_proposal": 0.273, "r_adaptive": 0.484, "fc": 2.73}
+{"sym": "ETH", "ts": 1791957746.175027, "side": 1, "entry": 2514.1, "sl": 2488.557142857143, "tp": 2565.185714285714, "src": "ic_muted", "r_current": -1.089, "r_proposal": -0.331, "r_adaptive": -1.023, "fc": 1.93}
+{"sym": "NEAR", "ts": 1791957752.08763, "side": 1, "entry": 5.0862, "sl": 4.907457142857143, "tp": 5.443685714285714, "src": "ic_muted", "r_current": -1.026, "r_proposal": 0.076, "r_adaptive": -1.01, "fc": 4.56}
+{"sym": "BTC", "ts": 1791957757.170051, "side": 1, "entry": 83702.0, "sl": 82866.28571428571, "tp": 84704.85714285714, "src": "ic_muted", "r_current": -1.09, "r_proposal": -0.241, "r_adaptive": -1.03, "fc": 1.5}
