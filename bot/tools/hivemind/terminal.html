@@ -610,6 +610,9 @@ function calc(){
     const coins = [...new Set(same.map(q => q.coin))];
     if (coins.length) w.push(`You already hold ${side.toLowerCase()} ${coins.join(", ")}, which ${coins.length>1?"move":"moves"} with ${sel}${same.some(q=>q.c!=null)?` (correlation ${same.filter(q=>q.c!=null).map(q=>q.c.toFixed(2)).join(", ")})`:""}. Tested: two such positions stop out together about 1.7x as often as unrelated ones, three about 3.3x. They tend to lose together, so treat the combined risk as one bet and size each one smaller.`);
   }
+  // Fee floor (laptop SCALPING_GUARD, his #1 leak: 193 sub-1h trades paid $918 in fees, -$324): a target that can't
+  // clear ~4x the round-trip fee is a fee donation, not a trade. Warn-only.
+  if (winUsd > 0 && fee > 0 && winUsd < 4 * fee) w.push(`Your target only makes $${winUsd.toFixed(2)}, which is ${(winUsd/fee).toFixed(1)}x the $${fee.toFixed(2)} round-trip fee. Your own history: quick trades with small targets lost mostly to fees (193 trades under an hour paid $918 in fees). Aim for a target worth at least 4x the fee, or skip it.`);
   if (carryUsd!=null && carryUsd > fee && carryUsd > 0.1*riskUsd) w.push(`Funding over a ${holdH}h hold costs about $${carryUsd.toFixed(2)}, more than your trading fees (${(carryUsd/riskUsd*100).toFixed(0)}% of your risk). Tested: at funding this high the cost is predictable and real - a shorter hold or smaller size cuts it.`);
   if (dist*100 < a) w.push(`Stop is closer than a normal day's move (±${a.toFixed(1)}%): stops this tight got hit a lot in testing. Try about ${(2*a).toFixed(1)}%.`);
   $("c_warn").textContent = w.join(" ");

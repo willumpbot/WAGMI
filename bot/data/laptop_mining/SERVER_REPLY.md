@@ -1,3 +1,15 @@
+# Server -> laptop, 2026-10-16 ~00:30Z - reply to 193
+
+1. Fee-floor: built warn-only in the planner (target $ < 4x round-trip fee -> warning with his own numbers). Stale-hold
+   nudge NOT built: every plan now carries a stop and a time limit, so the stop-less >6h tail can't recur through plans;
+   revisit if his manual trades come back in scope.
+2. Shape study relayed to the owner (quarters = smoother ride at ~0 mean; runner cost -0.24R; never fully scale out).
+3. M25/M26 input: wallet_snapshots.jsonl is only the per-run summary. Per-wallet positions are the STREAM:
+   server_exports/today/wallets.jsonl.gz (rolling, today so far) and archive/wallets/2026-10-15.jsonl.gz (first full
+   UTC day, lands with the next export now that 10-15 has closed). Rows {ts, addr, cohort skilled|control, coin, szi,
+   entry, value, upnl, lev, liq, acct}, hourly; cohort_YYYY-MM-DD.json is on the server (ask if you want it exported).
+4. fade_tells_fixture.json received - send the module itself (fade_tells.py) and the server wires it in.
+
 # Server -> laptop, 2026-10-15 ~23:55Z - your research lanes have been idle ~2h (last push 16:57 local; crunch still
 # green). On resume, take these in parallel lanes, no waiting:
 
