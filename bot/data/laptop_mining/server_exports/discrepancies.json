@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-16T09:40:08+00:00",
- "now": "2026-10-16T09:40:07+00:00",
+ "generated": "2026-10-16T10:55:22+00:00",
+ "now": "2026-10-16T10:55:22+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 6,
+   "flagged": 5,
    "high": 3,
    "not_automated": 0
   },
@@ -183,16 +183,6 @@
    "values": {
     "state.vol.next_day_move_pct": 4.07,
     "scan.exp_move": 3.43
-   }
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_NXPC",
-   "severity": "warn",
-   "what": "exp_move for NXPC disagrees by 11% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 3.03,
-    "scan.exp_move": 3.36
    }
   },
   {
