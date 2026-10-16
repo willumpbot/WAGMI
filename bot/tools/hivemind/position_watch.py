@@ -149,6 +149,25 @@ def run():
                 ctx.append(f"stop {abs(px_ - float(pl['stop'])) / px_ * 100:.1f}% away")
         except (TypeError, ValueError):
             pass
+        try:   # laptop's sealed fade tell (exploratory lean, ~7-pt swing): quiet & slow +0.5R fades more often
+            import fade_tells
+            f_ts = float(R["filled_at"])
+            e_, s_ = float(pl["entry"]), float(pl["stop"])
+            rk_ = abs(e_ - s_)
+            bars = sorted(hl.candles(pl["coin"], "1h", int((f_ts - 73 * 3600) * 1000), ttl=600) or [],
+                          key=lambda b: b["t"])
+            pre = [b for b in bars if int(b["t"]) / 1000 + 3600 <= f_ts][-72:]
+            post = [b for b in bars if int(b["t"]) / 1000 + 3600 > f_ts]
+            k05 = next((i for i, b in enumerate(post)
+                        if sgc * ((float(b["h"]) if sgc > 0 else float(b["l"])) - e_) / rk_ >= 0.5), None)
+            if pre and k05 is not None:
+                vprev = float(post[k05 - 1]["v"]) if k05 > 0 else float(pre[-1]["v"])
+                lab, note = fade_tells.classify(k05, vprev, sum(float(b["v"]) for b in pre) / len(pre))
+                if lab != "UNKNOWN":
+                    ctx.append(("fade lean: quiet & slow move - ~70% of these faded in testing" if lab == "FADE_PRONE"
+                                else "fade lean: fast/high-volume move - these faded less (~63%)") + " (exploratory)")
+        except Exception:
+            pass
         who = "Claude idea (not taken) " if pl.get("_idea") else ""
         alerts.append((f"giveback:{pl['id']}", "giveback",
                        f"{who}{pl['coin']} {pl['side']}: pulling back from peak - was up +{best:.2f}R, now {live:+.2f}R, "

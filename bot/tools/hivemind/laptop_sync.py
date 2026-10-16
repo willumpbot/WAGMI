@@ -285,6 +285,12 @@ def run(force=False):
         else:
             manifest["files"][name] = {"missing": True}
     (EXP / "_manifest.json").write_text(json.dumps(manifest, indent=0), encoding="utf-8")
+    try:   # the wallet cohort definition (laptop 194: selection-bias check) - latest daily cohort file
+        _coh = sorted((BOT / "data" / "hivemind" / "wallets").glob("cohort_*.json"))
+        if _coh:
+            shutil.copy2(_coh[-1], EXP / "wallet_cohort.json")
+    except OSError:
+        pass
     snap_src, snap_dst = BOT / "data" / "ctx_snapshots", EXP / "ctx_snapshots"   # OI/premium/impact, all perps (30 days)
     if snap_src.exists():
         snap_dst.mkdir(exist_ok=True)
