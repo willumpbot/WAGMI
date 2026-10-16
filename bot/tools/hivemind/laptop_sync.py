@@ -83,6 +83,7 @@ STREAMS = {
     "whales": BOT / "data" / "hivemind" / "whales_log.jsonl",                      # HL whale net positions
     "voices": BOT / "data" / "hivemind" / "voice_log.jsonl",                       # every voice reading, 15 min
     "depth_all": BOT / "data" / "hivemind" / "depth_all.jsonl",                    # L2 bands, all ~178 perps, 15 min
+    "wallet_accounts": BOT / "data" / "hivemind" / "wallets" / "accounts.jsonl",   # every cohort wallet's acct value, hourly
     "wallets": BOT / "data" / "hivemind" / "wallets" / "positions.jsonl",      # ~1,200 wallets' positions >= $5k, hourly
     "pool_trades": BOT / "data" / "hivemind" / "tg" / "pool_trades.jsonl",        # wallets trading called pools (call/h1/h6)
     "venue_funding": BOT / "data" / "hivemind" / "venue_funding.jsonl",            # HL/Binance/Bybit funding per hour + HL OI-cap list, 15 min
@@ -155,7 +156,7 @@ def _archive_streams():
     ARCH_STAMP.write_text(today)
 
 
-TODAY_STREAMS = ("wallets", "venue_funding", "pool_trades")   # new, small, recency matters (laptop 157)
+TODAY_STREAMS = ("wallets", "wallet_accounts", "venue_funding", "pool_trades")   # new, small, recency matters (laptop 157)
 
 
 def _today_streams():

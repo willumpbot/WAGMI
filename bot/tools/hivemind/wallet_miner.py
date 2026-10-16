@@ -33,7 +33,12 @@ def _day(ts=None):
     return datetime.fromtimestamp(ts or time.time(), timezone.utc).strftime("%Y-%m-%d")
 
 
+FROZEN = OUT / "cohort_frozen.json"   # laptop 195: the forward study needs the SAME wallets every hour
+
+
 def cohort():
+    if FROZEN.exists():
+        return json.loads(FROZEN.read_text(encoding="utf-8"))
     day = _day()
     path = OUT / f"cohort_{day}.json"
     if path.exists():
@@ -74,7 +79,7 @@ def snapshot():
     OUT.mkdir(parents=True, exist_ok=True)
     c = cohort()
     ts = round(time.time())
-    rows, ok, fail = [], 0, 0
+    rows, accts, ok, fail = [], [], 0, 0
     for w in c["wallets"]:
         try:
             st = hl.post({"type": "clearinghouseState", "user": w["addr"]}, ttl=1800)
@@ -84,6 +89,9 @@ def snapshot():
             time.sleep(PACE_S * 4)
             continue
         acct = float((st.get("marginSummary") or {}).get("accountValue") or 0)
+        accts.append({"ts": ts, "addr": w["addr"], "cohort": w["cohort"], "acct": round(acct, 2),
+                      "ntl": round(float((st.get("marginSummary") or {}).get("totalNtlPos") or 0), 2),
+                      "withdrawable": round(float(st.get("withdrawable") or 0), 2)})
         for ap in st.get("assetPositions", []):
             p = ap.get("position") or {}
             szi = float(p.get("szi") or 0)
@@ -98,6 +106,9 @@ def snapshot():
     with open(OUT / "positions.jsonl", "a", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
+    with open(OUT / "accounts.jsonl", "a", encoding="utf-8") as f:   # every wallet, every hour (realised P&L base)
+        for r in accts:
+            f.write(json.dumps(r) + chr(10))
     with open(OUT / "snapshots.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": ts, "wallets_read": ok, "failed": fail, "positions": len(rows),
                             "cohort_day": c["day"]}) + "\n")
