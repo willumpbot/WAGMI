@@ -871,6 +871,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             hold_time_rules=self.hold_time_rules,
             is_live=True,  # real live/paper engine: allowed to write momentum_state.json
         )
+        # PAPER_STOP_INTRABAR (default off, read per tick): paper stops fill at the stop in the
+        # 5m bar that crossed it instead of at the next scan's price. Paper only - a live
+        # account has real resting stops. Wiring the provider alone changes nothing.
+        if config.is_paper:
+            try:
+                from execution.paper_stop_fidelity import hl_5m_bars as _hl_5m_bars
+                self.pos_mgr.intrabar_bars_provider = _hl_5m_bars
+            except Exception as _psf_err:
+                logger.warning(f"[INIT] paper stop fidelity unavailable: {_psf_err}")
         # Per-symbol execution lock: prevents duplicate entries when two signals
         # for the same symbol race through the pipeline simultaneously.
         self._executing_symbols: set = set()
@@ -3477,6 +3486,18 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         current_price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
         if current_price is None:
             return
+        # PRICE-STALENESS FIX (2026-10-16): say so when the price that will drive
+        # update_price / stops / the exit agent is old or came from a fallback venue.
+        try:
+            _pinfo = self.fetcher.price_info(symbol)
+            if _pinfo and (_pinfo.get("age_s", 0) > 60 or _pinfo.get("fallback")):
+                logger.warning(
+                    f"[{trace_id}][{symbol}] PRICE PROVENANCE: {current_price:g} from "
+                    f"{_pinfo.get('source')} is {_pinfo.get('age_s', 0):.0f}s old"
+                    f"{' (fallback source)' if _pinfo.get('fallback') else ''}"
+                )
+        except Exception:
+            pass
 
         # Fill-price guardrail: validate against last known price
         last_known = self._last_prices.get(symbol)

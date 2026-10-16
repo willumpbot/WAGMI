@@ -972,6 +972,16 @@ def record_owner_close(event, pos, pos_mgr=None) -> Dict[str, Any]:
         row.update(row_marks(er))
     except Exception:
         pass
+    if md.get("intrabar_fill"):
+        # PAPER_STOP_INTRABAR: the stop filled in an earlier 5m bar than this record time ("ts" stays
+        # the write time; fill_ts is when a resting stop would have filled, at "exit")
+        row["intrabar_fill"] = True
+        row["fill_ts"] = md.get("intrabar_bar_ts")
+        try:
+            _fdt = getattr(event, "timestamp", None)
+            row["fill_epoch"] = _fdt.timestamp() if hasattr(_fdt, "timestamp") else None
+        except Exception:
+            row["fill_epoch"] = None
     if final:
         row["total_pnl"] = round(total, 6)
         row["total_r"] = round(total / risk_usd, 4) if risk_usd > 0 else None

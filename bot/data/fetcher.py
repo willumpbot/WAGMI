@@ -201,6 +201,26 @@ class DataFetcher:
         # Data freshness tracking: {(symbol, timeframe): timestamp}
         self._last_fetch_ts: Dict[Tuple[str, str], float] = {}
 
+        # PRICE-STALENESS FIX (2026-10-16 ETH incident): the live bot builds this
+        # fetcher with cache_ttl=max(90, SCAN_INTERVAL_S*3) = 900s, and latest_price()
+        # used that SAME ttl for its 'price:' entry -> position management (update_price,
+        # stop checks, exit agent via _last_prices) saw one ticker price for up to 15 min
+        # (ETH held 2469.25 from ~11:07 to ~11:22Z while the stop at 2472 was crossed at
+        # 11:10). The price entry now has its own short ttl (PRICE_CACHE_TTL_S, default
+        # 15s; never longer than cache_ttl). OHLCV caching is unchanged.
+        try:
+            self.price_cache_ttl = float(os.getenv("PRICE_CACHE_TTL_S", "15"))
+        except (TypeError, ValueError):
+            self.price_cache_ttl = 15.0
+        # A price older than this (exchange ticker timestamp / CoinGecko last point) is
+        # never returned by latest_price() for position management.
+        try:
+            self.price_max_age_s = float(os.getenv("PRICE_MAX_AGE_S", "120"))
+        except (TypeError, ValueError):
+            self.price_max_age_s = 120.0
+        # symbol -> {"price", "source", "as_of" (epoch s of the quote), "fetched" (epoch s)}
+        self._price_info: Dict[str, Dict[str, Any]] = {}
+
     # ─── OHLCV integrity validation ───────────────────────────────
 
     def _validate_ohlcv(self, df: pd.DataFrame, symbol: str, timeframe: str) -> pd.DataFrame:
@@ -685,6 +705,22 @@ class DataFetcher:
                 ticker = exchange.fetch_ticker(pair)
                 price = ticker.get("last") or ticker.get("close")
                 if price and price > 0:
+                    # A ticker whose own exchange timestamp is older than price_max_age_s
+                    # is a frozen quote: try the next venue instead of acting on it.
+                    _now = time.time()
+                    _ts_ms = ticker.get("timestamp")
+                    _as_of = (float(_ts_ms) / 1000.0) if _ts_ms else _now
+                    if _now - _as_of > getattr(self, "price_max_age_s", 120.0):
+                        logger.warning(
+                            f"[{symbol_name}] CCXT ticker {ex_name} quote is "
+                            f"{_now - _as_of:.0f}s old - skipped (stale venue)"
+                        )
+                        continue
+                    _info = getattr(self, "_price_info", None)
+                    if _info is not None:
+                        _info[symbol_name] = {"price": float(price), "source": f"ccxt:{ex_name}",
+                                              "as_of": min(_as_of, _now), "fetched": _now,
+                                              "fallback": ex_name != chain[0][0]}
                     return float(price)
             except Exception as e:
                 self._ccxt_failures += 1
@@ -982,9 +1018,15 @@ class DataFetcher:
     def latest_price(
         self, symbol_name: str, coin_id: str
     ) -> Optional[float]:
-        """Get the latest price. CCXT ticker first, CoinGecko fallback."""
+        """Get the latest price. CCXT ticker first, CoinGecko fallback.
+
+        The 'price:' cache entry lives at most price_cache_ttl seconds (default 15s),
+        NOT the fetcher-wide OHLCV cache_ttl (900s in the live bot). A CoinGecko
+        fallback point older than price_max_age_s is refused (None -> the caller skips
+        the tick, like a NO DATA symbol) instead of being acted on.
+        """
         cache_key = f"price:{symbol_name}"
-        cached = self._get_cached(cache_key)
+        cached = self._get_cached_ttl(cache_key, self._price_ttl())
         if cached is not None and not cached.empty:
             return float(cached["close"].iloc[-1])
 
@@ -995,12 +1037,48 @@ class DataFetcher:
             self._set_cache(cache_key, df)
             return price
 
-        # CoinGecko fallback
+        # CoinGecko fallback (5-min granularity + its own cache: can be minutes old)
         raw = self._fetch_cg_market_chart(coin_id, days=1)
         if raw is not None and not raw.empty:
-            return float(raw["close"].iloc[-1])
+            px = float(raw["close"].iloc[-1])
+            now = time.time()
+            try:
+                as_of = pd.Timestamp(raw["time"].iloc[-1]).timestamp()
+            except Exception:
+                as_of = now
+            age = now - as_of
+            if age > self.price_max_age_s:
+                logger.warning(
+                    f"[{symbol_name}] PRICE STALE: CCXT tickers failed and the CoinGecko "
+                    f"fallback point is {age:.0f}s old (> {self.price_max_age_s:.0f}s) - "
+                    f"not used for position management this tick"
+                )
+                return None
+            self._price_info[symbol_name] = {"price": px, "source": "coingecko", "as_of": as_of,
+                                             "fetched": now, "fallback": True}
+            return px
 
         return None
+
+    def _price_ttl(self) -> float:
+        return max(0.0, min(float(self.cache_ttl), float(getattr(self, "price_cache_ttl", self.cache_ttl))))
+
+    def _get_cached_ttl(self, key: str, ttl: float) -> Optional[pd.DataFrame]:
+        with self._lock:
+            if key in self._cache:
+                ts, df = self._cache[key]
+                if time.time() - ts < ttl:
+                    return df.copy()
+        return None
+
+    def price_info(self, symbol_name: str) -> Dict[str, Any]:
+        """Provenance of the last price latest_price()/fetch_live_price() fetched for a symbol:
+        {"price", "source", "as_of", "fetched", "fallback", "age_s"} ({} if none yet).
+        age_s = now - as_of (the quote's own time), so a cached value ages as it is reused."""
+        info = dict((getattr(self, "_price_info", {}) or {}).get(symbol_name) or {})
+        if info:
+            info["age_s"] = max(0.0, time.time() - float(info.get("as_of") or info.get("fetched") or time.time()))
+        return info
 
     def fetch_live_price(self, symbol_name: str) -> Optional[float]:
         """Fetch a fresh live price bypassing cache. Use at execution time."""

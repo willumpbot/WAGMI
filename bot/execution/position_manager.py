@@ -458,6 +458,10 @@ class PositionManager:
         # per process, on the first leveraged position's fee charge, so it
         # doesn't spam every scan cycle.
         self._fee_accounting_warned = False
+        # PAPER_STOP_INTRABAR (default off): 5m-bar source for intrabar paper stop fills
+        # (execution.paper_stop_fidelity). None = never consulted (backtests, tests, live
+        # accounts). The paper bot wires paper_stop_fidelity.hl_5m_bars.
+        self.intrabar_bars_provider = None
 
     def _compute_live_setup_time_stops(self) -> Dict[str, float]:
         """Live per-SYMBOL_SIDE time stops derived from realized closes.
@@ -1131,6 +1135,138 @@ class PositionManager:
     def update_price(
         self, symbol: str, current_price: float, df_5m=None, sim_now: datetime = None
     ) -> List[TradeEvent]:
+        """Process a price update for a position (see _update_price_impl).
+
+        PAPER_STOP_INTRABAR on (and a bars provider wired, live clock only): first close the
+        position AT ITS STOP if a 5m bar since the previous check crossed the stop that was
+        resting since then (execution.paper_stop_fidelity). Off: exactly _update_price_impl.
+        """
+        if sim_now is None and self.intrabar_bars_provider is not None and symbol in self.positions:
+            from execution import paper_stop_fidelity as _psf
+            if _psf.enabled():
+                return self._update_price_intrabar(symbol, current_price, df_5m, _psf)
+        return self._update_price_impl(symbol, current_price, df_5m=df_5m, sim_now=sim_now)
+
+    def _update_price_intrabar(self, symbol: str, current_price: float, df_5m, psf) -> List[TradeEvent]:
+        pos = self.positions.get(symbol)
+        if pos is None or pos.state == CLOSED:
+            return self._update_price_impl(symbol, current_price, df_5m=df_5m)
+        now_s = psf.now_s()
+        anchor = getattr(pos, "_intrabar_anchor", None)
+        bars = None
+        if anchor and float(anchor.get("sl") or 0) == float(pos.sl or 0):
+            since = max(float(anchor["ts"]), now_s - psf.max_lookback_s())
+            try:
+                bars = self.intrabar_bars_provider(symbol, since, now_s)
+            except Exception as e:
+                logger.warning(f"[{symbol}] [PAPER-STOP-INTRABAR] bars provider error: {e}")
+                bars = None
+            if bars:
+                event = self._intrabar_stop_fill(pos, bars, since, anchor.get("bar"), psf)
+                if event is not None:
+                    return [event]
+        elif anchor:
+            # the stop moved between checks (exit agent tighten, manual edit): when the new level
+            # started resting is unknown -> no intrabar fill this tick, re-anchor below
+            logger.info(f"[{symbol}] [PAPER-STOP-INTRABAR] stop moved between checks "
+                        f"({anchor.get('sl')} -> {pos.sl}): point check only this tick")
+        if bars is None:
+            try:
+                bars = self.intrabar_bars_provider(symbol, now_s - psf.BAR_S, now_s)
+            except Exception:
+                bars = None
+        events = self._update_price_impl(symbol, current_price, df_5m=df_5m)
+        if pos.state != CLOSED:
+            last = max(bars, key=lambda b: b[0]) if bars else None
+            try:
+                pos._intrabar_anchor = {
+                    "ts": now_s, "sl": float(pos.sl or 0),
+                    # the forming bar's range as seen NOW: next tick, only a NEW extreme in this
+                    # bar (made after this check) can count as a stop cross
+                    "bar": (float(last[0]), float(last[2]), float(last[3])) if last else None,
+                }
+            except Exception:
+                pass
+        return events
+
+    def _sl_close_action(self, pos, is_long: bool, _owner_locked: bool, _runner: str, _ladder: str) -> str:
+        """Close action for a stop hit (shared by the point check and the intrabar check)."""
+        # (an owner-locked position's stop was never trailed, so it is the owner's SL)
+        action = "TRAILING_STOP" if (pos.state == TRAILING and not _owner_locked) else "SL"
+        if (_runner == "live" and ((pos.entry_reasons or {}).get("owner_runner") or {}).get("half_taken")
+                and (1 if is_long else -1) * (float(pos.sl) - float(pos.original_sl or pos.sl)) > 0):
+            action = "OWNER_RUNNER_TRAIL"  # the trail had moved the stop; at the UNTRAILED stop it stays "SL"
+        if (_ladder == "live" and ((pos.entry_reasons or {}).get("owner_ladder") or {}).get("trail_on")
+                and (1 if is_long else -1) * (float(pos.sl) - float(pos.original_sl or pos.sl)) > 0):
+            action = "OWNER_LADDER_TRAIL"  # same rule: only once the trail has actually moved the owner's stop
+        return action
+
+    def _intrabar_stop_fill(self, pos, bars, since: float, seen_bar, psf) -> Optional[TradeEvent]:
+        """Close `pos` at its stop if a 5m bar after `since` crossed it. None = no cross found."""
+        is_long = pos.side == "LONG"
+        sl = float(pos.sl or 0)
+        # The bar that contained the previous check: only a NEW extreme beyond what that check saw
+        # counts (its earlier range belongs to a period the previous check already covered).
+        usable = []
+        for b in sorted(bars, key=lambda x: x[0]):
+            t, o, h, lo, c = (float(x) for x in b[:5])
+            if t + psf.BAR_S <= since:
+                continue
+            if t < since:
+                if not seen_bar or float(seen_bar[0]) != t:
+                    continue                      # no record of what was seen: can't date the extreme
+                if is_long:
+                    if lo >= float(seen_bar[2]):
+                        continue
+                elif h <= float(seen_bar[1]):
+                    continue
+            usable.append((t, o, h, lo, c))
+        hit = psf.find_stop_cross(usable, sl, is_long, since)
+        if hit is None:
+            return None
+        fill, bar_t = hit
+        # a resting target that an EARLIER bar reached would have filled first: leave that case to
+        # the point-in-time logic rather than book a stop the exchange would never have hit
+        tp2 = float(getattr(pos, "tp2", 0) or 0)
+        if tp2 > 0:
+            for (t, o, h, lo, c) in usable:
+                if t >= bar_t:
+                    break
+                if (h >= tp2) if is_long else (lo <= tp2):
+                    logger.info(f"[{pos.symbol}] [PAPER-STOP-INTRABAR] target {tp2:g} touched before the stop "
+                                f"bar - no intrabar stop fill")
+                    return None
+        # never better than the stop
+        fill = min(fill, sl) if is_long else max(fill, sl)
+        _owner_locked = _owner_exit_locked(pos)
+        _runner = _owner_runner_mode(pos) if _owner_locked else ""
+        _ladder = _owner_ladder_mode(pos) if _owner_locked else ""
+        if _owner_locked:
+            self._owner_runner_reconcile(pos, arm=(_runner == "live"))
+            self._owner_ladder_reconcile(pos, arm=(_ladder == "live"))
+        action = self._sl_close_action(pos, is_long, _owner_locked, _runner, _ladder)
+        if fill > pos.highest_price:
+            pos.highest_price = fill
+        if fill < pos.lowest_price:
+            pos.lowest_price = fill
+        bar_dt = psf.bar_dt(bar_t)
+        _prev_sim = getattr(self, "_sim_now", None)
+        self._sim_now = bar_dt                     # close_time / hold time = the bar the stop filled in
+        try:
+            event = self._close_position(pos, fill, action)
+        finally:
+            self._sim_now = _prev_sim
+        event.timestamp = bar_dt
+        event.metadata["intrabar_fill"] = True
+        event.metadata["intrabar_bar_ts"] = bar_dt.isoformat()
+        event.metadata["intrabar_stop"] = sl
+        logger.warning(f"[{pos.symbol}] [PAPER-STOP-INTRABAR] {action}: 5m bar {bar_dt:%H:%M}Z crossed the stop "
+                       f"{sl:g} -> filled @ {fill:g}" + ("" if fill == sl else " (bar opened through the stop)"))
+        return event
+
+    def _update_price_impl(
+        self, symbol: str, current_price: float, df_5m=None, sim_now: datetime = None
+    ) -> List[TradeEvent]:
         """
         Process a price update for a position.
         Checks SL, early exit, TP1, trailing stop, TP2 in order.
@@ -1373,14 +1509,7 @@ class PositionManager:
         # 0b. Check stop loss — on flash crashes, SL must fire before early exit
         sl_hit = (current_price <= pos.sl) if is_long else (current_price >= pos.sl)
         if sl_hit:
-            # (an owner-locked position's stop was never trailed, so it is the owner's SL)
-            action = "TRAILING_STOP" if (pos.state == TRAILING and not _owner_locked) else "SL"
-            if (_runner == "live" and ((pos.entry_reasons or {}).get("owner_runner") or {}).get("half_taken")
-                    and (1 if is_long else -1) * (float(pos.sl) - float(pos.original_sl or pos.sl)) > 0):
-                action = "OWNER_RUNNER_TRAIL"  # the trail had moved the stop; at the UNTRAILED stop it stays "SL"
-            if (_ladder == "live" and ((pos.entry_reasons or {}).get("owner_ladder") or {}).get("trail_on")
-                    and (1 if is_long else -1) * (float(pos.sl) - float(pos.original_sl or pos.sl)) > 0):
-                action = "OWNER_LADDER_TRAIL"  # same rule: only once the trail has actually moved the owner's stop
+            action = self._sl_close_action(pos, is_long, _owner_locked, _runner, _ladder)
             fill_price = self._sl_fill_price(pos, current_price, is_long)
             event = self._close_position(pos, fill_price, action)
             events.append(event)
