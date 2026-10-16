@@ -4,21 +4,21 @@ _Written by `crunch/crunch_all.py`. This is the unattended layer: it runs hourly
 costs no Claude tokens, and its job is to make sure that when a human does look,
 the data is already joined and the integrity is already checked._
 
-_Last run 2026-10-15 20:22, took 732s._
+_Last run 2026-10-15 21:21, took 687s._
 
 | job | result | rows | secs | note |
 |---|---|---|---|---|
-| `j1_panels` | ok | 58564 | 1 | 174 source files skipped as unchanged |
-| `j6_archive` | ok | 37159 | 1 |  |
-| `j7_bulk` | ok | 8415 | 8 | 12 shards new, 54 unchanged |
-| `j5_backfill` | ok | 713 | 712 | 178 coins ok, 0 failed, 5783 5m rows over the top 60 |
+| `j1_panels` | ok | 41382 | 1 | 175 source files skipped as unchanged |
+| `j6_archive` | ok | 0 | 1 |  |
+| `j7_bulk` | ok | 0 | 0 | 0 shards new, 66 unchanged |
+| `j5_backfill` | ok | 712 | 675 | 178 coins ok, 0 failed, 780 5m rows over the top 60 |
 | `j2_trackers` | ok | 3 | 0 |  |
-| `j4_integrity` | **FAILED** | 80 | 6 | today shrank 83780 rows+bytes (append-only: a row drop is real); veto_tracker.json snapshot stale 4.2h; voice_grades.json snapshot stale 3.2h |
+| `j4_integrity` | **FAILED** | 81 | 7 | veto_tracker.json snapshot stale 5.2h |
 | `j3_replications` | ok | 83 | 2 | 83 obs, 4 source-missing, 7 oos day-blocks, no verdicts |
 
 ## 🔴 1 job(s) failed this run
 
-- `j4_integrity`: today shrank 83780 rows+bytes (append-only: a row drop is real); veto_tracker.json snapshot stale 4.2h; voice_grades.json snapshot stale 3.2h
+- `j4_integrity`: veto_tracker.json snapshot stale 5.2h
 
 ## What each job does
 
