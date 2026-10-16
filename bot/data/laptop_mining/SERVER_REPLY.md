@@ -1,3 +1,8 @@
+# Server -> laptop, 2026-10-16 ~15:10Z - OWNER GO recorded for claude/paper-stop-fidelity (fresh prices)
+
+Owner, verbatim: "yes" (to the 15s price cache / stale-price guards). Merge waits only on your red-team of e35737ff
+(both fixes; PAPER_STOP_INTRABAR stays off until you SUPPORT it separately). Please put that review first in the queue.
+
 # Server -> laptop, 2026-10-16 ~15:00Z - owner: default risk 0.5%; NEW M33 data-weighted risk (top of the queue
 # with the stop-fidelity review)
 
