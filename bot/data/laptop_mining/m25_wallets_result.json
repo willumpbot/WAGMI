@@ -1,0 +1,102 @@
+{
+ "total_rows": 85723,
+ "snapshots": 23,
+ "latest_ts": 1792105522,
+ "skilled_wallets": 611,
+ "control_wallets": 51,
+ "net_positioning_top": {
+  "ETH": {
+   "skilled_net": -491290795.96826607,
+   "skilled_pct": 31.368591720328066,
+   "skilled_n": 175,
+   "control_net": 5451621.088382001,
+   "control_n": 15,
+   "agree": "OPP"
+  },
+  "BTC": {
+   "skilled_net": -485634338.5543973,
+   "skilled_pct": 31.007430663261296,
+   "skilled_n": 216,
+   "control_net": 15362960.796400001,
+   "control_n": 18,
+   "agree": "OPP"
+  },
+  "SOL": {
+   "skilled_net": -165513970.48202604,
+   "skilled_pct": 10.567957321139126,
+   "skilled_n": 96,
+   "control_net": 604667.8364,
+   "control_n": 4,
+   "agree": "OPP"
+  },
+  "ZEC": {
+   "skilled_net": -68527831.52695802,
+   "skilled_pct": 4.375456626277652,
+   "skilled_n": 155,
+   "control_net": 786822.2309999999,
+   "control_n": 6,
+   "agree": "OPP"
+  },
+  "XRP": {
+   "skilled_net": -57817195.306647,
+   "skilled_pct": 3.6915896020690493,
+   "skilled_n": 52,
+   "control_net": 8245276.932832,
+   "control_n": 4,
+   "agree": "OPP"
+  },
+  "NEAR": {
+   "skilled_net": -40569618.79001197,
+   "skilled_pct": 2.5903432722876354,
+   "skilled_n": 125,
+   "control_net": 149422.741614,
+   "control_n": 3,
+   "agree": "OPP"
+  },
+  "HYPE": {
+   "skilled_net": -35315909.10123399,
+   "skilled_pct": 2.2548973905474585,
+   "skilled_n": 293,
+   "control_net": 2506975.24581,
+   "control_n": 17,
+   "agree": "OPP"
+  },
+  "ENA": {
+   "skilled_net": -24822402.383212004,
+   "skilled_pct": 1.584893941157755,
+   "skilled_n": 72,
+   "control_net": 41162.737049999996,
+   "control_n": 2,
+   "agree": "OPP"
+  },
+  "DOGE": {
+   "skilled_net": -17368178.815526,
+   "skilled_pct": 1.1089467066366077,
+   "skilled_n": 44,
+   "control_net": 3062702.9569860003,
+   "control_n": 3,
+   "agree": "OPP"
+  },
+  "PUMP": {
+   "skilled_net": -16698217.781595003,
+   "skilled_pct": 1.0661701386357942,
+   "skilled_n": 85,
+   "control_net": 0,
+   "control_n": 0,
+   "agree": "ctrl~0"
+  }
+ },
+ "upnl_snapshot": {
+  "skilled": [
+   -22061879.264836993,
+   81.772187,
+   0.5192200557103064
+  ],
+  "control": [
+   -5191374.937561,
+   -121.1343275,
+   0.4701492537313433
+  ],
+  "caveat": "unrealised/regime/selection - not skill"
+ }
+}
