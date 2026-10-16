@@ -57,6 +57,16 @@ def _exit_mode(v):
     return v if v in EXIT_MODES else "profits_only"
 
 
+def _default_risk():
+    try:
+        for l in (BOT / ".env").read_text(encoding="utf-8").splitlines():
+            if l.strip().startswith("OWNER_PLAN_DEFAULT_RISK_USD="):
+                return float(l.split("=", 1)[1].strip())
+    except (OSError, ValueError):
+        pass
+    return 0.0
+
+
 def create(p):
     coin = str(p.get("coin", "")).strip()[:20]
     side = str(p.get("side", "")).upper()
@@ -75,7 +85,8 @@ def create(p):
            "entry": price if etype == "market" else entry, "stop": stop, "target": target, "price_at_plan": price,
            "entry_type": etype, "entry_window_h": float(p.get("entry_window_h") or 24),
            "max_hold_h": float(p.get("max_hold_h") or 48), "leverage": float(p.get("leverage") or 1),
-           "risk_usd": float(p.get("risk_usd") or 0), "setup": str(p.get("setup") or "other")[:40],
+           # owner 10-16: no risk set -> 0.5% of the account, stamped on the plan so old plans keep their old basis
+           "risk_usd": float(p.get("risk_usd") or 0) or _default_risk(), "setup": str(p.get("setup") or "other")[:40],
            "reason": str(p.get("reason") or "")[:300], "context": _context(coin),
            # which Claude idea this plan came from (laptop prereg needs it to grade the owner's adopt/skip choice)
            "source_idea_id": str(p.get("source_idea_id") or "")[:20] or None,

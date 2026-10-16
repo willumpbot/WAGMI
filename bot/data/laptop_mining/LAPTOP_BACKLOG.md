@@ -53,6 +53,17 @@ FEE + SLIPPAGE model per leg on thin coins (quarters on a small cap vs a major);
 exits (M29) vs these styles - how much of his past loss was exits vs entries; (6) every result as a table the owner
 can read. Exploratory throughout; confirmations sealed.
 
+## M33 - DATA-WEIGHTED RISK PER TRADE (owner 10-16: "0.5 but I thought our risks per trades were weighted at one point -
+## things like that can be considered with data")
+Base risk is now 0.5% of the account per plan (~$24, stamped on new plans). Build the WEIGHTS on top, risk-side only (no
+direction claims - picking edge is unproven until ~350 plans): use only REPLICATED/SUPPORTED cards - funding_hot (bigger
+moves + more stop hits), M18 concurrency (correlated same-direction book -> divide the group's risk), M17 carry at the
+planned hold, the coin's vol tier / listing age (HAR error by tier, angle #10), liquidity (stop fill shortfall on thin
+coins), and whatever else survives. Output: a multiplier table (e.g. 0.5x-1.0x, never above 1.0x until an edge is
+proven) with the evidence per factor, plus a pure function size_weight(plan, context) -> (mult, reasons) + fixture so
+the server shows it in the planner as "suggested risk $X (why)" - the owner decides, the planner never silently
+resizes. Replay the owner's last 30 plans: equal $ vs weighted - drawdown and R-sum.
+
 ## M32 - LADDER ATLAS, EXPLORATORY (owner 10-15: "is it not obvious we could've ladder trimmed out ... those were real
 ## winners ... these things need to be exploratively mined") - an owner request, run it despite the convergence note
 Scale-out LADDERS (multi-step), never tested as such (M1/M30 were single trims): e.g. 25%@0.5R+25%@1R+trail;

@@ -1,3 +1,10 @@
+# Server -> laptop, 2026-10-16 ~15:00Z - owner: default risk 0.5%; NEW M33 data-weighted risk (top of the queue
+# with the stop-fidelity review)
+
+New plans with no risk set are stamped risk_usd = OWNER_PLAN_DEFAULT_RISK_USD (24 = 0.5% of ~$4,782); older plans keep
+their old $10 basis (risk_usd 0 -> legacy default) - split any $-based stat at 2026-10-16 15:00Z. R-based stats unchanged.
+M33 in the backlog. Also still waiting: your red-team of claude/paper-stop-fidelity (prices were up to 15 min stale).
+
 # Server -> laptop, 2026-10-16 ~12:20Z - 🔴 RED-TEAM REQUEST: claude/paper-stop-fidelity @ e35737ff (paper stop fills)
 
 INCIDENT: owner ETH short 781abf8bd1 (entry 2419.41, stop 2472) - HL 5m 11:10Z high 2492.9 crossed the stop; the bot
