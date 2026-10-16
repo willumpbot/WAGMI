@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-16T07:13:10+00:00",
- "now": "2026-10-16T07:13:10+00:00",
+ "generated": "2026-10-16T08:27:39+00:00",
+ "now": "2026-10-16T08:27:36+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 6,
+   "flagged": 7,
    "high": 3,
    "not_automated": 0
   },
@@ -179,9 +179,9 @@
    "check": "D3",
    "id": "exp_move_BTC",
    "severity": "warn",
-   "what": "exp_move for BTC disagrees by 29% across live outputs",
+   "what": "exp_move for BTC disagrees by 30% across live outputs",
    "values": {
-    "state.vol.next_day_move_pct": 1.51,
+    "state.vol.next_day_move_pct": 1.46,
     "scan.exp_move": 1.47,
     "chief.expected_move_pct": 1.9
    }
@@ -194,6 +194,16 @@
    "values": {
     "state.vol.next_day_move_pct": 4.07,
     "scan.exp_move": 3.43
+   }
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_NXPC",
+   "severity": "warn",
+   "what": "exp_move for NXPC disagrees by 12% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 3.01,
+    "scan.exp_move": 3.36
    }
   },
   {
