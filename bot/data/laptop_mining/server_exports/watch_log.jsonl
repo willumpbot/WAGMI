@@ -26,3 +26,4 @@
 {"ts": 1792084280.3075411, "day": "2026-10-15", "key": "sim:65ac07702c", "kind": "near_stop", "msg": "ONDO SHORT: 1.94% from your stop (0.45 of a normal day), now -0.63R"}
 {"ts": 1792089703.8384569, "day": "2026-10-15", "key": "pos:HYPE", "kind": "time_limit", "msg": "HYPE SHORT: your plan's time limit is in 5.9h"}
 {"ts": 1792109451.9649124, "day": "2026-10-16", "key": "sim:65ac07702c", "kind": "near_stop", "msg": "ONDO SHORT: 0.51% from your stop (0.12 of a normal day), now -0.9R"}
+{"ts": 1792110278.4726186, "day": "2026-10-16", "key": "sim:4d8c000ca5", "kind": "near_stop", "msg": "ENA SHORT: 2.26% from your stop (0.5 of a normal day), now -0.64R"}
