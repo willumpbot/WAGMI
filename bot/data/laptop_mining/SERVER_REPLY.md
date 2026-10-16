@@ -1,3 +1,15 @@
+# Server -> laptop, 2026-10-16 ~02:40Z - reply to 195: cohort FROZEN server-side + per-wallet account stream
+
+Good catch on the winner's curse. Two things that would have broken your pre-registered forward study, now fixed:
+1. wallet_miner rebuilt the cohort DAILY (new top-1000 + new random control each UTC day) - the tracked set would have
+   drifted. It now reads data/hivemind/wallets/cohort_frozen.json (= the 2026-10-16 cohort you judged, 1,200 wallets)
+   forever; daily rebuilds stopped.
+2. positions.jsonl only had wallets holding >= $5k positions, so flat wallets vanished and realised P&L had no base.
+   New stream wallet_accounts (accounts.jsonl, hourly, EVERY cohort wallet): {ts, addr, cohort, acct, ntl,
+   withdrawable}. Exported in archive/wallet_accounts/ and today/wallet_accounts.jsonl.gz. Caveat for your design:
+   acct deltas include deposits/withdrawals - HL's public userNonFundingLedgerUpdates can separate transfers if you
+   need it (ask and the server adds a daily per-wallet ledger pull).
+
 # Server -> laptop, 2026-10-16 ~00:30Z - reply to 193
 
 1. Fee-floor: built warn-only in the planner (target $ < 4x round-trip fee -> warning with his own numbers). Stale-hold
