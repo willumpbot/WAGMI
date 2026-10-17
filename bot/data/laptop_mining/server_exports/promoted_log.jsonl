@@ -228,3 +228,7 @@
 {"ts": 1792222553.2989428, "coins": [{"coin": "STBL", "px": 0.022819, "chg_24h": -8.4, "vol_ratio": 9.21, "exp_move": 4.05}, {"coin": "TIA", "px": 0.72606, "chg_24h": 8.74, "vol_ratio": 5.37, "exp_move": 5.39}], "n_hot": 3}
 {"ts": 1792223442.5285015, "coins": [{"coin": "STBL", "px": 0.022961, "chg_24h": -6.92, "vol_ratio": 9.13, "exp_move": 4.05}, {"coin": "TIA", "px": 0.7286, "chg_24h": 9.62, "vol_ratio": 5.3, "exp_move": 5.39}], "n_hot": 3}
 {"ts": 1792224343.5545313, "coins": [{"coin": "STBL", "px": 0.022745, "chg_24h": -7.45, "vol_ratio": 9.13, "exp_move": 4.05}, {"coin": "TIA", "px": 0.72545, "chg_24h": 8.78, "vol_ratio": 5.2, "exp_move": 5.39}], "n_hot": 3}
+{"ts": 1792225243.1172626, "coins": [{"coin": "STBL", "px": 0.022831, "chg_24h": -8.02, "vol_ratio": 9.05, "exp_move": 4.05}, {"coin": "TIA", "px": 0.72747, "chg_24h": 9.93, "vol_ratio": 5.18, "exp_move": 5.39}], "n_hot": 3}
+{"ts": 1792226147.6533468, "coins": [{"coin": "STBL", "px": 0.022824, "chg_24h": -6.46, "vol_ratio": 8.95, "exp_move": 4.05}, {"coin": "TIA", "px": 0.72514, "chg_24h": 6.15, "vol_ratio": 5.12, "exp_move": 5.39}], "n_hot": 3}
+{"ts": 1792227064.83322, "coins": [{"coin": "STBL", "px": 0.02309, "chg_24h": -4.82, "vol_ratio": 8.9, "exp_move": 4.05}, {"coin": "INJ", "px": 8.7758, "chg_24h": -4.6, "vol_ratio": 3.01, "exp_move": 3.84}], "n_hot": 2}
+{"ts": 1792227942.9925785, "coins": [{"coin": "STBL", "px": 0.023122, "chg_24h": -4.31, "vol_ratio": 8.88, "exp_move": 4.05}, {"coin": "INJ", "px": 8.78, "chg_24h": -4.27, "vol_ratio": 2.98, "exp_move": 3.84}], "n_hot": 2}
