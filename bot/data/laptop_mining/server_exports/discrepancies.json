@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-17T10:08:48+00:00",
- "now": "2026-10-17T10:08:47+00:00",
+ "generated": "2026-10-17T11:11:32+00:00",
+ "now": "2026-10-17T11:11:31+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 9,
+   "flagged": 8,
    "high": 3,
    "not_automated": 0
   },
@@ -55,8 +55,8 @@
    "not_automated": 1
   },
   "D11": {
-   "flagged": 0,
-   "high": 0,
+   "flagged": 1,
+   "high": 1,
    "not_automated": 3
   },
   "D12": {
@@ -216,16 +216,6 @@
    }
   },
   {
-   "check": "D3",
-   "id": "exp_move_ZK",
-   "severity": "warn",
-   "what": "exp_move for ZK disagrees by 13% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 5.02,
-    "scan.exp_move": 4.43
-   }
-  },
-  {
    "check": "D5",
    "id": "scan_grader_funding_hot_day",
    "severity": "high",
@@ -363,6 +353,14 @@
    "id": "prereg_ideas:n",
    "severity": "warn",
    "what": "PREREG_IDEAS: n is 4 per [L:TRACKERS] but 1 per server stats"
+  },
+  {
+   "check": "D11",
+   "id": "stream_market_depth:depth bands are cumulative",
+   "severity": "high",
+   "what": "stream stream_market_depth: 1/187 recent rows break 'depth bands are cumulative'",
+   "expr": "g('l2.bid_depth_1pct') >= g('l2.bid_depth_0_5pct') >= g('l2.bid_depth_0_1pct')",
+   "example": "{\"ts\": \"2026-10-17T10:52:01Z\", \"symbol\": \"POPCAT\", \"l2\": {\"mid\": 0.0462315, \"spread\": 1.7e-05, \"spread_bps\": 3.6771, \"bid_depth_0_1pct\": 40925.0, \"ask_depth_0_1pct\": 16266.0, \"imbalance_0_1pct\": 0.4312, \"bid_depth_0_5pct\": 848346.0, \"ask_depth_0_5pct\": 937472.0, \"imbalance_0_5pct\": -0.0499, \"bid_dep"
   }
  ],
  "not_automated": [
