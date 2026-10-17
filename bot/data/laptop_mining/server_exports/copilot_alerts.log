@@ -12095,3 +12095,25 @@ State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
 State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
 (no alerts fired this run)
 [attention] wrote data\copilot\attention.json: 12 symbols, 0 at a range edge, 0 error(s)
+[2026-10-17T06:33:27Z] copilot_alerts run
+=== WAGMI Co-Pilot Alerts  - 2026-10-17T06:33:35.676100+00:00 ===
+
+--- BTC ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+--- SOL ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+--- POPCAT ---
+  prior state:   HOLD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: FIRE - entered actionable state: action HOLD->ADD
+[discord] sent (204)
+  Discord push sent
+
+State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
+[attention] wrote data\copilot\attention.json: 12 symbols, 0 at a range edge, 0 error(s)
