@@ -268,3 +268,4 @@
 {"ts": 1792258542.6576881, "coins": [{"coin": "STBL", "px": 0.022781, "chg_24h": -4.51, "vol_ratio": 7.7, "exp_move": 4.05}], "n_hot": 1}
 {"ts": 1792259442.3527398, "coins": [{"coin": "STBL", "px": 0.022787, "chg_24h": -5.15, "vol_ratio": 7.68, "exp_move": 4.05}, {"coin": "TIA", "px": 0.65895, "chg_24h": -5.52, "vol_ratio": 4.63, "exp_move": 5.39}], "n_hot": 2}
 {"ts": 1792260342.7583184, "coins": [{"coin": "STBL", "px": 0.022869, "chg_24h": -4.98, "vol_ratio": 7.67, "exp_move": 4.05}], "n_hot": 1}
+{"ts": 1792261241.6584458, "coins": [{"coin": "STBL", "px": 0.022966, "chg_24h": -4.16, "vol_ratio": 7.63, "exp_move": 4.05}], "n_hot": 1}

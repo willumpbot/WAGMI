@@ -12201,3 +12201,26 @@ State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
 State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
 (no alerts fired this run)
 [attention] wrote data\copilot\attention.json: 12 symbols, 0 at a range edge, 0 error(s)
+[2026-10-17T18:33:25Z] copilot_alerts run
+[2026-10-17T18:33:25Z] WATCHDOG: liq_collector not running - relaunching run_liq_collector.ps1
+[2026-10-17T18:33:25Z] WATCHDOG: microcap_collector not running - relaunching run_microcap_collector.ps1
+=== WAGMI Co-Pilot Alerts  - 2026-10-17T18:33:26.645542+00:00 ===
+
+--- BTC ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+--- SOL ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+--- POPCAT ---
+  prior state:   ADD|SAFE
+  current state: ADD|SAFE  (action=ADD, leverage=SAFE)
+  verdict: NONE - unchanged (ADD|SAFE) - no alert
+
+State written to C:\Users\vince\WAGMI\bot\data\copilot\alert_state.json
+(no alerts fired this run)
+[attention] wrote data\copilot\attention.json: 12 symbols, 0 at a range edge, 0 error(s)

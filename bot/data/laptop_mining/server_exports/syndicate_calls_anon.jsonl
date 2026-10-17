@@ -30,7 +30,7 @@
 {"ca": "HuDwEgKxqBLNKHBSFiVh8o5tdfzSBmhKochDqRFYCzVf", "call_ts": 1789638191, "caller_hash": "62721965a3", "starred": true, "first_seen_via_bot_alert": false}
 {"ca": "EFire5aaP23WQnLWPXLfJLKNrgF5wu1SrgnxogYBXYi7", "call_ts": 1789660242, "caller_hash": "2a9e7ca671", "starred": false, "first_seen_via_bot_alert": false}
 {"ca": "EgeNPFPXZuTFitvazKbhaLGDNV963Lnsa7g8mn2n8nG6", "call_ts": 1789667658, "caller_hash": "cfcc93ec1b", "starred": false, "first_seen_via_bot_alert": false}
-{"ca": "HhRCWrgTZnTtHqop5wRLyD2ps1UNgKhnG8WhVQNMSTNK", "call_ts": 1789671577, "caller_hash": "4b6591cc48", "starred": true, "first_seen_via_bot_alert": false}
+{"ca": "HhRCWrgTZnTtHqop5wRLyD2ps1UNgKhnG8WhVQNMSTNK", "call_ts": 1789674014, "caller_hash": "4b6591cc48", "starred": true, "first_seen_via_bot_alert": true}
 {"ca": "CFYhdWXsYfS7swnJgHRwb5toTHMEQD7Ljd5gGwKLpump", "call_ts": 1789675704, "caller_hash": "9d74932bdb", "starred": false, "first_seen_via_bot_alert": true}
 {"ca": "6bAQ49jm9rtoXuEsp2W1fKSe1jczhus6fEbCaGmUpump", "call_ts": 1789679667, "caller_hash": "9d74932bdb", "starred": false, "first_seen_via_bot_alert": true}
 {"ca": "HtTYHz1Kf3rrQo6AqDLmss7gq5WrkWAaXn3tupUZbonk", "call_ts": 1789683467, "caller_hash": "9d74932bdb", "starred": false, "first_seen_via_bot_alert": true}
@@ -239,3 +239,4 @@
 {"ca": "6WCtKQfkWurd77tCCAYWuL5TwyAvuovTzworfnfupump", "call_ts": 1792197529, "caller_hash": "ca3d1a954e", "starred": false, "first_seen_via_bot_alert": false}
 {"ca": "8Jef1ow6Ei4ZdHiiP8iyuUmXxbnYaTL9qP9Js4aDpump", "call_ts": 1792243488, "caller_hash": "185bf721fd", "starred": false, "first_seen_via_bot_alert": false}
 {"ca": "8jdHSCJRer9j6LWsYpBeo3BgmZz3cfAqYn8rqiZcpump", "call_ts": 1792257554, "caller_hash": "185bf721fd", "starred": false, "first_seen_via_bot_alert": false}
+{"ca": "7uhdNpeqQpE4YNe3xH47A38ziKDqP1r18x8Pcrqhpump", "call_ts": 1792262498, "caller_hash": "20d9b4ab51", "starred": false, "first_seen_via_bot_alert": false}
