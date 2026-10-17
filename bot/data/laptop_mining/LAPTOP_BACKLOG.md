@@ -182,3 +182,9 @@ M34. **Missed-move study: why did every XRP short miss the move, and is that nor
      0.5x exp-move, limit decay/reprice, break + retest); ask whether "weakest coin" (closest to 20d low, worst 7d) is
      where bounce-limits miss most. Deliver 1-3 plain rules + one number each (owner is visual). Then post a DIVE on XRP
      (owner holds 2 waiting XRP bounce shorts: 101b9e2294 @1.325, faea830d5b @1.312, both stop 1.362).
+     M34 owner refinement (10-17): "of course it looks good because the market was dropping, but we would have been
+     able to see that as well." => the real test is a REGIME-CONDITIONED entry rule using only what was visible at plan
+     time (e.g. daily+4h sellers driving, 7d momentum < 0, coin within X% of 20d low / weakest of the majors): in that
+     state, sell now (or half now / half on bounce) instead of waiting for the bounce. Test it on OTHER periods (2025+
+     HL history, both up and down weeks, and the mirror for longs) so it isn't fit to this one falling week. Report how
+     often the 'visible downtrend' state kept going vs reversed, and the R left on the table by waiting in each case.
