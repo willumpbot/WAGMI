@@ -166,3 +166,19 @@ M27. **Angle map sprint (ANGLE_MAP_2026-10-15.md section 3, the top 25).** Work 
      calibration_observations, nearmiss_reversion_log, copilot_alerts.log, voice_grades, accumulation_log,
      owner_plan_reviews, owner_watchlist, watch_log, state_transitions.csv.
 
+M34. **Missed-move study: why did every XRP short miss the move, and is that normal? (owner 2026-10-17, PRIORITY)**
+     The AI planner reissued the same XRP "sell the bounce" short 9x since 10-14 (1.40 -> 1.305). None filled: XRP was the
+     weakest major and never bounced, so it slid 1.376 -> 1.283 without us. BTC/LIT shorts DID fill (they bounced first).
+     Owner question: how did we miss it entirely, and will the bounce-limit entry routinely miss the strongest moves?
+     Server starter (light, 49 ai_plans, HL 15m, no fees, NOT sealed - exploratory only):
+     `scratch_entry/entry_study_starter.py` + `_out.json`. Starter numbers to replicate/refute:
+       A as-written limit: 21/49 filled, n=20 graded +5.45R (+0.27/trade, 13 wins)
+       B sell at plan time (same stop/target): n=40 +9.93R (+0.25); on the 20 UNFILLED plans: +9.91R, 19/20 wins (!)
+       C break-entry (sell-stop 0.2% under 20d low, plan's risk% and R:R): n=12 -6.98R (-0.58), 3 wins
+       near floor (<3% above 20d low): all three ~flat; fill rate falls with bounce asked (0-1.5%: 15/30, >1.5%: 6/19)
+     Read so far: break entries look BAD (false breaks, cf. SUI), but the unfilled bounce plans left ~+10R on the table.
+     Caveat: all ~shorts in one falling week = market beta, not skill. Do properly: seal first; fees 9bps; day+coin
+     clustered CIs; placebo (random entry times same coins); add entry variants (half-now/half-bounce, bounce of
+     0.5x exp-move, limit decay/reprice, break + retest); ask whether "weakest coin" (closest to 20d low, worst 7d) is
+     where bounce-limits miss most. Deliver 1-3 plain rules + one number each (owner is visual). Then post a DIVE on XRP
+     (owner holds 2 waiting XRP bounce shorts: 101b9e2294 @1.325, faea830d5b @1.312, both stop 1.362).
