@@ -50,10 +50,10 @@ def build():
         out["bot_pnl"] = []
     ai = _load(HM / "ai_plans.json", {}).get("ideas", [])
     out["ai_r"] = _cum([(datetime.fromtimestamp(i["result"].get("closed_at") or i["ts"], timezone.utc).strftime("%Y-%m-%d"),
-                         i["result"]["r"]) for i in ai if "r" in (i.get("result") or {})])
+                         i["result"]["r"]) for i in ai if (i.get("result") or {}).get("r") is not None])
     pl = _load(HM / "plans.json", {}).get("plans", [])
     out["owner_r"] = _cum([(datetime.fromtimestamp(p["result"].get("closed_at") or p["ts"], timezone.utc).strftime("%Y-%m-%d"),
-                            p["result"]["r"]) for p in pl if "r" in (p.get("result") or {})])
+                            p["result"]["r"]) for p in pl if (p.get("result") or {}).get("r") is not None])
     try:
         log = subprocess.run(["git", "log", "--since=2026-05-01", "--format=%ad", "--date=short"], cwd=BOT,
                              capture_output=True, text=True, timeout=30).stdout.split()
