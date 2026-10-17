@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-17T00:58:03+00:00",
- "now": "2026-10-17T00:58:02+00:00",
+ "generated": "2026-10-17T01:58:42+00:00",
+ "now": "2026-10-17T01:58:41+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 9,
+   "flagged": 8,
    "high": 3,
    "not_automated": 0
   },
@@ -203,17 +203,6 @@
    "values": {
     "state.vol.next_day_move_pct": 3.49,
     "scan.exp_move": 3.89
-   }
-  },
-  {
-   "check": "D3",
-   "id": "exp_move_XRP",
-   "severity": "warn",
-   "what": "exp_move for XRP disagrees by 13% across live outputs",
-   "values": {
-    "state.vol.next_day_move_pct": 2.14,
-    "scan.exp_move": 2.11,
-    "chief.expected_move_pct": 1.9
    }
   },
   {
