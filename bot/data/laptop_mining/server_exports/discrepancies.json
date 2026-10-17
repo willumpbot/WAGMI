@@ -1,6 +1,6 @@
 {
- "generated": "2026-10-17T16:57:40+00:00",
- "now": "2026-10-17T16:57:36+00:00",
+ "generated": "2026-10-17T18:08:57+00:00",
+ "now": "2026-10-17T18:08:56+00:00",
  "registry": "C:\\Users\\vince\\WAGMI\\bot\\knowledge",
  "data_dir": "C:\\Users\\vince\\WAGMI\\bot\\data",
  "summary": {
@@ -15,7 +15,7 @@
    "not_automated": 8
   },
   "D3": {
-   "flagged": 8,
+   "flagged": 9,
    "high": 3,
    "not_automated": 0
   },
@@ -193,6 +193,17 @@
    "values": {
     "state.vol.next_day_move_pct": 5.29,
     "scan.exp_move": 4.46
+   }
+  },
+  {
+   "check": "D3",
+   "id": "exp_move_SOL",
+   "severity": "warn",
+   "what": "exp_move for SOL disagrees by 12% across live outputs",
+   "values": {
+    "state.vol.next_day_move_pct": 2.14,
+    "scan.exp_move": 2.21,
+    "chief.expected_move_pct": 2.4
    }
   },
   {
