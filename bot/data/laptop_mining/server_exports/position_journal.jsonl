@@ -3119,3 +3119,5 @@
 {"position_id": "0c03a98d064d4a7f96b674c55a796e5b", "phase": "CLOSING", "ts": "2026-10-16T11:24:31.507218+00:00", "symbol": "ETH", "meta": {"action": "SL", "price": 2483.45}}
 {"position_id": "0c03a98d064d4a7f96b674c55a796e5b", "phase": "CLOSED_BOOKED", "ts": "2026-10-16T11:24:31.688480+00:00", "symbol": "ETH"}
 {"position_id": "5fdb1771e1274198898e76b97c03fa66", "phase": "OPEN", "ts": "2026-10-16T11:24:48.023711+00:00", "symbol": "BTC", "meta": {"side": "SHORT", "entry": 82767.2, "qty": 0.00493}}
+{"position_id": "b87270c329964c1282112b09d3340e7c", "phase": "CLOSING", "ts": "2026-10-17T15:24:06.706011+00:00", "symbol": "SOL", "meta": {"action": "OWNER_PLAN_MAX_HOLD", "price": 103.995}}
+{"position_id": "b87270c329964c1282112b09d3340e7c", "phase": "CLOSED_BOOKED", "ts": "2026-10-17T15:27:54.759945+00:00", "symbol": "SOL"}
